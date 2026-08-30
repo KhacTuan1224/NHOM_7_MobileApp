@@ -1,1 +1,1 @@
-# NHOM_X_MobileApp
+# NHOM_7_MobileApp
