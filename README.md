@@ -1,10 +1,11 @@
 # NHOM_7_MobileApp
 
-## Thành Viên Nhóm
-| Tên thành viên | Mã số sinh viên |
-| --- | --- |
-| Lại Thành Đạt (Leader) | [Điền MSSV] |
-| Trương Thành Đạt (Cựu Leader) | [Điền MSSV] |
-| Nguyễn Phương Chinh | 31231027785 |
-| Phan Khắc Anh Tuấn | [Điền MSSV] |
-| Nguyễn Tấn Khiêm   | [Điền MSSV] |
+## Development Team
+
+| Member                                                                         | Role        |
+| ------------------------------------------------------------------------------ | ----------- |
+| Lại Thành Đạt ([LaiThanhDat-glitch](https://github.com/LaiThanhDat-glitch))    | Team Leader |
+| Trương Thành Đạt - 31241024873 ([datweb07](https://github.com/datweb07))       | Member      |
+| Nguyễn Phương Chinh ([chinhngprit](https://github.com/chinhngprit))            | Member      |
+| Phan Khắc Anh Tuấn ([KhacTuan1224](https://github.com/KhacTuan1224))           | Member      |
+| Nguyễn Tấn Khiêm (tuất??) ([nguyentankhiem1610](https://github.com/nguyentankhiem1610)) | Member      |
