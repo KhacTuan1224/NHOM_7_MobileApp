@@ -45,3 +45,40 @@ flowchart TD
     classDef headerClass fill:#1E88E5,stroke:#0D47A1,stroke-width:2px,color:#fff,font-weight:bold;
     classDef default fill:#E3F2FD,stroke:#1976D2,stroke-width:1px,color:#0D47A1;
 ```
+
+
+### 4. Thương mại,Đặt hàng và Vận chuyển
+``` mermaid
+    flowchart TD
+    ROOT_M45["THƯƠNG MẠI VÀ VẬN CHUYỂN"]:::headerClass
+
+    M4["4.0 Giỏ hàng và Xử lý Đơn hàng"]:::parentClass
+    M5["5.0 Định vị GPS và Vận chuyển"]:::parentClass
+
+    ROOT_M45 --> M4
+    ROOT_M45 --> M5
+
+    subgraph SUB_CHECKOUT ["Quy trình Mua và Thanh toán"]
+        F41["4.1 Giỏ hàng đa nhà vườn (Room DB) <br/><b>[G, B]</b>"]
+        F42["4.2 Checkout Tài khoản (Lấy địa chỉ sẵn) <br/><b>[B]</b>"]
+        F43["4.3 Checkout Guest (Form thông tin) <br/><b>[G]</b>"]
+        F44["4.4 Thanh toán COD / Chuyển khoản VietQR <br/><b>[G, B]</b>"]
+    end
+
+    subgraph SUB_ORDER_LOGISTICS ["Theo dõi & Vận chuyển"]
+        F45["4.5 Lịch sử đơn và Trạng thái mua hàng <br/><b>[B]</b>"]
+        F46["4.6 Quản lý và Xác nhận đơn phía vườn <br/><b>[S]</b>"]
+        F51["5.1 Cập nhật mã vận đơn và Trạng thái <br/><b>[S]</b>"]
+        F52["5.2 Theo dõi lộ trình Google Maps <br/><b>[G, B]</b>"]
+    end
+
+    M4 --> SUB_CHECKOUT
+    M4 --> F45
+    M4 --> F46
+    M5 --> SUB_ORDER_LOGISTICS
+
+    classDef headerClass fill:#43A047,stroke:#1B5E20,stroke-width:2px,color:#fff,font-weight:bold;
+    classDef parentClass fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20,font-weight:bold;
+    classDef default fill:#F1F8E9,stroke:#689F38,stroke-width:1px,color:#33691E;
+```
+
