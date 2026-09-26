@@ -1,4 +1,3 @@
-``` mermaid
 flowchart TB
     %% =========================================================
     %% ADMIN
@@ -136,4 +135,3 @@ flowchart TB
         A16 --> A164["Nhận Post/Campaign pending"]
         A16 --> A165["Nhận Report mới"]
     end
-```
