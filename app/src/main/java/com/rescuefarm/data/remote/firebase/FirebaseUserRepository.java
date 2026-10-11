@@ -99,7 +99,12 @@ public class FirebaseUserRepository implements UserRepository {
         fields.put("fullName", clean(fullName)); fields.put("phone", clean(phone));
         fields.put("avatarUrl", clean(avatarUrl)); fields.put("latitude", latitude);
         fields.put("longitude", longitude); fields.put("updatedAt", FieldValue.serverTimestamp());
-        user(userId).update(fields).addOnSuccessListener(unused -> getUser(userId, callback))
+        user(userId).get().addOnSuccessListener(previous -> user(userId).update(fields)
+                .addOnSuccessListener(unused -> {
+                    com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
+                            previous.getString("avatarUrl"), avatarUrl);
+                    getUser(userId, callback);
+                }).addOnFailureListener(error -> notifyFailure(error, callback::onError)))
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
@@ -112,7 +117,12 @@ public class FirebaseUserRepository implements UserRepository {
         fields.put("shopAvatarUrl", clean(shopAvatarUrl));
         fields.put("address", clean(address));
         fields.put("updatedAt", FieldValue.serverTimestamp());
-        user(sellerId).update(fields).addOnSuccessListener(unused -> getUser(sellerId, callback))
+        user(sellerId).get().addOnSuccessListener(previous -> user(sellerId).update(fields)
+                .addOnSuccessListener(unused -> {
+                    com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
+                            previous.getString("shopAvatarUrl"), shopAvatarUrl);
+                    getUser(sellerId, callback);
+                }).addOnFailureListener(error -> notifyFailure(error, callback::onError)))
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
@@ -247,12 +257,14 @@ public class FirebaseUserRepository implements UserRepository {
     @Override public void submitSellerApplication(String sellerId, SellerApplication application,
             ApplicationCallback callback) {
         DocumentReference reference = firestore.collection(SELLER_APPLICATIONS).document(sellerId);
+        String[] previousProofUrl = {""};
         firestore.runTransaction(transaction -> {
             DocumentSnapshot existing = transaction.get(reference);
             String status = existing.getString("status");
             if ("PENDING".equals(status) || "APPROVED".equals(status)) {
                 throw new IllegalStateException("APPLICATION_CONFLICT");
             }
+            previousProofUrl[0] = safe(existing.getString("proofImageUrl"));
             Map<String, Object> data = new HashMap<>();
             data.put("id", sellerId); data.put("sellerId", sellerId);
             data.put("representativeName", clean(application.getRepresentativeName()));
@@ -264,7 +276,11 @@ public class FirebaseUserRepository implements UserRepository {
             data.put("updatedAt", FieldValue.serverTimestamp());
             transaction.set(reference, data);
             return null;
-        }).addOnSuccessListener(unused -> getSellerApplication(sellerId, callback))
+        }).addOnSuccessListener(unused -> {
+            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
+                    previousProofUrl[0], application.getProofImageUrl());
+            getSellerApplication(sellerId, callback);
+        })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 

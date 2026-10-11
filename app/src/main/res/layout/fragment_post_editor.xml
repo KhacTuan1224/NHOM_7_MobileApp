@@ -14,9 +14,16 @@
         <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/post_campaign_hint">
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/postCampaignInput" android:layout_width="match_parent" android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/post_images_hint">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/postImagesInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:minLines="2" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/uploadPostImageButton"
+            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/upload_post_images_action" />
+        <TextView android:id="@+id/postImagesUploadStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/no_images_selected" android:textSize="12sp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/clearPostImagesButton"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="@string/clear_uploaded_images_action" />
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/postImagesInput"
+            android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/post_products_hint">
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/postProductsInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:minLines="2" />
         </com.google.android.material.textfield.TextInputLayout>

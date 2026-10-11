@@ -18,17 +18,34 @@
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/editPhoneInput"
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="phone" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" android:hint="@string/avatar_url_label">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/editAvatarInput"
-                android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textUri" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:gravity="center_vertical" android:orientation="horizontal">
+            <ImageView android:id="@+id/editAvatarPreview" android:layout_width="64dp" android:layout_height="64dp"
+                android:background="@drawable/bg_profile_avatar_circle" android:clipToOutline="true"
+                android:contentDescription="@string/profile_avatar_description" android:scaleType="centerCrop"
+                android:src="@drawable/ic_nav_profile" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/uploadAvatarButton"
+                style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
+                android:layout_height="@dimen/touch_target_min" android:layout_marginStart="@dimen/space_md"
+                android:layout_weight="1" android:text="@string/upload_avatar_action" />
+        </LinearLayout>
+        <TextView android:id="@+id/avatarUploadStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/no_avatar_selected"
+            android:textColor="@color/rescue_on_surface_variant" android:textSize="12sp" />
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/editAvatarInput"
+            android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <TextView android:id="@+id/profileLocationText" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" />
         <com.google.android.material.button.MaterialButton android:id="@+id/useProfileLocationButton"
             style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/use_current_location_action" />
+        <FrameLayout android:id="@+id/profileMapContainer" android:layout_width="match_parent"
+            android:layout_height="220dp" android:layout_marginTop="@dimen/space_sm"
+            android:background="@drawable/bg_profile_map" android:clipToOutline="true"
+            android:visibility="gone">
+            <WebView android:id="@+id/profileLocationMap" android:layout_width="match_parent"
+                android:layout_height="match_parent" android:background="@android:color/transparent" />
+        </FrameLayout>
         <com.google.android.material.button.MaterialButton android:id="@+id/saveProfileButton"
             android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
             android:layout_marginTop="@dimen/space_md" android:text="@string/save_action" />

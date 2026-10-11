@@ -1,0 +1,43 @@
+package com.rescuefarm.service.media;
+
+import android.content.Context;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.fragment.app.Fragment;
+
+import com.bumptech.glide.Glide;
+
+/** Small UI adapter shared by image upload forms. */
+public final class CloudinaryUploadUi {
+    private CloudinaryUploadUi() { }
+
+    public static void upload(Fragment fragment, Uri uri, String assetType, String resourceId, int slot, View progressView,
+                              TextView statusView, ImageView preview, Result callback) {
+        if (uri == null || !fragment.isAdded()) return;
+        Context context = fragment.requireContext();
+        progressView.setEnabled(false);
+        if (statusView != null) statusView.setText("Đang tải ảnh lên…");
+        new CloudinaryMediaStorage(context).uploadImage(uri.toString(), assetType, resourceId, slot).whenComplete((url, error) ->
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (!fragment.isAdded()) return;
+                    progressView.setEnabled(true);
+                    if (error != null) {
+                        String message = error.getCause() != null ? error.getCause().getMessage() : error.getMessage();
+                        if (statusView != null) statusView.setText("Chưa có ảnh");
+                        Toast.makeText(fragment.requireContext(), message, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    callback.onUploaded(url);
+                    if (preview != null) Glide.with(fragment).load(url).centerCrop().into(preview);
+                    if (statusView != null) statusView.setText("Đã tải ảnh lên Cloudinary");
+                }));
+    }
+
+    public interface Result { void onUploaded(String secureUrl); }
+}

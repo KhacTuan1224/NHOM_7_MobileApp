@@ -16,11 +16,20 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
 import com.rescuefarm.domain.enums.ApplicationStatus;
 import com.rescuefarm.domain.model.SellerApplication;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerApplicationFragment extends Fragment {
     private ProfileViewModel viewModel; private View form, submit;
     private TextView status; private TextInputEditText representative, shop, address, proof;
     private boolean dirty, binding;
+    private TextView proofStatus;
+    private View proofUploadButton;
+    private final ActivityResultLauncher<String> proofPicker = registerForActivityResult(
+            new ActivityResultContracts.GetContent(), uri -> CloudinaryUploadUi.upload(this, uri,
+                    "sellerProof", com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid(), 0, proofUploadButton, proofStatus, null,
+                    url -> proof.setText(url)));
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_seller_application, parent, false);
@@ -30,6 +39,9 @@ public class SellerApplicationFragment extends Fragment {
         status = view.findViewById(R.id.applicationStatusText);
         representative = view.findViewById(R.id.representativeInput); shop = view.findViewById(R.id.shopNameInput);
         address = view.findViewById(R.id.shopAddressInput); proof = view.findViewById(R.id.proofImageInput);
+        proofStatus = view.findViewById(R.id.proofImageUploadStatus);
+        proofUploadButton = view.findViewById(R.id.uploadProofImageButton);
+        proofUploadButton.setOnClickListener(v -> proofPicker.launch("image/*"));
         viewModel = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext()))
                 .get(ProfileViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
@@ -63,6 +75,7 @@ public class SellerApplicationFragment extends Fragment {
             if (!dirty) {
                 binding = true;
                 representative.setText(""); shop.setText(""); address.setText(""); proof.setText("");
+                proofStatus.setText(R.string.no_image_selected);
                 binding = false;
             }
         }
@@ -72,6 +85,8 @@ public class SellerApplicationFragment extends Fragment {
                 binding = true;
                 representative.setText(application.getRepresentativeName()); shop.setText(application.getShopName());
                 address.setText(application.getAddress()); proof.setText(application.getProofImageUrl());
+                proofStatus.setText(application.getProofImageUrl() == null || application.getProofImageUrl().isEmpty()
+                        ? R.string.no_image_selected : R.string.image_uploaded_status);
                 binding = false;
             }
         }

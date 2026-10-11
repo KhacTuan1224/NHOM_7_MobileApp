@@ -204,8 +204,15 @@ public class FirebaseProductRepository implements ProductRepository {
         catch (IllegalArgumentException error) {
             callback.onError(ErrorCode.VALIDATION, error.getMessage()); return;
         }
+        List<String> previousImageUrls = new ArrayList<>();
         firestore.runTransaction(transaction -> {
             DocumentSnapshot existing = transaction.get(reference);
+            previousImageUrls.clear();
+            if (existing.exists()) {
+                Object oldImages = existing.get("imageUrls");
+                if (oldImages instanceof List<?>) for (Object value : (List<?>) oldImages)
+                    if (value instanceof String) previousImageUrls.add((String) value);
+            }
             if (existing.exists() && !sellerId.equals(existing.getString("sellerId"))) {
                 throw new IllegalStateException("FORBIDDEN");
             }
@@ -222,6 +229,8 @@ public class FirebaseProductRepository implements ProductRepository {
             transaction.set(reference, data);
             return result;
         }).addOnSuccessListener(result -> {
+            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
+                    previousImageUrls, result.getImageUrls());
             cacheExecutor.execute(() -> dao.replaceProduct(CatalogCacheMapper.toEntity(
                     result, System.currentTimeMillis())));
             callback.onSuccess(result);

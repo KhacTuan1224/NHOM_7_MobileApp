@@ -22,11 +22,20 @@ import com.rescuefarm.domain.model.Seller;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.bumptech.glide.Glide;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerProfileFragment extends Fragment {
     private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput, addressInput;
     private ImageView sellerAvatarView;
     private boolean dirty, binding;
+    private TextView avatarUploadStatus;
+    private View uploadAvatarButton;
+    private final ActivityResultLauncher<String> avatarPicker = registerForActivityResult(
+            new ActivityResultContracts.GetContent(), uri -> CloudinaryUploadUi.upload(this, uri,
+                    "shopAvatar", com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid(), 0, uploadAvatarButton, avatarUploadStatus, sellerAvatarView,
+                    url -> avatarInput.setText(url)));
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_seller_profile, container, false);
@@ -40,6 +49,9 @@ public class SellerProfileFragment extends Fragment {
         avatarInput = view.findViewById(R.id.sellerAvatarInput);
         addressInput = view.findViewById(R.id.sellerAddressInput);
         sellerAvatarView = view.findViewById(R.id.sellerProfileAvatar);
+        avatarUploadStatus = view.findViewById(R.id.sellerAvatarUploadStatus);
+        uploadAvatarButton = view.findViewById(R.id.uploadSellerAvatarButton);
+        uploadAvatarButton.setOnClickListener(v -> avatarPicker.launch("image/*"));
         view.findViewById(R.id.openSellerApplicationButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(
                         R.id.action_sellerProfileFragment_to_sellerApplicationFragment));
@@ -122,6 +134,8 @@ public class SellerProfileFragment extends Fragment {
         shopNameInput.setText(seller.getShopName());
         descriptionInput.setText(seller.getShopDescription());
         avatarInput.setText(seller.getShopAvatarUrl());
+        avatarUploadStatus.setText(seller.getShopAvatarUrl() == null || seller.getShopAvatarUrl().trim().isEmpty()
+                ? R.string.no_avatar_selected : R.string.avatar_uploaded_status);
         addressInput.setText(seller.getAddress());
         binding = false;
     }

@@ -48,4 +48,8 @@ public interface AdminRepository {
             String reason, ActionCallback callback);
     void setActive(Section section, String resourceId, boolean active,
             String reason, ActionCallback callback);
+    default void setResourceImage(Section section, String resourceId, String imageUrl,
+            ActionCallback callback) {
+        callback.onError(ErrorCode.VALIDATION, "Không hỗ trợ cập nhật ảnh cho loại dữ liệu này.");
+    }
 }
