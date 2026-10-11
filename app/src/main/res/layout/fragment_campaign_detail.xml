@@ -1,24 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
-        <TextView android:id="@+id/campaignDetailTitle" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
-        <TextView android:id="@+id/campaignDetailBadge" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
-            android:textColor="@color/rescue_primary" android:textStyle="bold" />
-        <TextView android:id="@+id/campaignDetailReason" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" />
-        <TextView android:id="@+id/campaignDetailProgress" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" android:textStyle="bold" />
-        <TextView android:id="@+id/campaignDetailSchedule" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" />
-        <TextView android:id="@+id/campaignDetailLocation" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" />
-        <TextView android:id="@+id/campaignDetailDescription" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_lg"
-            android:textColor="@color/rescue_on_surface_variant" />
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" 
+    android:layout_height="match_parent"
+    android:background="@color/rescue_background"
+    android:fillViewport="true">
+    
+    <LinearLayout 
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="80dp"
+        android:padding="16dp">
+        
+        <!-- Badge text directly (no colored background) -->
+        <TextView 
+            android:id="@+id/campaignDetailBadge" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textColor="@color/rescue_primary"
+            android:textStyle="bold"
+            android:textAllCaps="true"
+            android:layout_marginBottom="8dp" />
+        
+        <!-- Title -->
+        <TextView 
+            android:id="@+id/campaignDetailTitle" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" 
+            android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="8dp" />
+        
+        <!-- Reason -->
+        <TextView 
+            android:id="@+id/campaignDetailReason" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Progress in simple card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@color/rescue_primary_container">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tiến độ giải cứu"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall"
+                    android:textColor="@color/rescue_primary"
+                    android:layout_marginBottom="8dp" />
+                
+                <TextView 
+                    android:id="@+id/campaignDetailProgress" 
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="@color/rescue_on_primary_container"
+                    android:layout_marginBottom="8dp" />
+                
+                <ProgressBar
+                    android:id="@+id/campaignProgressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:progressTint="@color/rescue_primary"
+                    android:progressBackgroundTint="@color/rescue_outline"
+                    android:max="100" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        
+        <!-- Schedule directly on background -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Thời gian"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:layout_marginBottom="4dp" />
+        
+        <TextView 
+            android:id="@+id/campaignDetailSchedule" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Location directly on background -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Địa điểm"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:layout_marginBottom="4dp" />
+        
+        <TextView 
+            android:id="@+id/campaignDetailLocation" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Description directly on background -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chi tiết chiến dịch"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="8dp" />
+        
+        <TextView 
+            android:id="@+id/campaignDetailDescription" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Buttons directly on background -->
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/viewCampaignProductsButton"
+            android:layout_width="match_parent" 
+            android:layout_height="@dimen/touch_target_min"
+            android:text="Xem sản phẩm trong chiến dịch"
+            android:layout_marginBottom="8dp" />
+        
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/shareCampaignButton"
+            android:layout_width="match_parent" 
+            android:layout_height="@dimen/touch_target_min"
+            android:text="Chia sẻ chiến dịch"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_marginBottom="8dp" />
+        
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/reportCampaignButton"
+            android:layout_width="match_parent" 
+            android:layout_height="@dimen/touch_target_min"
+            android:text="@string/report_action"
+            style="@style/Widget.Material3.Button.TextButton" />
+        
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
