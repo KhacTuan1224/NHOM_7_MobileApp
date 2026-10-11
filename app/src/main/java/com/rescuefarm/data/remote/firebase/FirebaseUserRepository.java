@@ -192,10 +192,14 @@ public class FirebaseUserRepository implements UserRepository {
             Address value = copyAddress(addressRef.getId(), customerId, saved, makeDefault);
             if (makeDefault && oldDefaultId != null && !oldDefaultId.isEmpty()
                     && !oldDefaultId.equals(addressRef.getId())) {
-                transaction.update(userRef.collection(ADDRESSES).document(oldDefaultId), "isDefault", false);
+                transaction.update(userRef.collection(ADDRESSES).document(oldDefaultId),
+                        "isDefault", false,
+                        "updatedAt", FieldValue.serverTimestamp());
             }
             transaction.set(addressRef, addressMap(value));
-            if (makeDefault) transaction.update(userRef, "defaultAddressId", addressRef.getId());
+            if (makeDefault) transaction.update(userRef,
+                    "defaultAddressId", addressRef.getId(),
+                    "updatedAt", FieldValue.serverTimestamp());
             return value;
         }).addOnSuccessListener(callback::onSuccess)
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
