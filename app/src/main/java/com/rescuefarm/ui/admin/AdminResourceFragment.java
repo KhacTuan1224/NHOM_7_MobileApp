@@ -9,6 +9,8 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -18,6 +20,7 @@ import com.rescuefarm.data.repository.AdminRepository.Section;
 import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
 import com.rescuefarm.service.admin.AdminTransitionPolicy;
+import com.rescuefarm.service.media.CloudinaryUploadUi;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -29,6 +32,17 @@ public final class AdminResourceFragment extends Fragment {
     private EditText reason;
     private ProgressBar progress;
     private LinearLayout container;
+    private String selectedAssetId = "";
+    private View pendingImageButton;
+    private TextView pendingImageStatus;
+    private final ActivityResultLauncher<String> imagePicker = registerForActivityResult(
+            new ActivityResultContracts.GetContent(), uri -> {
+                if (selectedAssetId.isEmpty()) return;
+                String targetId = selectedAssetId;
+                String assetType = section == Section.CATEGORIES ? "category" : "banner";
+                CloudinaryUploadUi.upload(this, uri, assetType, targetId, 0, pendingImageButton, pendingImageStatus,
+                        null, url -> viewModel.setResourceImage(targetId, url));
+            });
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
@@ -84,6 +98,16 @@ public final class AdminResourceFragment extends Fragment {
                 item.getStatus(), item.getId()));
         row.addView(text);
         if (section == Section.CATEGORIES || section == Section.BANNERS) {
+            TextView imageStatus = new TextView(requireContext());
+            imageStatus.setText(item.getImageUrl().isEmpty() ? R.string.no_image_selected
+                    : R.string.category_banner_image_exists);
+            row.addView(imageStatus);
+            Button upload = button(R.string.upload_category_banner_image_action);
+            upload.setOnClickListener(v -> {
+                selectedAssetId = item.getId(); pendingImageButton = upload; pendingImageStatus = imageStatus;
+                imagePicker.launch("image/*");
+            });
+            row.addView(upload);
             Button toggle = button(item.isActive() ? R.string.admin_disable_action
                     : R.string.admin_enable_action);
             toggle.setOnClickListener(v -> viewModel.setActive(item.getId(), !item.isActive(),

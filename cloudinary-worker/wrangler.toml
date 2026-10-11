@@ -1,0 +1,11 @@
+name = "rescuefarm-cloudinary"
+main = "src/index.js"
+compatibility_date = "2026-10-11"
+
+[vars]
+FIREBASE_PROJECT_ID = "nhom7-rescuefarm"
+CLOUDINARY_CLOUD_NAME = "dmahghpku"
+CLOUDINARY_API_KEY = "342486666341846"
+
+[observability]
+enabled = true

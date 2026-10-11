@@ -1,1 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?><ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg"><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/reviews_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"/><EditText android:id="@+id/reviewOrderId" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/review_order_id_hint"/><EditText android:id="@+id/reviewOrderItemId" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/review_order_item_hint"/><EditText android:id="@+id/reviewRating" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/review_rating_hint" android:inputType="number"/><EditText android:id="@+id/reviewContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/review_content_hint"/><EditText android:id="@+id/reviewImages" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/review_images_hint"/><Button android:id="@+id/saveReviewButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/save_review_action"/><LinearLayout android:id="@+id/reviewContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/></LinearLayout></ScrollView>
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/reviews_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+        <EditText android:id="@+id/reviewOrderId" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="@string/review_order_id_hint" />
+        <EditText android:id="@+id/reviewOrderItemId" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="@string/review_order_item_hint" />
+        <EditText android:id="@+id/reviewRating" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="@string/review_rating_hint" android:inputType="number" />
+        <EditText android:id="@+id/reviewContent" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="@string/review_content_hint" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/uploadReviewImagesButton"
+            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:text="@string/upload_review_images_action" />
+        <TextView android:id="@+id/reviewImagesStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/no_images_selected" android:textSize="12sp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/clearReviewImagesButton"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="@string/clear_uploaded_images_action" />
+        <EditText android:id="@+id/reviewImages" android:layout_width="0dp"
+            android:layout_height="0dp" android:visibility="gone" />
+        <Button android:id="@+id/saveReviewButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/save_review_action" />
+        <LinearLayout android:id="@+id/reviewContainer" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

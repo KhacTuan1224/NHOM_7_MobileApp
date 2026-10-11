@@ -46,12 +46,17 @@
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerDescriptionInput"
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:minLines="2" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm" android:hint="@string/shop_avatar_label">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerAvatarInput"
-                android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textUri" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm" android:gravity="center_vertical" android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton android:id="@+id/uploadSellerAvatarButton"
+                style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="wrap_content"
+                android:layout_height="@dimen/touch_target_min" android:text="@string/upload_shop_avatar_action" />
+            <TextView android:id="@+id/sellerAvatarUploadStatus" android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_marginStart="@dimen/space_sm"
+                android:layout_weight="1" android:text="@string/no_avatar_selected" android:textSize="12sp" />
+        </LinearLayout>
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerAvatarInput"
+            android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_sm" android:hint="@string/shop_address_label">

@@ -15,7 +15,8 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${providers.gradleProperty("CLOUDINARY_CLOUD_NAME").orElse("").get()}\"")
+        buildConfigField("String", "CLOUDINARY_SIGNING_URL", "\"${providers.gradleProperty("CLOUDINARY_SIGNING_URL").orElse("").get()}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         javaCompileOptions {
@@ -24,6 +25,7 @@ android {
             }
         }
     }
+    buildFeatures { buildConfig = true }
 
     buildTypes {
         release {

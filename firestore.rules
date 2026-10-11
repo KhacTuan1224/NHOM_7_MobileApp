@@ -62,9 +62,9 @@ service cloud.firestore {
 
     function validUserProfile(data, userId) {
       return data.keys().hasOnly([
-            'id', 'email', 'fullName', 'phone', 'avatarUrl', 'role', 'status',
+            'id', 'email', 'fullName', 'phone', 'avatarUrl', 'avatarPublicId', 'role', 'status',
             'sellerStatus', 'customerType', 'companyName', 'taxCode',
-            'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl',
+            'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'shopAvatarPublicId',
             'address', 'latitude', 'longitude', 'defaultAddressId',
             'createdAt', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
@@ -73,7 +73,8 @@ service cloud.firestore {
           && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
           && data.phone is string && data.phone.size() <= 32
           && data.avatarUrl is string && data.avatarUrl.size() <= 2048
-          && data.role in ['CUSTOMER', 'SELLER']
+          && data.get('avatarPublicId', '') is string && data.get('avatarPublicId', '').size() <= 300
+          && data.role in ['CUSTOMER', 'SELLER', 'ADMIN']
           && data.status in ['ACTIVE', 'INACTIVE', 'BLOCKED']
           && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
           && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
@@ -83,7 +84,7 @@ service cloud.firestore {
           && (data.role != 'CUSTOMER'
             || (!data.keys().hasAny([
                   'sellerStatus', 'representativeName', 'shopName', 'shopDescription',
-                  'shopAvatarUrl', 'address'
+                  'shopAvatarUrl', 'shopAvatarPublicId', 'address'
                 ])
               && data.get('customerType', 'INDIVIDUAL') in ['INDIVIDUAL', 'BUSINESS']
               && data.get('companyName', '') is string && data.get('companyName', '').size() <= 160
@@ -97,13 +98,14 @@ service cloud.firestore {
               && data.get('shopDescription', '').size() <= 2000
               && data.get('shopAvatarUrl', '') is string
               && data.get('shopAvatarUrl', '').size() <= 2048
+              && data.get('shopAvatarPublicId', '') is string && data.get('shopAvatarPublicId', '').size() <= 300
               && data.get('address', '') is string && data.get('address', '').size() <= 500));
     }
 
     function validSellerApplication(data, sellerId) {
       return data.keys().hasOnly([
             'id', 'sellerId', 'representativeName', 'shopName', 'address',
-            'proofImageUrl', 'status', 'rejectionReason', 'submittedAt', 'updatedAt',
+            'proofImageUrl', 'proofImagePublicId', 'status', 'rejectionReason', 'submittedAt', 'updatedAt',
             'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && data.id == sellerId && data.sellerId == sellerId
@@ -112,6 +114,7 @@ service cloud.firestore {
           && data.shopName is string && data.shopName.size() >= 2 && data.shopName.size() <= 120
           && data.address is string && data.address.size() <= 500
           && data.proofImageUrl is string && data.proofImageUrl.size() <= 2048
+          && data.get('proofImagePublicId', '') is string && data.get('proofImagePublicId', '').size() <= 300
           && data.status in ['PENDING', 'APPROVED', 'REJECTED']
           && data.rejectionReason is string && data.rejectionReason.size() <= 500
           && data.submittedAt is timestamp && data.updatedAt is timestamp;
@@ -120,7 +123,7 @@ service cloud.firestore {
     function validProduct(data) {
       return data.keys().hasOnly([
             'id', 'sellerId', 'categoryId', 'name', 'description', 'originalPrice',
-            'rescuePrice', 'unit', 'origin', 'province', 'imageUrls', 'averageRating',
+            'rescuePrice', 'unit', 'origin', 'province', 'imageUrls', 'imagePublicIds', 'averageRating',
             'reviewCount', 'status', 'createdAt', 'updatedAt', 'moderatedBy',
             'moderatedAt', 'moderationReason'
           ])
@@ -142,6 +145,7 @@ service cloud.firestore {
           && data.origin is string && data.origin.size() <= 120
           && data.province is string && data.province.size() <= 120
           && data.imageUrls is list && data.imageUrls.size() <= 8
+          && data.get('imagePublicIds', []) is list && data.get('imagePublicIds', []).size() <= 8
           && data.averageRating is number && data.averageRating >= 0 && data.averageRating <= 5
           && data.reviewCount is int && data.reviewCount >= 0
           && data.createdAt is timestamp && data.updatedAt is timestamp
@@ -438,7 +442,7 @@ service cloud.firestore {
 
     function validPost(data) {
       return data.keys().hasOnly([
-            'id', 'sellerId', 'title', 'content', 'campaignId', 'imageUrls',
+            'id', 'sellerId', 'title', 'content', 'campaignId', 'imageUrls', 'imagePublicIds',
             'linkedProductIds', 'urgencyLevel', 'status', 'viewCount',
             'createdAt', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
@@ -450,6 +454,7 @@ service cloud.firestore {
           && data.content.size() >= 10 && data.content.size() <= 3000
           && data.campaignId is string
           && data.imageUrls is list && data.imageUrls.size() <= 6
+          && data.get('imagePublicIds', []) is list && data.get('imagePublicIds', []).size() <= 6
           && data.linkedProductIds is list && data.linkedProductIds.size() <= 12
           && data.createdAt is timestamp
           && data.urgencyLevel in ['NORMAL', 'HIGH', 'CRITICAL']
@@ -531,12 +536,12 @@ service cloud.firestore {
           && request.resource.data.id == resource.data.id
           && request.resource.data.role == resource.data.role
           && request.resource.data.status == resource.data.status
-          && request.resource.data.sellerStatus == resource.data.sellerStatus
+          && request.resource.data.get('sellerStatus', '') == resource.data.get('sellerStatus', '')
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.keys().hasOnly([
-            'id', 'email', 'fullName', 'phone', 'avatarUrl', 'role', 'status',
+            'id', 'email', 'fullName', 'phone', 'avatarUrl', 'avatarPublicId', 'role', 'status',
             'sellerStatus', 'customerType', 'companyName', 'taxCode',
-            'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl',
+            'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'shopAvatarPublicId',
             'address', 'latitude', 'longitude', 'defaultAddressId', 'createdAt',
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
@@ -547,7 +552,7 @@ service cloud.firestore {
               || request.resource.data.sellerStatus == resource.data.sellerStatus)
           && (resource.data.role == 'SELLER'
               || !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-                'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'address'
+                'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'shopAvatarPublicId', 'address'
               ]))
           && hasNoCredentialFields(request.resource.data))
         || (isAdmin()
@@ -634,7 +639,7 @@ service cloud.firestore {
           && request.resource.data.submittedAt == request.time
           && request.resource.data.updatedAt == request.time
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'representativeName', 'shopName', 'address', 'proofImageUrl',
+            'representativeName', 'shopName', 'address', 'proofImageUrl', 'proofImagePublicId',
             'status', 'rejectionReason', 'submittedAt', 'updatedAt'
           ])
           && hasNoCredentialFields(request.resource.data))
@@ -661,9 +666,14 @@ service cloud.firestore {
       allow get, list: if resource.data.active == true || isAdmin();
       allow update: if isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'active', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
+            'active', 'imageUrl', 'imagePublicId', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
           ])
           && request.resource.data.active is bool
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imageUrl'])
+            || (request.resource.data.imageUrl is string
+              && request.resource.data.imageUrl.matches('https://res\\.cloudinary\\.com/.+')))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imagePublicId'])
+            || (request.resource.data.imagePublicId is string && request.resource.data.imagePublicId.size() <= 300))
           && (request.resource.data.active == true
             || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
@@ -945,9 +955,14 @@ service cloud.firestore {
       allow get, list: if resource.data.active == true || isAdmin();
       allow update: if isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'active', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
+            'active', 'imageUrl', 'imagePublicId', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
           ])
           && request.resource.data.active is bool
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imageUrl'])
+            || (request.resource.data.imageUrl is string
+              && request.resource.data.imageUrl.matches('https://res\\.cloudinary\\.com/.+')))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imagePublicId'])
+            || (request.resource.data.imagePublicId is string && request.resource.data.imagePublicId.size() <= 300))
           && (request.resource.data.active == true
             || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
@@ -1052,7 +1067,7 @@ service cloud.firestore {
       allow create: if hasRole(request.auth.uid, 'CUSTOMER')
           && request.resource.data.keys().hasOnly([
             'id', 'customerId', 'productId', 'orderId', 'orderItemId', 'rating',
-            'content', 'imageUrls', 'status', 'createdAt', 'updatedAt'
+            'content', 'imageUrls', 'imagePublicIds', 'status', 'createdAt', 'updatedAt'
           ])
           && request.resource.data.customerId == request.auth.uid
           && request.resource.data.id == reviewId
@@ -1061,6 +1076,7 @@ service cloud.firestore {
           && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
           && request.resource.data.content is string && request.resource.data.content.size() <= 1000
           && request.resource.data.imageUrls is list && request.resource.data.imageUrls.size() <= 5
+          && request.resource.data.get('imagePublicIds', []) is list && request.resource.data.get('imagePublicIds', []).size() <= 5
           && request.resource.data.status == 'PUBLISHED'
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time
@@ -1072,7 +1088,7 @@ service cloud.firestore {
       allow update: if (hasRole(request.auth.uid, 'CUSTOMER')
           && request.resource.data.keys().hasOnly([
             'id', 'customerId', 'productId', 'orderId', 'orderItemId', 'rating',
-            'content', 'imageUrls', 'status', 'createdAt', 'updatedAt',
+            'content', 'imageUrls', 'imagePublicIds', 'status', 'createdAt', 'updatedAt',
             'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && resource.data.customerId == request.auth.uid
@@ -1087,8 +1103,9 @@ service cloud.firestore {
           && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
           && request.resource.data.content is string && request.resource.data.content.size() <= 1000
           && request.resource.data.imageUrls is list && request.resource.data.imageUrls.size() <= 5
+          && request.resource.data.get('imagePublicIds', []) is list && request.resource.data.get('imagePublicIds', []).size() <= 5
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'rating', 'content', 'imageUrls', 'updatedAt'
+            'rating', 'content', 'imageUrls', 'imagePublicIds', 'updatedAt'
           ])
           && request.resource.data.updatedAt == request.time)
         || (isAdmin()
