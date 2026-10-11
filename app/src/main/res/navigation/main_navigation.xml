@@ -112,12 +112,45 @@
             app:destination="@id/postDetailFragment" />
         <action android:id="@+id/action_guestHomeFragment_to_cartFragment"
             app:destination="@id/cartFragment" />
+        <action android:id="@+id/action_guestHomeFragment_to_allCategoriesFragment"
+            app:destination="@id/allCategoriesFragment" />
+        <action android:id="@+id/action_guestHomeFragment_to_allCriticalCampaignsFragment"
+            app:destination="@id/allCriticalCampaignsFragment" />
+        <action android:id="@+id/action_guestHomeFragment_to_allValueProductsFragment"
+            app:destination="@id/allValueProductsFragment" />
+        <action android:id="@+id/action_guestHomeFragment_to_allActiveCampaignsFragment"
+            app:destination="@id/allActiveCampaignsFragment" />
     </fragment>
     <fragment android:id="@+id/discoveryFragment"
         android:name="com.rescuefarm.ui.home.DiscoveryFragment" android:label="@string/discovery_title">
         <action android:id="@+id/action_discoveryFragment_to_productDetailFragment"
             app:destination="@id/productDetailFragment" />
         <action android:id="@+id/action_discoveryFragment_to_campaignDetailFragment"
+            app:destination="@id/campaignDetailFragment" />
+    </fragment>
+
+    <fragment android:id="@+id/allCategoriesFragment"
+        android:name="com.rescuefarm.ui.home.AllCategoriesFragment" 
+        android:label="@string/all_categories_title" />
+
+    <fragment android:id="@+id/allCriticalCampaignsFragment"
+        android:name="com.rescuefarm.ui.home.AllCriticalCampaignsFragment" 
+        android:label="@string/all_critical_campaigns_title">
+        <action android:id="@+id/action_allCriticalCampaignsFragment_to_campaignDetailFragment"
+            app:destination="@id/campaignDetailFragment" />
+    </fragment>
+
+    <fragment android:id="@+id/allValueProductsFragment"
+        android:name="com.rescuefarm.ui.home.AllValueProductsFragment" 
+        android:label="@string/all_value_products_title">
+        <action android:id="@+id/action_allValueProductsFragment_to_productDetailFragment"
+            app:destination="@id/productDetailFragment" />
+    </fragment>
+
+    <fragment android:id="@+id/allActiveCampaignsFragment"
+        android:name="com.rescuefarm.ui.home.AllActiveCampaignsFragment" 
+        android:label="@string/all_active_campaigns_title">
+        <action android:id="@+id/action_allActiveCampaignsFragment_to_campaignDetailFragment"
             app:destination="@id/campaignDetailFragment" />
     </fragment>
 
