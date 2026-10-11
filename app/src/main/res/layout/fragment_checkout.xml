@@ -1,1 +1,195 @@
-<?xml version="1.0" encoding="utf-8"?><ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/rescue_background"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg"><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"/><TextView android:id="@+id/checkoutOwnerText" android:layout_width="match_parent" android:layout_height="wrap_content"/><EditText android:id="@+id/checkoutName" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/receiver_name_hint"/><EditText android:id="@+id/checkoutPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/receiver_phone_hint" android:inputType="phone"/><EditText android:id="@+id/checkoutAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/receiver_address_hint"/><EditText android:id="@+id/checkoutLatitude" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/latitude_hint" android:inputType="numberDecimal|numberSigned"/><EditText android:id="@+id/checkoutLongitude" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/longitude_hint" android:inputType="numberDecimal|numberSigned"/><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/fulfillment_label"/><Spinner android:id="@+id/checkoutFulfillment" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"/><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/payment_method_label"/><Spinner android:id="@+id/checkoutPayment" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"/><EditText android:id="@+id/checkoutNote" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/order_note_hint"/><TextView android:id="@+id/checkoutSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="@dimen/space_md" android:background="@color/rescue_primary_container"/><TextView android:id="@+id/checkoutMessage" android:layout_width="match_parent" android:layout_height="wrap_content"/><com.google.android.material.button.MaterialButton android:id="@+id/submitCheckoutButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/place_order_action"/></LinearLayout></ScrollView>
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" 
+    android:layout_height="match_parent" 
+    android:background="@color/rescue_background"
+    android:fillViewport="true">
+    
+    <LinearLayout 
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content" 
+        android:orientation="vertical" 
+        android:padding="16dp"
+        android:paddingBottom="80dp">
+        
+        <!-- Title -->
+        <TextView 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content" 
+            android:text="@string/checkout_title" 
+            android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Owner info -->
+        <TextView 
+            android:id="@+id/checkoutOwnerText" 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Receiver info section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Thông tin người nhận"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="8dp" />
+        
+        <EditText 
+            android:id="@+id/checkoutName" 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content" 
+            android:hint="@string/receiver_name_hint"
+            android:background="@color/rescue_surface"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp" />
+        
+        <EditText 
+            android:id="@+id/checkoutPhone" 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content" 
+            android:hint="@string/receiver_phone_hint" 
+            android:inputType="phone"
+            android:background="@color/rescue_surface"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp" />
+        
+        <EditText 
+            android:id="@+id/checkoutAddress" 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content" 
+            android:hint="@string/receiver_address_hint"
+            android:background="@color/rescue_surface"
+            android:padding="12dp"
+            android:minLines="2"
+            android:layout_marginBottom="8dp" />
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+            
+            <EditText 
+                android:id="@+id/checkoutLatitude" 
+                android:layout_width="0dp" 
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:hint="@string/latitude_hint" 
+                android:inputType="numberDecimal|numberSigned"
+                android:background="@color/rescue_surface"
+                android:padding="12dp" />
+            
+            <EditText 
+                android:id="@+id/checkoutLongitude" 
+                android:layout_width="0dp" 
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:hint="@string/longitude_hint" 
+                android:inputType="numberDecimal|numberSigned"
+                android:background="@color/rescue_surface"
+                android:padding="12dp" />
+        </LinearLayout>
+        
+        <!-- Fulfillment method -->
+        <TextView
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content" 
+            android:text="@string/fulfillment_label"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="4dp" />
+        
+        <Spinner 
+            android:id="@+id/checkoutFulfillment" 
+            android:layout_width="match_parent" 
+            android:layout_height="@dimen/touch_target_min"
+            android:background="@color/rescue_surface"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Payment method -->
+        <TextView
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content" 
+            android:text="@string/payment_method_label"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="4dp" />
+        
+        <Spinner 
+            android:id="@+id/checkoutPayment" 
+            android:layout_width="match_parent" 
+            android:layout_height="@dimen/touch_target_min"
+            android:background="@color/rescue_surface"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Order note -->
+        <EditText 
+            android:id="@+id/checkoutNote" 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content" 
+            android:hint="@string/order_note_hint"
+            android:background="@color/rescue_surface"
+            android:padding="12dp"
+            android:minLines="3"
+            android:gravity="top"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Order summary card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@color/rescue_primary_container">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tổng đơn hàng"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall"
+                    android:textColor="@color/rescue_primary"
+                    android:layout_marginBottom="8dp" />
+                
+                <TextView 
+                    android:id="@+id/checkoutSummary" 
+                    android:layout_width="match_parent" 
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
+                    android:textColor="@color/rescue_on_primary_container" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        
+        <!-- Message -->
+        <TextView 
+            android:id="@+id/checkoutMessage" 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:layout_marginBottom="16dp" />
+        
+        <!-- Submit button -->
+        <com.google.android.material.button.MaterialButton 
+            android:id="@+id/submitCheckoutButton" 
+            android:layout_width="match_parent" 
+            android:layout_height="@dimen/touch_target_min" 
+            android:text="@string/place_order_action" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

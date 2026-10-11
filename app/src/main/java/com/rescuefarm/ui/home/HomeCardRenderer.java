@@ -184,12 +184,11 @@ public final class HomeCardRenderer {
 
     private MaterialCardView card(int radius) {
         MaterialCardView card = new MaterialCardView(fragment.requireContext());
-        card.setRadius(dp(radius)); card.setStrokeWidth(dp(1));
-        card.setStrokeColor(color(R.color.rescue_outline));
+        card.setRadius(dp(radius));
+        card.setStrokeWidth(0); // Bỏ viền xám
         card.setCardBackgroundColor(color(R.color.rescue_surface));
-        card.setCardElevation(0);
-        card.setMaxCardElevation(0);
-        card.setTranslationZ(0);
+        card.setCardElevation(dp(2)); // Thêm elevation nhẹ
+        card.setMaxCardElevation(dp(2));
         return card;
     }
 

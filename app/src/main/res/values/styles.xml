@@ -3,6 +3,22 @@
     <style name="TextAppearance.RescueFarm.Display" parent="TextAppearance.Material3.DisplaySmall">
         <item name="android:textStyle">bold</item>
     </style>
+    
+    <style name="TextAppearance.RescueFarm.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <style name="TextAppearance.RescueFarm.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <style name="TextAppearance.RescueFarm.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <style name="TextAppearance.RescueFarm.BodyMedium" parent="TextAppearance.Material3.BodyMedium" />
+    
+    <style name="TextAppearance.RescueFarm.BodySmall" parent="TextAppearance.Material3.BodySmall" />
 
     <style name="TextAppearance.RescueFarm.SectionTitle" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textStyle">bold</item>
