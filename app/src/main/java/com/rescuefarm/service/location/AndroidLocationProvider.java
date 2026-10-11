@@ -72,6 +72,18 @@ public class AndroidLocationProvider implements LocationProvider {
                             );
                             return;
                         }
+                        if (!isValidCoordinate(location.getLatitude(), location.getLongitude())) {
+                            callback.onLocationUnavailable("Thiết bị trả về tọa độ không hợp lệ. Hãy thử lại.");
+                            return;
+                        }
+                        if (isEmulatorDefaultLocation(location.getLatitude(), location.getLongitude())) {
+                            callback.onLocationUnavailable(
+                                    "Máy ảo đang dùng vị trí mặc định Mountain View (Hoa Kỳ). "
+                                            + "Trong Android Studio, mở Device Manager > Extended controls > Location, "
+                                            + "chọn một vị trí ở Việt Nam rồi thử lại."
+                            );
+                            return;
+                        }
                         callback.onLocationAvailable(location.getLatitude(), location.getLongitude());
                     })
                     .addOnFailureListener(exception -> callback.onLocationUnavailable(
@@ -137,6 +149,24 @@ public class AndroidLocationProvider implements LocationProvider {
                 firstNonEmpty(value.getSubLocality(), value.getLocality()),
                 street
         ));
+    }
+
+    private static boolean isValidCoordinate(double latitude, double longitude) {
+        return Double.isFinite(latitude) && Double.isFinite(longitude)
+                && latitude >= -90D && latitude <= 90D
+                && longitude >= -180D && longitude <= 180D;
+    }
+
+    /** The Android emulator's factory location; reject it so it cannot silently replace a user's saved location. */
+    private static boolean isEmulatorDefaultLocation(double latitude, double longitude) {
+        boolean emulator = Build.FINGERPRINT.startsWith("robolectric")
+                || Build.FINGERPRINT.toLowerCase(Locale.ROOT).contains("generic")
+                || Build.MODEL.toLowerCase(Locale.ROOT).contains("emulator")
+                || Build.MODEL.contains("Android SDK built for")
+                || Build.HARDWARE.contains("goldfish")
+                || Build.HARDWARE.contains("ranchu");
+        return emulator && Math.abs(latitude - 37.4219983D) < 0.01D
+                && Math.abs(longitude - (-122.084D)) < 0.01D;
     }
 
     private static String join(String first, String second) {

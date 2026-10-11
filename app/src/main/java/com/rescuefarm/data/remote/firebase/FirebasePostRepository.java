@@ -135,8 +135,15 @@ public class FirebasePostRepository implements PostRepository {
         }
         DocumentReference reference = clean(source.getId()).isEmpty()
                 ? firestore.collection(POSTS).document() : firestore.collection(POSTS).document(source.getId());
+        List<String> previousImageUrls = new ArrayList<>();
         firestore.runTransaction(transaction -> {
             DocumentSnapshot existing = transaction.get(reference);
+            previousImageUrls.clear();
+            if (existing.exists()) {
+                Object oldImages = existing.get("imageUrls");
+                if (oldImages instanceof List<?>) for (Object value : (List<?>) oldImages)
+                    if (value instanceof String) previousImageUrls.add((String) value);
+            }
             if (existing.exists() && !source.getSellerId().equals(existing.getString("sellerId"))) {
                 throw new IllegalStateException("FORBIDDEN");
             }
@@ -155,7 +162,11 @@ public class FirebasePostRepository implements PostRepository {
             data.put("createdAt", existing.exists() && existing.get("createdAt") != null
                     ? existing.get("createdAt") : FieldValue.serverTimestamp());
             data.put("updatedAt", FieldValue.serverTimestamp()); transaction.set(reference, data); return saved;
-        }).addOnSuccessListener(saved -> { cache(saved); callback.onSuccess(saved); })
+        }).addOnSuccessListener(saved -> {
+            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
+                    previousImageUrls, saved.getImageUrls());
+            cache(saved); callback.onSuccess(saved);
+        })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
     @Override public void loadEngagement(String postId, String currentUserId,

@@ -99,14 +99,27 @@ public class GuestHomeFragment extends Fragment {
                 greeting.setText(getString(R.string.home_greeting_format,
                         name == null || name.trim().isEmpty() ? "bạn" : name.trim())));
 
-        view.findViewById(R.id.searchButton).setOnClickListener(Navigation.createNavigateOnClickListener(
-                R.id.action_guestHomeFragment_to_discoveryFragment));
+        view.findViewById(R.id.searchButton).setOnClickListener(v -> {
+            DiscoveryBottomSheet bottomSheet = new DiscoveryBottomSheet();
+            bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
+        });
         view.findViewById(R.id.notificationButton).setOnClickListener(unused ->
                 Navigation.findNavController(view).navigate(viewModel.isAuthenticated()
                         ? R.id.action_guestHomeFragment_to_notificationFragment
                         : R.id.action_guestHomeFragment_to_loginFragment));
         view.findViewById(R.id.refreshHomeButton).setOnClickListener(v -> viewModel.refresh());
         locationLabel.setOnClickListener(v -> requestLocation());
+        
+        // See more buttons
+        view.findViewById(R.id.seeMoreCategoriesButton).setOnClickListener(v -> 
+                Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allCategoriesFragment));
+        view.findViewById(R.id.seeMoreCriticalButton).setOnClickListener(v -> 
+                Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allCriticalCampaignsFragment));
+        view.findViewById(R.id.seeMoreValueButton).setOnClickListener(v -> 
+                Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allValueProductsFragment));
+        view.findViewById(R.id.seeMoreCampaignsButton).setOnClickListener(v -> 
+                Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allActiveCampaignsFragment));
+        
         viewModel.refresh(); postViewModel.refreshFeed();
     }
 
@@ -204,9 +217,11 @@ public class GuestHomeFragment extends Fragment {
             for (int row = 0; row < 2 && index + row < values.size(); row++) {
                 Category category = values.get(index + row);
                 View tile = renderer.category(category, v -> {
-                    Bundle args = new Bundle(); args.putString("categoryId", category.getId());
-                    Navigation.findNavController(requireView()).navigate(
-                            R.id.action_guestHomeFragment_to_discoveryFragment, args);
+                    Bundle args = new Bundle();
+                    args.putString("categoryId", category.getId());
+                    DiscoveryBottomSheet bottomSheet = new DiscoveryBottomSheet();
+                    bottomSheet.setArguments(args);
+                    bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
                 });
                 column.addView(tile, new LinearLayout.LayoutParams(-1, dp(86)));
             }

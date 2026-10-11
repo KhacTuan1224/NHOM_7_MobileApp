@@ -69,6 +69,12 @@ public final class AdminViewModel extends ViewModel {
         repository.setActive(currentSection, id, active, reason, actionCallback());
     }
 
+    public void setResourceImage(String id, String imageUrl) {
+        state.setValue(AdminScreenState.list(AdminScreenState.Status.LOADING, currentSection,
+                currentItems(), "Đang lưu ảnh Cloudinary…"));
+        repository.setResourceImage(currentSection, id, imageUrl, actionCallback());
+    }
+
     private AdminRepository.ActionCallback actionCallback() {
         return new AdminRepository.ActionCallback() {
             @Override public void onSuccess() { refreshSection(currentSection); }

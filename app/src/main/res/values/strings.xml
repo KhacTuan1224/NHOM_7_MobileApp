@@ -91,8 +91,27 @@
     <string name="customer_profile_message">Tài khoản khách hàng RescueFarm.</string>
     <string name="shop_not_updated">Chưa cập nhật tên cửa hàng</string>
     <string name="avatar_url_label">URL ảnh đại diện</string>
+    <string name="upload_avatar_action">Tải ảnh đại diện lên</string>
+    <string name="upload_shop_avatar_action">Tải ảnh cửa hàng lên</string>
+    <string name="no_avatar_selected">Chưa chọn ảnh đại diện</string>
+    <string name="avatar_uploaded_status">Đã có ảnh đại diện</string>
+    <string name="upload_proof_image_action">Tải ảnh minh chứng lên</string>
+    <string name="no_image_selected">Chưa chọn ảnh</string>
+    <string name="image_uploaded_status">Đã tải ảnh lên</string>
+    <string name="upload_product_images_action">Thêm ảnh sản phẩm</string>
+    <string name="upload_post_images_action">Thêm ảnh bài viết</string>
+    <string name="no_images_selected">Chưa chọn ảnh nào</string>
+    <string name="clear_uploaded_images_action">Xóa danh sách ảnh</string>
+    <string name="uploaded_images_count_format">%1$d ảnh đã sẵn sàng</string>
+    <string name="post_image_limit_message">Bài viết chỉ hỗ trợ tối đa 6 ảnh.</string>
+    <string name="upload_review_images_action">Thêm ảnh đánh giá</string>
+    <string name="review_image_limit_message">Đánh giá chỉ hỗ trợ tối đa 5 ảnh.</string>
+    <string name="upload_category_banner_image_action">Tải ảnh danh mục / banner lên</string>
+    <string name="category_banner_image_exists">Đã có ảnh minh họa</string>
     <string name="use_current_location_action">Dùng vị trí hiện tại</string>
     <string name="coordinates_format">Vĩ độ %1$.6f • Kinh độ %2$.6f</string>
+    <string name="profile_map_loading">Đang tải bản đồ vị trí…</string>
+    <string name="profile_map_unavailable">Không tải được bản đồ. Hãy kiểm tra kết nối mạng.</string>
     <string name="save_action">Lưu thay đổi</string>
     <string name="address_list_title">Địa chỉ nhận hàng</string>
     <string name="add_address_action">Thêm địa chỉ</string>
@@ -293,4 +312,9 @@
     <string name="admin_resource_row_format">%1$s\n%2$s\nTrạng thái: %3$s\nID: %4$s</string>
     <string name="admin_dashboard_stats_format">Users: %1$d\nSeller applications: %2$d (%3$d chờ duyệt)\nProducts: %4$d\nCampaigns: %5$d (%6$d chờ duyệt)\nPosts: %7$d (%8$d chờ duyệt)\nOrders: %9$d\nReports đang mở: %10$d\nDoanh thu DELIVERED: %11$s</string>
     <string name="admin_analytics_format">Tổng hàng đợi moderation: %1$d\nUsers: %2$d\nProducts: %3$d\nCampaigns: %4$d\nOrders: %5$d\nDoanh thu DELIVERED: %6$s</string>
+    <string name="see_more_action">Xem thêm</string>
+    <string name="all_categories_title">Tất cả danh mục</string>
+    <string name="all_critical_campaigns_title">Chiến dịch cần giải cứu gấp</string>
+    <string name="all_value_products_title">Sản phẩm giá tốt</string>
+    <string name="all_active_campaigns_title">Chiến dịch đang diễn ra</string>
 </resources>

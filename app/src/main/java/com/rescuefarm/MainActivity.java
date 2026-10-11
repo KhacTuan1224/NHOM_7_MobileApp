@@ -73,21 +73,82 @@ public class MainActivity extends AppCompatActivity {
                                         ImageView profileButton,
                                         NavDestination destination) {
         int destinationId = destination.getId();
+        
+        // Show bottom nav for most customer-facing screens
         boolean show = destinationId == R.id.guestHomeFragment
                 || destinationId == R.id.feedFragment
                 || destinationId == R.id.cartFragment
                 || destinationId == R.id.orderConfirmationFragment
-                || destinationId == R.id.profileFragment;
+                || destinationId == R.id.profileFragment
+                // Home related
+                || destinationId == R.id.allCategoriesFragment
+                || destinationId == R.id.allCriticalCampaignsFragment
+                || destinationId == R.id.allValueProductsFragment
+                || destinationId == R.id.allActiveCampaignsFragment
+                || destinationId == R.id.discoveryFragment
+                // Profile related
+                || destinationId == R.id.editProfileFragment
+                || destinationId == R.id.addressListFragment
+                || destinationId == R.id.addressEditorFragment
+                || destinationId == R.id.favoriteFragment
+                // Product/Campaign
+                || destinationId == R.id.productDetailFragment
+                || destinationId == R.id.campaignDetailFragment
+                || destinationId == R.id.productListFragment
+                || destinationId == R.id.campaignListFragment
+                // Feed related
+                || destinationId == R.id.postDetailFragment
+                // Engagement
+                || destinationId == R.id.reviewFragment
+                || destinationId == R.id.reportFragment
+                || destinationId == R.id.notificationFragment
+                // Order
+                || destinationId == R.id.orderDetailFragment
+                // Checkout
+                || destinationId == R.id.checkoutFragment;
+                
         findViewById(R.id.customerBottomNavigationContainer).setVisibility(
                 show ? android.view.View.VISIBLE : android.view.View.GONE
         );
+        
         int inactive = ContextCompat.getColor(this, R.color.rescue_on_surface_variant);
         int active = ContextCompat.getColor(this, R.color.rescue_splash_green);
-        tintNavigationIcon(homeButton, destinationId == R.id.guestHomeFragment, active, inactive);
-        tintNavigationIcon(communityButton, destinationId == R.id.feedFragment, active, inactive);
-        tintNavigationIcon(ordersButton, destinationId == R.id.orderConfirmationFragment,
-                active, inactive);
-        tintNavigationIcon(profileButton, destinationId == R.id.profileFragment, active, inactive);
+        
+        // Highlight home button for home and related fragments
+        boolean isHomeActive = destinationId == R.id.guestHomeFragment
+                || destinationId == R.id.allCategoriesFragment
+                || destinationId == R.id.allCriticalCampaignsFragment
+                || destinationId == R.id.allValueProductsFragment
+                || destinationId == R.id.allActiveCampaignsFragment
+                || destinationId == R.id.discoveryFragment
+                || destinationId == R.id.productDetailFragment
+                || destinationId == R.id.campaignDetailFragment
+                || destinationId == R.id.productListFragment
+                || destinationId == R.id.campaignListFragment;
+        
+        // Highlight community button for feed related
+        boolean isCommunityActive = destinationId == R.id.feedFragment
+                || destinationId == R.id.postDetailFragment;
+        
+        // Highlight orders button for order related
+        boolean isOrdersActive = destinationId == R.id.orderConfirmationFragment
+                || destinationId == R.id.orderDetailFragment
+                || destinationId == R.id.checkoutFragment;
+        
+        // Highlight profile button for profile related
+        boolean isProfileActive = destinationId == R.id.profileFragment
+                || destinationId == R.id.editProfileFragment
+                || destinationId == R.id.addressListFragment
+                || destinationId == R.id.addressEditorFragment
+                || destinationId == R.id.favoriteFragment
+                || destinationId == R.id.notificationFragment
+                || destinationId == R.id.reviewFragment
+                || destinationId == R.id.reportFragment;
+        
+        tintNavigationIcon(homeButton, isHomeActive, active, inactive);
+        tintNavigationIcon(communityButton, isCommunityActive, active, inactive);
+        tintNavigationIcon(ordersButton, isOrdersActive, active, inactive);
+        tintNavigationIcon(profileButton, isProfileActive, active, inactive);
         centerCartButton.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 

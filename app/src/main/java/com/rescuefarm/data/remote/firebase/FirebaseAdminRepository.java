@@ -146,6 +146,35 @@ public final class FirebaseAdminRepository implements AdminRepository {
         }, callback);
     }
 
+    @Override public void setResourceImage(Section section, String resourceId, String imageUrl,
+            ActionCallback callback) {
+        if (!online(callback)) return;
+        if (section != Section.CATEGORIES && section != Section.BANNERS) {
+            callback.onError(ErrorCode.VALIDATION, "Chỉ category và banner hỗ trợ cập nhật ảnh."); return;
+        }
+        String id = trim(resourceId), url = trim(imageUrl);
+        if (id.isEmpty() || !url.startsWith("https://res.cloudinary.com/")) {
+            callback.onError(ErrorCode.VALIDATION, "URL ảnh phải là secure_url từ Cloudinary."); return;
+        }
+        ensureAdmin(() -> {
+            String adminId = auth.getCurrentUser().getUid();
+            DocumentReference ref = db.collection(section.getCollection()).document(id);
+            DocumentReference audit = db.collection(AUDIT).document();
+            db.runTransaction(tx -> {
+                DocumentSnapshot current = tx.get(ref);
+                if (!current.exists()) throw new IllegalStateException("RESOURCE_NOT_FOUND");
+                String previous = text(current, "imageUrl");
+                Map<String, Object> changes = moderation(adminId, "Updated Cloudinary image");
+                changes.put("imageUrl", url);
+                tx.update(ref, changes);
+                tx.set(audit, auditMap(adminId, section, id,
+                        previous.isEmpty() ? "NO_IMAGE" : "IMAGE_SET", "IMAGE_SET", "Updated Cloudinary image"));
+                return true;
+            }).addOnSuccessListener(value -> callback.onSuccess())
+                    .addOnFailureListener(error -> fail(error, callback));
+        }, callback);
+    }
+
     private void runTransition(Section section, String id, String target, String note,
             ActionCallback callback) {
         String adminId = auth.getCurrentUser().getUid();
@@ -199,6 +228,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
 
     private AdminListItem mapItem(Section section, DocumentSnapshot document) {
         String title, subtitle, status = clean(document.getString("status"));
+        String imageUrl = "";
         boolean active = Boolean.TRUE.equals(document.getBoolean("active"));
         switch (section) {
             case SELLER_APPLICATIONS:
@@ -208,9 +238,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
             case POSTS: case PRODUCTS: case CAMPAIGNS:
                 title = first(document, "title", "name", "id"); subtitle = text(document, "sellerId"); break;
             case CATEGORIES:
-                title = first(document, "name", "id"); subtitle = "Category"; status = active ? "ACTIVE" : "INACTIVE"; break;
+                title = first(document, "name", "id"); subtitle = "Category"; imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
             case BANNERS:
-                title = first(document, "title", "id"); subtitle = text(document, "campaignId"); status = active ? "ACTIVE" : "INACTIVE"; break;
+                title = first(document, "title", "id"); subtitle = text(document, "campaignId"); imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
             case REVIEWS:
                 title = "★ " + (long) number(document, "rating") + " — " + text(document, "productId"); subtitle = text(document, "content"); break;
             case REPORTS:
@@ -220,7 +250,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
             default:
                 title = document.getId(); subtitle = "";
         }
-        return new AdminListItem(document.getId(), title, subtitle, status, active);
+        return new AdminListItem(document.getId(), title, subtitle, status, active, imageUrl);
     }
 
     private static Section[] dashboardSections() {
