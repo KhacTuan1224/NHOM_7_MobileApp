@@ -38,7 +38,7 @@ public class FeedFragment extends Fragment {
     }
     private void render(List<Post> values) {
         container.removeAllViews();
-        if (values == null || values.isEmpty()) { container.addView(renderer.message("Chưa có post đã duyệt trong cache.")); return; }
+        if (values == null || values.isEmpty()) { container.addView(renderer.message(getString(R.string.feed_empty_message))); return; }
         for (Post post : values) container.addView(renderer.card(post, false, v -> open(post.getId())));
     }
     private void open(String id) {

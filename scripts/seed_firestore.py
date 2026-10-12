@@ -159,6 +159,37 @@ def build_documents(now: datetime) -> dict[str, dict[str, dict[str, Any]]]:
         },
     }
 
+    posts = {
+        "post-seed-rescue-dragon-fruit": {
+            "id": "post-seed-rescue-dragon-fruit",
+            "sellerId": SELLER_ID,
+            "title": "Chung tay giải cứu thanh long ruột đỏ Bình Thuận",
+            "content": "Vườn đang vào vụ thu hoạch, thanh long còn tươi ngon nhưng cần được tiêu thụ sớm. Mời mọi người cùng kết nối để nông sản đến tay người mua với giá tốt.",
+            "campaignId": "campaign-critical-dragon-fruit",
+            "imageUrls": [IMAGE["fruit"]],
+            "linkedProductIds": ["prod-binh-thuan-dragon-fruit"],
+            "urgencyLevel": "CRITICAL",
+            "status": "PUBLISHED",
+            "viewCount": 0,
+            "createdAt": now - timedelta(hours=3),
+            "updatedAt": now,
+        },
+        "post-seed-fresh-produce": {
+            "id": "post-seed-fresh-produce",
+            "sellerId": SELLER_ID,
+            "title": "Nông sản tươi ngon, giá tốt mỗi ngày",
+            "content": "RescueFarm kết nối các vườn và hợp tác xã với người mua. Theo dõi các bài viết để cập nhật nông sản đang cần giải cứu tại địa phương.",
+            "campaignId": "campaign-mobile-avocado",
+            "imageUrls": [IMAGE["banner2"]],
+            "linkedProductIds": ["prod-da-lat-avocado"],
+            "urgencyLevel": "HIGH",
+            "status": "PUBLISHED",
+            "viewCount": 0,
+            "createdAt": now - timedelta(hours=1),
+            "updatedAt": now,
+        },
+    }
+
     promotions = {
         "prod-binh-thuan-dragon-fruit": {
             "id": "prod-binh-thuan-dragon-fruit",
@@ -190,6 +221,7 @@ def build_documents(now: datetime) -> dict[str, dict[str, dict[str, Any]]]:
         "campaigns": campaigns,
         "banners": banners,
         "promotions": promotions,
+        "posts": posts,
     }
 
 
@@ -197,9 +229,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Import RescueFarm mock data into Firestore.")
     parser.add_argument("--project", default=PROJECT_ID, help=f"Firebase project ID (default: {PROJECT_ID})")
     parser.add_argument("--dry-run", action="store_true", help="Print planned document IDs without writing")
+    parser.add_argument("--only", choices=["categories", "products", "productBatches", "campaigns", "banners", "promotions", "posts"], help="Upsert only one collection")
     args = parser.parse_args()
 
     documents = build_documents(datetime.now(timezone.utc))
+    if args.only:
+        documents = {args.only: documents[args.only]}
     print(f"Firestore project: {args.project}")
     print("Documents to upsert:")
     for collection, entries in documents.items():
