@@ -6,7 +6,7 @@ public interface EngagementRepository{
  interface FavoriteCallback{void onSuccess(boolean favorite);void onError(ErrorCode code,String message);}
  interface ReviewCallback{void onSuccess(Review review);void onError(ErrorCode code,String message);}
  interface ReportCallback{void onSuccess(Report report);void onError(ErrorCode code,String message);}
- LiveData<List<Favorite>> observeFavorites();LiveData<List<Review>> observeProductReviews();LiveData<List<Report>> observeReports();LiveData<List<Notification>> observeNotifications();
+ LiveData<List<Favorite>> observeFavorites();LiveData<Boolean> observeFavorite(String customerId,String productId);LiveData<List<Review>> observeProductReviews();LiveData<List<Report>> observeReports();LiveData<List<Notification>> observeNotifications();
  void refreshFavorites(String customerId,ActionCallback callback);void toggleFavorite(String customerId,String productId,FavoriteCallback callback);
  void refreshProductReviews(String productId,ActionCallback callback);void saveReview(Review review,boolean update,ReviewCallback callback);void deleteReview(String reviewId,ActionCallback callback);
  void createReport(String reporterId,ReportTargetType type,String targetId,String reason,String description,ReportCallback callback);

@@ -1046,7 +1046,12 @@ service cloud.firestore {
     }
 
     match /favorites/{favoriteId} {
-      allow get, list: if hasRole(request.auth.uid, 'CUSTOMER')
+      // Transactional favorite toggles must be able to read the deterministic
+      // document before its first creation, when resource.data is absent.
+      allow get: if hasRole(request.auth.uid, 'CUSTOMER')
+          && (favoriteId.matches('^' + request.auth.uid + '_.*$')
+            || resource.data.customerId == request.auth.uid);
+      allow list: if hasRole(request.auth.uid, 'CUSTOMER')
           && resource.data.customerId == request.auth.uid;
       allow create: if hasRole(request.auth.uid, 'CUSTOMER')
           && request.resource.data.keys().hasOnly(['id', 'customerId', 'productId', 'createdAt'])
