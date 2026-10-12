@@ -753,7 +753,12 @@ service cloud.firestore {
     }
 
     match /promotions/{promotionId} {
-      allow get: if (resource.data.active == true
+      // Checkout reads by product ID even when no promotion exists or it has expired.
+      // Only active customers may use this path, for products currently on sale.
+      allow get: if (isSignedIn() && hasRole(request.auth.uid, 'CUSTOMER')
+            && exists(/databases/$(database)/documents/products/$(promotionId))
+            && get(/databases/$(database)/documents/products/$(promotionId)).data.status == 'ACTIVE')
+          || (resource.data.active == true
             && resource.data.startDate <= request.time
             && resource.data.endDate > request.time)
           || (isSignedIn() && resource.data.sellerId == request.auth.uid)
@@ -788,7 +793,13 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow get, list: if orderReadable(resource.data);
+      // The first transaction read checks whether this checkout was already processed.
+      // A missing order has no owner yet; existing orders still require ownership.
+      allow get: if (isSignedIn() && hasRole(request.auth.uid, 'CUSTOMER')
+            && !exists(/databases/$(database)/documents/orders/$(orderId)))
+          || (exists(/databases/$(database)/documents/orders/$(orderId))
+            && orderReadable(resource.data));
+      allow list: if orderReadable(resource.data);
       allow create: if validOrder(request.resource.data, orderId)
           && checkoutOwnerAllowed(request.resource.data)
           && !exists(/databases/$(database)/documents/orders/$(orderId));

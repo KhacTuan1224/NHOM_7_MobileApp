@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         homeButton.setOnClickListener(unused -> navigateTo(navController, R.id.guestHomeFragment));
         communityButton.setOnClickListener(unused -> navigateTo(navController, R.id.feedFragment));
         ordersButton.setOnClickListener(unused ->
-                navigateTo(navController, R.id.orderConfirmationFragment));
+                navigateTo(navController, R.id.customerOrderListFragment));
         profileButton.setOnClickListener(unused -> {
             if (!AuthRepositoryFactory.create(this).isAuthenticated()) {
                 navController.navigate(R.id.loginFragment);
@@ -79,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
                 || destinationId == R.id.feedFragment
                 || destinationId == R.id.cartFragment
                 || destinationId == R.id.orderConfirmationFragment
+                || destinationId == R.id.customerOrderListFragment
                 || destinationId == R.id.profileFragment
                 // Home related
                 || destinationId == R.id.allCategoriesFragment
@@ -132,6 +133,7 @@ public class MainActivity extends AppCompatActivity {
         
         // Highlight orders button for order related
         boolean isOrdersActive = destinationId == R.id.orderConfirmationFragment
+                || destinationId == R.id.customerOrderListFragment
                 || destinationId == R.id.orderDetailFragment
                 || destinationId == R.id.checkoutFragment;
         
