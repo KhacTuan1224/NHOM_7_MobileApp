@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="customer_orders_title">Đơn hàng của tôi</string>
+    <string name="customer_orders_empty">Bạn chưa có đơn hàng nào được lưu trên thiết bị. Nhấn làm mới để tải lịch sử đơn hàng.</string>
+    <string name="customer_orders_login_required">Đăng nhập để xem lịch sử đơn hàng của bạn.</string>
+    <string name="customer_order_row_format">%1$s\n%2$s • %3$s\nXem chi tiết</string>
+    <string-array name="customer_order_status_labels">
+        <item>Chờ xác nhận</item>
+        <item>Đã xác nhận</item>
+        <item>Đang chuẩn bị</item>
+        <item>Sẵn sàng nhận hàng</item>
+        <item>Đang giao hàng</item>
+        <item>Đã giao hàng</item>
+        <item>Đã hủy</item>
+    </string-array>
+</resources>

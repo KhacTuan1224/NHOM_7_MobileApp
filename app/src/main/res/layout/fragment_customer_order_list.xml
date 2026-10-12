@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginBottom="@dimen/customer_bottom_navigation_height"
+    android:background="@color/rescue_background"
+    android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_md">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/customer_orders_title"
+            android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/refreshCustomerOrdersButton" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/refresh_orders_action" />
+        <ProgressBar android:id="@+id/customerOrdersProgress"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal" android:visibility="gone" />
+        <TextView android:id="@+id/customerOrdersMessage"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:paddingVertical="@dimen/space_sm" android:visibility="gone"
+            android:accessibilityLiveRegion="polite" />
+        <TextView android:id="@+id/customerOrdersEmpty"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:paddingVertical="@dimen/space_md" android:text="@string/customer_orders_empty" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/customerOrdersLoginButton" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/login_action"
+            android:visibility="gone" />
+        <LinearLayout android:id="@+id/customerOrdersContainer"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
