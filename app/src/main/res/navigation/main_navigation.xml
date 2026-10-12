@@ -252,6 +252,12 @@
         app:destination="@id/orderConfirmationFragment" /></fragment>
     <fragment android:id="@+id/orderConfirmationFragment" android:name="com.rescuefarm.ui.checkout.OrderConfirmationFragment"
         android:label="@string/order_confirmation_title"><action android:id="@+id/action_orderConfirmationFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" /></fragment>
+    <fragment android:id="@+id/customerOrderListFragment"
+        android:name="com.rescuefarm.ui.order.CustomerOrderListFragment"
+        android:label="@string/customer_orders_title">
+        <action android:id="@+id/action_customerOrderListFragment_to_orderDetailFragment"
+            app:destination="@id/orderDetailFragment" />
+    </fragment>
     <fragment android:id="@+id/orderDetailFragment" android:name="com.rescuefarm.ui.order.OrderDetailFragment"
         android:label="@string/order_detail_title"><deepLink app:uri="rescuefarm://orders/{orderId}" /></fragment>
     <fragment android:id="@+id/sellerOrderListFragment" android:name="com.rescuefarm.ui.order.SellerOrderListFragment"
@@ -285,7 +291,10 @@
             app:destination="@id/campaignDetailFragment" />
     </fragment>
     <fragment android:id="@+id/campaignDetailFragment"
-        android:name="com.rescuefarm.ui.campaign.CampaignDetailFragment" android:label="@string/campaign_detail_title"><deepLink app:uri="rescuefarm://campaigns/{campaignId}" /></fragment>
+        android:name="com.rescuefarm.ui.campaign.CampaignDetailFragment" android:label="@string/campaign_detail_title">
+        <deepLink app:uri="rescuefarm://campaigns/{campaignId}" />
+        <action android:id="@+id/action_campaignDetailFragment_to_reportFragment" app:destination="@id/reportFragment" />
+    </fragment>
     <fragment android:id="@+id/sellerCampaignListFragment"
         android:name="com.rescuefarm.ui.campaign.SellerCampaignListFragment" android:label="@string/seller_campaigns_title">
         <action android:id="@+id/action_sellerCampaignListFragment_to_campaignEditorFragment"

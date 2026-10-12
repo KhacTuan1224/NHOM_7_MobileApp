@@ -6,5 +6,6 @@
     <dimen name="space_lg">24dp</dimen>
     <dimen name="space_xl">32dp</dimen>
     <dimen name="touch_target_min">48dp</dimen>
+    <dimen name="customer_bottom_navigation_height">104dp</dimen>
     <dimen name="card_corner_radius">20dp</dimen>
 </resources>

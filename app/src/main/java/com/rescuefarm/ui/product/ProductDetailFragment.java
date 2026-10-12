@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.google.android.material.button.MaterialButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -48,10 +49,37 @@ public class ProductDetailFragment extends Fragment {
                 .get(CartViewModel.class);
         engagementViewModel = new ViewModelProvider(this, new EngagementViewModelFactory(requireContext()))
                 .get(EngagementViewModel.class);
+        MaterialButton favoriteButton = view.findViewById(R.id.favoriteProductButton);
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
+                : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        Boolean[] favoriteState = {null};
         engagementViewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == EngagementState.Status.SUCCESS || value.getStatus() == EngagementState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show();
+            favoriteButton.setEnabled(currentUserId.isEmpty()
+                    || (value.getStatus() != EngagementState.Status.LOADING && favoriteState[0] != null));
         });
+        if (currentUserId.isEmpty()) {
+            favoriteButton.setText(R.string.sign_in_to_favorite_action);
+            favoriteButton.setOnClickListener(v -> Toast.makeText(requireContext(),
+                    R.string.sign_in_to_favorite_action, Toast.LENGTH_SHORT).show());
+        } else {
+            favoriteButton.setEnabled(false);
+            engagementViewModel.observeFavorite(currentUserId, productId).observe(
+                    getViewLifecycleOwner(), isFavorite -> {
+                        favoriteState[0] = isFavorite;
+                        EngagementState currentState = engagementViewModel.getState().getValue();
+                        boolean busy = currentState != null
+                                && currentState.getStatus() == EngagementState.Status.LOADING;
+                        favoriteButton.setEnabled(isFavorite != null && !busy);
+                        favoriteButton.setText(isFavorite == null
+                                ? R.string.favorite_state_unavailable
+                                : Boolean.TRUE.equals(isFavorite)
+                                        ? R.string.remove_favorite_action : R.string.add_favorite_action);
+                    });
+            favoriteButton.setOnClickListener(v -> engagementViewModel.toggleFavorite(
+                    currentUserId, productId));
+        }
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == ProductScreenState.Status.PRODUCT) render(view, value.getProduct());
             else if (value.getStatus() == ProductScreenState.Status.ERROR)
@@ -70,10 +98,6 @@ public class ProductDetailFragment extends Fragment {
         view.findViewById(R.id.addToCartButton).setOnClickListener(v -> addToCart());
         view.findViewById(R.id.openCartButton).setOnClickListener(Navigation.createNavigateOnClickListener(
                 R.id.action_productDetailFragment_to_cartFragment));
-        view.findViewById(R.id.favoriteProductButton).setOnClickListener(v -> {
-            String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? "" : FirebaseAuth.getInstance().getCurrentUser().getUid();
-            engagementViewModel.toggleFavorite(uid, productId);
-        });
         view.findViewById(R.id.openReviewsButton).setOnClickListener(v -> { Bundle b=new Bundle();b.putString("productId",productId);Navigation.findNavController(v).navigate(R.id.action_productDetailFragment_to_reviewFragment,b); });
         view.findViewById(R.id.reportProductButton).setOnClickListener(v -> { Bundle b=new Bundle();b.putString("targetType","PRODUCT");b.putString("targetId",productId);Navigation.findNavController(v).navigate(R.id.action_productDetailFragment_to_reportFragment,b); });
         viewModel.loadProduct(productId); viewModel.refreshBatches(productId);
