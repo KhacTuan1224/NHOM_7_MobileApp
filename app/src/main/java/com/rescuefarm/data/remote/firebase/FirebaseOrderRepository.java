@@ -1,6 +1,7 @@
 package com.rescuefarm.data.remote.firebase;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.Transformations;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
@@ -9,6 +10,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.rescuefarm.data.repository.OrderRepository;
 import com.rescuefarm.data.local.dao.OrderCacheDao;
 import com.rescuefarm.data.local.database.RescueFarmDatabase;
@@ -61,8 +63,42 @@ public class FirebaseOrderRepository implements OrderRepository {
     public FirebaseOrderRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
             NetworkStatusProvider network){this.database=database;this.orderDao=database.orderCacheDao();
         this.cacheExecutor=cacheExecutor;this.network=network;}
-    @Override public LiveData<List<Order>> observeOrders(String ownerId){return Transformations.map(
-            orderDao.observeOwnerOrders(ownerId),OrderCacheMapper::orders);}
+    @Override public LiveData<List<Order>> observeOrders(String ownerId){
+        MediatorLiveData<List<Order>> result = new MediatorLiveData<>();
+        result.addSource(Transformations.map(orderDao.observeOwnerOrders(ownerId),
+                OrderCacheMapper::orders), result::setValue);
+        LiveData<List<Order>> remote = new LiveData<List<Order>>() {
+            private ListenerRegistration registration;
+            @Override protected void onActive() {
+                if (ownerId == null || ownerId.trim().isEmpty()) {
+                    postValue(new ArrayList<>());
+                    return;
+                }
+                registration = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
+                        .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
+                        .addSnapshotListener((snapshot, error) -> {
+                            if (error != null || snapshot == null) return;
+                            List<Order> values = new ArrayList<>();
+                            for (DocumentSnapshot document : snapshot.getDocuments()) {
+                                values.add(mapOrder(document, new ArrayList<>()));
+                            }
+                            postValue(values);
+                        });
+            }
+            @Override protected void onInactive() {
+                if (registration != null) { registration.remove(); registration = null; }
+            }
+        };
+        result.addSource(remote, values -> {
+            if (values == null) return;
+            result.setValue(values);
+            cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                orderDao.clearOwnerOrders(ownerId);
+                orderDao.replaceOrders(toEntities(values));
+            }));
+        });
+        return result;
+    }
     @Override public LiveData<List<Order>> observeSellerOrders(String sellerId){return Transformations.map(
             orderDao.observeSellerOrders(sellerId),OrderCacheMapper::orders);}
 
@@ -166,7 +202,8 @@ public class FirebaseOrderRepository implements OrderRepository {
 
     @Override public void refreshOrders(String ownerId, ActionCallback callback){
         if(!network.isOnline()){callback.onError(ErrorCode.NETWORK,"Không thể tải đơn khi offline.");return;}
-        db.collection(ORDERS).whereEqualTo("ownerId",ownerId).get().addOnSuccessListener(s->{
+        db.collection(ORDERS).whereEqualTo("ownerId",ownerId)
+                .whereEqualTo("ownerType",OrderOwnerType.CUSTOMER.name()).get().addOnSuccessListener(s->{
             List<Order> values=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())values.add(mapOrder(d,new ArrayList<>()));
             cacheExecutor.execute(()->{database.runInTransaction(()->{orderDao.clearOwnerOrders(ownerId);
                 orderDao.replaceOrders(toEntities(values));});callback.onSuccess();});}).addOnFailureListener(e->failure(e,callback));

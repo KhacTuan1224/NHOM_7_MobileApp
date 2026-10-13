@@ -149,6 +149,36 @@
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
 
+        <TextView android:id="@+id/nearbyMobileTitle" style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:text="Điểm giải cứu di động gần bạn"
+            android:textColor="@color/rescue_on_surface" />
+        <HorizontalScrollView android:id="@+id/nearbyMobileScroll" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
+            <LinearLayout android:id="@+id/nearbyMobileSection" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView android:id="@+id/nearbyFixedTitle" style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:text="Điểm giải cứu cố định gần bạn"
+            android:textColor="@color/rescue_on_surface" />
+        <HorizontalScrollView android:id="@+id/nearbyFixedScroll" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
+            <LinearLayout android:id="@+id/nearbyFixedSection" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView android:id="@+id/endingSoonTitle" style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:text="Sắp hết thời gian"
+            android:textColor="@color/rescue_on_surface" />
+        <HorizontalScrollView android:id="@+id/endingSoonScroll" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
+            <LinearLayout android:id="@+id/endingSoonSection" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:orientation="horizontal" />
+        </HorizontalScrollView>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
