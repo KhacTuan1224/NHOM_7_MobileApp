@@ -24,6 +24,10 @@ public final class OfflineOrderRepository implements OrderRepository {
     @Override public void refreshSellerOrders(String sellerId,ActionCallback callback){callback.onError(ErrorCode.NETWORK,READ_MESSAGE);}
     @Override public void findGuestOrder(String code,String phone,OrderCallback callback){callback.onError(ErrorCode.NETWORK,"Tra cứu guest cần kết nối mạng; không thể tin cậy cache theo số điện thoại.");}
     @Override public void getOrder(String id,LifecycleCallback callback){callback.onError(ErrorCode.NETWORK,"Chi tiết payment/shipment cần kết nối mạng; danh sách cache chỉ để tham khảo.");}
+    @Override public void observeOrder(String id,LifecycleCallback callback){
+        callback.onError(ErrorCode.NETWORK,"Theo dõi trạng thái chi tiết cần kết nối mạng.");
+    }
+    @Override public void stopObservingOrder(String id) { }
     @Override public void transitionOrder(String id,OrderStatus target,LifecycleCallback callback){callback.onError(ErrorCode.NETWORK,WRITE_MESSAGE);}
     @Override public void confirmBankTransfer(String id,String reference,LifecycleCallback callback){callback.onError(ErrorCode.NETWORK,WRITE_MESSAGE);}
     @Override public void close(){executor.shutdownNow();}

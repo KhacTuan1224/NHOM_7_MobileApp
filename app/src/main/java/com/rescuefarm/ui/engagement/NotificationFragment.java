@@ -46,7 +46,7 @@ public class NotificationFragment extends Fragment {
                 if (!granted) {
                     Toast.makeText(requireContext(), 
                             R.string.notification_permission_denied, Toast.LENGTH_LONG).show();
-                }
+                } else registerCurrentToken();
             });
 
     @Nullable
@@ -90,8 +90,12 @@ public class NotificationFragment extends Fragment {
                 && ContextCompat.checkSelfPermission(requireContext(), 
                         Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            return;
         }
-        
+        registerCurrentToken();
+    }
+
+    private void registerCurrentToken() {
         FirebaseMessaging.getInstance().getToken()
                 .addOnSuccessListener(token -> viewModel.registerToken(userId, token))
                 .addOnFailureListener(e -> Toast.makeText(requireContext(), 

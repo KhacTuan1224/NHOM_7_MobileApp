@@ -9,11 +9,18 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.rescuefarm.data.repository.AuthRepository;
 import com.rescuefarm.data.repository.UserRepository;
 import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.domain.enums.CustomerType;
 import com.rescuefarm.domain.model.User;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FirebaseAuthRepository implements AuthRepository {
     private final FirebaseAuth firebaseAuth;
@@ -115,7 +122,23 @@ public class FirebaseAuthRepository implements AuthRepository {
     }
 
     @Override
-    public void signOut() { firebaseAuth.signOut(); }
+    public void signOut() { signOut(null); }
+
+    @Override
+    public void signOut(ActionCallback callback) {
+        FirebaseUser current = firebaseAuth.getCurrentUser();
+        if (current == null) { if (callback != null) callback.onSuccess(); return; }
+        final String uid = current.getUid();
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token ->
+                FirebaseFirestore.getInstance().collection("users").document(uid)
+                        .collection("devices").document(hashToken(token)).delete()
+                        .addOnCompleteListener(task -> finishSignOut(callback)))
+                .addOnFailureListener(error -> finishSignOut(callback));
+    }
+
+    private void finishSignOut(ActionCallback callback) {
+        firebaseAuth.signOut(); if (callback != null) callback.onSuccess();
+    }
 
     private void loadRequiredProfile(FirebaseUser firebaseUser, AuthCallback callback) {
         if (firebaseUser == null) {
@@ -124,11 +147,11 @@ public class FirebaseAuthRepository implements AuthRepository {
         }
         userRepository.getUser(firebaseUser.getUid(), new UserRepository.UserCallback() {
             @Override
-            public void onSuccess(User user) { callback.onSuccess(user); }
+            public void onSuccess(User user) { registerCustomerDevice(user); callback.onSuccess(user); }
 
             @Override
             public void onError(UserRepository.ProfileError error, String message) {
-                firebaseAuth.signOut();
+                signOut();
                 callback.onError(mapProfileError(error), message);
             }
         });
@@ -137,12 +160,12 @@ public class FirebaseAuthRepository implements AuthRepository {
     private void loadOrCreateGoogleProfile(FirebaseUser firebaseUser, AuthCallback callback) {
         userRepository.getUser(firebaseUser.getUid(), new UserRepository.UserCallback() {
             @Override
-            public void onSuccess(User user) { callback.onSuccess(user); }
+            public void onSuccess(User user) { registerCustomerDevice(user); callback.onSuccess(user); }
 
             @Override
             public void onError(UserRepository.ProfileError error, String message) {
                 if (error != UserRepository.ProfileError.NOT_FOUND) {
-                    if (error == UserRepository.ProfileError.DISABLED) { firebaseAuth.signOut(); }
+                    if (error == UserRepository.ProfileError.DISABLED) { signOut(); }
                     callback.onError(mapProfileError(error), message);
                     return;
                 }
@@ -189,7 +212,7 @@ public class FirebaseAuthRepository implements AuthRepository {
                 taxCode,
                 new UserRepository.UserCallback() {
                     @Override
-                    public void onSuccess(User user) { callback.onSuccess(user); }
+                    public void onSuccess(User user) { registerCustomerDevice(user); callback.onSuccess(user); }
 
                     @Override
                     public void onError(UserRepository.ProfileError error, String message) {
@@ -205,6 +228,30 @@ public class FirebaseAuthRepository implements AuthRepository {
         if (error == UserRepository.ProfileError.DISABLED) { return ErrorCode.ACCOUNT_DISABLED; }
         if (error == UserRepository.ProfileError.NETWORK) { return ErrorCode.NETWORK; }
         return ErrorCode.PROFILE_UNAVAILABLE;
+    }
+
+    private void registerCustomerDevice(User user) {
+        if (user == null || user.getRole() != UserRole.CUSTOMER || !user.isActive()) return;
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
+            if (token == null || token.trim().isEmpty()) return;
+            Map<String, Object> device = new HashMap<>();
+            device.put("userId", user.getId()); device.put("token", token);
+            device.put("platform", "ANDROID"); device.put("updatedAt", FieldValue.serverTimestamp());
+            FirebaseFirestore.getInstance().collection("users").document(user.getId())
+                    .collection("devices").document(hashToken(token)).set(device);
+        });
+    }
+
+    private String hashToken(String token) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(StandardCharsets.UTF_8));
+            StringBuilder value = new StringBuilder();
+            for (byte part : digest) value.append(String.format(java.util.Locale.ROOT, "%02x", part));
+            return value.toString();
+        } catch (Exception error) {
+            return Integer.toHexString(token.hashCode());
+        }
     }
 
     private void notifyFailure(Exception exception, AuthCallback callback) {

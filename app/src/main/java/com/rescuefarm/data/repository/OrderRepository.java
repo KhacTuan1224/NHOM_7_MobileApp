@@ -27,6 +27,8 @@ public interface OrderRepository {
     void refreshSellerOrders(String sellerId, ActionCallback callback);
     void findGuestOrder(String orderCode, String receiverPhone, OrderCallback callback);
     void getOrder(String orderId, LifecycleCallback callback);
+    void observeOrder(String orderId, LifecycleCallback callback);
+    void stopObservingOrder(String orderId);
     void transitionOrder(String orderId, OrderStatus targetStatus, LifecycleCallback callback);
     void confirmBankTransfer(String orderId, String referenceCode, LifecycleCallback callback);
     default void close() { }
