@@ -171,14 +171,23 @@ public final class DiscoveryEngine {
                 : now.getTime() + q.getExpiryWithinDays() * 86400000L;
         double available = 0D;
         boolean expiryMatch = q.getExpiryWithinDays() == 0;
+        boolean foundBatch = false;
         for (List<ProductBatch> values : byProduct.values()) if (values != null) {
             for (ProductBatch batch : values) if (batch != null
-                    && campaign.getBatchTargets().containsKey(batch.getId()) && batch.isSellable(now)) {
-                available += batch.getAvailableQuantity();
-                if (batch.getExpiryDate() != null && batch.getExpiryDate().getTime() <= expiryLimit) {
-                    expiryMatch = true;
+                    && campaign.getBatchTargets().containsKey(batch.getId())) {
+                foundBatch = true;
+                if (batch.isSellable(now)) {
+                    available += batch.getAvailableQuantity();
+                    if (batch.getExpiryDate() != null && batch.getExpiryDate().getTime() <= expiryLimit) {
+                        expiryMatch = true;
+                    }
                 }
             }
+        }
+        if (!foundBatch) {
+            if (q.getExpiryWithinDays() > 0) return false;
+            double remaining = campaign.calculateRemainingQuantity();
+            return remaining > 0D && remaining >= q.getMinStock();
         }
         return available > 0D && available >= q.getMinStock() && expiryMatch;
     }
