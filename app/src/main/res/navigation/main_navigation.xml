@@ -293,6 +293,8 @@
     <fragment android:id="@+id/campaignDetailFragment"
         android:name="com.rescuefarm.ui.campaign.CampaignDetailFragment" android:label="@string/campaign_detail_title">
         <deepLink app:uri="rescuefarm://campaigns/{campaignId}" />
+        <action android:id="@+id/action_campaignDetailFragment_to_productDetailFragment"
+            app:destination="@id/productDetailFragment" />
         <action android:id="@+id/action_campaignDetailFragment_to_reportFragment" app:destination="@id/reportFragment" />
     </fragment>
     <fragment android:id="@+id/sellerCampaignListFragment"

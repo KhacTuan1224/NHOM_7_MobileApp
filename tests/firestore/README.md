@@ -4,7 +4,8 @@ Uses the official Firestore Emulator and `@firebase/rules-unit-testing` with the
 isolated `demo-rescuefarm` project. No production documents are read or written.
 The test environment loads the repository's `firestore.rules`.
 
-Requirements: Node.js supported by Firebase CLI and Java 21 or newer on PATH.
+Requirements: Node.js 24.12 or newer and Java 21 or newer on PATH. The pinned
+Firebase SDK/rules-test packages require Node 24.12 or newer.
 
 From this directory:
 

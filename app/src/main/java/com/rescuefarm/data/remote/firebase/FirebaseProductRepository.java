@@ -11,6 +11,8 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.rescuefarm.data.local.dao.CatalogCacheDao;
 import com.rescuefarm.data.local.database.RescueFarmDatabase;
 import com.rescuefarm.data.local.entity.CategoryCacheEntity;
@@ -33,6 +35,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 public class FirebaseProductRepository implements ProductRepository {
@@ -190,6 +194,38 @@ public class FirebaseProductRepository implements ProductRepository {
             if (cached != null) callback.onSuccess(CatalogCacheMapper.toDomain(cached));
             else notifyFailure(error, callback::onError);
         }));
+    }
+
+    @Override public void getCampaignProducts(List<String> batchIds, ProductListCallback callback) {
+        if (batchIds == null || batchIds.isEmpty()) {
+            callback.onSuccess(new ArrayList<>());
+            return;
+        }
+        List<Task<DocumentSnapshot>> batchReads = new ArrayList<>();
+        for (String batchId : batchIds) if (batchId != null && !batchId.trim().isEmpty()) {
+            batchReads.add(firestore.collection(BATCHES).document(batchId).get());
+        }
+        if (batchReads.isEmpty()) { callback.onSuccess(new ArrayList<>()); return; }
+        Tasks.whenAllSuccess(batchReads).addOnSuccessListener(batchResults -> {
+            Set<String> productIds = new LinkedHashSet<>();
+            for (Object result : batchResults) if (result instanceof DocumentSnapshot) {
+                String productId = ((DocumentSnapshot) result).getString("productId");
+                if (productId != null && !productId.trim().isEmpty()) productIds.add(productId);
+            }
+            List<Task<DocumentSnapshot>> productReads = new ArrayList<>();
+            for (String productId : productIds) productReads.add(firestore.collection(PRODUCTS)
+                    .document(productId).get());
+            if (productReads.isEmpty()) { callback.onSuccess(new ArrayList<>()); return; }
+            Tasks.whenAllSuccess(productReads).addOnSuccessListener(productResults -> {
+                List<Product> products = new ArrayList<>();
+                for (Object result : productResults) if (result instanceof DocumentSnapshot) {
+                    DocumentSnapshot snapshot = (DocumentSnapshot) result;
+                    Product product = snapshot.exists() ? mapProduct(snapshot) : null;
+                    if (product != null && product.isAvailable()) products.add(product);
+                }
+                callback.onSuccess(products);
+            }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
     @Override public void saveProduct(Product product, ProductCallback callback) {

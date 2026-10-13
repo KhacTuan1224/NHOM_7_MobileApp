@@ -47,7 +47,8 @@ public class GuestHomeFragment extends Fragment {
     private ProgressBar progress;
     private TextView feedTitle;
     private ViewPager2 bannerPager;
-    private LinearLayout bannerDots, criticalSection, valueSection, campaignSection, categorySection, feedSection;
+    private LinearLayout bannerDots, criticalSection, nearbyMobileSection, nearbyFixedSection,
+            endingSoonSection, valueSection, campaignSection, categorySection, feedSection;
     private BannerPagerAdapter bannerAdapter;
     private ViewPager2.OnPageChangeCallback bannerPageCallback;
     private final Handler bannerHandler = new Handler(Looper.getMainLooper());
@@ -84,6 +85,9 @@ public class GuestHomeFragment extends Fragment {
         };
         bannerPager.registerOnPageChangeCallback(bannerPageCallback);
         criticalSection = view.findViewById(R.id.criticalSection);
+        nearbyMobileSection = view.findViewById(R.id.nearbyMobileSection);
+        nearbyFixedSection = view.findViewById(R.id.nearbyFixedSection);
+        endingSoonSection = view.findViewById(R.id.endingSoonSection);
         valueSection = view.findViewById(R.id.valueSection);
         campaignSection = view.findViewById(R.id.campaignSection);
         categorySection = view.findViewById(R.id.categorySection);
@@ -148,6 +152,13 @@ public class GuestHomeFragment extends Fragment {
                 ? R.string.home_location_loading : R.string.home_location_default);
         renderBanners(state.getBanners());
         renderCampaigns(criticalSection, state.getCritical(), state, "Chưa có chiến dịch CRITICAL.");
+        String locationEmpty = state.getLocationState() == HomeViewState.LocationState.AVAILABLE
+                ? "Chưa có điểm giải cứu gần vị trí của bạn."
+                : "Bật vị trí để xem các điểm giải cứu gần bạn.";
+        renderCampaigns(nearbyMobileSection, state.getNearbyMobile(), state, locationEmpty);
+        renderCampaigns(nearbyFixedSection, state.getNearbyFixed(), state, locationEmpty);
+        renderCampaigns(endingSoonSection, state.getEndingSoon(), state,
+                "Chưa có chiến dịch sắp kết thúc.");
         renderProducts(state.getValueProducts());
         List<RescueCampaign> otherCampaigns = new ArrayList<>();
         for (RescueCampaign campaign : state.getActiveCampaigns()) {
