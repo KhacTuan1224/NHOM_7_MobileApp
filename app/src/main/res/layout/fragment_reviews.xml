@@ -5,10 +5,19 @@
         android:orientation="vertical" android:padding="@dimen/space_lg">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/reviews_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+        <TextView android:id="@+id/reviewProductSummary" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:paddingTop="@dimen/space_xs" />
+        <TextView android:id="@+id/reviewListStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:paddingTop="@dimen/space_sm" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:text="Chọn sản phẩm từ đơn đã nhận"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall" />
+        <Spinner android:id="@+id/reviewEligibleOrderItem" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:layout_marginBottom="@dimen/space_sm" />
         <EditText android:id="@+id/reviewOrderId" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:hint="@string/review_order_id_hint" />
+            android:layout_height="0dp" android:visibility="gone" android:hint="@string/review_order_id_hint" />
         <EditText android:id="@+id/reviewOrderItemId" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:hint="@string/review_order_item_hint" />
+            android:layout_height="0dp" android:visibility="gone" android:hint="@string/review_order_item_hint" />
         <EditText android:id="@+id/reviewRating" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:hint="@string/review_rating_hint" android:inputType="number" />
         <EditText android:id="@+id/reviewContent" android:layout_width="match_parent"

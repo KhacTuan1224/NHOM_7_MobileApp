@@ -92,12 +92,11 @@ public class SellerProfileFragment extends Fragment {
                         .setMessage(R.string.logout_confirmation)
                         .setNegativeButton(R.string.cancel_action, null)
                         .setPositiveButton(R.string.logout_action, (dialog, which) -> {
-                            viewModel.signOut();
-                            NavController navController = NavHostFragment.findNavController(this);
-                            NavOptions options = new NavOptions.Builder()
-                                    .setPopUpTo(R.id.main_navigation, true)
-                                    .build();
-                            navController.navigate(R.id.loginFragment, null, options);
+                            viewModel.signOut(new com.rescuefarm.data.repository.AuthRepository.ActionCallback() {
+                                @Override public void onSuccess() { if (isAdded()) navigateToLogin(); }
+                                @Override public void onError(com.rescuefarm.data.repository.AuthRepository.ErrorCode error,
+                                        String message) { if (isAdded()) navigateToLogin(); }
+                            });
                         })
                         .show());
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
@@ -142,6 +141,12 @@ public class SellerProfileFragment extends Fragment {
             }
         });
         viewModel.loadProfile();
+    }
+
+    private void navigateToLogin() {
+        NavController navController = NavHostFragment.findNavController(this);
+        NavOptions options = new NavOptions.Builder().setPopUpTo(R.id.main_navigation, true).build();
+        navController.navigate(R.id.loginFragment, null, options);
     }
 
     private void populate(Seller seller) {

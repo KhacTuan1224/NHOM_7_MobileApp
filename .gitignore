@@ -12,6 +12,8 @@ gen/
 out/
 build/
 app/build/
+functions/node_modules/
+.firebase/
 
 .gradle/
 buildOutputCleanup/

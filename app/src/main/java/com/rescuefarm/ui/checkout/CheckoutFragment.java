@@ -30,6 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CheckoutFragment extends Fragment {
     private CheckoutViewModel vm;
@@ -38,6 +40,12 @@ public class CheckoutFragment extends Fragment {
     private TextView summary, message;
     private final List<Address> savedAddresses = new ArrayList<>();
     private boolean bindingAddresses;
+    private boolean bindingPaymentMethods;
+    private boolean bankTransferAvailable;
+    private int bankLoadVersion;
+    private boolean quoteReady;
+    private double quotedSubtotal;
+    private double quotedShippingFee;
     private Cart currentCart;
     private final Handler quoteHandler = new Handler(Looper.getMainLooper());
     private int quoteVersion;
@@ -57,8 +65,8 @@ public class CheckoutFragment extends Fragment {
         summary = view.findViewById(R.id.checkoutSummary); message = view.findViewById(R.id.checkoutMessage);
         fulfillment.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
                 FulfillmentType.values()));
-        payment.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
-                PaymentMethod.values()));
+        updateFulfillmentFields();
+        bindPaymentMethods();
         vm = new ViewModelProvider(this, new CheckoutViewModelFactory(requireContext()))
                 .get(CheckoutViewModel.class);
         ((TextView) view.findViewById(R.id.checkoutOwnerText)).setText(
@@ -75,7 +83,15 @@ public class CheckoutFragment extends Fragment {
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
         fulfillment.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View row, int position, long id) { scheduleShippingEstimate(); }
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View row, int position, long id) {
+                updateFulfillmentFields(); refreshPaymentMethods(); scheduleShippingEstimate();
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
+        });
+        payment.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View row, int position, long id) {
+                if (!bindingPaymentMethods) scheduleShippingEstimate();
+            }
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
         TextWatcher locationWatcher = new TextWatcher() {
@@ -84,7 +100,9 @@ public class CheckoutFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) { }
         };
         lat.addTextChangedListener(locationWatcher); lng.addTextChangedListener(locationWatcher);
-        vm.getCart().observe(getViewLifecycleOwner(), this::renderCart);
+        vm.getCart().observe(getViewLifecycleOwner(), cart -> {
+            renderCart(cart); refreshPaymentMethods();
+        });
         vm.getState().observe(getViewLifecycleOwner(), result -> {
             message.setText(result.getMessage());
             view.findViewById(R.id.submitCheckoutButton).setEnabled(
@@ -97,11 +115,26 @@ public class CheckoutFragment extends Fragment {
                 Navigation.findNavController(view).navigate(R.id.action_checkoutFragment_to_orderConfirmationFragment, args);
             } else if (result.getStatus() == CheckoutState.Status.ERROR) {
                 Toast.makeText(requireContext(), result.getMessage(), Toast.LENGTH_LONG).show();
+                if (result.getMessage() != null && result.getMessage().contains("QUOTE_CHANGED"))
+                    scheduleShippingEstimate();
             }
         });
-        view.findViewById(R.id.submitCheckoutButton).setOnClickListener(unused -> vm.submit(
-                text(name), text(phone), text(address), text(lat), text(lng),
-                (FulfillmentType) fulfillment.getSelectedItem(), (PaymentMethod) payment.getSelectedItem(), text(note)));
+        View submit = view.findViewById(R.id.submitCheckoutButton);
+        submit.setOnClickListener(unused -> {
+            if (!vm.isGuest() && !quoteReady) {
+                message.setText("Đang chờ báo giá mới nhất từ máy chủ. Hãy kiểm tra kết nối rồi thử lại.");
+                scheduleShippingEstimate(); return;
+            }
+            vm.submit(text(name), text(phone), text(address), text(lat), text(lng),
+                    (FulfillmentType) fulfillment.getSelectedItem(), (PaymentMethod) payment.getSelectedItem(),
+                    text(note), quoteReady ? quotedSubtotal : Double.NaN,
+                    quoteReady ? quotedShippingFee : Double.NaN);
+        });
+        if (vm.isGuest()) {
+            submit.setEnabled(false);
+            message.setText("Checkout cần tài khoản Customer để máy chủ xác minh và giữ tồn kho.");
+        }
+        refreshPaymentMethods();
     }
 
     private void renderAddresses(List<Address> values) {
@@ -140,55 +173,134 @@ public class CheckoutFragment extends Fragment {
     }
 
     private void scheduleShippingEstimate() {
+        quoteReady = false;
+        quoteVersion++;
+        View submit = getView() == null ? null : getView().findViewById(R.id.submitCheckoutButton);
+        if (submit != null && !vm.isGuest()) submit.setEnabled(false);
         quoteHandler.removeCallbacks(quoteRunnable); quoteHandler.postDelayed(quoteRunnable, 400L);
     }
 
     private void refreshShippingEstimate() {
         TextView estimate = getView() == null ? null : getView().findViewById(R.id.checkoutShippingEstimate);
         if (estimate == null) return;
-        int version = ++quoteVersion;
-        if (fulfillment.getSelectedItem() != FulfillmentType.DELIVERY) {
-            estimate.setText("Phí giao hàng: 0 ₫ (nhận tại chỗ)."); return;
+        int version = quoteVersion;
+        if (vm.isGuest()) { estimate.setText("Checkout chỉ dành cho Customer đăng nhập."); return; }
+        if (currentCart == null) { estimate.setText("Đang tải giỏ hàng…"); return; }
+        double subtotal = 0D; int count = 0; String sellerId = "";
+        StringBuilder lines = new StringBuilder();
+        NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems()) if (item.isSelected()) {
+            if (!sellerId.isEmpty() && !sellerId.equals(item.getSellerId())) {
+                estimate.setText("Mỗi đơn chỉ gồm sản phẩm của một cửa hàng. Hãy tách giỏ theo Seller."); return;
+            }
+            sellerId = item.getSellerId(); count++;
+            double line = Math.round(item.calculateTotal()); subtotal += line;
+            lines.append("• Batch ").append(item.getBatchId()).append(" · ")
+                    .append(item.getQuantity()).append(" × ").append(money.format(item.getUnitPrice()))
+                    .append(" = ").append(money.format(line)).append('\n');
         }
-        String sellerId = "";
-        if (currentCart != null) for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems())
-            if (item.isSelected()) { sellerId = item.getSellerId(); break; }
-        if (sellerId.isEmpty()) { estimate.setText("Chọn sản phẩm để tính phí giao hàng."); return; }
-        double customerLat, customerLng;
-        try { customerLat = Double.parseDouble(text(lat)); customerLng = Double.parseDouble(text(lng)); }
-        catch (NumberFormatException error) { estimate.setText("Chọn địa chỉ có tọa độ để xem phí giao hàng."); return; }
-        final String selectedSeller = sellerId;
+        if (count == 0) { estimate.setText("Chọn mặt hàng để xem tạm tính."); return; }
+        final double itemSubtotal = subtotal;
+        final double customerLat, customerLng;
+        if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY) {
+            try { customerLat = Double.parseDouble(text(lat)); customerLng = Double.parseDouble(text(lng)); }
+            catch (NumberFormatException error) { estimate.setText("Giao hàng cần tọa độ địa chỉ."); return; }
+        } else { customerLat = 0D; customerLng = 0D; }
+        quoteReady = true; quotedSubtotal = itemSubtotal;
+        estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines);
+        if (fulfillment.getSelectedItem() != FulfillmentType.DELIVERY) {
+            quotedShippingFee = 0D;
+            estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines
+                    + "Tiền hàng: " + money.format(itemSubtotal) + "\nPhí giao: " + money.format(0D)
+                    + "\nTổng tạm tính: " + money.format(itemSubtotal));
+            enableCheckoutSubmit();
+            return;
+        }
+        final int requestVersion = version; final String shopId = sellerId;
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("sellerPublicProfiles").document(selectedSeller).get().addOnSuccessListener(seller -> {
-            if (version != quoteVersion || !isAdded() || !seller.exists()) return;
+        db.collection("sellerPublicProfiles").document(shopId).get().addOnSuccessListener(profile -> {
+            if (requestVersion != quoteVersion || !isAdded()) return;
             db.collection("appConfig").document("shipping").get().addOnSuccessListener(config -> {
-                if (version != quoteVersion || !isAdded()) return;
-                if (!config.exists()) { estimate.setText("Chưa cấu hình biểu phí giao hàng."); return; }
-                double sellerLat = number(seller.get("latitude")), sellerLng = number(seller.get("longitude"));
-                if (sellerLat == 0D && sellerLng == 0D) { estimate.setText("Seller chưa cập nhật tọa độ cửa hàng."); return; }
-                double distance = distanceKm(sellerLat, sellerLng, customerLat, customerLng);
-                double base = number(config.get("baseFeeVnd")), perKm = number(config.get("perKmFeeVnd"));
-                double freeKm = number(config.get("freeDistanceKm"));
-                long fee = Math.round(base + Math.ceil(Math.max(0D, distance - freeKm) * perKm));
-                String feeText = NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(fee);
-                String totalText = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
-                        .format((currentCart == null ? 0D : currentCart.calculateSubtotal()) + fee);
-                estimate.setText(String.format(Locale.getDefault(),
-                        "Khoảng cách đường chim bay %.1f km · Phí ước tính %s · Tổng tạm tính %s (trước khuyến mãi server)",
-                        distance, feeText, totalText));
-            }).addOnFailureListener(error -> { if (version == quoteVersion && isAdded()) estimate.setText("Không tải được biểu phí giao hàng."); });
-        }).addOnFailureListener(error -> { if (version == quoteVersion && isAdded()) estimate.setText("Không tải được tọa độ seller."); });
+                if (requestVersion != quoteVersion || !isAdded()) return;
+                if (!profile.exists() || !config.exists()) { quoteReady = false; estimate.setText("Thiếu tọa độ Seller hoặc cấu hình giao hàng."); return; }
+                double shopLat = number(profile.get("latitude")), shopLng = number(profile.get("longitude"));
+                double distance = distanceKm(shopLat, shopLng, customerLat, customerLng);
+                quotedShippingFee = number(config.get("baseFeeVnd")) + Math.ceil(Math.max(0D,
+                        distance - number(config.get("freeDistanceKm"))) * number(config.get("perKmFeeVnd")));
+                estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines
+                        + "Tiền hàng: " + money.format(itemSubtotal) + "\nKhoảng cách: "
+                        + String.format(Locale.getDefault(), "%.1f km", distance) + "\nPhí giao: "
+                        + money.format(quotedShippingFee) + "\nTổng tạm tính: " + money.format(itemSubtotal + quotedShippingFee));
+                enableCheckoutSubmit();
+            }).addOnFailureListener(error -> { quoteReady = false; estimate.setText("Không đọc được cấu hình giao hàng: " + error.getLocalizedMessage()); });
+        }).addOnFailureListener(error -> { quoteReady = false; estimate.setText("Không đọc được hồ sơ cửa hàng: " + error.getLocalizedMessage()); });
     }
 
-    private double number(Object value) { return value instanceof Number ? ((Number) value).doubleValue() : 0D; }
-    private double distanceKm(double lat1, double lon1, double lat2, double lon2) {
-        double dLat = Math.toRadians(lat2 - lat1), dLon = Math.toRadians(lon2 - lon1);
+    private double distanceKm(double lat1, double lng1, double lat2, double lng2) {
+        double radians = Math.PI / 180D, dLat = (lat2 - lat1) * radians, dLng = (lng2 - lng1) * radians;
         double a = Math.sin(dLat / 2D) * Math.sin(dLat / 2D)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2D) * Math.sin(dLon / 2D);
+                + Math.cos(lat1 * radians) * Math.cos(lat2 * radians) * Math.sin(dLng / 2D) * Math.sin(dLng / 2D);
         return 6371D * 2D * Math.atan2(Math.sqrt(a), Math.sqrt(1D - a));
     }
 
+    private void enableCheckoutSubmit() {
+        View submit = getView() == null ? null : getView().findViewById(R.id.submitCheckoutButton);
+        if (submit != null && quoteReady) submit.setEnabled(true);
+    }
+
+    private void updateFulfillmentFields() {
+        if (fulfillment == null) return;
+        boolean delivery = fulfillment.getSelectedItem() == FulfillmentType.DELIVERY;
+        if (address != null) address.setVisibility(delivery ? View.VISIBLE : View.GONE);
+        if (lat != null && lat.getParent() != null)
+            lat.getParent().setVisibility(delivery ? View.VISIBLE : View.GONE);
+    }
+
+    private void bindPaymentMethods() {
+        payment.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_dropdown_item, new PaymentMethod[] {PaymentMethod.CASH_ON_SITE}));
+    }
+
+    private void refreshPaymentMethods() {
+        if (payment == null || fulfillment == null || !isAdded()) return;
+        String sellerId = "";
+        if (currentCart != null) for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems())
+            if (item.isSelected()) { sellerId = item.getSellerId(); break; }
+        final String selectedSeller = sellerId;
+        int version = ++bankLoadVersion;
+        bankTransferAvailable = false;
+        applyPaymentMethods();
+        if (selectedSeller.isEmpty()) return;
+        FirebaseFirestore.getInstance().collection("sellerPublicProfiles").document(selectedSeller).get()
+                .addOnSuccessListener(profile -> {
+                    if (version != bankLoadVersion || !isAdded()) return;
+                    bankTransferAvailable = profile.exists()
+                            && !blank(profile.getString("bankCode"))
+                            && !blank(profile.getString("bankAccountName"))
+                            && !blank(profile.getString("bankAccountNumber"));
+                    applyPaymentMethods();
+                    scheduleShippingEstimate();
+                });
+    }
+
+    private void applyPaymentMethods() {
+        PaymentMethod previous = payment.getSelectedItem() instanceof PaymentMethod
+                ? (PaymentMethod) payment.getSelectedItem() : null;
+        List<PaymentMethod> allowed = new ArrayList<>();
+        if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY) allowed.add(PaymentMethod.COD);
+        else allowed.add(PaymentMethod.CASH_ON_SITE);
+        if (bankTransferAvailable) allowed.add(PaymentMethod.BANK_TRANSFER);
+        bindingPaymentMethods = true;
+        payment.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_dropdown_item, allowed));
+        int selected = previous == null ? -1 : allowed.indexOf(previous);
+        payment.setSelection(selected < 0 ? 0 : selected);
+        bindingPaymentMethods = false;
+    }
+
+    private boolean blank(String value) { return value == null || value.trim().isEmpty(); }
+
+    private double number(Object value) { return value instanceof Number ? ((Number) value).doubleValue() : 0D; }
     private String text(EditText field) { return field.getText().toString().trim(); }
     @Override public void onDestroyView() { quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; super.onDestroyView(); }
 }

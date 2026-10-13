@@ -29,12 +29,15 @@ import com.rescuefarm.domain.model.Payment;
 import com.rescuefarm.domain.model.Shipment;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.Arrays;
+import java.util.List;
 
 public class OrderDetailFragment extends Fragment {
     private OrderViewModel vm;
     private TextView detail, instructions, message, bankInfo;
     private ImageView qrImage;
     private LinearLayout items;
+    private LinearLayout timeline;
     private Spinner target;
     private EditText reference;
     private View transitionButton, confirmButton;
@@ -50,6 +53,7 @@ public class OrderDetailFragment extends Fragment {
         message = view.findViewById(R.id.orderLifecycleMessage); bankInfo = view.findViewById(R.id.orderBankInfo);
         qrImage = view.findViewById(R.id.orderBankQr); items = view.findViewById(R.id.orderItemsContainer);
         target = view.findViewById(R.id.orderStatusTarget); reference = view.findViewById(R.id.bankReferenceInput);
+        timeline = view.findViewById(R.id.orderStatusTimeline);
         transitionButton = view.findViewById(R.id.transitionOrderButton);
         confirmButton = view.findViewById(R.id.confirmBankTransferButton);
         target.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
@@ -59,7 +63,17 @@ public class OrderDetailFragment extends Fragment {
         vm.getState().observe(getViewLifecycleOwner(), this::render);
         transitionButton.setOnClickListener(unused -> vm.transition(orderId, (OrderStatus) target.getSelectedItem()));
         confirmButton.setOnClickListener(unused -> vm.confirmTransfer(orderId, reference.getText().toString().trim()));
-        if (orderId.isEmpty()) message.setText(R.string.order_id_missing); else vm.load(orderId);
+        if (orderId.isEmpty()) message.setText(R.string.order_id_missing);
+    }
+
+    @Override public void onStart() {
+        super.onStart();
+        if (vm != null && !orderId.isEmpty()) vm.observeOrder(orderId);
+    }
+
+    @Override public void onStop() {
+        if (vm != null && !orderId.isEmpty()) vm.stopObservingOrder(orderId);
+        super.onStop();
     }
 
     private void render(OrderLifecycleState state) {
@@ -70,7 +84,9 @@ public class OrderDetailFragment extends Fragment {
         }
         if (state.getStatus() != OrderLifecycleState.Status.SUCCESS) return;
         Order order = state.getOrder(); Payment payment = state.getPayment(); Shipment shipment = state.getShipment();
-        String shipmentStatus = shipment == null ? getString(R.string.shipment_not_required) : shipment.getStatus().name();
+        String shipmentStatus = order.getFulfillmentType() != com.rescuefarm.domain.enums.FulfillmentType.DELIVERY
+                ? getString(R.string.shipment_not_required)
+                : shipment == null ? "Đang chờ thông tin vận chuyển" : shipment.getStatus().name();
         detail.setText(getString(R.string.order_detail_format, order.getOrderCode(), order.getStatus().name(),
                 order.getFulfillmentType().name(), payment.getMethod().name(), payment.getStatus().name(), shipmentStatus,
                 NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(order.getTotalAmount())));
@@ -78,6 +94,7 @@ public class OrderDetailFragment extends Fragment {
                 " · %.1f km đường chim bay", shipment.getDistanceKm());
         detail.append("\nPhí giao hàng: " + NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
                 .format(order.getShippingFee()) + distanceLabel + ".");
+        renderTimeline(order);
         instructions.setText(paymentInstructions(payment));
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -92,6 +109,57 @@ public class OrderDetailFragment extends Fragment {
         renderItems(order, customer);
         if (bank && !seller) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
+    }
+
+    private void renderTimeline(Order order) {
+        timeline.removeAllViews();
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            addTimelineRow("Đơn hàng đã hủy · phần tồn giữ chỗ đã được hoàn trả.", true, false);
+            return;
+        }
+        List<OrderStatus> steps;
+        switch (order.getFulfillmentType()) {
+            case DELIVERY:
+                steps = Arrays.asList(OrderStatus.PENDING, OrderStatus.CONFIRMED,
+                        OrderStatus.PREPARING, OrderStatus.SHIPPING, OrderStatus.DELIVERED); break;
+            case PICKUP:
+                steps = Arrays.asList(OrderStatus.PENDING, OrderStatus.CONFIRMED,
+                        OrderStatus.PREPARING, OrderStatus.READY_FOR_PICKUP, OrderStatus.DELIVERED); break;
+            case ON_SITE_RESCUE:
+            default:
+                steps = Arrays.asList(OrderStatus.PENDING, OrderStatus.CONFIRMED,
+                        OrderStatus.PREPARING, OrderStatus.DELIVERED); break;
+        }
+        int current = steps.indexOf(order.getStatus());
+        for (int i = 0; i < steps.size(); i++) {
+            boolean complete = current >= 0 && i < current;
+            boolean active = i == current;
+            addTimelineRow((complete ? "✓ " : active ? "● " : "○ ")
+                    + statusLabel(steps.get(i), order.getFulfillmentType()), complete || active, active);
+        }
+    }
+
+    private void addTimelineRow(String label, boolean emphasized, boolean current) {
+        TextView row = new TextView(requireContext());
+        row.setText(label); row.setTextSize(14);
+        row.setTextColor(requireContext().getColor(current ? R.color.rescue_primary
+                : emphasized ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
+        if (current) row.setTypeface(null, android.graphics.Typeface.BOLD);
+        row.setPadding(0, 6, 0, 6); timeline.addView(row);
+    }
+
+    private String statusLabel(OrderStatus status, com.rescuefarm.domain.enums.FulfillmentType fulfillment) {
+        switch (status) {
+            case PENDING: return "Cửa hàng xác nhận đơn";
+            case CONFIRMED: return "Đơn đã được xác nhận";
+            case PREPARING: return "Đang chuẩn bị nông sản";
+            case SHIPPING: return "Đang giao hàng";
+            case READY_FOR_PICKUP: return "Sẵn sàng để nhận tại cửa hàng";
+            case DELIVERED: return fulfillment == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY
+                    ? "Đã giao hàng" : "Đã nhận nông sản";
+            case CANCELLED: return "Đã hủy";
+            default: return status.name();
+        }
     }
 
     private void renderItems(Order order, boolean canReview) {
