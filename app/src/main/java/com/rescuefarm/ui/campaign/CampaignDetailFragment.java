@@ -44,6 +44,7 @@ public class CampaignDetailFragment extends Fragment {
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == CampaignScreenState.Status.CAMPAIGN) {
                 render(view, value.getCampaign());
+                refreshUrgency(value.getCampaign());
             } else if (value.getStatus() == CampaignScreenState.Status.ERROR) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
             }
@@ -76,10 +77,11 @@ public class CampaignDetailFragment extends Fragment {
         set(view, R.id.campaignDetailTitle, value.getTitle());
         set(view, R.id.campaignDetailBadge, value.getHighlightLabel());
         set(view, R.id.campaignDetailDescription, value.getDescription());
+        set(view, R.id.campaignDetailProgress, getString(R.string.campaign_progress_quantities_format,
+                value.calculateProgress(), value.getTargetQuantity(), value.getRescuedQuantity(),
+                value.getReservedQuantity(), value.calculateRemainingQuantity(), "kg"));
         set(view, R.id.campaignDetailReason, getString(R.string.campaign_reason_format,
                 value.getRescueReason().name(), value.getUrgencyLevel().name()));
-        set(view, R.id.campaignDetailProgress, getString(R.string.campaign_progress_format,
-                value.calculateProgress(), value.getRescuedQuantity(), value.getTargetQuantity()));
         
         // Set progress bar
         android.widget.ProgressBar progressBar = view.findViewById(R.id.campaignProgressBar);
@@ -98,6 +100,33 @@ public class CampaignDetailFragment extends Fragment {
                     : getString(R.string.mobile_location_stale);
         }
         set(view, R.id.campaignDetailLocation, location);
+    }
+
+    private void refreshUrgency(RescueCampaign value) {
+        if (value == null || value.getBatchTargets().isEmpty()) return;
+        ProductRepository repository = ProductRepositoryFactory.create(requireContext());
+        repository.getBatchesByIds(new ArrayList<>(value.getBatchTargets().keySet()),
+                new ProductRepository.BatchListCallback() {
+            @Override public void onSuccess(List<com.rescuefarm.domain.model.ProductBatch> batches) {
+                repository.close();
+                if (!isAdded() || value.getEndDate() == null) return;
+                Date earliest = null;
+                if (batches != null) for (com.rescuefarm.domain.model.ProductBatch batch : batches) {
+                    if (batch != null && batch.isSellable(new Date()) && batch.getExpiryDate() != null
+                            && (earliest == null || batch.getExpiryDate().before(earliest))) {
+                        earliest = batch.getExpiryDate();
+                    }
+                }
+                if (earliest != null) {
+                    value.calculateUrgency(new Date(), earliest);
+                    View root = getView();
+                    if (root != null && campaign == value) render(root, value);
+                }
+            }
+            @Override public void onError(ProductRepository.ErrorCode error, String message) {
+                repository.close();
+            }
+        });
     }
 
     private void openCampaignProducts(View source) {
@@ -125,6 +154,9 @@ public class CampaignDetailFragment extends Fragment {
                         .setItems(labels, (dialog, index) -> {
                             Bundle args = new Bundle();
                             args.putString("productId", values.get(index).getId());
+                            args.putString("campaignId", campaignId);
+                            args.putStringArrayList("campaignBatchIds",
+                                    new ArrayList<>(campaign.getBatchTargets().keySet()));
                             androidx.navigation.NavController nav = Navigation.findNavController(source);
                             if (nav.getCurrentDestination() != null
                                     && nav.getCurrentDestination().getId() == R.id.campaignDetailFragment) {

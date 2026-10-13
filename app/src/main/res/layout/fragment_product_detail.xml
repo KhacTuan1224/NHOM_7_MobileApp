@@ -79,6 +79,29 @@
                 android:layout_marginTop="4dp" 
                 android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
                 android:textColor="@color/rescue_on_surface_variant" />
+
+            <TextView
+                android:id="@+id/productBatchLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Chọn lô nông sản"
+                android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                android:textColor="@color/rescue_on_surface_variant" />
+
+            <Spinner
+                android:id="@+id/productBatchSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/touch_target_min"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/productBatchHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/rescue_on_surface_variant"
+                android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall" />
         </LinearLayout>
         
         <!-- Price calculator in one simple card -->

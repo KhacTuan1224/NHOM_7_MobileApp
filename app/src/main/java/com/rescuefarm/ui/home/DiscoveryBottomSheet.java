@@ -180,7 +180,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         }
         for (DiscoveryResult value : values) {
             if (value.getType() == DiscoveryResult.Type.PRODUCT) {
-                results.addView(renderer.product(value.getProduct(), v -> openProduct(value.getProduct().getId())));
+                results.addView(renderer.product(value.getProduct(), v -> openProduct(value)));
             } else {
                 results.addView(renderer.campaign(value.getCampaign(), value.getDistanceKilometers(),
                         v -> openCampaign(value.getCampaign().getId())));
@@ -207,9 +207,11 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
-    private void openProduct(String id) {
+    private void openProduct(DiscoveryResult result) {
         Bundle args = new Bundle();
-        args.putString("productId", id);
+        args.putString("productId", result.getProduct().getId());
+        args.putString("batchId", result.getBatchId());
+        args.putString("campaignId", result.getCampaignId());
         dismiss();
         Navigation.findNavController(requireActivity().findViewById(R.id.main))
                 .navigate(R.id.productDetailFragment, args);

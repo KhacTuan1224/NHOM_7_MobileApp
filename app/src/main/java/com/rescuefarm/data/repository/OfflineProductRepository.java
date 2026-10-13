@@ -41,6 +41,17 @@ public class OfflineProductRepository implements ProductRepository {
             else callback.onSuccess(CatalogCacheMapper.toDomain(cached));
         });
     }
+    @Override public void getBatchesByIds(List<String> batchIds, BatchListCallback callback) {
+        executor.execute(() -> {
+            java.util.ArrayList<ProductBatch> values = new java.util.ArrayList<>();
+            if (batchIds != null) for (String id : batchIds) {
+                if (id == null || id.trim().isEmpty()) continue;
+                com.rescuefarm.data.local.entity.ProductBatchCacheEntity cached = dao.findBatch(id.trim());
+                if (cached != null) values.add(CatalogCacheMapper.toDomain(cached));
+            }
+            callback.onSuccess(values);
+        });
+    }
     @Override public void saveProduct(Product product, ProductCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
     }

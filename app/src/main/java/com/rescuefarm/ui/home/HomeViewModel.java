@@ -85,7 +85,7 @@ public class HomeViewModel extends ViewModel {
             categories = safe(values); publish();
         });
         homeState.addSource(campaignRepository.observeActiveCampaigns(), values -> {
-            campaigns = safe(values); publish();
+            campaigns = safe(values); syncBatchSources(); publish();
         });
         homeState.addSource(campaignRepository.observeActiveBanners(), values -> {
             banners = safe(values); publish();
@@ -154,7 +154,8 @@ public class HomeViewModel extends ViewModel {
     }
 
     private void syncBatchSources() {
-        if (!query.needsBatchData()) {
+        boolean neededForCampaigns = !campaigns.isEmpty();
+        if (!query.needsBatchData() && !neededForCampaigns) {
             for (Map.Entry<String, LiveData<List<ProductBatch>>> entry : batchSources.entrySet()) {
                 homeState.removeSource(entry.getValue());
             }
@@ -231,7 +232,8 @@ public class HomeViewModel extends ViewModel {
     }
     private void publish() {
         homeState.postValue(contentBuilder.build(banners, products, campaigns, categories,
-                latitude, longitude, new Date(), locationState, refreshing, message, freshness));
+                productBatches, latitude, longitude, new Date(), locationState,
+                refreshing, message, freshness));
         publishSearch();
     }
     private void publishSearch() {
