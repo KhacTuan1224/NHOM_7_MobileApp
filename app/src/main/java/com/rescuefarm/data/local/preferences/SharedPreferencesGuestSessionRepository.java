@@ -23,7 +23,7 @@ public class SharedPreferencesGuestSessionRepository implements GuestSessionRepo
     }
 
     @Override
-    public String getOrCreateGuestId() {
+    public synchronized String getOrCreateGuestId() {
         String existingGuestId = preferences.getString(KEY_GUEST_ID, null);
         if (existingGuestId != null && !existingGuestId.trim().isEmpty()) {
             return existingGuestId;
