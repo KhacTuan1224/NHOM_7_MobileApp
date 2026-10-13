@@ -78,6 +78,11 @@ public interface UserRepository {
             String shopDescription,
             String shopAvatarUrl,
             String address,
+            String bankCode,
+            String bankAccountName,
+            String bankAccountNumber,
+            double latitude,
+            double longitude,
             UserCallback callback
     );
     void getAddresses(String customerId, AddressListCallback callback);

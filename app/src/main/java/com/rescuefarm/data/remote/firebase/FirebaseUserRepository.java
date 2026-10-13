@@ -109,21 +109,38 @@ public class FirebaseUserRepository implements UserRepository {
     }
 
     @Override public void updateSellerProfile(String sellerId, String representativeName, String shopName,
-            String shopDescription, String shopAvatarUrl, String address, UserCallback callback) {
+            String shopDescription, String shopAvatarUrl, String address, String bankCode,
+            String bankAccountName, String bankAccountNumber, double latitude, double longitude,
+            UserCallback callback) {
         Map<String, Object> fields = new HashMap<>();
         fields.put("representativeName", clean(representativeName));
         fields.put("shopName", clean(shopName));
         fields.put("shopDescription", clean(shopDescription));
         fields.put("shopAvatarUrl", clean(shopAvatarUrl));
         fields.put("address", clean(address));
+        fields.put("bankCode", clean(bankCode));
+        fields.put("bankAccountName", clean(bankAccountName));
+        fields.put("bankAccountNumber", clean(bankAccountNumber));
+        fields.put("latitude", latitude); fields.put("longitude", longitude);
         fields.put("updatedAt", FieldValue.serverTimestamp());
-        user(sellerId).get().addOnSuccessListener(previous -> user(sellerId).update(fields)
-                .addOnSuccessListener(unused -> {
+        Map<String,Object> publicProfile = new HashMap<>();
+        publicProfile.put("sellerId", sellerId); publicProfile.put("shopName", clean(shopName));
+        publicProfile.put("shopDescription", clean(shopDescription));
+        publicProfile.put("shopAvatarUrl", clean(shopAvatarUrl)); publicProfile.put("address", clean(address));
+        publicProfile.put("latitude", latitude); publicProfile.put("longitude", longitude);
+        publicProfile.put("bankCode", clean(bankCode)); publicProfile.put("bankAccountName", clean(bankAccountName));
+        publicProfile.put("bankAccountNumber", clean(bankAccountNumber));
+        publicProfile.put("updatedAt", FieldValue.serverTimestamp());
+        user(sellerId).get().addOnSuccessListener(previous -> {
+            com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+            batch.update(user(sellerId), fields);
+            batch.set(firestore.collection("sellerPublicProfiles").document(sellerId), publicProfile);
+            batch.commit().addOnSuccessListener(unused -> {
                     com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
                             previous.getString("shopAvatarUrl"), shopAvatarUrl);
                     getUser(sellerId, callback);
-                }).addOnFailureListener(error -> notifyFailure(error, callback::onError)))
-                .addOnFailureListener(error -> notifyFailure(error, callback::onError));
+                }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
     @Override public void getAddresses(String customerId, AddressListCallback callback) {
@@ -302,6 +319,8 @@ public class FirebaseUserRepository implements UserRepository {
             seller.updateSellerProfile(snapshot.getString("representativeName"), snapshot.getString("shopName"),
                     snapshot.getString("shopDescription"), snapshot.getString("shopAvatarUrl"),
                     snapshot.getString("address"));
+            seller.updateBankDetails(snapshot.getString("bankCode"), snapshot.getString("bankAccountName"),
+                    snapshot.getString("bankAccountNumber"));
             value = seller;
         } else {
             Customer customer = new Customer(id, email, fullName,

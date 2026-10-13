@@ -44,9 +44,15 @@ public class ReviewFragment extends Fragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         productId = getArguments() == null ? "" : getArguments().getString("productId", "");
+        String orderIdArg = getArguments() == null ? "" : getArguments().getString("orderId", "");
+        String orderItemArg = getArguments() == null ? "" : getArguments().getString("orderItemId", "");
         uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
         order = view.findViewById(R.id.reviewOrderId); item = view.findViewById(R.id.reviewOrderItemId);
+        if (!orderIdArg.isEmpty() && !orderItemArg.isEmpty()) {
+            order.setText(orderIdArg); item.setText(orderItemArg);
+            order.setEnabled(false); item.setEnabled(false);
+        }
         rating = view.findViewById(R.id.reviewRating); content = view.findViewById(R.id.reviewContent);
         images = view.findViewById(R.id.reviewImages); list = view.findViewById(R.id.reviewContainer);
         imagesStatus = view.findViewById(R.id.reviewImagesStatus);

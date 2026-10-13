@@ -13,6 +13,9 @@ public class Payment {
     private double amount;
     private String referenceCode;
     private Date paidAt;
+    private String bankCode = "";
+    private String bankAccountName = "";
+    private String bankAccountNumber = "";
 
     public Payment() { status = PaymentStatus.UNPAID; }
 
@@ -51,6 +54,11 @@ public class Payment {
     public void setReferenceCode(String value) {
         referenceCode = value == null ? "" : value.trim();
     }
+    public void setBankDetails(String code, String accountName, String accountNumber) {
+        bankCode = code == null ? "" : code.trim();
+        bankAccountName = accountName == null ? "" : accountName.trim();
+        bankAccountNumber = accountNumber == null ? "" : accountNumber.trim();
+    }
 
     public void markFailed() {
         if (status == PaymentStatus.PAID) { throw new IllegalStateException("A paid payment cannot be marked failed"); }
@@ -64,5 +72,8 @@ public class Payment {
     public double getAmount() { return amount; }
     public String getReferenceCode() { return referenceCode; }
     public Date getPaidAt() { return copy(paidAt); }
+    public String getBankCode() { return bankCode; }
+    public String getBankAccountName() { return bankAccountName; }
+    public String getBankAccountNumber() { return bankAccountNumber; }
     private static Date copy(Date value) { return value == null ? null : new Date(value.getTime()); }
 }
