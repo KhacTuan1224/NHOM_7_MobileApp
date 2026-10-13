@@ -68,8 +68,13 @@ public final class HomeCardRenderer {
 
         String unit = related == null ? "kg" : related.getUnit();
         body.addView(text(String.format(Locale.forLanguageTag("vi-VN"),
-                "%.0f%% giải cứu · %.0f / %.0f %s", campaign.calculateProgress(),
-                campaign.getRescuedQuantity(), campaign.getTargetQuantity(), unit),
+                "%.0f%% hoàn thành · mục tiêu %.2f %s", campaign.calculateProgress(),
+                campaign.getTargetQuantity(), unit),
+                11, false, R.color.rescue_on_surface_variant));
+        body.addView(text(String.format(Locale.forLanguageTag("vi-VN"),
+                "Đã giải cứu %.2f · đang giữ %.2f · còn khả dụng %.2f %s",
+                campaign.getRescuedQuantity(), campaign.getReservedQuantity(),
+                campaign.calculateRemainingQuantity(), unit),
                 11, false, R.color.rescue_on_surface_variant));
         if (Double.isFinite(distance)) {
             body.addView(text(String.format(Locale.forLanguageTag("vi-VN"), "Cách bạn %.1f km", distance),

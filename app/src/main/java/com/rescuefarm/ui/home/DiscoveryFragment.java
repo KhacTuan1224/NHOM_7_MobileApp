@@ -119,7 +119,7 @@ public class DiscoveryFragment extends Fragment {
         if (values.isEmpty()) { results.addView(renderer.message("Không tìm thấy dữ liệu phù hợp.")); return; }
         for (DiscoveryResult value : values) {
             if (value.getType() == DiscoveryResult.Type.PRODUCT) {
-                results.addView(renderer.product(value.getProduct(), v -> openProduct(value.getProduct().getId())));
+                results.addView(renderer.product(value.getProduct(), v -> openProduct(value)));
             } else {
                 results.addView(renderer.campaign(value.getCampaign(), value.getDistanceKilometers(),
                         v -> openCampaign(value.getCampaign().getId())));
@@ -140,7 +140,10 @@ public class DiscoveryFragment extends Fragment {
                 || Boolean.TRUE.equals(values.get(Manifest.permission.ACCESS_COARSE_LOCATION))) viewModel.requestNearbyLocation();
         else viewModel.onLocationPermissionDenied();
     }
-    private void openProduct(String id) { Bundle args = new Bundle(); args.putString("productId", id);
+    private void openProduct(DiscoveryResult result) { Bundle args = new Bundle();
+        args.putString("productId", result.getProduct().getId());
+        args.putString("batchId", result.getBatchId());
+        args.putString("campaignId", result.getCampaignId());
         Navigation.findNavController(requireView()).navigate(R.id.action_discoveryFragment_to_productDetailFragment, args); }
     private void openCampaign(String id) { Bundle args = new Bundle(); args.putString("campaignId", id);
         Navigation.findNavController(requireView()).navigate(R.id.action_discoveryFragment_to_campaignDetailFragment, args); }

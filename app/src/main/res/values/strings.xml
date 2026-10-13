@@ -148,6 +148,11 @@
     <string name="product_image_description">Ảnh sản phẩm</string>
     <string name="discount_format">Tiết kiệm %.0f%%</string>
     <string name="product_stock_format">Còn %1$.2f trong %2$d batch có thể bán</string>
+    <string name="product_batch_choice_format">Thu hoạch %1$s · Hạn %2$s · Còn %3$.2f %4$s</string>
+    <string name="product_batch_stock_format">Lô đã chọn: khả dụng %1$.2f · đang giữ %2$.2f · đã bán %3$.2f</string>
+    <string name="product_no_sellable_batches">Hiện không có lô còn hạn và khả dụng.</string>
+    <string name="product_campaign_batches_unavailable">Các lô thuộc chiến dịch này hiện không còn khả dụng.</string>
+    <string name="campaign_progress_quantities_format">%1$.0f%% hoàn thành\nMục tiêu %2$.2f %6$s · Đã giải cứu %3$.2f · Đang giữ %4$.2f · Còn khả dụng %5$.2f</string>
     <string name="seller_products_action">Quản lý sản phẩm</string>
     <string name="seller_products_title">Sản phẩm của cửa hàng</string>
     <string name="seller_approval_catalog_notice">Chỉ seller đã được phê duyệt mới có thể tạo hoặc sửa sản phẩm và batch.</string>

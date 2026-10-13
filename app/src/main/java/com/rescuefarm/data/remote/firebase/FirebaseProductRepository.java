@@ -228,6 +228,27 @@ public class FirebaseProductRepository implements ProductRepository {
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+    @Override public void getBatchesByIds(List<String> batchIds, BatchListCallback callback) {
+        if (batchIds == null || batchIds.isEmpty()) {
+            callback.onSuccess(new ArrayList<>());
+            return;
+        }
+        List<Task<DocumentSnapshot>> reads = new ArrayList<>();
+        for (String id : batchIds) if (id != null && !id.trim().isEmpty()) {
+            reads.add(firestore.collection(BATCHES).document(id.trim()).get());
+        }
+        if (reads.isEmpty()) { callback.onSuccess(new ArrayList<>()); return; }
+        Tasks.whenAllSuccess(reads).addOnSuccessListener(results -> {
+            List<ProductBatch> batches = new ArrayList<>();
+            for (Object result : results) if (result instanceof DocumentSnapshot) {
+                DocumentSnapshot snapshot = (DocumentSnapshot) result;
+                if (!snapshot.exists()) continue;
+                try { batches.add(mapBatch(snapshot)); } catch (RuntimeException ignored) { }
+            }
+            callback.onSuccess(batches);
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
     @Override public void saveProduct(Product product, ProductCallback callback) {
         if (!online(callback, "Không thể lưu sản phẩm khi offline; thay đổi không được xếp hàng.")) return;
         String sellerId = currentUserId();

@@ -6,6 +6,7 @@ import com.rescuefarm.domain.enums.UrgencyLevel;
 import com.rescuefarm.domain.model.Banner;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
+import com.rescuefarm.domain.model.ProductBatch;
 import com.rescuefarm.domain.model.RescueCampaign;
 import com.rescuefarm.service.location.CampaignLocationService;
 import java.util.ArrayList;
@@ -33,6 +34,16 @@ public final class HomeContentBuilder {
             List<RescueCampaign> campaignSource, List<Category> categorySource,
             Double latitude, Double longitude, Date now, HomeViewState.LocationState locationState,
             boolean refreshing, String message, HomeViewState.DataFreshness freshness) {
+        return build(bannerSource, productSource, campaignSource, categorySource,
+                java.util.Collections.emptyMap(), latitude, longitude, now, locationState,
+                refreshing, message, freshness);
+    }
+
+    public HomeViewState build(List<Banner> bannerSource, List<Product> productSource,
+            List<RescueCampaign> campaignSource, List<Category> categorySource,
+            Map<String, List<ProductBatch>> batchesByProduct, Double latitude, Double longitude,
+            Date now, HomeViewState.LocationState locationState, boolean refreshing,
+            String message, HomeViewState.DataFreshness freshness) {
         Date safeNow = now == null ? new Date() : now;
         List<Banner> banners = new ArrayList<>();
         if (bannerSource != null) for (Banner value : bannerSource) {
@@ -42,7 +53,11 @@ public final class HomeContentBuilder {
 
         List<RescueCampaign> active = new ArrayList<>();
         if (campaignSource != null) for (RescueCampaign value : campaignSource) {
-            if (value != null && value.getStatus() == CampaignStatus.ACTIVE) active.add(value);
+            if (value != null && value.getStatus() == CampaignStatus.ACTIVE
+                    && value.getEndDate() != null && value.getEndDate().after(safeNow)) {
+                refreshUrgency(value, batchesByProduct, safeNow);
+                active.add(value);
+            }
         }
         active.sort(campaignComparator());
         List<RescueCampaign> critical = new ArrayList<>();
@@ -84,6 +99,22 @@ public final class HomeContentBuilder {
         categories.sort(Comparator.comparingInt(Category::getDisplayOrder).thenComparing(Category::getName));
         return new HomeViewState(banners, critical, mobile, fixed, endingSoon, valueProducts,
                 active, categories, distances, locationState, refreshing, message, freshness);
+    }
+
+    private void refreshUrgency(RescueCampaign campaign,
+            Map<String, List<ProductBatch>> batchesByProduct, Date now) {
+        if (batchesByProduct == null || batchesByProduct.isEmpty()) return;
+        Date earliest = null;
+        for (List<ProductBatch> values : batchesByProduct.values()) if (values != null) {
+            for (ProductBatch batch : values) if (batch != null
+                    && campaign.getBatchTargets().containsKey(batch.getId())
+                    && batch.isSellable(now)
+                    && batch.getExpiryDate() != null
+                    && (earliest == null || batch.getExpiryDate().before(earliest))) {
+                earliest = batch.getExpiryDate();
+            }
+        }
+        if (earliest != null && campaign.getEndDate() != null) campaign.calculateUrgency(now, earliest);
     }
 
     private static Comparator<RescueCampaign> campaignComparator() {

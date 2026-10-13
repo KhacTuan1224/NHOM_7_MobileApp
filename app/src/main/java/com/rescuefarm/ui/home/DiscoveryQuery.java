@@ -58,6 +58,6 @@ public final class DiscoveryQuery {
     public double getMinStock() { return minStock; }
     public boolean needsBatchData() {
         return expiryWithinDays > 0 || minStock > 0 || sort == Sort.BEST_SELLING
-                || sort == Sort.NEAREST_DEADLINE;
+                || sort == Sort.NEAREST_DEADLINE || reason != null || urgency != null || mode != null;
     }
 }
