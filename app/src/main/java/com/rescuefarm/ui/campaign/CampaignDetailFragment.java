@@ -57,8 +57,14 @@ public class CampaignDetailFragment extends Fragment {
         view.findViewById(R.id.campaignDirectionsButton).setOnClickListener(v -> openDirections());
         
         view.findViewById(R.id.shareCampaignButton).setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Chia sẻ chiến dịch", Toast.LENGTH_SHORT).show();
-            // TODO: Implement share functionality
+            if (campaign == null) return;
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType("text/plain");
+            share.putExtra(Intent.EXTRA_SUBJECT, campaign.getTitle());
+            share.putExtra(Intent.EXTRA_TEXT, campaign.getTitle() + "\n" + campaign.getDescription()
+                + "\nCòn " + campaign.calculateRemainingQuantity() + " kg cần giải cứu."
+                + "\nrescuefarm://campaigns/" + Uri.encode(campaignId));
+            startActivity(Intent.createChooser(share, "Chia sẻ chiến dịch"));
         });
         
         view.findViewById(R.id.reportCampaignButton).setOnClickListener(v -> {

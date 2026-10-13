@@ -4,13 +4,68 @@ public class FirebaseEngagementRepository implements EngagementRepository{
  private static final String FAVORITES="favorites",REVIEWS="reviews",REPORTS="reports",NOTIFICATIONS="notifications",ORDERS="orders",ITEMS="items",USERS="users",DEVICES="devices";
  private final FirebaseFirestore db=FirebaseFirestore.getInstance();private final FirebaseAuth auth=FirebaseAuth.getInstance();private final NetworkStatusProvider network;private final ReviewEligibilityService eligibility=new ReviewEligibilityService();
  private final MutableLiveData<List<Favorite>> favorites=new MutableLiveData<>(new ArrayList<>());private final MutableLiveData<List<Review>> reviews=new MutableLiveData<>(new ArrayList<>());private final MutableLiveData<List<Report>> reports=new MutableLiveData<>(new ArrayList<>());private final MutableLiveData<List<Notification>> notifications=new MutableLiveData<>(new ArrayList<>());
- public FirebaseEngagementRepository(NetworkStatusProvider n){network=n;}public LiveData<List<Favorite>> observeFavorites(){return favorites;}public LiveData<List<Review>> observeProductReviews(){return reviews;}public LiveData<List<Report>> observeReports(){return reports;}public LiveData<List<Notification>> observeNotifications(){return notifications;}
+ public FirebaseEngagementRepository(NetworkStatusProvider n){network=n;}public LiveData<List<Favorite>> observeFavorites(){return favorites;}public LiveData<List<Review>> observeProductReviews(){return reviews;}public LiveData<List<Report>> observeReports(){return reports;}public LiveData<List<Notification>> observeNotifications(){return new LiveData<List<Notification>>() {
+  private ListenerRegistration listener;
+  protected void onActive(){String uid=auth.getCurrentUser()==null?"":auth.getCurrentUser().getUid();
+   if(uid.isEmpty()){postValue(Collections.emptyList());return;}
+   listener=db.collection(NOTIFICATIONS).whereEqualTo("userId",uid).addSnapshotListener((snapshot,error)->{
+    if(error!=null||snapshot==null)return; List<Notification> values=new ArrayList<>();
+    for(DocumentSnapshot d:snapshot.getDocuments())values.add(mapNotification(d));
+    values.sort((a,b)->Long.compare(time(b.getCreatedAt()),time(a.getCreatedAt())));postValue(values);
+   });
+  }
+  protected void onInactive(){if(listener!=null)listener.remove();listener=null;}
+ };}
  public LiveData<Boolean> observeFavorite(String customerId,String productId){return new LiveData<Boolean>(){private ListenerRegistration registration;@Override protected void onActive(){if(clean(customerId).isEmpty()||clean(productId).isEmpty()){postValue(false);return;}String id=Favorite.key(customerId,productId);registration=db.collection(FAVORITES).document(id).addSnapshotListener((snapshot,error)->{if(error!=null||snapshot==null){postValue(null);return;}postValue(snapshot.exists()&&customerId.equals(snapshot.getString("customerId")));});}@Override protected void onInactive(){if(registration!=null){registration.remove();registration=null;}}};}
  public void refreshFavorites(String uid,ActionCallback cb){query(FAVORITES,"customerId",uid,s->{List<Favorite> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapFavorite(d));favorites.setValue(out);cb.onSuccess();},cb);}
  public void toggleFavorite(String uid,String productId,FavoriteCallback cb){if(!online(cb)||!session(uid,cb))return;Favorite f;try{f=Favorite.create(uid,productId,new Date());}catch(Exception e){cb.onError(ErrorCode.VALIDATION,e.getMessage());return;}DocumentReference ref=db.collection(FAVORITES).document(f.getId());db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(d.exists()){tx.delete(ref);return false;}tx.set(ref,favoriteMap(f));return true;}).addOnSuccessListener(cb::onSuccess).addOnFailureListener(e->fail(e,cb));}
  public void refreshProductReviews(String productId,ActionCallback cb){if(!online(cb))return;db.collection(REVIEWS).whereEqualTo("productId",productId).whereEqualTo("status",ReviewStatus.PUBLISHED.name()).get().addOnSuccessListener(s->{List<Review> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReview(d));reviews.setValue(out);cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}
- public void saveReview(Review r,boolean update,ReviewCallback cb){if(!online(cb))return;if(r==null){cb.onError(ErrorCode.VALIDATION,"Review không hợp lệ.");return;}if(!session(r.getCustomerId(),cb))return;DocumentReference ref=db.collection(REVIEWS).document(r.getId()),orderRef=db.collection(ORDERS).document(r.getOrderId()),itemRef=orderRef.collection(ITEMS).document(r.getOrderItemId());List<String> previousImages=new ArrayList<>();db.runTransaction(tx->{DocumentSnapshot existing=tx.get(ref),order=tx.get(orderRef),item=tx.get(itemRef);previousImages.clear();if(existing.exists()){Object old=existing.get("imageUrls");if(old instanceof List<?>)for(Object value:(List<?>)old)if(value instanceof String)previousImages.add((String)value);}if(!order.exists()||!item.exists())throw new IllegalStateException("ORDER_ITEM_NOT_FOUND");eligibility.requireEligible(r.getCustomerId(),order.getString("ownerId"),enumValue(OrderOwnerType.class,order.getString("ownerType"),OrderOwnerType.GUEST),enumValue(OrderStatus.class,order.getString("status"),OrderStatus.PENDING),r.getProductId(),item.getString("productId"));if(!update&&existing.exists())throw new IllegalStateException("DUPLICATE_REVIEW");if(update&&!existing.exists())throw new IllegalStateException("REVIEW_NOT_FOUND");tx.set(ref,reviewMap(r,existing),SetOptions.merge());return r;}).addOnSuccessListener(saved->{com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages,saved.getImageUrls());cb.onSuccess(saved);}).addOnFailureListener(e->fail(e,cb));}
- public void deleteReview(String id,ActionCallback cb){if(!online(cb))return;DocumentReference ref=db.collection(REVIEWS).document(id);ref.get().addOnSuccessListener(snapshot->{List<String> oldUrls=new ArrayList<>();Object raw=snapshot.get("imageUrls");if(raw instanceof List<?>)for(Object value:(List<?>)raw)if(value instanceof String)oldUrls.add((String)value);ref.delete().addOnSuccessListener(v->{com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(oldUrls,Collections.emptyList());cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}).addOnFailureListener(e->fail(e,cb));}
+ public void saveReview(Review r, boolean update, ReviewCallback cb) {
+  if(!online(cb))return;
+  if(r==null){cb.onError(ErrorCode.VALIDATION,"Review không hợp lệ.");return;}
+  if(!session(r.getCustomerId(),cb))return;
+  DocumentReference ref=db.collection(REVIEWS).document(r.getId());
+  List<String> previousImages=new ArrayList<>();
+  db.runTransaction(tx->{
+   DocumentSnapshot existing=tx.get(ref);
+   DocumentSnapshot order=tx.get(db.collection(ORDERS).document(r.getOrderId()));
+   DocumentSnapshot item=tx.get(order.getReference().collection(ITEMS).document(r.getOrderItemId()));
+   DocumentSnapshot product=tx.get(db.collection("products").document(r.getProductId()));
+   previousImages.clear(); if(existing.exists()) {
+    Object old=existing.get("imageUrls"); if(old instanceof List<?>)for(Object value:(List<?>)old)
+     if(value instanceof String)previousImages.add((String)value);
+   }
+   if(!order.exists()||!item.exists())throw new IllegalStateException("ORDER_ITEM_NOT_FOUND");
+   eligibility.requireEligible(r.getCustomerId(),order.getString("ownerId"),
+    enumValue(OrderOwnerType.class,order.getString("ownerType"),OrderOwnerType.GUEST),
+    enumValue(OrderStatus.class,order.getString("status"),OrderStatus.PENDING),r.getProductId(),item.getString("productId"));
+   boolean withdrawn=existing.exists()&&"DELETED".equals(existing.getString("status"));
+   if(!update&&existing.exists()&&!withdrawn)throw new IllegalStateException("DUPLICATE_REVIEW");
+   if(update&&!existing.exists())throw new IllegalStateException("REVIEW_NOT_FOUND");
+   tx.set(ref,reviewMap(r,existing),SetOptions.merge());
+   FirebaseReviewSummary.update(tx,product,existing,r.getId(),r.getRating());
+   return r;
+  }).addOnSuccessListener(saved->{
+   com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages,saved.getImageUrls()); cb.onSuccess(saved);
+  }).addOnFailureListener(e->fail(e,cb));
+ }
+ public void deleteReview(String id, ActionCallback cb) {
+  if(!online(cb))return; List<String> previousImages=new ArrayList<>();
+  db.runTransaction(tx->{
+   DocumentSnapshot review=tx.get(db.collection(REVIEWS).document(id));
+   if(!review.exists())throw new IllegalStateException("REVIEW_NOT_FOUND");
+   String uid=auth.getCurrentUser()==null?"":auth.getCurrentUser().getUid();
+   if(!uid.equals(review.getString("customerId")))throw new IllegalStateException("REVIEW_FORBIDDEN");
+   if("DELETED".equals(review.getString("status")))return false;
+   DocumentSnapshot product=tx.get(db.collection("products").document(review.getString("productId")));
+   previousImages.clear(); Object raw=review.get("imageUrls");
+   if(raw instanceof List<?>)for(Object value:(List<?>)raw)if(value instanceof String)previousImages.add((String)value);
+   tx.update(review.getReference(),"status","DELETED","imageUrls",Collections.emptyList(),"imagePublicIds",Collections.emptyList(),"updatedAt",FieldValue.serverTimestamp());
+   FirebaseReviewSummary.update(tx,product,review,id,0); return true;
+  }).addOnSuccessListener(v->{
+   com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages,Collections.emptyList());cb.onSuccess();
+  }).addOnFailureListener(e->fail(e,cb));
+ }
  public void createReport(String uid,ReportTargetType type,String targetId,String reason,String description,ReportCallback cb){if(!online(cb)||!session(uid,cb))return;DocumentReference ref=db.collection(REPORTS).document();try{Report r=Report.create(ref.getId(),uid,type,targetId,reason,description,new Date());ref.set(reportMap(r)).addOnSuccessListener(v->cb.onSuccess(r)).addOnFailureListener(e->fail(e,cb));}catch(Exception e){cb.onError(ErrorCode.VALIDATION,e.getMessage());}}
  public void refreshReports(ActionCallback cb){if(!online(cb))return;db.collection(REPORTS).get().addOnSuccessListener(s->{List<Report> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReport(d));reports.setValue(out);cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}
  public void transitionReport(String id,ReportStatus target,String note,ReportCallback cb){if(!online(cb))return;if(target==null){cb.onError(ErrorCode.VALIDATION,"Trạng thái report không hợp lệ.");return;}String admin=auth.getCurrentUser()==null?"":auth.getCurrentUser().getUid();DocumentReference ref=db.collection(REPORTS).document(id);db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(!d.exists())throw new IllegalStateException("REPORT_NOT_FOUND");Report r=mapReport(d);if(target==ReportStatus.IN_REVIEW)r.startReview(admin);else if(target==ReportStatus.RESOLVED)r.resolve(admin,note);else if(target==ReportStatus.REJECTED)r.reject(admin,note);else throw new IllegalStateException("REPORT_TRANSITION_INVALID");tx.update(ref,"status",r.getStatus().name(),"resolvedBy",r.getResolvedBy(),"resolutionNote",clean(r.getResolutionNote()),"updatedAt",FieldValue.serverTimestamp());return r;}).addOnSuccessListener(cb::onSuccess).addOnFailureListener(e->fail(e,cb));}

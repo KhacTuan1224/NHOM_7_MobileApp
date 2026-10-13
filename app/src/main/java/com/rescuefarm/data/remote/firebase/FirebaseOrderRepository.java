@@ -122,6 +122,7 @@ public class FirebaseOrderRepository implements OrderRepository {
                 CheckoutIdempotencyPolicy.isReplay(existing.getString("requestId"),existing.getString("ownerId"),request);
                 return new Result(mapOrder(existing,new ArrayList<>()),true);
             }
+            DocumentSnapshot cartDoc = tx.get(db.collection("customerCarts").document(request.ownerId));
             double shippingDistanceKm = 0D, shippingFee = 0D;
             DocumentSnapshot sellerProfile = null;
             if (request.fulfillmentType == FulfillmentType.DELIVERY
@@ -132,16 +133,10 @@ public class FirebaseOrderRepository implements OrderRepository {
                                 ? "SELLER_BANK_DETAILS_MISSING" : "SHIPPING_CONFIG_MISSING");
             }
             if (request.fulfillmentType == FulfillmentType.DELIVERY) {
-                DocumentSnapshot shippingConfig = tx.get(db.collection("appConfig").document("shipping"));
-                if (!shippingConfig.exists()) throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
-                double sellerLat = number(sellerProfile, "latitude"), sellerLng = number(sellerProfile, "longitude");
-                if ((sellerLat == 0D && sellerLng == 0D) || request.latitude == 0D && request.longitude == 0D)
-                    throw new IllegalStateException("SHIPPING_COORDINATES_MISSING");
-                shippingDistanceKm = distanceKm(sellerLat, sellerLng, request.latitude, request.longitude);
-                double base = number(shippingConfig, "baseFeeVnd");
-                double perKm = number(shippingConfig, "perKmFeeVnd");
-                double freeKm = number(shippingConfig, "freeDistanceKm");
-                shippingFee = base + Math.ceil(Math.max(0D, shippingDistanceKm - freeKm) * perKm);
+                Object configuredFee = sellerProfile.get("shippingFee");
+                if (!(configuredFee instanceof Number)) throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
+                shippingFee = ((Number)configuredFee).doubleValue();
+                if (!Double.isFinite(shippingFee) || shippingFee < 0) throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
             }
             Map<String,DocumentSnapshot> productDocs=new HashMap<>(),batchDocs=new HashMap<>(),promotionDocs=new HashMap<>();
             for(CartItem item:request.items){
@@ -222,6 +217,7 @@ public class FirebaseOrderRepository implements OrderRepository {
                 if (bankCode.isEmpty() || accountName.isEmpty() || accountNumber.isEmpty())
                     throw new IllegalStateException("SELLER_BANK_DETAILS_MISSING");
                 payment.setBankDetails(bankCode, accountName, accountNumber);
+                payment.setQrUrl(clean(sellerProfile.getString("qrUrl")));
             }
             tx.set(db.collection(PAYMENTS).document(request.requestId),paymentMap(payment));
             if(lifecycle.requiresShipment(request.fulfillmentType)){
@@ -241,6 +237,10 @@ public class FirebaseOrderRepository implements OrderRepository {
             if(campaignDoc!=null)tx.update(campaignDoc.getReference(),"reservedQuantity",
                     number(campaignDoc,"reservedQuantity")+campaignReserve,"lastReservationOrderId",request.requestId,
                     "lastReservationQuantity",campaignReserve,"updatedAt",FieldValue.serverTimestamp());
+            if (cartDoc.exists()) tx.update(cartDoc.getReference(), "items",
+                com.rescuefarm.service.cart.CheckoutCartCleanup.remaining(cartDoc.get("items"), request.items),
+                "updatedAt", FieldValue.serverTimestamp());
+            writeOrderNotification(tx, order.getId(), order.getOwnerId(), OrderStatus.PENDING);
             return new Result(order,false);
         }).addOnSuccessListener(r->{cache(r.order);callback.onSuccess(r.order,r.replay);})
                 .addOnFailureListener(e->failure(e,callback));
@@ -266,6 +266,14 @@ public class FirebaseOrderRepository implements OrderRepository {
                 "Tra cứu đơn guest đã tắt để tránh lộ đơn bằng mã đơn và số điện thoại. Hãy đăng nhập tài khoản sở hữu đơn.");
     }
 
+    @Override public void getOrderItems(String orderId, ItemCallback callback) {
+        db.collection(ORDERS).document(orderId).collection(ITEMS).get()
+            .addOnSuccessListener(snapshot -> {
+                List<OrderItem> items = new ArrayList<>();
+                for (DocumentSnapshot d : snapshot.getDocuments()) items.add(mapOrderItem(d));
+                callback.success(items);
+            }).addOnFailureListener(e -> callback.error("Không tải được mặt hàng của đơn."));
+    }
     @Override public void getOrder(String orderId,LifecycleCallback callback){
         if(!network.isOnline()){callback.onError(ErrorCode.NETWORK,"Cần kết nối mạng để tải trạng thái đơn.");return;}
         fetchLifecycle(clean(orderId),false,callback);
@@ -352,6 +360,7 @@ public class FirebaseOrderRepository implements OrderRepository {
             orderUpdate.put("paymentStatus",nextPayment.name());orderUpdate.put("updatedAt",FieldValue.serverTimestamp());
             if(terminal){orderUpdate.put("inventoryFinalized",true);orderUpdate.put("finalizedStatus",target.name());}
             tx.update(orderRef,orderUpdate);
+            writeOrderNotification(tx, orderId, orderDoc.getString("ownerId"), target);
             if(terminal){Map<String,Object> paymentUpdate=new HashMap<>();paymentUpdate.put("status",nextPayment.name());
                 paymentUpdate.put("updatedAt",FieldValue.serverTimestamp());
                 if(nextPayment==PaymentStatus.PAID&&!PaymentStatus.PAID.name().equals(paymentDoc.getString("status")))
@@ -403,6 +412,16 @@ public class FirebaseOrderRepository implements OrderRepository {
         }).addOnFailureListener(e->failure(e,callback));
     }
 
+    private void writeOrderNotification(com.google.firebase.firestore.Transaction tx, String orderId, String uid, OrderStatus status) {
+        String id = orderId + "_" + status.name();
+        Map<String,Object> data = new HashMap<>();
+        data.put("id",id); data.put("userId",uid); data.put("type","ORDER"); data.put("referenceId",orderId);
+        data.put("title","Cập nhật đơn hàng");
+        String[] labels={"Chờ xác nhận","Đã xác nhận","Đang chuẩn bị","Sẵn sàng nhận hàng","Đang giao","Đã giao","Đã hủy"};
+        data.put("body", "Trạng thái đơn hàng: " + labels[status.ordinal()]);
+        data.put("isRead",false); data.put("createdAt",FieldValue.serverTimestamp());
+        tx.set(db.collection("notifications").document(id),data);
+    }
     private void validateRequest(CheckoutRequest r){if(r==null||clean(r.requestId).isEmpty()||r.ownerType==null||clean(r.ownerId).isEmpty()
             ||clean(r.receiverName).length()<2||clean(r.receiverPhone).length()<9||r.fulfillmentType==null||r.paymentMethod==null)
         throw new IllegalArgumentException("Thông tin checkout chưa hợp lệ.");
@@ -427,9 +446,9 @@ public class FirebaseOrderRepository implements OrderRepository {
             d.getString("productId"),d.getString("batchId"),d.getString("productNameSnapshot"),
             d.getString("productImageSnapshot"),d.getString("unitSnapshot"),number(d,"originalPriceSnapshot"),
             number(d,"rescuePriceSnapshot"),number(d,"finalPriceSnapshot"),number(d,"quantity"));}
-    private Map<String,Object> paymentMap(Payment p){Map<String,Object> m=new HashMap<>();m.put("id",p.getId());m.put("orderId",p.getOrderId());m.put("method",p.getMethod().name());m.put("status",p.getStatus().name());m.put("amount",p.getAmount());m.put("referenceCode",clean(p.getReferenceCode()));m.put("bankCode",clean(p.getBankCode()));m.put("bankAccountName",clean(p.getBankAccountName()));m.put("bankAccountNumber",clean(p.getBankAccountNumber()));m.put("paidAt",null);m.put("createdAt",FieldValue.serverTimestamp());m.put("updatedAt",FieldValue.serverTimestamp());return m;}
+    private Map<String,Object> paymentMap(Payment p){Map<String,Object> m=new HashMap<>();m.put("id",p.getId());m.put("orderId",p.getOrderId());m.put("method",p.getMethod().name());m.put("status",p.getStatus().name());m.put("amount",p.getAmount());m.put("referenceCode",clean(p.getReferenceCode()));m.put("bankCode",clean(p.getBankCode()));m.put("bankAccountName",clean(p.getBankAccountName()));m.put("bankAccountNumber",clean(p.getBankAccountNumber()));m.put("qrUrl",p.getQrUrl());m.put("paidAt",null);m.put("createdAt",FieldValue.serverTimestamp());m.put("updatedAt",FieldValue.serverTimestamp());return m;}
     private Map<String,Object> shipmentMap(Shipment s){Map<String,Object> m=new HashMap<>();m.put("id",s.getId());m.put("orderId",s.getOrderId());m.put("carrierName",clean(s.getCarrierName()));m.put("trackingCode",clean(s.getTrackingCode()));m.put("status",s.getStatus().name());m.put("distanceKm",s.getDistanceKm());m.put("shippingFee",s.getShippingFee());m.put("createdAt",FieldValue.serverTimestamp());m.put("updatedAt",FieldValue.serverTimestamp());return m;}
-    private Payment mapPayment(DocumentSnapshot d){Payment value=Payment.restore(d.getId(),d.getString("orderId"),enumValue(PaymentMethod.class,d.getString("method"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("status"),PaymentStatus.UNPAID),number(d,"amount"),d.getString("referenceCode"),date(d,"paidAt"));value.setBankDetails(d.getString("bankCode"),d.getString("bankAccountName"),d.getString("bankAccountNumber"));return value;}
+    private Payment mapPayment(DocumentSnapshot d){Payment value=Payment.restore(d.getId(),d.getString("orderId"),enumValue(PaymentMethod.class,d.getString("method"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("status"),PaymentStatus.UNPAID),number(d,"amount"),d.getString("referenceCode"),date(d,"paidAt"));value.setBankDetails(d.getString("bankCode"),d.getString("bankAccountName"),d.getString("bankAccountNumber"));value.setQrUrl(d.getString("qrUrl"));return value;}
     private Shipment mapShipment(DocumentSnapshot d){return Shipment.restore(d.getId(),d.getString("orderId"),d.getString("carrierName"),d.getString("trackingCode"),enumValue(ShipmentStatus.class,d.getString("status"),ShipmentStatus.PENDING),number(d,"distanceKm"),number(d,"shippingFee"));}
     private Map<String,Double> reservationMap(Object raw){Map<String,Double> result=new HashMap<>();if(raw instanceof Map<?,?>)for(Map.Entry<?,?> e:((Map<?,?>)raw).entrySet())if(e.getKey() instanceof String&&e.getValue() instanceof Number){double quantity=((Number)e.getValue()).doubleValue();if(quantity>0D)result.put((String)e.getKey(),quantity);}if(result.isEmpty())throw new IllegalStateException("RESERVATIONS_MISSING");return result;}
     private Order mapOrder(DocumentSnapshot d,List<OrderItem> items){return Order.restore(d.getId(),enumValue(OrderOwnerType.class,d.getString("ownerType"),OrderOwnerType.GUEST),d.getString("ownerId"),d.getString("orderCode"),d.getString("sellerId"),d.getString("campaignId"),enumValue(FulfillmentType.class,d.getString("fulfillmentType"),FulfillmentType.PICKUP),d.getString("receiverName"),d.getString("receiverPhone"),d.getString("receiverAddress"),number(d,"receiverLatitude"),number(d,"receiverLongitude"),number(d,"subtotal"),number(d,"quantityDiscount"),number(d,"shippingFee"),number(d,"totalAmount"),enumValue(PaymentMethod.class,d.getString("paymentMethod"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("paymentStatus"),PaymentStatus.UNPAID),enumValue(OrderStatus.class,d.getString("status"),OrderStatus.PENDING),d.getString("note"),date(d,"createdAt"),date(d,"updatedAt"),items);}
@@ -437,7 +456,7 @@ public class FirebaseOrderRepository implements OrderRepository {
             OrderCacheMapper.toEntity(value,System.currentTimeMillis())));}
     private List<OrderCacheEntity> toEntities(List<Order> values){List<OrderCacheEntity> result=new ArrayList<>();
         long now=System.currentTimeMillis();for(Order value:values)result.add(OrderCacheMapper.toEntity(value,now));return result;}
-    private void failure(Exception e,OrderCallback c){String m=e.getMessage();if("QUOTE_CHANGED".equals(m)){c.onError(ErrorCode.CONFLICT,"QUOTE_CHANGED: Giá sản phẩm hoặc phí giao hàng vừa thay đổi. Báo giá mới đã được tải; vui lòng kiểm tra và xác nhận lại.");return;}if("SELLER_BANK_DETAILS_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Seller chưa cấu hình đủ mã ngân hàng, tên chủ tài khoản và số tài khoản trong hồ sơ cửa hàng.");return;}if("SHIPPING_CONFIG_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Chưa cấu hình phí giao hàng hoặc tọa độ seller. Cần tạo appConfig/shipping và cập nhật hồ sơ cửa hàng.");return;}if("SHIPPING_COORDINATES_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Thiếu tọa độ cửa hàng hoặc địa chỉ nhận hàng nên chưa thể tính phí theo km.");return;}if(m!=null&&(m.contains("Insufficient")||m.contains("unavailable")||m.contains("BATCH")||m.contains("PRODUCT"))){c.onError(ErrorCode.INSUFFICIENT_STOCK,"Tồn kho đã thay đổi hoặc batch không còn bán.");return;}if("CAMPAIGN_CONFLICT".equals(m)){c.onError(ErrorCode.CAMPAIGN_CONFLICT,"Nhận tại điểm giải cứu cần Campaign hợp lệ, cùng batch được phân bổ và còn đủ lượng khả dụng.");return;}if("IDEMPOTENCY_CONFLICT".equals(m)){c.onError(ErrorCode.CONFLICT,"Idempotency key đã được dùng cho request khác.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Firestore Rules từ chối checkout.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể tạo đơn; transaction đã rollback.");}
+    private void failure(Exception e,OrderCallback c){String m=e.getMessage();if("QUOTE_CHANGED".equals(m)){c.onError(ErrorCode.CONFLICT,"QUOTE_CHANGED: Giá sản phẩm hoặc phí giao hàng vừa thay đổi. Báo giá mới đã được tải; vui lòng kiểm tra và xác nhận lại.");return;}if("SELLER_BANK_DETAILS_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Seller chưa cấu hình đủ mã ngân hàng, tên chủ tài khoản và số tài khoản trong hồ sơ cửa hàng.");return;}if("SHIPPING_CONFIG_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Người bán chưa cấu hình phí giao hàng cố định trong hồ sơ cửa hàng.");return;}if("SHIPPING_COORDINATES_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Thiếu tọa độ cửa hàng hoặc địa chỉ nhận hàng nên chưa thể tính phí theo km.");return;}if(m!=null&&(m.contains("Insufficient")||m.contains("unavailable")||m.contains("BATCH")||m.contains("PRODUCT"))){c.onError(ErrorCode.INSUFFICIENT_STOCK,"Tồn kho đã thay đổi hoặc batch không còn bán.");return;}if("CAMPAIGN_CONFLICT".equals(m)){c.onError(ErrorCode.CAMPAIGN_CONFLICT,"Nhận tại điểm giải cứu cần Campaign hợp lệ, cùng batch được phân bổ và còn đủ lượng khả dụng.");return;}if("IDEMPOTENCY_CONFLICT".equals(m)){c.onError(ErrorCode.CONFLICT,"Idempotency key đã được dùng cho request khác.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Firestore Rules từ chối checkout.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể tạo đơn; transaction đã rollback.");}
     private void failure(Exception e,ActionCallback c){if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED)c.onError(ErrorCode.FORBIDDEN,"Không có quyền đọc đơn.");else c.onError(ErrorCode.UNKNOWN,"Không thể tải đơn.");}
     private void failure(Exception e,LifecycleCallback c){String m=e.getMessage()==null?"":e.getMessage();if(m.contains("ORDER_NOT_FOUND")){c.onError(ErrorCode.NOT_FOUND,"Không tìm thấy đơn.");return;}if(m.contains("ILLEGAL_ORDER_TRANSITION")){c.onError(ErrorCode.VALIDATION,"Chuyển trạng thái đơn không hợp lệ.");return;}if(m.contains("BANK_TRANSFER_NOT_CONFIRMED")){c.onError(ErrorCode.CONFLICT,"Cần xác nhận chuyển khoản thủ công trước khi hoàn tất đơn.");return;}if(m.contains("PAID_ORDER_REQUIRES_REFUND")){c.onError(ErrorCode.CONFLICT,"Đơn đã thanh toán cần quy trình hoàn tiền, không thể hủy trực tiếp.");return;}if(m.contains("FINALIZED")||m.contains("reserved")||m.contains("CAMPAIGN")||m.contains("RESERVATIONS")){c.onError(ErrorCode.CONFLICT,"Tồn kho hoặc campaign đã thay đổi; transaction đã rollback.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Bạn không có quyền cập nhật đơn này.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể cập nhật đơn; transaction đã rollback.");}
     private static double number(DocumentSnapshot d,String f){Object v=d.get(f);return v instanceof Number?((Number)v).doubleValue():0D;}private static long longValue(DocumentSnapshot d,String f){Long v=d.getLong(f);return v==null?0L:v;}private static Date date(DocumentSnapshot d,String f){Timestamp v=d.getTimestamp(f);return v==null?null:v.toDate();}private static String clean(String v){return v==null?"":v.trim();}private static <T extends Enum<T>>T enumValue(Class<T> t,String v,T fallback){try{return Enum.valueOf(t,v==null?"":v);}catch(Exception e){return fallback;}}

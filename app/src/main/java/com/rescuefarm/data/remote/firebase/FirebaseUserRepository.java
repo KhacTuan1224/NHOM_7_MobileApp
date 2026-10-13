@@ -30,6 +30,12 @@ import java.util.List;
 import java.util.Map;
 
 public class FirebaseUserRepository implements UserRepository {
+    @Override public androidx.lifecycle.LiveData<com.rescuefarm.data.repository.SellerStorefront> observePublicStorefront(String id) {
+        return new FirebaseStorefrontRepository().observe(id);
+    }
+    @Override public void getPublicStorefront(String id, com.rescuefarm.data.repository.StorefrontRepository.Callback callback) {
+        new FirebaseStorefrontRepository().load(id, callback);
+    }
     private static final String USERS = "users";
     private static final String ADDRESSES = "addresses";
     private static final String SELLER_APPLICATIONS = "sellerApplications";
@@ -134,7 +140,7 @@ public class FirebaseUserRepository implements UserRepository {
         user(sellerId).get().addOnSuccessListener(previous -> {
             com.google.firebase.firestore.WriteBatch batch = firestore.batch();
             batch.update(user(sellerId), fields);
-            batch.set(firestore.collection("sellerPublicProfiles").document(sellerId), publicProfile);
+            batch.set(firestore.collection("sellerPublicProfiles").document(sellerId), publicProfile, com.google.firebase.firestore.SetOptions.merge());
             batch.commit().addOnSuccessListener(unused -> {
                     com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
                             previous.getString("shopAvatarUrl"), shopAvatarUrl);

@@ -330,6 +330,7 @@
         android:name="com.rescuefarm.ui.feed.PostEditorFragment" android:label="@string/post_editor_title" />
     <fragment android:id="@+id/favoriteFragment" android:name="com.rescuefarm.ui.engagement.FavoriteFragment" android:label="@string/favorites_title"><action android:id="@+id/action_favoriteFragment_to_productDetailFragment" app:destination="@id/productDetailFragment" /></fragment>
     <fragment android:id="@+id/reviewFragment" android:name="com.rescuefarm.ui.engagement.ReviewFragment" android:label="@string/reviews_title" />
+    <fragment android:id="@+id/storefrontFragment" android:name="com.rescuefarm.ui.profile.StorefrontFragment" android:label="Cấu hình cửa hàng" />
     <fragment android:id="@+id/publicSellerProfileFragment" android:name="com.rescuefarm.ui.profile.PublicSellerProfileFragment" android:label="Hồ sơ cửa hàng" />
     <fragment android:id="@+id/reportFragment" android:name="com.rescuefarm.ui.engagement.ReportFragment" android:label="@string/report_action" />
     <fragment android:id="@+id/notificationFragment" android:name="com.rescuefarm.ui.engagement.NotificationFragment" android:label="@string/notifications_title"><deepLink app:uri="rescuefarm://notifications" /></fragment>

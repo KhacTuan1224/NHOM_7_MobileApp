@@ -129,7 +129,7 @@ service cloud.firestore {
             'id', 'sellerId', 'categoryId', 'name', 'description', 'originalPrice',
             'rescuePrice', 'unit', 'origin', 'province', 'imageUrls', 'imagePublicIds', 'averageRating',
             'reviewCount', 'status', 'createdAt', 'updatedAt', 'moderatedBy',
-            'moderatedAt', 'moderationReason'
+            'moderatedAt', 'moderationReason', 'ratingSum', 'lastReviewId'
           ])
           && data.id is string && data.sellerId is string
           && data.name is string
@@ -239,6 +239,10 @@ service cloud.firestore {
           && data.subtotal is number && data.subtotal >= 0
           && data.quantityDiscount is number && data.quantityDiscount >= 0
           && data.shippingFee is number && data.shippingFee >= 0
+          && (data.fulfillmentType == 'DELIVERY'
+            ? exists(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId))
+              && data.shippingFee == get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.shippingFee
+            : data.shippingFee == 0)
           && data.totalAmount is number && data.totalAmount >= 0
           && data.totalAmount == data.subtotal - data.quantityDiscount + data.shippingFee
           && data.paymentMethod in ['COD', 'BANK_TRANSFER', 'CASH_ON_SITE']
@@ -634,7 +638,7 @@ service cloud.firestore {
           && request.auth.uid == sellerId
           && request.resource.data.keys().hasOnly([
             'sellerId', 'shopName', 'shopDescription', 'shopAvatarUrl', 'address',
-            'latitude', 'longitude', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'updatedAt'
+            'latitude', 'longitude', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'shippingFee', 'qrUrl', 'updatedAt'
           ])
           && request.resource.data.sellerId == sellerId
           && request.resource.data.shopName is string && request.resource.data.shopName.size() <= 120
@@ -648,6 +652,10 @@ service cloud.firestore {
           && request.resource.data.bankCode is string && request.resource.data.bankCode.size() <= 24
           && request.resource.data.bankAccountName is string && request.resource.data.bankAccountName.size() <= 120
           && request.resource.data.bankAccountNumber is string && request.resource.data.bankAccountNumber.size() <= 40
+          && request.resource.data.get('shippingFee', 0) is number
+          && request.resource.data.get('shippingFee', 0) >= 0 && request.resource.data.get('shippingFee', 0) <= 1000000
+          && request.resource.data.get('qrUrl', '') is string && request.resource.data.get('qrUrl', '').size() <= 2048
+          && (request.resource.data.get('qrUrl', '') == '' || request.resource.data.qrUrl.matches('https://.*'))
           && request.resource.data.updatedAt == request.time;
       allow delete: if isAdmin() || (request.auth.uid == sellerId && hasRole(sellerId, 'SELLER'));
     }
@@ -723,6 +731,30 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    function reviewSummaryWritten(productId, reviewId) {
+      let product = getAfter(/databases/$(database)/documents/products/$(productId)).data;
+      return product.lastReviewId == reviewId && product.updatedAt == request.time;
+    }
+
+    function validReviewSummaryChange(before, after, productId) {
+      let reviewId = after.lastReviewId;
+      let reviewPath = /databases/$(database)/documents/reviews/$(reviewId);
+      let next = getAfter(reviewPath).data;
+      let oldPublished = exists(reviewPath) && get(reviewPath).data.status == 'PUBLISHED';
+      let nextPublished = next.status == 'PUBLISHED';
+      let oldRating = oldPublished ? get(reviewPath).data.rating : 0;
+      let nextRating = nextPublished ? next.rating : 0;
+      let count = before.reviewCount + (nextPublished ? 1 : 0) - (oldPublished ? 1 : 0);
+      let sum = before.get('ratingSum', before.averageRating * before.reviewCount) + nextRating - oldRating;
+      return (isOwner(next.customerId) && hasRole(next.customerId, 'CUSTOMER') || isAdmin())
+          && next.productId == productId && next.updatedAt == request.time
+          && after.reviewCount == count && count >= 0
+          && after.ratingSum == sum && sum >= 0 && sum <= count * 5
+          && after.averageRating == (count == 0 ? 0 : sum / (count * 1.0))
+          && after.updatedAt == request.time
+          && after.diff(before).affectedKeys().hasOnly(['reviewCount', 'ratingSum', 'averageRating', 'lastReviewId', 'updatedAt']);
+    }
+
     match /products/{productId} {
       allow get, list: if resource.data.status == 'ACTIVE'
           || (isSignedIn() && resource.data.sellerId == request.auth.uid) || isAdmin();
@@ -740,6 +772,8 @@ service cloud.firestore {
           && request.resource.data.sellerId == resource.data.sellerId
           && request.resource.data.averageRating == resource.data.averageRating
           && request.resource.data.reviewCount == resource.data.reviewCount
+          && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
+          && request.resource.data.get('lastReviewId', '') == resource.data.get('lastReviewId', '')
           && validProduct(request.resource.data)
           && hasNoCredentialFields(request.resource.data))
         || (isAdmin()
@@ -755,7 +789,8 @@ service cloud.firestore {
           && (request.resource.data.status != 'HIDDEN'
             || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data)
-          && hasNoCredentialFields(request.resource.data));
+          && hasNoCredentialFields(request.resource.data))
+        || validReviewSummaryChange(resource.data, request.resource.data, productId);
       allow delete: if false;
     }
 
@@ -884,7 +919,7 @@ service cloud.firestore {
       allow list: if false;
       allow create: if request.resource.data.keys().hasOnly([
             'id', 'orderId', 'method', 'status', 'amount', 'referenceCode',
-            'bankCode', 'bankAccountName', 'bankAccountNumber', 'paidAt', 'createdAt', 'updatedAt'
+            'bankCode', 'bankAccountName', 'bankAccountNumber', 'qrUrl', 'paidAt', 'createdAt', 'updatedAt'
           ])
           && paymentId == request.resource.data.orderId
           && request.resource.data.id == paymentId
@@ -893,6 +928,8 @@ service cloud.firestore {
           && request.resource.data.updatedAt == request.time
           && request.resource.data.amount == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.totalAmount
           && request.resource.data.method == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.paymentMethod
+          && request.resource.data.get('qrUrl', '') is string
+          && request.resource.data.get('qrUrl', '').size() <= 2048
           && request.resource.data.status == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.paymentStatus
           && request.resource.data.bankCode is string && request.resource.data.bankCode.size() <= 24
           && request.resource.data.bankAccountName is string && request.resource.data.bankAccountName.size() <= 120
@@ -1128,9 +1165,14 @@ service cloud.firestore {
     }
 
     match /reviews/{reviewId} {
-      allow get, list: if resource.data.status == 'PUBLISHED'
+      allow get: if (!exists(/databases/$(database)/documents/reviews/$(reviewId))
+          && isSignedIn() && hasRole(request.auth.uid, 'CUSTOMER'))
+        || (exists(/databases/$(database)/documents/reviews/$(reviewId))
+          && (resource.data.status == 'PUBLISHED' || isOwner(resource.data.customerId) || isAdmin()));
+      allow list: if resource.data.status == 'PUBLISHED'
           || (isSignedIn() && resource.data.customerId == request.auth.uid) || isAdmin();
       allow create: if hasRole(request.auth.uid, 'CUSTOMER')
+          && reviewSummaryWritten(request.resource.data.productId, reviewId)
           && request.resource.data.keys().hasOnly([
             'id', 'customerId', 'productId', 'orderId', 'orderItemId', 'rating',
             'content', 'imageUrls', 'imagePublicIds', 'status', 'createdAt', 'updatedAt'
@@ -1151,7 +1193,7 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status == 'DELIVERED'
           && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId)/items/$(request.resource.data.orderItemId))
           && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)/items/$(request.resource.data.orderItemId)).data.productId == request.resource.data.productId;
-      allow update: if (hasRole(request.auth.uid, 'CUSTOMER')
+      allow update: if reviewSummaryWritten(resource.data.productId, reviewId) && ((hasRole(request.auth.uid, 'CUSTOMER')
           && request.resource.data.keys().hasOnly([
             'id', 'customerId', 'productId', 'orderId', 'orderItemId', 'rating',
             'content', 'imageUrls', 'imagePublicIds', 'status', 'createdAt', 'updatedAt',
@@ -1164,14 +1206,15 @@ service cloud.firestore {
           && request.resource.data.orderId == resource.data.orderId
           && request.resource.data.orderItemId == resource.data.orderItemId
           && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.status == 'PUBLISHED'
+          && resource.data.status in ['PUBLISHED', 'DELETED']
+          && request.resource.data.status in ['PUBLISHED', 'DELETED']
           && request.resource.data.rating is int
           && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
           && request.resource.data.content is string && request.resource.data.content.size() <= 1000
           && request.resource.data.imageUrls is list && request.resource.data.imageUrls.size() <= 5
           && request.resource.data.get('imagePublicIds', []) is list && request.resource.data.get('imagePublicIds', []).size() <= 5
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'rating', 'content', 'imageUrls', 'imagePublicIds', 'updatedAt'
+            'rating', 'content', 'imageUrls', 'imagePublicIds', 'status', 'updatedAt'
           ])
           && request.resource.data.updatedAt == request.time)
         || (isAdmin()
@@ -1186,9 +1229,8 @@ service cloud.firestore {
           ])
           && (!(request.resource.data.status in ['REJECTED', 'HIDDEN'])
             || request.resource.data.moderationReason.size() >= 3)
-          && hasAdminModerationFields(request.resource.data));
-      allow delete: if hasRole(request.auth.uid, 'CUSTOMER')
-          && resource.data.customerId == request.auth.uid;
+          && hasAdminModerationFields(request.resource.data)));
+      allow delete: if false;
     }
 
     match /reports/{reportId} {
@@ -1228,9 +1270,19 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function orderNotificationAllowed(data, id) {
+      let path = /databases/$(database)/documents/orders/$(data.referenceId);
+      let order = getAfter(path).data;
+      return data.type == 'ORDER' && data.userId == order.ownerId
+          && id == data.referenceId + '_' + order.status
+          && (exists(path) ? get(path).data.status != order.status && lifecycleActor(order)
+              : order.status == 'PENDING' && checkoutOwnerAllowed(order));
+    }
+
     match /notifications/{notificationId} {
       allow get, list: if isActiveAccount() && resource.data.userId == request.auth.uid;
-      allow create: if isAdmin() && request.resource.data.id == notificationId
+      allow create: if (isAdmin() || orderNotificationAllowed(request.resource.data, notificationId))
+          && request.resource.data.id == notificationId
           && request.resource.data.keys().hasOnly([
             'id', 'userId', 'type', 'title', 'body', 'referenceId', 'isRead', 'createdAt'
           ])

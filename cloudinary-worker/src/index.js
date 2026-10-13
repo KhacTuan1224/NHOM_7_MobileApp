@@ -133,6 +133,8 @@ async function resolveAsset(body, uid, profile) {
     return { publicId: `rescuefarm/users/${uid}/avatar`, assetFolder: `rescuefarm_assets/avatars/${uid}` };
   if (type === "shopAvatar" && resourceId === uid && profile.role === "SELLER")
     return { publicId: `rescuefarm/sellers/${uid}/shop-avatar`, assetFolder: `rescuefarm_assets/avatars/${uid}` };
+  if (type === "paymentQr" && resourceId === uid && profile.role === "SELLER" && profile.sellerStatus === "APPROVED")
+    return { publicId: `rescuefarm/sellers/${uid}/payment-qr`, assetFolder: `rescuefarm_assets/payment_qr/${uid}` };
   if (type === "sellerProof" && resourceId === uid)
     return { publicId: `rescuefarm/sellers/${uid}/application-proof`, assetFolder: `rescuefarm_assets/seller_applications/${uid}` };
   if (type === "product" && profile.role === "SELLER" && profile.sellerStatus === "APPROVED")
