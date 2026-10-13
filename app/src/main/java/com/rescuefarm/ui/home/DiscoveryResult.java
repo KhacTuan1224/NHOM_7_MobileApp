@@ -17,6 +17,9 @@ public final class DiscoveryResult {
     public static DiscoveryResult product(Product value) {
         return new DiscoveryResult(Type.PRODUCT, value, null, Double.NaN);
     }
+    public static DiscoveryResult product(Product value, double distance) {
+        return new DiscoveryResult(Type.PRODUCT, value, null, distance);
+    }
     public static DiscoveryResult campaign(RescueCampaign value, double distance) {
         return new DiscoveryResult(Type.CAMPAIGN, null, value, distance);
     }

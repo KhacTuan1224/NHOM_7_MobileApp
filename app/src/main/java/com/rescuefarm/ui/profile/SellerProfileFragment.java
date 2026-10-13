@@ -27,7 +27,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerProfileFragment extends Fragment {
-    private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput, addressInput;
+    private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput, addressInput,
+            bankCodeInput, bankAccountNameInput, bankAccountNumberInput, latitudeInput, longitudeInput;
     private ImageView sellerAvatarView;
     private boolean dirty, binding;
     private TextView avatarUploadStatus;
@@ -48,6 +49,11 @@ public class SellerProfileFragment extends Fragment {
         descriptionInput = view.findViewById(R.id.sellerDescriptionInput);
         avatarInput = view.findViewById(R.id.sellerAvatarInput);
         addressInput = view.findViewById(R.id.sellerAddressInput);
+        bankCodeInput = view.findViewById(R.id.sellerBankCodeInput);
+        bankAccountNameInput = view.findViewById(R.id.sellerBankAccountNameInput);
+        bankAccountNumberInput = view.findViewById(R.id.sellerBankAccountNumberInput);
+        latitudeInput = view.findViewById(R.id.sellerLatitudeInput);
+        longitudeInput = view.findViewById(R.id.sellerLongitudeInput);
         sellerAvatarView = view.findViewById(R.id.sellerProfileAvatar);
         avatarUploadStatus = view.findViewById(R.id.sellerAvatarUploadStatus);
         uploadAvatarButton = view.findViewById(R.id.uploadSellerAvatarButton);
@@ -70,9 +76,16 @@ public class SellerProfileFragment extends Fragment {
         view.findViewById(R.id.openSellerOrdersButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(
                         R.id.action_sellerProfileFragment_to_sellerOrderListFragment));
-        view.findViewById(R.id.saveSellerProfileButton).setOnClickListener(v ->
+        view.findViewById(R.id.saveSellerProfileButton).setOnClickListener(v -> {
+            try {
                 viewModel.updateSellerProfile(text(representativeInput), text(shopNameInput),
-                        text(descriptionInput), text(avatarInput), text(addressInput)));
+                        text(descriptionInput), text(avatarInput), text(addressInput),
+                        text(bankCodeInput), text(bankAccountNameInput), text(bankAccountNumberInput),
+                        coordinate(latitudeInput, true), coordinate(longitudeInput, false));
+            } catch (IllegalArgumentException error) {
+                Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
         view.findViewById(R.id.logoutButton).setOnClickListener(unused ->
                 new MaterialAlertDialogBuilder(requireContext())
                         .setTitle(R.string.logout_title)
@@ -119,6 +132,9 @@ public class SellerProfileFragment extends Fragment {
         descriptionInput.addTextChangedListener(watcher);
         avatarInput.addTextChangedListener(watcher);
         addressInput.addTextChangedListener(watcher);
+        bankCodeInput.addTextChangedListener(watcher); bankAccountNameInput.addTextChangedListener(watcher);
+        bankAccountNumberInput.addTextChangedListener(watcher); latitudeInput.addTextChangedListener(watcher);
+        longitudeInput.addTextChangedListener(watcher);
         viewModel.observeProfile().observe(getViewLifecycleOwner(), user -> {
             if (user instanceof Seller) {
                 if (!dirty) populate((Seller) user);
@@ -137,6 +153,10 @@ public class SellerProfileFragment extends Fragment {
         avatarUploadStatus.setText(seller.getShopAvatarUrl() == null || seller.getShopAvatarUrl().trim().isEmpty()
                 ? R.string.no_avatar_selected : R.string.avatar_uploaded_status);
         addressInput.setText(seller.getAddress());
+        bankCodeInput.setText(seller.getBankCode()); bankAccountNameInput.setText(seller.getBankAccountName());
+        bankAccountNumberInput.setText(seller.getBankAccountNumber());
+        latitudeInput.setText(seller.getLatitude() == 0D ? "" : String.valueOf(seller.getLatitude()));
+        longitudeInput.setText(seller.getLongitude() == 0D ? "" : String.valueOf(seller.getLongitude()));
         binding = false;
     }
 
@@ -158,5 +178,16 @@ public class SellerProfileFragment extends Fragment {
 
     private static String text(TextInputEditText input) {
         return input.getText() == null ? "" : input.getText().toString();
+    }
+    private double coordinate(TextInputEditText input, boolean latitude) {
+        String value = text(input).trim(); if (value.isEmpty()) return 0D;
+        try {
+            double parsed = Double.parseDouble(value.replace(',', '.'));
+            if (!Double.isFinite(parsed) || (latitude ? parsed < -90D || parsed > 90D
+                    : parsed < -180D || parsed > 180D)) throw new NumberFormatException();
+            return parsed;
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException(latitude ? "Vĩ độ không hợp lệ." : "Kinh độ không hợp lệ.");
+        }
     }
 }

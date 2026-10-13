@@ -99,6 +99,15 @@ public class ProductDetailFragment extends Fragment {
         view.findViewById(R.id.openCartButton).setOnClickListener(Navigation.createNavigateOnClickListener(
                 R.id.action_productDetailFragment_to_cartFragment));
         view.findViewById(R.id.openReviewsButton).setOnClickListener(v -> { Bundle b=new Bundle();b.putString("productId",productId);Navigation.findNavController(v).navigate(R.id.action_productDetailFragment_to_reviewFragment,b); });
+        view.findViewById(R.id.openPublicSellerButton).setOnClickListener(v -> {
+            if (currentProduct == null || currentProduct.getSellerId() == null
+                    || currentProduct.getSellerId().trim().isEmpty()) {
+                Toast.makeText(requireContext(), "Chưa có hồ sơ công khai của cửa hàng.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Bundle args = new Bundle(); args.putString("sellerId", currentProduct.getSellerId());
+            Navigation.findNavController(v).navigate(R.id.action_productDetailFragment_to_publicSellerProfileFragment, args);
+        });
         view.findViewById(R.id.reportProductButton).setOnClickListener(v -> { Bundle b=new Bundle();b.putString("targetType","PRODUCT");b.putString("targetId",productId);Navigation.findNavController(v).navigate(R.id.action_productDetailFragment_to_reportFragment,b); });
         viewModel.loadProduct(productId); viewModel.refreshBatches(productId);
     }

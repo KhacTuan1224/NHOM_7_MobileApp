@@ -11,6 +11,9 @@ public class Seller extends User {
     private String address;
     private SellerStatus sellerStatus;
     private double averageRating;
+    private String bankCode = "";
+    private String bankAccountName = "";
+    private String bankAccountNumber = "";
 
     public Seller() { super(); }
 
@@ -49,6 +52,11 @@ public class Seller extends User {
     }
 
     public boolean canSell() { return sellerStatus == SellerStatus.APPROVED; }
+    public void updateBankDetails(String bankCode, String bankAccountName, String bankAccountNumber) {
+        this.bankCode = bankCode == null ? "" : bankCode.trim();
+        this.bankAccountName = bankAccountName == null ? "" : bankAccountName.trim();
+        this.bankAccountNumber = bankAccountNumber == null ? "" : bankAccountNumber.trim();
+    }
     public String getShopName() { return shopName; }
     public String getRepresentativeName() { return representativeName; }
     public String getShopDescription() { return shopDescription; }
@@ -56,4 +64,7 @@ public class Seller extends User {
     public String getAddress() { return address; }
     public SellerStatus getSellerStatus() { return sellerStatus; }
     public double getAverageRating() { return averageRating; }
+    public String getBankCode() { return bankCode; }
+    public String getBankAccountName() { return bankAccountName; }
+    public String getBankAccountNumber() { return bankAccountNumber; }
 }

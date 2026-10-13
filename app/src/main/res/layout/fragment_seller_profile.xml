@@ -63,6 +63,39 @@
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerAddressInput"
                 android:layout_width="match_parent" android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:text="Tài khoản nhận chuyển khoản (VietQR)"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall" />
+        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm" android:hint="Mã ngân hàng VietQR (ví dụ: MB, VCB)">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerBankCodeInput"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textCapCharacters" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm" android:hint="Tên chủ tài khoản">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerBankAccountNameInput"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textCapCharacters" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm" android:hint="Số tài khoản">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerBankAccountNumberInput"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:text="Tọa độ lấy hàng của cửa hàng (để tính phí theo km)"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerLatitudeInput"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:hint="Vĩ độ" android:inputType="numberDecimal|numberSigned" />
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerLongitudeInput"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:hint="Kinh độ" android:inputType="numberDecimal|numberSigned" />
+        </LinearLayout>
         <com.google.android.material.button.MaterialButton android:id="@+id/saveSellerProfileButton"
             style="@style/Widget.RescueFarm.ProfilePrimaryButton"
             android:layout_width="match_parent" android:layout_height="42dp"

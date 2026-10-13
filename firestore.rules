@@ -65,7 +65,7 @@ service cloud.firestore {
             'id', 'email', 'fullName', 'phone', 'avatarUrl', 'avatarPublicId', 'role', 'status',
             'sellerStatus', 'customerType', 'companyName', 'taxCode',
             'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'shopAvatarPublicId',
-            'address', 'latitude', 'longitude', 'defaultAddressId',
+            'address', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'latitude', 'longitude', 'defaultAddressId',
             'createdAt', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && data.id == userId
@@ -84,7 +84,8 @@ service cloud.firestore {
           && (data.role != 'CUSTOMER'
             || (!data.keys().hasAny([
                   'sellerStatus', 'representativeName', 'shopName', 'shopDescription',
-                  'shopAvatarUrl', 'shopAvatarPublicId', 'address'
+                  'shopAvatarUrl', 'shopAvatarPublicId', 'address',
+                  'bankCode', 'bankAccountName', 'bankAccountNumber'
                 ])
               && data.get('customerType', 'INDIVIDUAL') in ['INDIVIDUAL', 'BUSINESS']
               && data.get('companyName', '') is string && data.get('companyName', '').size() <= 160
@@ -99,7 +100,10 @@ service cloud.firestore {
               && data.get('shopAvatarUrl', '') is string
               && data.get('shopAvatarUrl', '').size() <= 2048
               && data.get('shopAvatarPublicId', '') is string && data.get('shopAvatarPublicId', '').size() <= 300
-              && data.get('address', '') is string && data.get('address', '').size() <= 500));
+              && data.get('address', '') is string && data.get('address', '').size() <= 500
+              && data.get('bankCode', '') is string && data.get('bankCode', '').size() <= 24
+              && data.get('bankAccountName', '') is string && data.get('bankAccountName', '').size() <= 120
+              && data.get('bankAccountNumber', '') is string && data.get('bankAccountNumber', '').size() <= 40));
     }
 
     function validSellerApplication(data, sellerId) {
@@ -542,7 +546,7 @@ service cloud.firestore {
             'id', 'email', 'fullName', 'phone', 'avatarUrl', 'avatarPublicId', 'role', 'status',
             'sellerStatus', 'customerType', 'companyName', 'taxCode',
             'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'shopAvatarPublicId',
-            'address', 'latitude', 'longitude', 'defaultAddressId', 'createdAt',
+            'address', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'latitude', 'longitude', 'defaultAddressId', 'createdAt',
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && request.resource.data.updatedAt == request.time
@@ -552,7 +556,8 @@ service cloud.firestore {
               || request.resource.data.sellerStatus == resource.data.sellerStatus)
           && (resource.data.role == 'SELLER'
               || !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-                'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'shopAvatarPublicId', 'address'
+                'representativeName', 'shopName', 'shopDescription', 'shopAvatarUrl', 'shopAvatarPublicId', 'address',
+                'bankCode', 'bankAccountName', 'bankAccountNumber'
               ]))
           && hasNoCredentialFields(request.resource.data))
         || (isAdmin()
@@ -619,6 +624,44 @@ service cloud.firestore {
             && request.resource.data.updatedAt == request.time;
         allow delete: if hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER');
       }
+    }
+
+    match /sellerPublicProfiles/{sellerId} {
+      // Public shop and payment details are needed by customer checkout and seller discovery.
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if hasRole(sellerId, 'SELLER')
+          && request.auth.uid == sellerId
+          && request.resource.data.keys().hasOnly([
+            'sellerId', 'shopName', 'shopDescription', 'shopAvatarUrl', 'address',
+            'latitude', 'longitude', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'updatedAt'
+          ])
+          && request.resource.data.sellerId == sellerId
+          && request.resource.data.shopName is string && request.resource.data.shopName.size() <= 120
+          && request.resource.data.shopDescription is string && request.resource.data.shopDescription.size() <= 2000
+          && request.resource.data.shopAvatarUrl is string && request.resource.data.shopAvatarUrl.size() <= 2048
+          && request.resource.data.address is string && request.resource.data.address.size() <= 500
+          && request.resource.data.latitude is number && request.resource.data.latitude >= -90
+          && request.resource.data.latitude <= 90
+          && request.resource.data.longitude is number && request.resource.data.longitude >= -180
+          && request.resource.data.longitude <= 180
+          && request.resource.data.bankCode is string && request.resource.data.bankCode.size() <= 24
+          && request.resource.data.bankAccountName is string && request.resource.data.bankAccountName.size() <= 120
+          && request.resource.data.bankAccountNumber is string && request.resource.data.bankAccountNumber.size() <= 40
+          && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin() || (request.auth.uid == sellerId && hasRole(sellerId, 'SELLER'));
+    }
+
+    match /appConfig/shipping {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['baseFeeVnd', 'perKmFeeVnd', 'freeDistanceKm', 'updatedAt'])
+          && request.resource.data.baseFeeVnd is number && request.resource.data.baseFeeVnd >= 0
+          && request.resource.data.perKmFeeVnd is number && request.resource.data.perKmFeeVnd >= 0
+          && request.resource.data.freeDistanceKm is number && request.resource.data.freeDistanceKm >= 0
+          && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
     }
 
     match /sellerApplications/{sellerId} {
@@ -841,7 +884,7 @@ service cloud.firestore {
       allow list: if false;
       allow create: if request.resource.data.keys().hasOnly([
             'id', 'orderId', 'method', 'status', 'amount', 'referenceCode',
-            'paidAt', 'createdAt', 'updatedAt'
+            'bankCode', 'bankAccountName', 'bankAccountNumber', 'paidAt', 'createdAt', 'updatedAt'
           ])
           && paymentId == request.resource.data.orderId
           && request.resource.data.id == paymentId
@@ -851,6 +894,13 @@ service cloud.firestore {
           && request.resource.data.amount == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.totalAmount
           && request.resource.data.method == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.paymentMethod
           && request.resource.data.status == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.paymentStatus
+          && request.resource.data.bankCode is string && request.resource.data.bankCode.size() <= 24
+          && request.resource.data.bankAccountName is string && request.resource.data.bankAccountName.size() <= 120
+          && request.resource.data.bankAccountNumber is string && request.resource.data.bankAccountNumber.size() <= 40
+          && (request.resource.data.method != 'BANK_TRANSFER'
+            || (request.resource.data.bankCode.size() > 0
+              && request.resource.data.bankAccountName.size() > 0
+              && request.resource.data.bankAccountNumber.size() > 0))
           && checkoutOwnerAllowed(getAfter(/databases/$(database)/documents/orders/$(paymentId)).data);
       allow update: if request.resource.data.id == resource.data.id
           && request.resource.data.orderId == resource.data.orderId

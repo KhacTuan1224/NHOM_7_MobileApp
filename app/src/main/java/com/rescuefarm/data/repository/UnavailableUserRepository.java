@@ -26,7 +26,9 @@ public class UnavailableUserRepository implements UserRepository {
     @Override public void updateProfile(String userId, String fullName, String phone, String avatarUrl,
             double latitude, double longitude, UserCallback callback) { unavailable(callback); }
     @Override public void updateSellerProfile(String sellerId, String representativeName, String shopName,
-            String shopDescription, String shopAvatarUrl, String address, UserCallback callback) {
+            String shopDescription, String shopAvatarUrl, String address, String bankCode,
+            String bankAccountName, String bankAccountNumber, double latitude, double longitude,
+            UserCallback callback) {
         unavailable(callback);
     }
     @Override public void getAddresses(String customerId, AddressListCallback callback) {

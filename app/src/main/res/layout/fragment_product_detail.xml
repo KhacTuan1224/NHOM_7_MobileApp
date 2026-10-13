@@ -212,6 +212,13 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/openPublicSellerButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp" android:text="Xem cửa hàng người bán" />
         
         <com.google.android.material.button.MaterialButton 
             android:id="@+id/reportProductButton"

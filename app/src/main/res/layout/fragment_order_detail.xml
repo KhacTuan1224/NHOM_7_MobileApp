@@ -4,6 +4,13 @@
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/order_detail_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <TextView android:id="@+id/orderDetailText" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_md" />
         <TextView android:id="@+id/paymentInstructionsText" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_md" />
+        <LinearLayout android:id="@+id/orderItemsContainer" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:paddingTop="@dimen/space_md" />
+        <TextView android:id="@+id/orderBankInfo" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:visibility="gone" android:paddingTop="@dimen/space_md" />
+        <ImageView android:id="@+id/orderBankQr" android:layout_width="220dp" android:layout_height="220dp"
+            android:layout_gravity="center_horizontal" android:visibility="gone"
+            android:contentDescription="QR chuyển khoản" android:scaleType="fitCenter" />
         <TextView android:id="@+id/orderLifecycleMessage" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_sm" />
         <Spinner android:id="@+id/orderStatusTarget" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" />
         <com.google.android.material.button.MaterialButton android:id="@+id/transitionOrderButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/update_order_status_action" />

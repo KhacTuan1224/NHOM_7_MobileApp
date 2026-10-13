@@ -121,6 +121,27 @@ public class FirebaseOrderRepository implements OrderRepository {
                 CheckoutIdempotencyPolicy.isReplay(existing.getString("requestId"),existing.getString("ownerId"),request);
                 return new Result(mapOrder(existing,new ArrayList<>()),true);
             }
+            double shippingDistanceKm = 0D, shippingFee = 0D;
+            DocumentSnapshot sellerProfile = null;
+            if (request.fulfillmentType == FulfillmentType.DELIVERY
+                    || request.paymentMethod == PaymentMethod.BANK_TRANSFER) {
+                sellerProfile = tx.get(db.collection("sellerPublicProfiles").document(sellerId));
+                if (!sellerProfile.exists()) throw new IllegalStateException(
+                        request.paymentMethod == PaymentMethod.BANK_TRANSFER
+                                ? "SELLER_BANK_DETAILS_MISSING" : "SHIPPING_CONFIG_MISSING");
+            }
+            if (request.fulfillmentType == FulfillmentType.DELIVERY) {
+                DocumentSnapshot shippingConfig = tx.get(db.collection("appConfig").document("shipping"));
+                if (!shippingConfig.exists()) throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
+                double sellerLat = number(sellerProfile, "latitude"), sellerLng = number(sellerProfile, "longitude");
+                if ((sellerLat == 0D && sellerLng == 0D) || request.latitude == 0D && request.longitude == 0D)
+                    throw new IllegalStateException("SHIPPING_COORDINATES_MISSING");
+                shippingDistanceKm = distanceKm(sellerLat, sellerLng, request.latitude, request.longitude);
+                double base = number(shippingConfig, "baseFeeVnd");
+                double perKm = number(shippingConfig, "perKmFeeVnd");
+                double freeKm = number(shippingConfig, "freeDistanceKm");
+                shippingFee = base + Math.ceil(Math.max(0D, shippingDistanceKm - freeKm) * perKm);
+            }
             Map<String,DocumentSnapshot> productDocs=new HashMap<>(),batchDocs=new HashMap<>(),promotionDocs=new HashMap<>();
             for(CartItem item:request.items){
                 DocumentSnapshot product=tx.get(db.collection(PRODUCTS).document(item.getProductId()));
@@ -169,7 +190,7 @@ public class FirebaseOrderRepository implements OrderRepository {
             Order order=Order.create(request.requestId,request.ownerType,request.ownerId,
                     CheckoutPolicy.orderCode(request.requestId),sellerId,campaignId,request.fulfillmentType,
                     request.receiverName,request.receiverPhone,request.receiverAddress,request.latitude,request.longitude,
-                    subtotal,0D,0D,request.paymentMethod,paymentStatus,request.note,snapshots,now);
+                    subtotal,0D,shippingFee,request.paymentMethod,paymentStatus,request.note,snapshots,now);
             Map<String,Object> orderData=orderMap(order);orderData.put("requestId",request.requestId);
             orderData.put("campaignReservedQuantity",campaignReserve);
             Map<String,Double> reservations=new HashMap<>();for(OrderItem item:snapshots)reservations.put(item.getBatchId(),item.getQuantity());
@@ -177,9 +198,17 @@ public class FirebaseOrderRepository implements OrderRepository {
             orderData.put("inventoryFinalized",false);orderData.put("finalizedStatus","");
             orderData.put("createdAt",FieldValue.serverTimestamp());orderData.put("updatedAt",FieldValue.serverTimestamp());tx.set(orderRef,orderData);
             Payment payment=Payment.create(request.requestId,request.paymentMethod,order.getTotalAmount());
+            if (request.paymentMethod == PaymentMethod.BANK_TRANSFER) {
+                String bankCode = clean(sellerProfile.getString("bankCode"));
+                String accountName = clean(sellerProfile.getString("bankAccountName"));
+                String accountNumber = clean(sellerProfile.getString("bankAccountNumber"));
+                if (bankCode.isEmpty() || accountName.isEmpty() || accountNumber.isEmpty())
+                    throw new IllegalStateException("SELLER_BANK_DETAILS_MISSING");
+                payment.setBankDetails(bankCode, accountName, accountNumber);
+            }
             tx.set(db.collection(PAYMENTS).document(request.requestId),paymentMap(payment));
             if(lifecycle.requiresShipment(request.fulfillmentType)){
-                Shipment shipment=Shipment.create(request.requestId,0D,order.getShippingFee());
+                Shipment shipment=Shipment.create(request.requestId,shippingDistanceKm,order.getShippingFee());
                 tx.set(db.collection(SHIPMENTS).document(request.requestId),shipmentMap(shipment));
             }
             for(OrderItem item:snapshots)tx.set(orderRef.collection(ITEMS).document(item.getId()),itemMap(item));
@@ -324,11 +353,15 @@ public class FirebaseOrderRepository implements OrderRepository {
             if(!orderDoc.exists()){callback.onError(ErrorCode.NOT_FOUND,"Không tìm thấy đơn.");return;}
             db.collection(PAYMENTS).document(orderId).get().addOnSuccessListener(paymentDoc->{
                 if(!paymentDoc.exists()){callback.onError(ErrorCode.CONFLICT,"Đơn chưa có payment record.");return;}
-                Order order=mapOrder(orderDoc,new ArrayList<>());Payment payment=mapPayment(paymentDoc);
-                cache(order);if(!lifecycle.requiresShipment(order.getFulfillmentType())){callback.onSuccess(order,payment,null,replay);return;}
-                db.collection(SHIPMENTS).document(orderId).get().addOnSuccessListener(shipmentDoc->{
-                    if(!shipmentDoc.exists()){callback.onError(ErrorCode.CONFLICT,"Đơn giao hàng chưa có shipment record.");return;}
-                    callback.onSuccess(order,payment,mapShipment(shipmentDoc),replay);
+                db.collection(ORDERS).document(orderId).collection(ITEMS).get().addOnSuccessListener(itemDocs -> {
+                    List<OrderItem> orderItems = new ArrayList<>();
+                    for (DocumentSnapshot itemDoc : itemDocs.getDocuments()) orderItems.add(mapOrderItem(itemDoc));
+                    Order order=mapOrder(orderDoc,orderItems);Payment payment=mapPayment(paymentDoc);
+                    cache(order);if(!lifecycle.requiresShipment(order.getFulfillmentType())){callback.onSuccess(order,payment,null,replay);return;}
+                    db.collection(SHIPMENTS).document(orderId).get().addOnSuccessListener(shipmentDoc->{
+                        if(!shipmentDoc.exists()){callback.onError(ErrorCode.CONFLICT,"Đơn giao hàng chưa có shipment record.");return;}
+                        callback.onSuccess(order,payment,mapShipment(shipmentDoc),replay);
+                    }).addOnFailureListener(e->failure(e,callback));
                 }).addOnFailureListener(e->failure(e,callback));
             }).addOnFailureListener(e->failure(e,callback));
         }).addOnFailureListener(e->failure(e,callback));
@@ -354,9 +387,13 @@ public class FirebaseOrderRepository implements OrderRepository {
         return Promotion.restore(d.getId(),d.getString("sellerId"),d.getString("productId"),enumValue(PromotionType.class,d.getString("type"),null),number(d,"value"),tiers,date(d,"startDate"),date(d,"endDate"),Boolean.TRUE.equals(d.getBoolean("active")));}catch(RuntimeException e){return null;}}
     private Map<String,Object> orderMap(Order o){Map<String,Object> m=new HashMap<>();m.put("id",o.getId());m.put("orderCode",o.getOrderCode());m.put("ownerType",o.getOwnerType().name());m.put("ownerId",o.getOwnerId());m.put("sellerId",o.getSellerId());m.put("campaignId",o.getCampaignId());m.put("fulfillmentType",o.getFulfillmentType().name());m.put("receiverName",o.getReceiverName());m.put("receiverPhone",o.getReceiverPhone());m.put("receiverAddress",o.getReceiverAddress());m.put("receiverLatitude",o.getReceiverLatitude());m.put("receiverLongitude",o.getReceiverLongitude());m.put("subtotal",o.getSubtotal());m.put("quantityDiscount",o.getQuantityDiscount());m.put("shippingFee",o.getShippingFee());m.put("totalAmount",o.getTotalAmount());m.put("paymentMethod",o.getPaymentMethod().name());m.put("paymentStatus",o.getPaymentStatus().name());m.put("status",o.getStatus().name());m.put("note",o.getNote());return m;}
     private Map<String,Object> itemMap(OrderItem i){Map<String,Object> m=new HashMap<>();m.put("id",i.getId());m.put("orderId",i.getOrderId());m.put("productId",i.getProductId());m.put("batchId",i.getBatchId());m.put("productNameSnapshot",i.getProductNameSnapshot());m.put("productImageSnapshot",i.getProductImageSnapshot());m.put("unitSnapshot",i.getUnitSnapshot());m.put("originalPriceSnapshot",i.getOriginalPriceSnapshot());m.put("rescuePriceSnapshot",i.getRescuePriceSnapshot());m.put("finalPriceSnapshot",i.getFinalPriceSnapshot());m.put("quantity",i.getQuantity());m.put("subtotal",i.getSubtotal());return m;}
-    private Map<String,Object> paymentMap(Payment p){Map<String,Object> m=new HashMap<>();m.put("id",p.getId());m.put("orderId",p.getOrderId());m.put("method",p.getMethod().name());m.put("status",p.getStatus().name());m.put("amount",p.getAmount());m.put("referenceCode",clean(p.getReferenceCode()));m.put("paidAt",null);m.put("createdAt",FieldValue.serverTimestamp());m.put("updatedAt",FieldValue.serverTimestamp());return m;}
+    private OrderItem mapOrderItem(DocumentSnapshot d){return OrderItem.snapshot(d.getId(),d.getString("orderId"),
+            d.getString("productId"),d.getString("batchId"),d.getString("productNameSnapshot"),
+            d.getString("productImageSnapshot"),d.getString("unitSnapshot"),number(d,"originalPriceSnapshot"),
+            number(d,"rescuePriceSnapshot"),number(d,"finalPriceSnapshot"),number(d,"quantity"));}
+    private Map<String,Object> paymentMap(Payment p){Map<String,Object> m=new HashMap<>();m.put("id",p.getId());m.put("orderId",p.getOrderId());m.put("method",p.getMethod().name());m.put("status",p.getStatus().name());m.put("amount",p.getAmount());m.put("referenceCode",clean(p.getReferenceCode()));m.put("bankCode",clean(p.getBankCode()));m.put("bankAccountName",clean(p.getBankAccountName()));m.put("bankAccountNumber",clean(p.getBankAccountNumber()));m.put("paidAt",null);m.put("createdAt",FieldValue.serverTimestamp());m.put("updatedAt",FieldValue.serverTimestamp());return m;}
     private Map<String,Object> shipmentMap(Shipment s){Map<String,Object> m=new HashMap<>();m.put("id",s.getId());m.put("orderId",s.getOrderId());m.put("carrierName",clean(s.getCarrierName()));m.put("trackingCode",clean(s.getTrackingCode()));m.put("status",s.getStatus().name());m.put("distanceKm",s.getDistanceKm());m.put("shippingFee",s.getShippingFee());m.put("createdAt",FieldValue.serverTimestamp());m.put("updatedAt",FieldValue.serverTimestamp());return m;}
-    private Payment mapPayment(DocumentSnapshot d){return Payment.restore(d.getId(),d.getString("orderId"),enumValue(PaymentMethod.class,d.getString("method"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("status"),PaymentStatus.UNPAID),number(d,"amount"),d.getString("referenceCode"),date(d,"paidAt"));}
+    private Payment mapPayment(DocumentSnapshot d){Payment value=Payment.restore(d.getId(),d.getString("orderId"),enumValue(PaymentMethod.class,d.getString("method"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("status"),PaymentStatus.UNPAID),number(d,"amount"),d.getString("referenceCode"),date(d,"paidAt"));value.setBankDetails(d.getString("bankCode"),d.getString("bankAccountName"),d.getString("bankAccountNumber"));return value;}
     private Shipment mapShipment(DocumentSnapshot d){return Shipment.restore(d.getId(),d.getString("orderId"),d.getString("carrierName"),d.getString("trackingCode"),enumValue(ShipmentStatus.class,d.getString("status"),ShipmentStatus.PENDING),number(d,"distanceKm"),number(d,"shippingFee"));}
     private Map<String,Double> reservationMap(Object raw){Map<String,Double> result=new HashMap<>();if(raw instanceof Map<?,?>)for(Map.Entry<?,?> e:((Map<?,?>)raw).entrySet())if(e.getKey() instanceof String&&e.getValue() instanceof Number){double quantity=((Number)e.getValue()).doubleValue();if(quantity>0D)result.put((String)e.getKey(),quantity);}if(result.isEmpty())throw new IllegalStateException("RESERVATIONS_MISSING");return result;}
     private Order mapOrder(DocumentSnapshot d,List<OrderItem> items){return Order.restore(d.getId(),enumValue(OrderOwnerType.class,d.getString("ownerType"),OrderOwnerType.GUEST),d.getString("ownerId"),d.getString("orderCode"),d.getString("sellerId"),d.getString("campaignId"),enumValue(FulfillmentType.class,d.getString("fulfillmentType"),FulfillmentType.PICKUP),d.getString("receiverName"),d.getString("receiverPhone"),d.getString("receiverAddress"),number(d,"receiverLatitude"),number(d,"receiverLongitude"),number(d,"subtotal"),number(d,"quantityDiscount"),number(d,"shippingFee"),number(d,"totalAmount"),enumValue(PaymentMethod.class,d.getString("paymentMethod"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("paymentStatus"),PaymentStatus.UNPAID),enumValue(OrderStatus.class,d.getString("status"),OrderStatus.PENDING),d.getString("note"),date(d,"createdAt"),date(d,"updatedAt"),items);}
@@ -364,10 +401,17 @@ public class FirebaseOrderRepository implements OrderRepository {
             OrderCacheMapper.toEntity(value,System.currentTimeMillis())));}
     private List<OrderCacheEntity> toEntities(List<Order> values){List<OrderCacheEntity> result=new ArrayList<>();
         long now=System.currentTimeMillis();for(Order value:values)result.add(OrderCacheMapper.toEntity(value,now));return result;}
-    private void failure(Exception e,OrderCallback c){String m=e.getMessage();if(m!=null&&(m.contains("Insufficient")||m.contains("unavailable")||m.contains("BATCH")||m.contains("PRODUCT"))){c.onError(ErrorCode.INSUFFICIENT_STOCK,"Tồn kho đã thay đổi hoặc batch không còn bán.");return;}if("CAMPAIGN_CONFLICT".equals(m)){c.onError(ErrorCode.CAMPAIGN_CONFLICT,"Campaign không còn đủ số lượng hoặc không hợp lệ.");return;}if("IDEMPOTENCY_CONFLICT".equals(m)){c.onError(ErrorCode.CONFLICT,"Idempotency key đã được dùng cho request khác.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Firestore Rules từ chối checkout.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể tạo đơn; transaction đã rollback.");}
+    private void failure(Exception e,OrderCallback c){String m=e.getMessage();if("SELLER_BANK_DETAILS_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Seller chưa cấu hình đủ mã ngân hàng, tên chủ tài khoản và số tài khoản trong hồ sơ cửa hàng.");return;}if("SHIPPING_CONFIG_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Chưa cấu hình phí giao hàng hoặc tọa độ seller. Cần tạo appConfig/shipping và cập nhật hồ sơ cửa hàng.");return;}if("SHIPPING_COORDINATES_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Thiếu tọa độ cửa hàng hoặc địa chỉ nhận hàng nên chưa thể tính phí theo km.");return;}if(m!=null&&(m.contains("Insufficient")||m.contains("unavailable")||m.contains("BATCH")||m.contains("PRODUCT"))){c.onError(ErrorCode.INSUFFICIENT_STOCK,"Tồn kho đã thay đổi hoặc batch không còn bán.");return;}if("CAMPAIGN_CONFLICT".equals(m)){c.onError(ErrorCode.CAMPAIGN_CONFLICT,"Campaign không còn đủ số lượng hoặc không hợp lệ.");return;}if("IDEMPOTENCY_CONFLICT".equals(m)){c.onError(ErrorCode.CONFLICT,"Idempotency key đã được dùng cho request khác.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Firestore Rules từ chối checkout.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể tạo đơn; transaction đã rollback.");}
     private void failure(Exception e,ActionCallback c){if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED)c.onError(ErrorCode.FORBIDDEN,"Không có quyền đọc đơn.");else c.onError(ErrorCode.UNKNOWN,"Không thể tải đơn.");}
     private void failure(Exception e,LifecycleCallback c){String m=e.getMessage()==null?"":e.getMessage();if(m.contains("ORDER_NOT_FOUND")){c.onError(ErrorCode.NOT_FOUND,"Không tìm thấy đơn.");return;}if(m.contains("ILLEGAL_ORDER_TRANSITION")){c.onError(ErrorCode.VALIDATION,"Chuyển trạng thái đơn không hợp lệ.");return;}if(m.contains("BANK_TRANSFER_NOT_CONFIRMED")){c.onError(ErrorCode.CONFLICT,"Cần xác nhận chuyển khoản thủ công trước khi hoàn tất đơn.");return;}if(m.contains("PAID_ORDER_REQUIRES_REFUND")){c.onError(ErrorCode.CONFLICT,"Đơn đã thanh toán cần quy trình hoàn tiền, không thể hủy trực tiếp.");return;}if(m.contains("FINALIZED")||m.contains("reserved")||m.contains("CAMPAIGN")||m.contains("RESERVATIONS")){c.onError(ErrorCode.CONFLICT,"Tồn kho hoặc campaign đã thay đổi; transaction đã rollback.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Bạn không có quyền cập nhật đơn này.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể cập nhật đơn; transaction đã rollback.");}
-    private static double number(DocumentSnapshot d,String f){Double v=d.getDouble(f);return v==null?0D:v;}private static long longValue(DocumentSnapshot d,String f){Long v=d.getLong(f);return v==null?0L:v;}private static Date date(DocumentSnapshot d,String f){Timestamp v=d.getTimestamp(f);return v==null?null:v.toDate();}private static String clean(String v){return v==null?"":v.trim();}private static <T extends Enum<T>>T enumValue(Class<T> t,String v,T fallback){try{return Enum.valueOf(t,v==null?"":v);}catch(Exception e){return fallback;}}
+    private static double number(DocumentSnapshot d,String f){Object v=d.get(f);return v instanceof Number?((Number)v).doubleValue():0D;}private static long longValue(DocumentSnapshot d,String f){Long v=d.getLong(f);return v==null?0L:v;}private static Date date(DocumentSnapshot d,String f){Timestamp v=d.getTimestamp(f);return v==null?null:v.toDate();}private static String clean(String v){return v==null?"":v.trim();}private static <T extends Enum<T>>T enumValue(Class<T> t,String v,T fallback){try{return Enum.valueOf(t,v==null?"":v);}catch(Exception e){return fallback;}}
+    private static double distanceKm(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1), dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2D) * Math.sin(dLat / 2D)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2D) * Math.sin(dLon / 2D);
+        return 6371D * 2D * Math.atan2(Math.sqrt(a), Math.sqrt(1D - a));
+    }
     private static final class Result{final Order order;final boolean replay;Result(Order o,boolean r){order=o;replay=r;}}
     @Override public void close(){cacheExecutor.shutdownNow();}
 }

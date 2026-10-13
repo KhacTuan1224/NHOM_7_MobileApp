@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -32,7 +33,8 @@ import java.util.Map;
 public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     private HomeViewModel viewModel;
     private HomeCardRenderer renderer;
-    private TextInputEditText searchInput, provinceInput;
+    private TextInputEditText searchInput, provinceInput, minPriceInput, maxPriceInput,
+            radiusInput, expiryDaysInput, minStockInput;
     private Spinner categorySpinner, reasonSpinner, urgencySpinner, modeSpinner, sortSpinner;
     private LinearLayout results;
     private TextView count;
@@ -65,6 +67,9 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         renderer = new HomeCardRenderer(this);
         searchInput = view.findViewById(R.id.searchInput);
         provinceInput = view.findViewById(R.id.provinceInput);
+        minPriceInput = view.findViewById(R.id.minPriceInput); maxPriceInput = view.findViewById(R.id.maxPriceInput);
+        radiusInput = view.findViewById(R.id.radiusInput); expiryDaysInput = view.findViewById(R.id.expiryDaysInput);
+        minStockInput = view.findViewById(R.id.minStockInput);
         categorySpinner = view.findViewById(R.id.categorySpinner);
         reasonSpinner = view.findViewById(R.id.reasonSpinner);
         urgencySpinner = view.findViewById(R.id.urgencySpinner);
@@ -80,6 +85,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
 
         viewModel = new ViewModelProvider(requireActivity(), new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
+        restoreInputs(viewModel.getQuery());
         viewModel.getHomeState().observe(getViewLifecycleOwner(), value -> setupCategories(value.getCategories()));
         viewModel.getSearchResults().observe(getViewLifecycleOwner(), this::render);
 
@@ -134,11 +140,17 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     private void apply() {
         String category = categorySpinner.getSelectedItemPosition() <= 0 ? ""
                 : categories.get(categorySpinner.getSelectedItemPosition() - 1).getId();
-        viewModel.setQuery(new DiscoveryQuery(text(searchInput), category, text(provinceInput),
-                selected(RescueReason.values(), reasonSpinner),
-                selected(UrgencyLevel.values(), urgencySpinner),
-                selected(RescueMode.values(), modeSpinner),
-                DiscoveryQuery.Sort.values()[sortSpinner.getSelectedItemPosition()]));
+        try {
+            double min = decimal(minPriceInput, 0D), max = decimal(maxPriceInput, Double.MAX_VALUE);
+            if (max < min) throw new IllegalArgumentException("Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.");
+            viewModel.setQuery(new DiscoveryQuery(text(searchInput), category, text(provinceInput),
+                    selected(RescueReason.values(), reasonSpinner), selected(UrgencyLevel.values(), urgencySpinner),
+                    selected(RescueMode.values(), modeSpinner),
+                    DiscoveryQuery.Sort.values()[sortSpinner.getSelectedItemPosition()], min, max,
+                    decimal(radiusInput, 0D), integer(expiryDaysInput), decimal(minStockInput, 0D)));
+        } catch (IllegalArgumentException error) {
+            Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private <T> T selected(T[] values, Spinner spinner) {
@@ -149,6 +161,8 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     private void clear() {
         searchInput.setText("");
         provinceInput.setText("");
+        minPriceInput.setText(""); maxPriceInput.setText(""); radiusInput.setText("");
+        expiryDaysInput.setText(""); minStockInput.setText("");
         categorySpinner.setSelection(0);
         reasonSpinner.setSelection(0);
         urgencySpinner.setSelection(0);
@@ -211,5 +225,33 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
 
     private static String text(TextInputEditText input) {
         return input.getText() == null ? "" : input.getText().toString().trim();
+    }
+    private double decimal(TextInputEditText input, double fallback) {
+        String value = text(input); if (value.isEmpty()) return fallback;
+        try { double parsed = Double.parseDouble(value.replace(',', '.'));
+            if (!Double.isFinite(parsed) || parsed < 0D) throw new NumberFormatException();
+            return parsed;
+        } catch (NumberFormatException error) { throw new IllegalArgumentException("Giá, bán kính và tồn kho phải là số không âm."); }
+    }
+    private int integer(TextInputEditText input) {
+        String value = text(input); if (value.isEmpty()) return 0;
+        try { int parsed = Integer.parseInt(value); if (parsed < 0) throw new NumberFormatException(); return parsed; }
+        catch (NumberFormatException error) { throw new IllegalArgumentException("Số ngày hết hạn phải là số nguyên không âm."); }
+    }
+    private void restoreInputs(DiscoveryQuery query) {
+        searchInput.setText(query.getText()); provinceInput.setText(query.getProvince());
+        minPriceInput.setText(query.getMinPrice() == 0D ? "" : String.valueOf(query.getMinPrice()));
+        maxPriceInput.setText(query.getMaxPrice() == Double.MAX_VALUE ? "" : String.valueOf(query.getMaxPrice()));
+        radiusInput.setText(query.getRadiusKm() == 0D ? "" : String.valueOf(query.getRadiusKm()));
+        expiryDaysInput.setText(query.getExpiryWithinDays() == 0 ? "" : String.valueOf(query.getExpiryWithinDays()));
+        minStockInput.setText(query.getMinStock() == 0D ? "" : String.valueOf(query.getMinStock()));
+        selectEnum(reasonSpinner, query.getReason()); selectEnum(urgencySpinner, query.getUrgency());
+        selectEnum(modeSpinner, query.getMode()); selectEnum(sortSpinner, query.getSort());
+    }
+    private void selectEnum(Spinner spinner, Enum<?> selected) {
+        if (selected != null) for (int i = 0; i < spinner.getCount(); i++)
+            if (spinner.getItemAtPosition(i).toString().equals(selected.name().replace('_', ' '))) {
+                spinner.setSelection(i); return;
+            }
     }
 }
