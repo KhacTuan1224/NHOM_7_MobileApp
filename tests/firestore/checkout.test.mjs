@@ -219,14 +219,16 @@ test('seller config supports fixed shipping and QR, stays private for writes, an
   const seller = env.authenticatedContext('seller').firestore(), customer = env.authenticatedContext('customer-a').firestore();
   const config = {
     sellerId: 'seller', shopName: 'Shop', shopDescription: '', shopAvatarUrl: '', address: 'Farm', latitude: 0, longitude: 0,
-    shippingFee: 20000, bankCode: 'VCB', bankAccountName: 'Test seller', bankAccountNumber: '123456',
-    qrUrl: 'https://example.com/qr.png', updatedAt: serverTimestamp()
+    shippingFee: 20000, updatedAt: serverTimestamp()
   };
+  const payment = {sellerId: 'seller', bankCode: 'VCB', bankAccountName: 'Test seller',
+    bankAccountNumber: '123456', qrUrl: 'https://example.com/qr.png', updatedAt: serverTimestamp()};
   const batch = writeBatch(seller);
   batch.set(doc(seller, 'sellerPublicProfiles/seller'), config, { merge: true });
+  batch.set(doc(seller, 'sellerPaymentProfiles/seller'), payment, { merge: true });
   batch.update(doc(seller, 'users/seller'), {
     shopName: config.shopName, shopDescription: config.shopDescription, address: config.address,
-    bankCode: config.bankCode, bankAccountName: config.bankAccountName, bankAccountNumber: config.bankAccountNumber,
+    bankCode: payment.bankCode, bankAccountName: payment.bankAccountName, bankAccountNumber: payment.bankAccountNumber,
     updatedAt: serverTimestamp()
   });
   await assertSucceeds(batch.commit());
@@ -234,7 +236,9 @@ test('seller config supports fixed shipping and QR, stays private for writes, an
   await assertFails(updateDoc(doc(customer, 'sellerPublicProfiles/seller'), { shippingFee: 0, updatedAt: serverTimestamp() }));
   await assertSucceeds(updateDoc(doc(seller, 'sellerPublicProfiles/seller'), { shopName: 'Updated', updatedAt: serverTimestamp() }));
   const profile = (await getDoc(doc(customer, 'sellerPublicProfiles/seller'))).data();
-  assert.equal(profile.shippingFee, 20000); assert.equal(profile.qrUrl, 'https://example.com/qr.png');
+  assert.equal(profile.shippingFee, 20000); assert.equal(profile.bankAccountNumber, undefined);
+  await assertFails(getDoc(doc(customer, 'sellerPaymentProfiles/seller')));
+  assert.equal((await getDoc(doc(seller, 'sellerPaymentProfiles/seller'))).data().qrUrl, 'https://example.com/qr.png');
 });
 
 test('wrong fixed shipping fee rolls back order, cart and inventory together', async () => {
