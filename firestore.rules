@@ -215,6 +215,37 @@ service cloud.firestore {
           && hasNoCredentialFields(data);
     }
 
+    function validOrderShipping(data, orderId) {
+      return data.fulfillmentType == 'DELIVERY'
+        ? exists(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId))
+          && exists(/databases/$(database)/documents/appConfig/shipping)
+          && existsAfter(/databases/$(database)/documents/shipments/$(orderId))
+          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm is number
+          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm >= 0
+          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm <= 20040
+          && !(data.receiverLatitude == 0 && data.receiverLongitude == 0)
+          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude is number
+          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude is number
+          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude >= -90
+          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude <= 90
+          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude >= -180
+          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude <= 180
+          && (get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude != 0
+            || get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude != 0)
+          && get(/databases/$(database)/documents/appConfig/shipping).data.baseFeeVnd is number
+          && get(/databases/$(database)/documents/appConfig/shipping).data.baseFeeVnd >= 0
+          && get(/databases/$(database)/documents/appConfig/shipping).data.perKmFeeVnd is number
+          && get(/databases/$(database)/documents/appConfig/shipping).data.perKmFeeVnd >= 0
+          && get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm is number
+          && get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm >= 0
+          && data.shippingFee == get(/databases/$(database)/documents/appConfig/shipping).data.baseFeeVnd
+            + math.ceil((getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm > get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm
+              ? getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm - get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm : 0)
+              * get(/databases/$(database)/documents/appConfig/shipping).data.perKmFeeVnd)
+          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.shippingFee == data.shippingFee
+        : data.shippingFee == 0;
+    }
+
     function validOrder(data, orderId) {
       return data.keys().hasOnly([
             'id', 'requestId', 'ownerType', 'ownerId', 'sellerId', 'campaignId',
@@ -239,10 +270,8 @@ service cloud.firestore {
           && data.subtotal is number && data.subtotal >= 0
           && data.quantityDiscount is number && data.quantityDiscount >= 0
           && data.shippingFee is number && data.shippingFee >= 0
-          && (data.fulfillmentType == 'DELIVERY'
-            ? exists(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId))
-              && data.shippingFee == get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.shippingFee
-            : data.shippingFee == 0)
+          && data.shippingFee <= 1000000
+          && validOrderShipping(data, orderId)
           && data.totalAmount is number && data.totalAmount >= 0
           && data.totalAmount == data.subtotal - data.quantityDiscount + data.shippingFee
           && data.paymentMethod in ['COD', 'BANK_TRANSFER', 'CASH_ON_SITE']
@@ -666,8 +695,11 @@ service cloud.firestore {
       allow create, update: if isAdmin()
           && request.resource.data.keys().hasOnly(['baseFeeVnd', 'perKmFeeVnd', 'freeDistanceKm', 'updatedAt'])
           && request.resource.data.baseFeeVnd is number && request.resource.data.baseFeeVnd >= 0
+          && request.resource.data.baseFeeVnd <= 1000000
           && request.resource.data.perKmFeeVnd is number && request.resource.data.perKmFeeVnd >= 0
+          && request.resource.data.perKmFeeVnd <= 1000000
           && request.resource.data.freeDistanceKm is number && request.resource.data.freeDistanceKm >= 0
+          && request.resource.data.freeDistanceKm <= 20040
           && request.resource.data.updatedAt == request.time;
       allow delete: if isAdmin();
     }

@@ -125,6 +125,7 @@ public class FirebaseOrderRepository implements OrderRepository {
             DocumentSnapshot cartDoc = tx.get(db.collection("customerCarts").document(request.ownerId));
             double shippingDistanceKm = 0D, shippingFee = 0D;
             DocumentSnapshot sellerProfile = null;
+            DocumentSnapshot shippingConfig = null;
             if (request.fulfillmentType == FulfillmentType.DELIVERY
                     || request.paymentMethod == PaymentMethod.BANK_TRANSFER) {
                 sellerProfile = tx.get(db.collection("sellerPublicProfiles").document(sellerId));
@@ -133,10 +134,23 @@ public class FirebaseOrderRepository implements OrderRepository {
                                 ? "SELLER_BANK_DETAILS_MISSING" : "SHIPPING_CONFIG_MISSING");
             }
             if (request.fulfillmentType == FulfillmentType.DELIVERY) {
-                Object configuredFee = sellerProfile.get("shippingFee");
-                if (!(configuredFee instanceof Number)) throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
-                shippingFee = ((Number)configuredFee).doubleValue();
-                if (!Double.isFinite(shippingFee) || shippingFee < 0) throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
+                shippingConfig = tx.get(db.collection("appConfig").document("shipping"));
+                double sellerLat = number(sellerProfile, "latitude"), sellerLng = number(sellerProfile, "longitude");
+                double receiverLat = request.latitude, receiverLng = request.longitude;
+                double baseFee = number(shippingConfig, "baseFeeVnd");
+                double perKmFee = number(shippingConfig, "perKmFeeVnd");
+                double freeDistance = number(shippingConfig, "freeDistanceKm");
+                if (!shippingConfig.exists() || !validCoordinates(sellerLat, sellerLng)
+                        || !validCoordinates(receiverLat, receiverLng)
+                        || !Double.isFinite(baseFee) || baseFee < 0 || baseFee > 1000000D
+                        || !Double.isFinite(perKmFee) || perKmFee < 0 || perKmFee > 1000000D
+                        || !Double.isFinite(freeDistance) || freeDistance < 0 || freeDistance > 20040D) {
+                    throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
+                }
+                shippingDistanceKm = distanceKm(sellerLat, sellerLng, receiverLat, receiverLng);
+                shippingFee = baseFee + Math.ceil(Math.max(0D, shippingDistanceKm - freeDistance) * perKmFee);
+                if (!Double.isFinite(shippingFee) || shippingFee > 1000000D)
+                    throw new IllegalStateException("SHIPPING_CONFIG_MISSING");
             }
             Map<String,DocumentSnapshot> productDocs=new HashMap<>(),batchDocs=new HashMap<>(),promotionDocs=new HashMap<>();
             for(CartItem item:request.items){
@@ -456,10 +470,12 @@ public class FirebaseOrderRepository implements OrderRepository {
             OrderCacheMapper.toEntity(value,System.currentTimeMillis())));}
     private List<OrderCacheEntity> toEntities(List<Order> values){List<OrderCacheEntity> result=new ArrayList<>();
         long now=System.currentTimeMillis();for(Order value:values)result.add(OrderCacheMapper.toEntity(value,now));return result;}
-    private void failure(Exception e,OrderCallback c){String m=e.getMessage();if("QUOTE_CHANGED".equals(m)){c.onError(ErrorCode.CONFLICT,"QUOTE_CHANGED: Giá sản phẩm hoặc phí giao hàng vừa thay đổi. Báo giá mới đã được tải; vui lòng kiểm tra và xác nhận lại.");return;}if("SELLER_BANK_DETAILS_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Seller chưa cấu hình đủ mã ngân hàng, tên chủ tài khoản và số tài khoản trong hồ sơ cửa hàng.");return;}if("SHIPPING_CONFIG_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Người bán chưa cấu hình phí giao hàng cố định trong hồ sơ cửa hàng.");return;}if("SHIPPING_COORDINATES_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Thiếu tọa độ cửa hàng hoặc địa chỉ nhận hàng nên chưa thể tính phí theo km.");return;}if(m!=null&&(m.contains("Insufficient")||m.contains("unavailable")||m.contains("BATCH")||m.contains("PRODUCT"))){c.onError(ErrorCode.INSUFFICIENT_STOCK,"Tồn kho đã thay đổi hoặc batch không còn bán.");return;}if("CAMPAIGN_CONFLICT".equals(m)){c.onError(ErrorCode.CAMPAIGN_CONFLICT,"Nhận tại điểm giải cứu cần Campaign hợp lệ, cùng batch được phân bổ và còn đủ lượng khả dụng.");return;}if("IDEMPOTENCY_CONFLICT".equals(m)){c.onError(ErrorCode.CONFLICT,"Idempotency key đã được dùng cho request khác.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Firestore Rules từ chối checkout.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể tạo đơn; transaction đã rollback.");}
+    private void failure(Exception e,OrderCallback c){String m=e.getMessage();if("QUOTE_CHANGED".equals(m)){c.onError(ErrorCode.CONFLICT,"QUOTE_CHANGED: Giá sản phẩm hoặc phí giao hàng vừa thay đổi. Báo giá mới đã được tải; vui lòng kiểm tra và xác nhận lại.");return;}if("SELLER_BANK_DETAILS_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Seller chưa cấu hình đủ mã ngân hàng, tên chủ tài khoản và số tài khoản trong hồ sơ cửa hàng.");return;}if("SHIPPING_CONFIG_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Thiếu biểu phí giao hàng toàn hệ thống hoặc tọa độ GPS hợp lệ của Seller/địa chỉ nhận.");return;}if("SHIPPING_COORDINATES_MISSING".equals(m)){c.onError(ErrorCode.VALIDATION,"Thiếu tọa độ cửa hàng hoặc địa chỉ nhận hàng nên chưa thể tính phí theo km.");return;}if(m!=null&&(m.contains("Insufficient")||m.contains("unavailable")||m.contains("BATCH")||m.contains("PRODUCT"))){c.onError(ErrorCode.INSUFFICIENT_STOCK,"Tồn kho đã thay đổi hoặc batch không còn bán.");return;}if("CAMPAIGN_CONFLICT".equals(m)){c.onError(ErrorCode.CAMPAIGN_CONFLICT,"Nhận tại điểm giải cứu cần Campaign hợp lệ, cùng batch được phân bổ và còn đủ lượng khả dụng.");return;}if("IDEMPOTENCY_CONFLICT".equals(m)){c.onError(ErrorCode.CONFLICT,"Idempotency key đã được dùng cho request khác.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Firestore Rules từ chối checkout.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể tạo đơn; transaction đã rollback.");}
     private void failure(Exception e,ActionCallback c){if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED)c.onError(ErrorCode.FORBIDDEN,"Không có quyền đọc đơn.");else c.onError(ErrorCode.UNKNOWN,"Không thể tải đơn.");}
     private void failure(Exception e,LifecycleCallback c){String m=e.getMessage()==null?"":e.getMessage();if(m.contains("ORDER_NOT_FOUND")){c.onError(ErrorCode.NOT_FOUND,"Không tìm thấy đơn.");return;}if(m.contains("ILLEGAL_ORDER_TRANSITION")){c.onError(ErrorCode.VALIDATION,"Chuyển trạng thái đơn không hợp lệ.");return;}if(m.contains("BANK_TRANSFER_NOT_CONFIRMED")){c.onError(ErrorCode.CONFLICT,"Cần xác nhận chuyển khoản thủ công trước khi hoàn tất đơn.");return;}if(m.contains("PAID_ORDER_REQUIRES_REFUND")){c.onError(ErrorCode.CONFLICT,"Đơn đã thanh toán cần quy trình hoàn tiền, không thể hủy trực tiếp.");return;}if(m.contains("FINALIZED")||m.contains("reserved")||m.contains("CAMPAIGN")||m.contains("RESERVATIONS")){c.onError(ErrorCode.CONFLICT,"Tồn kho hoặc campaign đã thay đổi; transaction đã rollback.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Bạn không có quyền cập nhật đơn này.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể cập nhật đơn; transaction đã rollback.");}
-    private static double number(DocumentSnapshot d,String f){Object v=d.get(f);return v instanceof Number?((Number)v).doubleValue():0D;}private static long longValue(DocumentSnapshot d,String f){Long v=d.getLong(f);return v==null?0L:v;}private static Date date(DocumentSnapshot d,String f){Timestamp v=d.getTimestamp(f);return v==null?null:v.toDate();}private static String clean(String v){return v==null?"":v.trim();}private static <T extends Enum<T>>T enumValue(Class<T> t,String v,T fallback){try{return Enum.valueOf(t,v==null?"":v);}catch(Exception e){return fallback;}}
+    private static double number(DocumentSnapshot d,String f){Object v=d==null?null:d.get(f);return v instanceof Number?((Number)v).doubleValue():0D;}
+    private static boolean validCoordinates(double latitude,double longitude){return Double.isFinite(latitude)&&latitude>=-90D&&latitude<=90D&&Double.isFinite(longitude)&&longitude>=-180D&&longitude<=180D&&!(latitude==0D&&longitude==0D);}
+    private static long longValue(DocumentSnapshot d,String f){Long v=d.getLong(f);return v==null?0L:v;}private static Date date(DocumentSnapshot d,String f){Timestamp v=d.getTimestamp(f);return v==null?null:v.toDate();}private static String clean(String v){return v==null?"":v.trim();}private static <T extends Enum<T>>T enumValue(Class<T> t,String v,T fallback){try{return Enum.valueOf(t,v==null?"":v);}catch(Exception e){return fallback;}}
     private static double distanceKm(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1), dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2D) * Math.sin(dLat / 2D)

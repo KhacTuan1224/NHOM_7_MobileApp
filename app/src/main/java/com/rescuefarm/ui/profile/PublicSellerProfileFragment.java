@@ -37,7 +37,7 @@ public class PublicSellerProfileFragment extends Fragment {
                     name.setText(value(profile.shopName, "Cửa hàng RescueFarm"));
                     description.setText(value(profile.description, "Chưa có giới thiệu cửa hàng."));
                     address.setText(value(profile.address, "Chưa cập nhật địa chỉ.")
-                        + (profile.shippingConfigured ? "\nPhí giao hàng cố định: " + (long)profile.shippingFee + " đ" : ""));
+                        + "\nPhí giao hàng được tính theo khoảng cách GPS khi đặt hàng.");
                     String bankCode = profile.bankName, accountName = profile.accountName, accountNumber = profile.bankAccount;
                     bank.setText(blank(bankCode) || blank(accountName) || blank(accountNumber)
                             ? "Cửa hàng chưa cấu hình tài khoản nhận chuyển khoản."
