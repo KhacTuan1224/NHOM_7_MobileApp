@@ -27,10 +27,12 @@ import com.rescuefarm.domain.model.Order;
 import com.rescuefarm.domain.model.OrderItem;
 import com.rescuefarm.domain.model.Payment;
 import com.rescuefarm.domain.model.Shipment;
+import com.rescuefarm.service.backend.RenderBackendClient;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
+import org.json.JSONObject;
 
 public class OrderDetailFragment extends Fragment {
     private OrderViewModel vm;
@@ -42,6 +44,7 @@ public class OrderDetailFragment extends Fragment {
     private EditText reference;
     private View transitionButton, confirmButton;
     private String orderId = "";
+    private String lastObservedEvent = "";
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
@@ -84,6 +87,9 @@ public class OrderDetailFragment extends Fragment {
         }
         if (state.getStatus() != OrderLifecycleState.Status.SUCCESS) return;
         Order order = state.getOrder(); Payment payment = state.getPayment(); Shipment shipment = state.getShipment();
+        String eventKey = order.getStatus().name() + "_" + payment.getStatus().name();
+        if (!lastObservedEvent.isEmpty() && !lastObservedEvent.equals(eventKey)) notifyOrderEvent();
+        lastObservedEvent = eventKey;
         String shipmentStatus = order.getFulfillmentType() != com.rescuefarm.domain.enums.FulfillmentType.DELIVERY
                 ? getString(R.string.shipment_not_required)
                 : shipment == null ? "Đang chờ thông tin vận chuyển" : shipment.getStatus().name();
@@ -109,6 +115,18 @@ public class OrderDetailFragment extends Fragment {
         renderItems(order, customer);
         if (bank && !seller) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
+    }
+
+    private void notifyOrderEvent() {
+        JSONObject request = new JSONObject();
+        try { request.put("type", "ORDER"); request.put("referenceId", orderId); }
+        catch (org.json.JSONException ignored) { return; }
+        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
+            @Override public void onSuccess(JSONObject response) { }
+            @Override public void onError(String error) {
+                // Order state remains visible in Firestore; push/inbox delivery is best-effort on Render free tier.
+            }
+        });
     }
 
     private void renderTimeline(Order order) {

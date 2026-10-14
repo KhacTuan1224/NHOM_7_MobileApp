@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: rescuefarm-backend
+    runtime: node
+    plan: free
+    rootDir: functions
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

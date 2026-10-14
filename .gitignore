@@ -46,3 +46,6 @@ Thumbs.db
 *.swp
 *~
 serviceAccountKey.json
+functions/serviceAccountKey.json
+.env
+functions/.env
