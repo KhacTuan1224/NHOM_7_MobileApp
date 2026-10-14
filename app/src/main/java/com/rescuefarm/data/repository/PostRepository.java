@@ -42,6 +42,12 @@ public interface PostRepository {
     }
     void refreshFeed(boolean reset, int pageSize, PageCallback callback);
     void refreshSellerPosts(String sellerId, ActionCallback callback);
+    default void refreshSellerPostPage(String sellerId, boolean reset, int pageSize, PageCallback callback) {
+        refreshSellerPosts(sellerId, new ActionCallback() {
+            @Override public void onSuccess() { callback.onSuccess(false); }
+            @Override public void onError(ErrorCode error, String message) { callback.onError(error, message); }
+        });
+    }
     void getPost(String postId, PostCallback callback);
     void savePost(Post post, boolean submitForApproval, PostCallback callback);
     void loadEngagement(String postId, String currentUserId, EngagementCallback callback);

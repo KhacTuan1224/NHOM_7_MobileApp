@@ -15,6 +15,7 @@ public class PostViewModel extends ViewModel {
     private final PostRepository repository; private final AuthRepository authRepository;
     private final MutableLiveData<PostScreenState> state = new MutableLiveData<>(PostScreenState.idle());
     private final MutableLiveData<Boolean> hasMore = new MutableLiveData<>(true);
+    private final MutableLiveData<Boolean> sellerPostsHaveMore = new MutableLiveData<>(false);
     private String loadedPostId = "";
     private final java.util.Set<String> recordedViews = new java.util.HashSet<>();
     public PostViewModel(PostRepository repository, AuthRepository authRepository) {
@@ -22,6 +23,7 @@ public class PostViewModel extends ViewModel {
     }
     public LiveData<PostScreenState> getState() { return state; }
     public LiveData<Boolean> getHasMore() { return hasMore; }
+    public LiveData<Boolean> getSellerPostsHaveMore() { return sellerPostsHaveMore; }
     public LiveData<List<Post>> getFeed() { return repository.observePublishedPosts(); }
     public LiveData<List<Post>> getSellerPosts() { return repository.observeSellerPosts(currentUserId()); }
     public LiveData<Post> observePost(String postId) { return repository.observePost(postId); }
@@ -38,6 +40,13 @@ public class PostViewModel extends ViewModel {
     public void refreshSellerPosts() {
         String userId = requireUser("Vui lòng đăng nhập seller."); if (userId == null) return;
         repository.refreshSellerPosts(userId, action(null));
+    }
+    public void refreshSellerPostPage(boolean reset) {
+        String userId = requireUser("Vui lòng đăng nhập seller."); if (userId == null) return;
+        repository.refreshSellerPostPage(userId, reset, PAGE_SIZE, new PostRepository.PageCallback() {
+            @Override public void onSuccess(boolean more) { sellerPostsHaveMore.postValue(more); }
+            @Override public void onError(PostRepository.ErrorCode error, String message) { state.postValue(PostScreenState.error(message)); }
+        });
     }
     public void loadPost(String postId) {
         loadedPostId = postId == null ? "" : postId; state.setValue(PostScreenState.loading());
