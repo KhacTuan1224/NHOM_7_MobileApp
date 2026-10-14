@@ -23,7 +23,8 @@ import com.rescuefarm.domain.enums.FulfillmentType;
 import com.rescuefarm.domain.enums.PaymentMethod;
 import com.rescuefarm.domain.model.Address;
 import com.rescuefarm.domain.model.Cart;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.rescuefarm.data.repository.SellerStorefront;
+import com.rescuefarm.data.repository.StorefrontRepository;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -201,11 +202,6 @@ public class CheckoutFragment extends Fragment {
         }
         if (count == 0) { estimate.setText("Chọn mặt hàng để xem tạm tính."); return; }
         final double itemSubtotal = subtotal;
-        final double customerLat, customerLng;
-        if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY) {
-            try { customerLat = Double.parseDouble(text(lat)); customerLng = Double.parseDouble(text(lng)); }
-            catch (NumberFormatException error) { estimate.setText("Giao hàng cần tọa độ địa chỉ."); return; }
-        } else { customerLat = 0D; customerLng = 0D; }
         quoteReady = true; quotedSubtotal = itemSubtotal;
         estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines);
         if (fulfillment.getSelectedItem() != FulfillmentType.DELIVERY) {
@@ -217,30 +213,22 @@ public class CheckoutFragment extends Fragment {
             return;
         }
         final int requestVersion = version; final String shopId = sellerId;
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("sellerPublicProfiles").document(shopId).get().addOnSuccessListener(profile -> {
-            if (requestVersion != quoteVersion || !isAdded()) return;
-            db.collection("appConfig").document("shipping").get().addOnSuccessListener(config -> {
-                if (requestVersion != quoteVersion || !isAdded()) return;
-                if (!profile.exists() || !config.exists()) { quoteReady = false; estimate.setText("Thiếu tọa độ Seller hoặc cấu hình giao hàng."); return; }
-                double shopLat = number(profile.get("latitude")), shopLng = number(profile.get("longitude"));
-                double distance = distanceKm(shopLat, shopLng, customerLat, customerLng);
-                quotedShippingFee = number(config.get("baseFeeVnd")) + Math.ceil(Math.max(0D,
-                        distance - number(config.get("freeDistanceKm"))) * number(config.get("perKmFeeVnd")));
-                estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines
-                        + "Tiền hàng: " + money.format(itemSubtotal) + "\nKhoảng cách: "
-                        + String.format(Locale.getDefault(), "%.1f km", distance) + "\nPhí giao: "
-                        + money.format(quotedShippingFee) + "\nTổng tạm tính: " + money.format(itemSubtotal + quotedShippingFee));
+        quoteReady = false;
+        vm.loadStorefront(shopId, new StorefrontRepository.Callback() {
+            public void success(SellerStorefront profile) {
+                if (requestVersion != quoteVersion || getView() == null) return;
+                if (!profile.shippingConfigured) { estimate.setText("Người bán chưa cấu hình phí giao hàng cố định."); return; }
+                quotedShippingFee = profile.shippingFee; quoteReady = true;
+                estimate.setText(lines + "Tiền hàng: " + money.format(itemSubtotal)
+                    + "\nPhí giao cố định: " + money.format(quotedShippingFee)
+                    + "\nTổng tạm tính: " + money.format(itemSubtotal + quotedShippingFee));
                 enableCheckoutSubmit();
-            }).addOnFailureListener(error -> { quoteReady = false; estimate.setText("Không đọc được cấu hình giao hàng: " + error.getLocalizedMessage()); });
-        }).addOnFailureListener(error -> { quoteReady = false; estimate.setText("Không đọc được hồ sơ cửa hàng: " + error.getLocalizedMessage()); });
-    }
-
-    private double distanceKm(double lat1, double lng1, double lat2, double lng2) {
-        double radians = Math.PI / 180D, dLat = (lat2 - lat1) * radians, dLng = (lng2 - lng1) * radians;
-        double a = Math.sin(dLat / 2D) * Math.sin(dLat / 2D)
-                + Math.cos(lat1 * radians) * Math.cos(lat2 * radians) * Math.sin(dLng / 2D) * Math.sin(dLng / 2D);
-        return 6371D * 2D * Math.atan2(Math.sqrt(a), Math.sqrt(1D - a));
+            }
+            public void error(String message) {
+                if (requestVersion != quoteVersion || getView() == null) return;
+                quoteReady = false; estimate.setText(message);
+            }
+        });
     }
 
     private void enableCheckoutSubmit() {
@@ -252,8 +240,8 @@ public class CheckoutFragment extends Fragment {
         if (fulfillment == null) return;
         boolean delivery = fulfillment.getSelectedItem() == FulfillmentType.DELIVERY;
         if (address != null) address.setVisibility(delivery ? View.VISIBLE : View.GONE);
-        if (lat != null && lat.getParent() != null)
-            lat.getParent().setVisibility(delivery ? View.VISIBLE : View.GONE);
+        if (lat != null) lat.setVisibility(delivery ? View.VISIBLE : View.GONE);
+        if (lng != null) lng.setVisibility(delivery ? View.VISIBLE : View.GONE);
     }
 
     private void bindPaymentMethods() {
@@ -271,16 +259,16 @@ public class CheckoutFragment extends Fragment {
         bankTransferAvailable = false;
         applyPaymentMethods();
         if (selectedSeller.isEmpty()) return;
-        FirebaseFirestore.getInstance().collection("sellerPublicProfiles").document(selectedSeller).get()
-                .addOnSuccessListener(profile -> {
-                    if (version != bankLoadVersion || !isAdded()) return;
-                    bankTransferAvailable = profile.exists()
-                            && !blank(profile.getString("bankCode"))
-                            && !blank(profile.getString("bankAccountName"))
-                            && !blank(profile.getString("bankAccountNumber"));
-                    applyPaymentMethods();
-                    scheduleShippingEstimate();
-                });
+        vm.loadStorefront(selectedSeller, new StorefrontRepository.Callback() {
+            public void success(SellerStorefront profile) {
+                if (version != bankLoadVersion || getView() == null) return;
+                bankTransferAvailable = profile.acceptsTransfer(); applyPaymentMethods();
+            }
+            public void error(String message) {
+                if (version != bankLoadVersion || getView() == null) return;
+                bankTransferAvailable = false; applyPaymentMethods();
+            }
+        });
     }
 
     private void applyPaymentMethods() {

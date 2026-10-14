@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, collection, query, where, setDoc,
-  runTransaction, serverTimestamp, Timestamp } from 'firebase/firestore';
+  runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 
 let env;
 const now = Date.now();
@@ -23,8 +23,11 @@ beforeEach(async () => {
     'users/customer-a': { role: 'CUSTOMER', status: 'ACTIVE' },
     'users/customer-b': { role: 'CUSTOMER', status: 'ACTIVE' },
     'users/blocked': { role: 'CUSTOMER', status: 'BLOCKED' },
-    'users/seller': { role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED' },
-    'products/product-a': { sellerId: 'seller', status: 'ACTIVE', rescuePrice: 30000 },
+    'users/seller': { id: 'seller', email: 'seller@example.com', fullName: 'Test seller', phone: '', avatarUrl: '',
+      role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED', latitude: 0, longitude: 0, createdAt: past, updatedAt: past },
+    'users/admin': { role: 'ADMIN', status: 'ACTIVE' },
+    'sellerPublicProfiles/seller': { sellerId: 'seller', shopName: 'Test', shippingFee: 15000 },
+    'products/product-a': { sellerId: 'seller', status: 'ACTIVE', rescuePrice: 30000, reviewCount: 0, averageRating: 0 },
     'products/hidden': { sellerId: 'seller', status: 'HIDDEN', rescuePrice: 30000 },
     'productBatches/batch-a': {
       id: 'batch-a', productId: 'product-a', activeCampaignId: '',
@@ -32,7 +35,15 @@ beforeEach(async () => {
       availableQuantity: 10, reservedQuantity: 0, soldQuantity: 0,
       inventoryVersion: 0, status: 'AVAILABLE', createdAt: past, updatedAt: past
     },
-    'orders/existing': { ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller' }
+    'orders/existing': { ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller', status: 'DELIVERED' },
+    'orders/existing/items/batch-a': { productId: 'product-a' },
+    'orders/other/items/batch-b': { productId: 'product-a' },
+    'orders/other': { ownerType: 'CUSTOMER', ownerId: 'customer-b', sellerId: 'seller', status: 'DELIVERED' },
+    'customerCarts/customer-a': { id: 'customer-a', ownerType: 'CUSTOMER', ownerKey: 'customer-a', updatedAt: past,
+      items: [
+        { id: 'product-a::batch-a', productId: 'product-a', batchId: 'batch-a', sellerId: 'seller', quantity: 3, unitPrice: 30000, selected: true },
+        { id: 'keep', productId: 'product-b', batchId: 'batch-b', sellerId: 'other-seller', quantity: 2, unitPrice: 10000, selected: false }
+      ] }
   });
 });
 
@@ -71,10 +82,13 @@ test('promotion fallback is limited to active customers and active products', as
 });
 
 // Mirrors the Android transaction's initial read, promotion read and atomic writes.
-async function checkout(db) {
+async function checkout(db, overrideFee = null) {
   return runTransaction(db, async tx => {
     const orderRef = doc(db, 'orders/new-order');
     if ((await tx.get(orderRef)).exists()) return;
+    const profile = (await tx.get(doc(db, 'sellerPublicProfiles/seller'))).data();
+    const cart = (await tx.get(doc(db, 'customerCarts/customer-a'))).data();
+    const fee = overrideFee ?? profile.shippingFee;
     await tx.get(doc(db, 'products/product-a'));
     const batch = (await tx.get(doc(db, 'productBatches/batch-a'))).data();
     await tx.get(doc(db, 'promotions/product-a'));
@@ -83,7 +97,7 @@ async function checkout(db) {
       sellerId: 'seller', campaignId: '', orderCode: 'RF-TEST', fulfillmentType: 'DELIVERY',
       receiverName: 'Test Customer', receiverPhone: '0912345678', receiverAddress: 'Test address',
       receiverLatitude: 0, receiverLongitude: 0, subtotal: 90000, quantityDiscount: 0,
-      shippingFee: 0, totalAmount: 90000, paymentMethod: 'COD', paymentStatus: 'UNPAID',
+      shippingFee: fee, totalAmount: 90000 + fee, paymentMethod: 'COD', paymentStatus: 'UNPAID',
       status: 'PENDING', note: '', campaignReservedQuantity: 0,
       batchReservations: { 'batch-a': 3 }, inventoryFinalized: false, finalizedStatus: '',
       createdAt: serverTimestamp(), updatedAt: serverTimestamp()
@@ -96,18 +110,26 @@ async function checkout(db) {
       quantity: 3, subtotal: 90000
     });
     tx.set(doc(db, 'payments/new-order'), {
-      id: 'new-order', orderId: 'new-order', method: 'COD', status: 'UNPAID', amount: 90000,
-      referenceCode: '', paidAt: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+      id: 'new-order', orderId: 'new-order', method: 'COD', status: 'UNPAID', amount: 90000 + fee,
+      referenceCode: '', bankCode: '', bankAccountName: '', bankAccountNumber: '', qrUrl: '',
+      paidAt: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });
     tx.set(doc(db, 'shipments/new-order'), {
       id: 'new-order', orderId: 'new-order', carrierName: '', trackingCode: '',
-      status: 'PENDING', distanceKm: 0, shippingFee: 0,
+      status: 'PENDING', distanceKm: 0, shippingFee: fee,
       createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });
     tx.update(doc(db, 'productBatches/batch-a'), {
       availableQuantity: batch.availableQuantity - 3, reservedQuantity: batch.reservedQuantity + 3,
       status: 'RESERVED_PARTIAL', inventoryVersion: batch.inventoryVersion + 1,
       lastReservationOrderId: 'new-order', lastReservationQuantity: 3, updatedAt: serverTimestamp()
+    });
+    tx.update(doc(db, 'customerCarts/customer-a'), {
+      items: cart.items.filter(item => item.id !== 'product-a::batch-a'), updatedAt: serverTimestamp()
+    });
+    tx.set(doc(db, 'notifications/new-order_PENDING'), {
+      id: 'new-order_PENDING', userId: 'customer-a', type: 'ORDER', title: 'Order created', body: 'Pending',
+      referenceId: 'new-order', isRead: false, createdAt: serverTimestamp()
     });
   });
 }
@@ -131,6 +153,10 @@ for (const promotionState of ['missing', 'expired', 'inactive']) {
     assert.equal((await getDoc(doc(db, 'orders/new-order'))).data().status, 'PENDING');
     assert.equal((await getDoc(doc(db, 'payments/new-order'))).data().status, 'UNPAID');
     assert.equal((await getDoc(doc(db, 'shipments/new-order'))).data().status, 'PENDING');
+    assert.equal((await getDoc(doc(db, 'orders/new-order'))).data().shippingFee, 15000);
+    assert.equal((await getDoc(doc(db, 'orders/new-order'))).data().totalAmount, 105000);
+    assert.deepEqual((await getDoc(doc(db, 'customerCarts/customer-a'))).data().items.map(item => item.id), ['keep']);
+    assert.equal((await getDoc(doc(db, 'notifications/new-order_PENDING'))).data().isRead, false);
   });
 }
 
@@ -139,4 +165,115 @@ test('a different customer cannot create an order for customer-a', async () => {
   const db = env.authenticatedContext('customer-a').firestore();
   assert.equal((await getDoc(doc(db, 'orders/new-order'))).exists(), false);
   assert.equal((await getDoc(doc(db, 'productBatches/batch-a'))).data().availableQuantity, 10);
+});
+
+async function reviewChange(db, { uid = 'customer-a', orderId = 'existing', itemId = 'batch-a', rating = 5, status = 'PUBLISHED', summary = true, admin = false } = {}) {
+  const id = `${uid}_${orderId}_${itemId}`;
+  return runTransaction(db, async tx => {
+    const ref = doc(db, `reviews/${id}`), productRef = doc(db, 'products/product-a');
+    const old = await tx.get(ref), product = (await tx.get(productRef)).data();
+    const previous = old.exists() && old.data().status === 'PUBLISHED' ? old.data().rating : 0;
+    const next = status === 'PUBLISHED' ? rating : 0;
+    const count = product.reviewCount + (next > 0 ? 1 : 0) - (previous > 0 ? 1 : 0);
+    const sum = (product.ratingSum ?? product.averageRating * product.reviewCount) + next - previous;
+    if (admin) tx.update(ref, { status, moderatedBy: 'admin', moderatedAt: serverTimestamp(), moderationReason: 'Test moderation', updatedAt: serverTimestamp() });
+    else tx.set(ref, {
+      id, customerId: uid, productId: 'product-a', orderId, orderItemId: itemId, rating,
+      content: 'Test review', imageUrls: [], imagePublicIds: [], status,
+      createdAt: old.exists() ? old.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp()
+    }, { merge: true });
+    if (summary) tx.update(productRef, { reviewCount: count, ratingSum: sum,
+      averageRating: count === 0 ? 0 : sum / count, lastReviewId: id, updatedAt: serverTimestamp() });
+  });
+}
+
+test('new review, edits and withdrawal update summary atomically; withdrawn review can be reposted', async () => {
+  const a = env.authenticatedContext('customer-a').firestore(), b = env.authenticatedContext('customer-b').firestore();
+  await assertSucceeds(reviewChange(a));
+  await assertSucceeds(reviewChange(a, { rating: 3 }));
+  await assertSucceeds(reviewChange(b, { uid: 'customer-b', orderId: 'other', itemId: 'batch-b', rating: 4 }));
+  let product = (await getDoc(doc(a, 'products/product-a'))).data();
+  assert.equal(product.reviewCount, 2); assert.equal(product.averageRating, 3.5);
+  await assertSucceeds(reviewChange(a, { rating: 3, status: 'DELETED' }));
+  product = (await getDoc(doc(a, 'products/product-a'))).data();
+  assert.equal(product.reviewCount, 1); assert.equal(product.averageRating, 4);
+  assert.equal((await getDoc(doc(a, 'reviews/customer-a_existing_batch-a'))).data().status, 'DELETED');
+  await assertSucceeds(reviewChange(a, { rating: 5 }));
+  assert.equal((await getDoc(doc(a, 'products/product-a'))).data().averageRating, 4.5);
+});
+
+test('reviews require delivered ownership and summary; customers cannot forge summary or read private reviews', async () => {
+  const a = env.authenticatedContext('customer-a').firestore(), b = env.authenticatedContext('customer-b').firestore();
+  assert.equal((await assertSucceeds(getDoc(doc(a, 'reviews/customer-a_existing_batch-a')))).exists(), false);
+  await assertFails(reviewChange(a, { summary: false }));
+  await assertFails(reviewChange(b));
+  await assertFails(updateDoc(doc(a, 'products/product-a'), { reviewCount: 100, averageRating: 5 }));
+  await assertSucceeds(reviewChange(a));
+  await assertSucceeds(reviewChange(a, { status: 'DELETED' }));
+  await assertFails(getDoc(doc(b, 'reviews/customer-a_existing_batch-a')));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'reviews/missing')));
+});
+
+test('admin hide and restore also update the published review summary', async () => {
+  const a = env.authenticatedContext('customer-a').firestore(), admin = env.authenticatedContext('admin').firestore();
+  await assertSucceeds(reviewChange(a));
+  await assertSucceeds(reviewChange(admin, { status: 'HIDDEN', admin: true }));
+  assert.equal((await getDoc(doc(a, 'products/product-a'))).data().reviewCount, 0);
+  await assertFails(reviewChange(a, { rating: 4 }));
+  await assertSucceeds(reviewChange(admin, { status: 'PUBLISHED', admin: true }));
+  assert.equal((await getDoc(doc(a, 'products/product-a'))).data().reviewCount, 1);
+});
+
+test('seller config supports fixed shipping and QR, stays private for writes, and merges existing data', async () => {
+  const seller = env.authenticatedContext('seller').firestore(), customer = env.authenticatedContext('customer-a').firestore();
+  const config = {
+    sellerId: 'seller', shopName: 'Shop', shopDescription: '', shopAvatarUrl: '', address: 'Farm', latitude: 0, longitude: 0,
+    shippingFee: 20000, bankCode: 'VCB', bankAccountName: 'Test seller', bankAccountNumber: '123456',
+    qrUrl: 'https://example.com/qr.png', updatedAt: serverTimestamp()
+  };
+  const batch = writeBatch(seller);
+  batch.set(doc(seller, 'sellerPublicProfiles/seller'), config, { merge: true });
+  batch.update(doc(seller, 'users/seller'), {
+    shopName: config.shopName, shopDescription: config.shopDescription, address: config.address,
+    bankCode: config.bankCode, bankAccountName: config.bankAccountName, bankAccountNumber: config.bankAccountNumber,
+    updatedAt: serverTimestamp()
+  });
+  await assertSucceeds(batch.commit());
+  assert.equal((await getDoc(doc(seller, 'users/seller'))).data().bankAccountNumber, '123456');
+  await assertFails(updateDoc(doc(customer, 'sellerPublicProfiles/seller'), { shippingFee: 0, updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(doc(seller, 'sellerPublicProfiles/seller'), { shopName: 'Updated', updatedAt: serverTimestamp() }));
+  const profile = (await getDoc(doc(customer, 'sellerPublicProfiles/seller'))).data();
+  assert.equal(profile.shippingFee, 20000); assert.equal(profile.qrUrl, 'https://example.com/qr.png');
+});
+
+test('wrong fixed shipping fee rolls back order, cart and inventory together', async () => {
+  const customer = env.authenticatedContext('customer-a').firestore();
+  await assertFails(checkout(customer, 0));
+  assert.equal((await getDoc(doc(customer, 'orders/new-order'))).exists(), false);
+  assert.equal((await getDoc(doc(customer, 'customerCarts/customer-a'))).data().items.length, 2);
+  assert.equal((await getDoc(doc(customer, 'productBatches/batch-a'))).data().availableQuantity, 10);
+});
+
+test('notifications cannot be forged outside an atomic order status change', async () => {
+  const a = env.authenticatedContext('customer-a').firestore();
+  await assertFails(setDoc(doc(a, 'notifications/existing_DELIVERED'), {
+    id: 'existing_DELIVERED', userId: 'customer-a', type: 'ORDER', title: 'Fake', body: '',
+    referenceId: 'existing', isRead: false, createdAt: serverTimestamp()
+  }));
+});
+
+test('seller status transition creates a notification visible only to the order customer', async () => {
+  const customer = env.authenticatedContext('customer-a').firestore();
+  await assertSucceeds(checkout(customer));
+  const seller = env.authenticatedContext('seller').firestore();
+  await assertSucceeds(runTransaction(seller, async tx => {
+    const order = await tx.get(doc(seller, 'orders/new-order'));
+    tx.update(order.ref, { status: 'CONFIRMED', updatedAt: serverTimestamp() });
+    tx.set(doc(seller, 'notifications/new-order_CONFIRMED'), {
+      id: 'new-order_CONFIRMED', userId: 'customer-a', type: 'ORDER', title: 'Order confirmed', body: '',
+      referenceId: 'new-order', isRead: false, createdAt: serverTimestamp()
+    });
+  }));
+  await assertSucceeds(getDoc(doc(customer, 'notifications/new-order_CONFIRMED')));
+  await assertFails(getDoc(doc(env.authenticatedContext('customer-b').firestore(), 'notifications/new-order_CONFIRMED')));
 });

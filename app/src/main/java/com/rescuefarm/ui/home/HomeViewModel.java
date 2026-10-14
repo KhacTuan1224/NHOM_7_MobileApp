@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
+import com.rescuefarm.data.repository.SellerStorefront;
+
 
 public class HomeViewModel extends ViewModel {
     private final ProductRepository productRepository;
@@ -44,7 +44,7 @@ public class HomeViewModel extends ViewModel {
     private List<Banner> banners = new ArrayList<>();
     private final Map<String, List<ProductBatch>> productBatches = new HashMap<>();
     private final Map<String, LiveData<List<ProductBatch>>> batchSources = new HashMap<>();
-    private final Map<String, ListenerRegistration> sellerLocationSources = new HashMap<>();
+    private final Map<String, LiveData<SellerStorefront>> sellerLocationSources = new HashMap<>();
     private final Map<String, double[]> sellerCoordinates = new HashMap<>();
     private DiscoveryQuery query = DiscoveryQuery.empty();
     private Double latitude;
@@ -98,6 +98,7 @@ public class HomeViewModel extends ViewModel {
     public LiveData<String> getGreetingName() { return greetingName; }
     public List<Category> getCategoriesSnapshot() { return new ArrayList<>(categories); }
     public DiscoveryQuery getQuery() { return query; }
+    public List<Product> getProductsSnapshot() { return new ArrayList<>(products); }
     public boolean isAuthenticated() { return authRepository.isAuthenticated(); }
 
     private void loadGreetingName() {
@@ -177,7 +178,7 @@ public class HomeViewModel extends ViewModel {
             LiveData<List<ProductBatch>> source = productRepository.observeBatches(productId);
             batchSources.put(productId, source);
             homeState.addSource(source, values -> {
-                productBatches.put(productId, safe(values)); publishSearch();
+                productBatches.put(productId, safe(values)); publish();
             });
         }
     }
@@ -189,25 +190,22 @@ public class HomeViewModel extends ViewModel {
         if (needs) for (Product product : products) if (product != null && product.getSellerId() != null
                 && !product.getSellerId().trim().isEmpty()) needed.add(product.getSellerId());
         List<String> removed = new ArrayList<>();
-        for (Map.Entry<String, ListenerRegistration> entry : sellerLocationSources.entrySet()) {
-            if (!needed.contains(entry.getKey())) { entry.getValue().remove(); removed.add(entry.getKey()); }
+        for (Map.Entry<String, LiveData<SellerStorefront>> entry : sellerLocationSources.entrySet()) {
+            if (!needed.contains(entry.getKey())) { homeState.removeSource(entry.getValue()); removed.add(entry.getKey()); }
         }
         for (String id : removed) { sellerLocationSources.remove(id); sellerCoordinates.remove(id); }
         for (String id : needed) if (!sellerLocationSources.containsKey(id)) {
-            ListenerRegistration listener = FirebaseFirestore.getInstance().collection("sellerPublicProfiles")
-                    .document(id).addSnapshotListener((snapshot, error) -> {
-                        if (error != null || snapshot == null || !snapshot.exists()) sellerCoordinates.remove(id);
-                        else {
-                            double lat = number(snapshot.get("latitude")), lng = number(snapshot.get("longitude"));
-                            if (lat == 0D && lng == 0D) sellerCoordinates.remove(id);
-                            else sellerCoordinates.put(id, new double[]{lat, lng});
-                        }
-                        publishSearch();
-                    });
-            sellerLocationSources.put(id, listener);
+            if (userRepository == null) continue;
+            LiveData<SellerStorefront> source = userRepository.observePublicStorefront(id);
+            sellerLocationSources.put(id, source);
+            homeState.addSource(source, value -> {
+                if (value == null || !value.configured || value.latitude == 0D && value.longitude == 0D)
+                    sellerCoordinates.remove(id);
+                else sellerCoordinates.put(id, new double[]{value.latitude, value.longitude});
+                publishSearch();
+            });
         }
     }
-    private double number(Object value) { return value instanceof Number ? ((Number) value).doubleValue() : 0D; }
 
     private CampaignRepository.ActionCallback callback() {
         return new CampaignRepository.ActionCallback() {
@@ -244,7 +242,7 @@ public class HomeViewModel extends ViewModel {
         return values == null ? new ArrayList<>() : new ArrayList<>(values);
     }
     @Override protected void onCleared() {
-        for (ListenerRegistration source : sellerLocationSources.values()) source.remove();
+        for (LiveData<SellerStorefront> source : sellerLocationSources.values()) homeState.removeSource(source);
         sellerLocationSources.clear(); sellerCoordinates.clear();
         productRepository.close(); campaignRepository.close(); locationProvider.close();
     }

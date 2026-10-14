@@ -17,9 +17,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
+
+
+
 import com.rescuefarm.R;
 import com.rescuefarm.domain.enums.OrderStatus;
 import com.rescuefarm.domain.model.Order;
@@ -54,7 +54,7 @@ public class ReviewFragment extends Fragment {
     private boolean bindingTargets;
     private boolean editing;
     private boolean reviewsLoaded;
-    private ListenerRegistration productSummaryListener;
+
 
     private final ActivityResultLauncher<String> imagePicker = registerForActivityResult(
             new ActivityResultContracts.GetContent(), uri -> CloudinaryUploadUi.upload(this, uri,
@@ -124,13 +124,12 @@ public class ReviewFragment extends Fragment {
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
         saveButton.setOnClickListener(v -> save());
-        productSummaryListener = FirebaseFirestore.getInstance().collection("products").document(productId)
-                .addSnapshotListener((snapshot, error) -> {
-                    if (error != null || snapshot == null || !snapshot.exists() || !isAdded()) return;
-                    reviewSummary.setText(String.format(java.util.Locale.forLanguageTag("vi-VN"),
-                            "★ %.1f · %d đánh giá", number(snapshot, "averageRating"),
-                            (int) number(snapshot, "reviewCount")));
-                });
+        com.rescuefarm.ui.product.ProductViewModel productVm = new ViewModelProvider(this,
+            new com.rescuefarm.ui.product.ProductViewModelFactory(requireContext())).get(com.rescuefarm.ui.product.ProductViewModel.class);
+        productVm.observeProduct(productId).observe(getViewLifecycleOwner(), product -> {
+            if(product!=null)reviewSummary.setText(String.format(java.util.Locale.forLanguageTag("vi-VN"),
+                "★ %.1f · %d đánh giá", product.getAverageRating(),product.getReviewCount()));
+        });
         vm.refreshReviews(productId);
         if (!uid.isEmpty()) orderViewModel.observeCustomerOrders(uid).observe(
                 getViewLifecycleOwner(), orders -> renderEligibleItems(orders, orderIdArg, orderItemArg));
@@ -144,24 +143,18 @@ public class ReviewFragment extends Fragment {
                 eligibleOrders.put(orderValue.getId(), orderValue);
         }
         for (String id : eligibleOrders.keySet()) if (loadedOrderIds.add(id)) {
-            FirebaseFirestore.getInstance().collection("orders").document(id).collection("items")
-                    .get().addOnSuccessListener(snapshot -> {
-                        if (!isAdded() || !eligibleOrders.containsKey(id)) return;
-                        List<OrderItem> savedItems = new ArrayList<>();
-                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                            String itemProductId = doc.getString("productId");
-                            if (!productId.equals(itemProductId)) continue;
-                            try {
-                                savedItems.add(OrderItem.snapshot(doc.getId(), id, itemProductId,
-                                        doc.getString("batchId"), doc.getString("productNameSnapshot"),
-                                        doc.getString("productImageSnapshot"), doc.getString("unitSnapshot"),
-                                        number(doc, "originalPriceSnapshot"), number(doc, "rescuePriceSnapshot"),
-                                        number(doc, "finalPriceSnapshot"), number(doc, "quantity")));
-                            } catch (RuntimeException ignored) { }
-                        }
-                        itemsByOrder.put(id, savedItems);
-                        bindReviewTargets(selectedOrderId, selectedItemId);
-                    });
+            orderViewModel.getOrderItems(id,new com.rescuefarm.data.repository.OrderRepository.ItemCallback() {
+                public void success(List<OrderItem> values) {
+                    if (getView()==null || !eligibleOrders.containsKey(id)) return;
+                    List<OrderItem> savedItems = new ArrayList<>();
+                    for(OrderItem value:values)if(productId.equals(value.getProductId()))savedItems.add(value);
+                    itemsByOrder.put(id,savedItems); bindReviewTargets(selectedOrderId,selectedItemId);
+                }
+                public void error(String message) {
+                    loadedOrderIds.remove(id);
+                    if(getView()!=null)reviewStatus.setText(message);
+                }
+            });
         }
         bindReviewTargets(selectedOrderId, selectedItemId);
     }
@@ -302,19 +295,12 @@ public class ReviewFragment extends Fragment {
 
     private String targetKey(String orderId, String itemId) { return uid + "_" + orderId + "_" + itemId; }
     private String join(List<String> values) { return values == null ? "" : android.text.TextUtils.join("\n", values); }
-    private double number(DocumentSnapshot document, String field) {
-        Object value = document.get(field); return value instanceof Number ? ((Number) value).doubleValue() : 0D;
-    }
     private void updateReviewStatus(List<Review> reviews) {
         if (!reviewsLoaded) return;
         reviewStatus.setText(reviews == null || reviews.isEmpty()
                 ? "Sản phẩm chưa có đánh giá." : "");
     }
 
-    @Override public void onDestroyView() {
-        if (productSummaryListener != null) { productSummaryListener.remove(); productSummaryListener = null; }
-        super.onDestroyView();
-    }
     private String text(EditText field) { return field.getText().toString().trim(); }
 
     private static final class ReviewTarget {

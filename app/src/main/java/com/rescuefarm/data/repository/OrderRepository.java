@@ -9,6 +9,8 @@ import com.rescuefarm.service.order.CheckoutRequest;
 import java.util.List;
 
 public interface OrderRepository {
+    interface ItemCallback { void success(List<com.rescuefarm.domain.model.OrderItem> items); void error(String message); }
+    default void getOrderItems(String id, ItemCallback callback) { callback.error("Cần kết nối mạng để tải sản phẩm của đơn."); }
     enum ErrorCode { VALIDATION, INSUFFICIENT_STOCK, MULTI_SELLER, CAMPAIGN_CONFLICT,
         FORBIDDEN, NETWORK, NOT_FOUND, CONFLICT, UNKNOWN }
     interface OrderCallback {

@@ -14,6 +14,7 @@ public class OrderViewModel extends ViewModel {
     private final OrderRepository repository; private final MutableLiveData<OrderLifecycleState> state=new MutableLiveData<>(OrderLifecycleState.idle());
     public OrderViewModel(OrderRepository repository){this.repository=repository;}
     public LiveData<OrderLifecycleState> getState(){return state;}
+    public void getOrderItems(String id, OrderRepository.ItemCallback callback) { repository.getOrderItems(id, callback); }
     public LiveData<List<Order>> observeCustomerOrders(String ownerId) {
         if (ownerId == null || ownerId.trim().isEmpty()) {
             return new MutableLiveData<>(java.util.Collections.emptyList());
