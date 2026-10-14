@@ -13,7 +13,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.ScrollView;
+import android.widget.CheckBox;
 import android.widget.Toast;
+import android.app.DatePickerDialog;
 import androidx.appcompat.app.AlertDialog;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -33,6 +35,10 @@ import java.util.Map;
 import java.util.List;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.Calendar;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 
 public final class AdminResourceFragment extends Fragment {
     private final AdminTransitionPolicy policy = new AdminTransitionPolicy();
@@ -45,8 +51,13 @@ public final class AdminResourceFragment extends Fragment {
     private EditText searchInput;
     private Spinner statusFilter;
     private View loadMoreButton;
+    private Button orderFromButton, orderThroughButton;
+    private Date orderFromDate, orderThroughDate;
     private String searchTerm = "";
     private boolean bindingStatusFilter;
+    private final Runnable pendingSearch = () -> {
+        if (viewModel != null) viewModel.setSearchTerm(searchTerm);
+    };
     private String selectedAssetId = "";
     private View pendingImageButton;
     private TextView pendingImageStatus;
@@ -75,13 +86,35 @@ public final class AdminResourceFragment extends Fragment {
         searchInput = view.findViewById(R.id.adminSearchInput);
         statusFilter = view.findViewById(R.id.adminStatusFilter);
         loadMoreButton = view.findViewById(R.id.loadMoreAdminItemsButton);
+        View dateFilters = view.findViewById(R.id.adminOrderDateFilters);
+        orderFromButton = view.findViewById(R.id.adminOrderFromDate);
+        orderThroughButton = view.findViewById(R.id.adminOrderThroughDate);
         title.setText(getString(R.string.admin_section_title_format, label(section)));
+        View addCatalog = view.findViewById(R.id.adminAddCatalogResourceButton);
+        if (section == Section.CATEGORIES || section == Section.BANNERS) {
+            addCatalog.setVisibility(View.VISIBLE);
+            addCatalog.setOnClickListener(v -> showCatalogEditor(null));
+        }
         reason.setVisibility(section == Section.CATEGORIES || section == Section.BANNERS
                 ? View.VISIBLE : View.GONE);
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
         if (section != Section.ANALYTICS) {
+            if (section == Section.ORDERS) {
+                dateFilters.setVisibility(View.VISIBLE);
+                orderFromDate = viewModel.getOrderFromDate(); orderThroughDate = viewModel.getOrderThroughDate();
+                refreshDateLabels();
+                orderFromButton.setOnClickListener(v -> pickOrderDate(true));
+                orderThroughButton.setOnClickListener(v -> pickOrderDate(false));
+                view.findViewById(R.id.adminOrderClearDates).setOnClickListener(v -> {
+                    orderFromDate = null; orderThroughDate = null; refreshDateLabels();
+                    viewModel.setOrderDateRange(null, null);
+                });
+            } else dateFilters.setVisibility(View.GONE);
+            if (section == Section.ORDERS) searchInput.setHint("orderCode / code: / seller: / customer: / id:");
+            else if (section == Section.REPORTS) searchInput.setHint("target ID hoặc target:...");
+            else searchInput.setHint("Tìm theo tên hoặc nhập id:<mã>");
             statusFilter.setAdapter(new ArrayAdapter<>(requireContext(),
                     android.R.layout.simple_spinner_dropdown_item,
                     getResources().getStringArray(R.array.admin_status_filters)));
@@ -95,9 +128,9 @@ public final class AdminResourceFragment extends Fragment {
             searchInput.addTextChangedListener(new android.text.TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
                 @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    searchTerm = s == null ? "" : s.toString().trim().toLowerCase(Locale.ROOT);
-                    AdminScreenState current = viewModel.getState().getValue();
-                    if (current != null) renderItems(current.getItems());
+                    searchTerm = s == null ? "" : s.toString().trim();
+                    searchInput.removeCallbacks(pendingSearch);
+                    searchInput.postDelayed(pendingSearch, 350L);
                 }
                 @Override public void afterTextChanged(android.text.Editable s) { }
             });
@@ -128,11 +161,7 @@ public final class AdminResourceFragment extends Fragment {
         if (section == Section.ANALYTICS) return;
         container.removeAllViews();
         if (items == null) return;
-        for (AdminListItem item : items) {
-            String searchable = (item.getTitle() + " " + item.getSubtitle() + " " + item.getId())
-                    .toLowerCase(Locale.ROOT);
-            if (searchTerm.isEmpty() || searchable.contains(searchTerm)) renderItem(item);
-        }
+        for (AdminListItem item : items) renderItem(item);
     }
 
     private void renderItem(AdminListItem item) {
@@ -147,6 +176,8 @@ public final class AdminResourceFragment extends Fragment {
         detail.setOnClickListener(v -> openDetail(item));
         row.addView(detail);
         if (section == Section.CATEGORIES || section == Section.BANNERS) {
+            Button edit = buttonText("Chỉnh sửa thông tin");
+            edit.setOnClickListener(v -> showCatalogEditor(item)); row.addView(edit);
             TextView imageStatus = new TextView(requireContext());
             imageStatus.setText(item.getImageUrl().isEmpty() ? R.string.no_image_selected
                     : R.string.category_banner_image_exists);
@@ -162,16 +193,164 @@ public final class AdminResourceFragment extends Fragment {
             toggle.setOnClickListener(v -> viewModel.setActive(item.getId(), !item.isActive(),
                     reason.getText().toString().trim()));
             row.addView(toggle);
-        } else if (section != Section.SELLER_APPLICATIONS && section != Section.REPORTS
-                && section != Section.ORDERS && section != Section.USERS) {
-            for (String target : policy.allowedTargets(section, item.getStatus())) {
-                Button action = buttonText(target);
-                action.setOnClickListener(v -> viewModel.transition(item.getId(), target,
-                        reason.getText().toString().trim()));
-                row.addView(action);
-            }
         }
         container.addView(row);
+    }
+
+    private void showCatalogEditor(AdminListItem item) {
+        boolean editing = item != null;
+        boolean category = section == Section.CATEGORIES;
+        LinearLayout fields = new LinearLayout(requireContext()); fields.setOrientation(LinearLayout.VERTICAL);
+        int padding = (int) (20 * getResources().getDisplayMetrics().density);
+        fields.setPadding(padding, padding, padding, padding);
+        EditText id = editor(category ? "ID ổn định (slug)" : "ID Banner (để trống để tự tạo)");
+        if (editing) { id.setText(item.getId()); id.setEnabled(false); }
+        else if (category) id.setHint("Ví dụ: rau-cu");
+        fields.addView(id);
+        EditText name = editor(category ? "Tên danh mục" : "Tiêu đề Banner"); fields.addView(name);
+        EditText description = null;
+        if (category) {
+            description = editor("Mô tả danh mục (không bắt buộc)");
+            description.setSingleLine(false); description.setMinLines(2); description.setMaxLines(4);
+            fields.addView(description);
+        }
+        final EditText descriptionField = description;
+        EditText image = editor("Cloudinary image URL (có thể tải ảnh sau khi tạo)"); fields.addView(image);
+        EditText order = editor("Thứ tự hiển thị (0–10000)"); order.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); fields.addView(order);
+        EditText campaign = null, start = null, end = null;
+        if (!category) {
+            campaign = editor("Campaign ID (không bắt buộc)"); fields.addView(campaign);
+            start = dateEditor("Ngày bắt đầu (YYYY-MM-DD)"); fields.addView(start);
+            end = dateEditor("Ngày kết thúc (YYYY-MM-DD)"); fields.addView(end);
+            Calendar defaults = Calendar.getInstance();
+            start.setText(formatDay(defaults.getTime())); defaults.add(Calendar.DAY_OF_YEAR, 7);
+            end.setText(formatDay(defaults.getTime()));
+        }
+        final EditText campaignField = campaign, startField = start, endField = end;
+        CheckBox active = new CheckBox(requireContext()); active.setText("Đang hiển thị"); fields.addView(active);
+        EditText note = editor("Lý do quản trị (bắt buộc khi tắt) "); note.setMinLines(2); fields.addView(note);
+        if (editing) {
+            viewModel.loadDetail(section, item.getId(), new AdminRepository.DetailCallback() {
+                @Override public void onSuccess(Map<String, Object> data) {
+                    if (!isAdded()) return;
+                    name.setText(String.valueOf(data.get(category ? "name" : "title")));
+                    if (category) descriptionField.setText(data.get("description") == null
+                            ? "" : String.valueOf(data.get("description")));
+                    image.setText(String.valueOf(data.getOrDefault("imageUrl", "")));
+                    order.setText(String.valueOf(data.getOrDefault("displayOrder", 0)));
+                    active.setChecked(Boolean.TRUE.equals(data.get("active")));
+                    note.setText("");
+                    if (!category) {
+                        Object campaignValue = data.get("campaignId");
+                        campaignField.setText(campaignValue == null ? "" : String.valueOf(campaignValue));
+                        startField.setText(formatDay(asDate(data.get("startDate"))));
+                        endField.setText(formatDay(asDate(data.get("endDate"))));
+                    }
+                }
+                @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                    if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle(editing ? "Chỉnh sửa " + (category ? "Category" : "Banner")
+                        : "Tạo " + (category ? "Category" : "Banner"))
+                .setView(fields).setNegativeButton("Hủy", null).setPositiveButton("Lưu", null).create();
+        dialog.setOnShowListener(unused -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String resourceId = id.getText().toString().trim();
+            String resourceName = name.getText().toString().trim();
+            String displayImage = image.getText().toString().trim();
+            String reasonText = note.getText().toString().trim();
+            int displayOrder;
+            try { displayOrder = Integer.parseInt(order.getText().toString().trim()); }
+            catch (NumberFormatException error) { order.setError("Nhập số thứ tự hợp lệ."); return; }
+            Map<String, Object> values = new java.util.HashMap<>();
+            values.put(category ? "name" : "title", resourceName);
+            if (category) values.put("description", descriptionField.getText().toString().trim());
+            values.put("imageUrl", displayImage); values.put("displayOrder", displayOrder);
+            values.put("active", active.isChecked()); values.put("moderationReason", reasonText);
+            if (!category) {
+                Date startDate = parseDay(startField.getText().toString());
+                Date endDate = parseDay(endField.getText().toString());
+                if (startDate == null || endDate == null || !endDate.after(startDate)) {
+                    endField.setError("Nhập ngày hợp lệ; ngày kết thúc phải sau ngày bắt đầu."); return;
+                }
+                values.put("campaignId", campaignField.getText().toString().trim());
+                values.put("startDate", startDate); values.put("endDate", endDate);
+            }
+            viewModel.saveCatalogResource(resourceId, values, new AdminRepository.ActionCallback() {
+                @Override public void onSuccess() {
+                    if (isAdded()) Toast.makeText(requireContext(), "Đã lưu và ghi audit.", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }
+                @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                    if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                }
+            });
+        }));
+        dialog.show();
+    }
+
+    private EditText editor(String hint) {
+        EditText input = new EditText(requireContext()); input.setHint(hint);
+        input.setSingleLine(true); return input;
+    }
+
+    private EditText dateEditor(String hint) {
+        EditText input = editor(hint); input.setFocusable(false); input.setClickable(true);
+        input.setOnClickListener(v -> {
+            Calendar value = Calendar.getInstance(); Date current = parseDay(input.getText().toString());
+            if (current != null) value.setTime(current);
+            new DatePickerDialog(requireContext(), (picker, year, month, day) -> {
+                Calendar selected = Calendar.getInstance(); selected.set(year, month, day, 12, 0, 0);
+                selected.set(Calendar.MILLISECOND, 0); input.setText(formatDay(selected.getTime()));
+            }, value.get(Calendar.YEAR), value.get(Calendar.MONTH), value.get(Calendar.DAY_OF_MONTH)).show();
+        });
+        return input;
+    }
+
+    private String formatDay(Date value) {
+        return value == null ? "" : new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(value);
+    }
+
+    private Date parseDay(String value) {
+        try { return new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(value.trim()); }
+        catch (ParseException | RuntimeException error) { return null; }
+    }
+
+    private Date asDate(Object value) {
+        if (value instanceof Date) return (Date) value;
+        if (value instanceof com.google.firebase.Timestamp) return ((com.google.firebase.Timestamp) value).toDate();
+        return null;
+    }
+
+    private void pickOrderDate(boolean from) {
+        Calendar value = Calendar.getInstance();
+        Date current = from ? orderFromDate : orderThroughDate;
+        if (current != null) value.setTime(current);
+        new DatePickerDialog(requireContext(), (picker, year, month, day) -> {
+            Calendar selected = Calendar.getInstance();
+            selected.set(year, month, day, 0, 0, 0); selected.set(Calendar.MILLISECOND, 0);
+            if (from) orderFromDate = selected.getTime();
+            else {
+                selected.add(Calendar.DAY_OF_YEAR, 1); // inclusive selected day, exclusive upper bound
+                orderThroughDate = selected.getTime();
+            }
+            if (orderFromDate != null && orderThroughDate != null && !orderThroughDate.after(orderFromDate)) {
+                Toast.makeText(requireContext(), "Ngày kết thúc phải cùng hoặc sau ngày bắt đầu.", Toast.LENGTH_SHORT).show();
+                if (from) orderFromDate = null; else orderThroughDate = null;
+            }
+            refreshDateLabels(); viewModel.setOrderDateRange(orderFromDate, orderThroughDate);
+        }, value.get(Calendar.YEAR), value.get(Calendar.MONTH), value.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void refreshDateLabels() {
+        if (orderFromButton != null) orderFromButton.setText(orderFromDate == null ? "Từ ngày"
+                : "Từ " + formatDay(orderFromDate));
+        if (orderThroughButton != null) {
+            Date shown = orderThroughDate == null ? null : new Date(orderThroughDate.getTime() - 1L);
+            orderThroughButton.setText(shown == null ? "Đến ngày" : "Đến " + formatDay(shown));
+        }
     }
 
     private void openDetail(AdminListItem item) {
@@ -207,18 +386,29 @@ public final class AdminResourceFragment extends Fragment {
             addReportActions(body, dialog, item, detail, actionReason);
         }
         else if (section != Section.ORDERS && section != Section.CATEGORIES && section != Section.BANNERS) {
-            for (String target : policy.allowedTargets(section, item.getStatus())) {
-                Button action = buttonText(adminActionLabel(target)); body.addView(action);
-                action.setOnClickListener(v -> viewModel.transition(item.getId(), target,
-                        actionReason.getText().toString().trim(), new AdminRepository.ActionCallback() {
-                            @Override public void onSuccess() {
-                                if (isAdded()) Toast.makeText(requireContext(), "Đã cập nhật và ghi audit.", Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
-                            }
-                            @Override public void onError(AdminRepository.ErrorCode code, String message) {
-                                if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
-                            }
-                        }));
+            for (String target : allowedTargets(item, detail)) {
+                Button action = buttonText(adminActionLabel(target, item, detail)); body.addView(action);
+                action.setOnClickListener(v -> {
+                    String note = actionReason.getText().toString().trim();
+                    try { policy.validate(section, item.getStatus(), target, note); }
+                    catch (IllegalArgumentException | IllegalStateException error) {
+                        Toast.makeText(requireContext(), "Cần lý do hợp lệ hoặc trạng thái đã thay đổi.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    new AlertDialog.Builder(requireContext()).setTitle("Xác nhận thao tác")
+                            .setMessage("Bạn có chắc muốn " + adminActionLabel(target, item, detail) + "?")
+                            .setNegativeButton("Quay lại", null)
+                            .setPositiveButton("Xác nhận", (confirm, which) -> viewModel.transition(item.getId(), target,
+                                    note, new AdminRepository.ActionCallback() {
+                                        @Override public void onSuccess() {
+                                            if (isAdded()) Toast.makeText(requireContext(), "Đã cập nhật và ghi audit.", Toast.LENGTH_SHORT).show();
+                                            dialog.dismiss();
+                                        }
+                                        @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                                            if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                                        }
+                                    })).show();
+                });
             }
         }
         dialog.show();
@@ -241,8 +431,16 @@ public final class AdminResourceFragment extends Fragment {
     private void addReportButton(LinearLayout body, AlertDialog dialog, AdminListItem item,
             EditText reasonInput, AdminRepository.ReportAction action, String label) {
         Button button = buttonText(label); body.addView(button);
-        button.setOnClickListener(v -> viewModel.resolveReport(item.getId(), action,
-                reasonInput.getText().toString().trim(), new AdminRepository.ActionCallback() {
+        button.setOnClickListener(v -> {
+            String note = reasonInput.getText().toString().trim();
+            if (action != AdminRepository.ReportAction.MARK_IN_REVIEW && note.length() < 3) {
+                reasonInput.setError("Nhập lý do xử lý tối thiểu 3 ký tự."); return;
+            }
+            new AlertDialog.Builder(requireContext()).setTitle("Xác nhận xử lý report")
+                    .setMessage(label + "? Thao tác sẽ được ghi audit.")
+                    .setNegativeButton("Quay lại", null)
+                    .setPositiveButton("Xác nhận", (confirm, which) -> viewModel.resolveReport(item.getId(), action,
+                            note, new AdminRepository.ActionCallback() {
                     @Override public void onSuccess() {
                         if (isAdded()) Toast.makeText(requireContext(), "Đã cập nhật report và ghi audit.", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
@@ -250,7 +448,8 @@ public final class AdminResourceFragment extends Fragment {
                     @Override public void onError(AdminRepository.ErrorCode code, String message) {
                         if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
                     }
-                }));
+                })).show();
+        });
     }
 
     private boolean supportsHide(String type, Map<String, Object> detail) {
@@ -283,12 +482,14 @@ public final class AdminResourceFragment extends Fragment {
                 else if (row instanceof String && ((String) row).startsWith("https://res.cloudinary.com/")) {
                     ImageView image = new ImageView(requireContext()); image.setAdjustViewBounds(true);
                     image.setMaxHeight((int) (240 * getResources().getDisplayMetrics().density));
-                    body.addView(image); Glide.with(this).load(row).centerCrop().into(image);
+                    body.addView(image); Glide.with(this).load(row)
+                            .error(android.R.drawable.ic_menu_report_image).centerCrop().into(image);
                 } else addDetailText(body, String.valueOf(row));
             } else if (value instanceof String && ((String) value).startsWith("https://res.cloudinary.com/")) {
                 ImageView image = new ImageView(requireContext()); image.setAdjustViewBounds(true);
                 image.setMaxHeight((int) (240 * getResources().getDisplayMetrics().density));
-                body.addView(image); Glide.with(this).load(value).centerCrop().into(image);
+                body.addView(image); Glide.with(this).load(value)
+                        .error(android.R.drawable.ic_menu_report_image).centerCrop().into(image);
             } else if (value != null && !key.toLowerCase(Locale.ROOT).contains("publicid")) {
                 addDetailText(body, humanize(prefix + key) + ": " + value);
             }
@@ -304,13 +505,26 @@ public final class AdminResourceFragment extends Fragment {
         return value.replace('.', ' ').replace('_', ' ').replaceAll("([a-z])([A-Z])", "$1 $2");
     }
 
-    private String adminActionLabel(String status) {
+    private String adminActionLabel(String status, AdminListItem item, Map<String, Object> detail) {
+        if (section == Section.PRODUCTS && "HIDDEN".equals(item.getStatus())
+                && java.util.Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(status))
+            return "Khôi phục Product về " + status;
         switch (status) {
             case "APPROVED": case "ACTIVE": case "PUBLISHED": return "Phê duyệt / khôi phục";
             case "REJECTED": return "Từ chối"; case "HIDDEN": return "Ẩn";
             case "STOPPED": return "Dừng Campaign"; case "BLOCKED": return "Khóa tài khoản";
             default: return status;
         }
+    }
+
+    private List<String> allowedTargets(AdminListItem item, Map<String, Object> detail) {
+        if (section == Section.PRODUCTS && "HIDDEN".equals(item.getStatus())) {
+            String previous = detail.get("moderationPreviousStatus") == null ? "INACTIVE"
+                    : String.valueOf(detail.get("moderationPreviousStatus"));
+            if (!java.util.Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(previous)) previous = "INACTIVE";
+            return java.util.Collections.singletonList(previous);
+        }
+        return policy.allowedTargets(section, item.getStatus());
     }
 
     private void openReportedTarget(Map<String, Object> detail) {
