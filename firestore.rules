@@ -1015,7 +1015,12 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      allow get, list: if resource.data.status == 'PUBLISHED'
+      allow get: if (isApprovedSeller(request.auth.uid)
+              && !exists(/databases/$(database)/documents/posts/$(postId)))
+          || resource.data.status == 'PUBLISHED'
+          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
+          || isAdmin();
+      allow list: if resource.data.status == 'PUBLISHED'
           || (isSignedIn() && resource.data.sellerId == request.auth.uid)
           || isAdmin();
       allow create: if isApprovedSeller(request.auth.uid)
