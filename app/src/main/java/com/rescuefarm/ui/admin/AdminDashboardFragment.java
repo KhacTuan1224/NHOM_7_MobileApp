@@ -46,6 +46,7 @@ public final class AdminDashboardFragment extends Fragment {
         bind(view, R.id.adminReportsButton, Section.REPORTS);
         bind(view, R.id.adminOrdersButton, Section.ORDERS);
         bind(view, R.id.adminAnalyticsButton, Section.ANALYTICS);
+        bind(view, R.id.adminShippingSettingsButton, Section.SHIPPING_SETTINGS);
         viewModel.refreshDashboard();
     }
 
@@ -76,6 +77,8 @@ public final class AdminDashboardFragment extends Fragment {
                 + "\nĐiểm mobile đang chia sẻ vị trí mới: " + value.getLiveMobilePoints()
                 + "\nTổng lượng đã giải cứu: " + String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())
                 + "\nTỷ lệ hoàn thành: " + String.format(Locale.getDefault(), "%.1f%%", value.getCompletionRate())
-                + " (rescued / target của Campaign đã duyệt)");
+                + " (rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt)"
+                + "\nDoanh thu dưới đây là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
+                + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
     }
 }

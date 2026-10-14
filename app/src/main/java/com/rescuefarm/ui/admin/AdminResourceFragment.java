@@ -53,6 +53,8 @@ public final class AdminResourceFragment extends Fragment {
     private View loadMoreButton;
     private Button orderFromButton, orderThroughButton;
     private Date orderFromDate, orderThroughDate;
+    private EditText shippingBaseFee, shippingFreeDistance, shippingPerKmFee;
+    private TextView shippingPreview;
     private String searchTerm = "";
     private boolean bindingStatusFilter;
     private final Runnable pendingSearch = () -> {
@@ -94,6 +96,12 @@ public final class AdminResourceFragment extends Fragment {
         if (section == Section.CATEGORIES || section == Section.BANNERS) {
             addCatalog.setVisibility(View.VISIBLE);
             addCatalog.setOnClickListener(v -> showCatalogEditor(null));
+        }
+        if (section == Section.SHIPPING_SETTINGS) {
+            addCatalog.setVisibility(View.GONE); reason.setVisibility(View.GONE);
+            searchInput.setVisibility(View.GONE); statusFilter.setVisibility(View.GONE);
+            view.findViewById(R.id.adminOrderDateFilters).setVisibility(View.GONE);
+            loadMoreButton.setVisibility(View.GONE);
         }
         reason.setVisibility(section == Section.CATEGORIES || section == Section.BANNERS
                 ? View.VISIBLE : View.GONE);
@@ -145,16 +153,91 @@ public final class AdminResourceFragment extends Fragment {
 
     private void refresh() {
         if (section == Section.ANALYTICS) viewModel.refreshDashboard();
+        else if (section == Section.SHIPPING_SETTINGS) loadShippingConfig();
         else viewModel.refreshSection(section);
     }
 
     private void render(AdminScreenState state) {
         progress.setVisibility(state.getStatus() == AdminScreenState.Status.LOADING ? View.VISIBLE : View.GONE);
         message.setText(state.getMessage());
-        container.removeAllViews();
         if (section == Section.ANALYTICS) { renderAnalytics(state.getDashboard()); return; }
+        if (section == Section.SHIPPING_SETTINGS) { renderShippingSettings(); return; }
+        container.removeAllViews();
         renderItems(state.getItems());
         loadMoreButton.setVisibility(viewModel.hasMore() ? View.VISIBLE : View.GONE);
+    }
+
+    private void renderShippingSettings() {
+        if (shippingBaseFee != null && shippingBaseFee.getParent() == container) return;
+        addDetailText(container, "Phí giao hàng tính theo khoảng cách Haversine: phí cơ bản + ceil(max(0, km − km miễn phí) × phí/km). Pickup và On-site Rescue không tính phí giao hàng.");
+        shippingBaseFee = shippingNumberField("Phí cơ bản (₫)"); container.addView(shippingBaseFee);
+        shippingFreeDistance = shippingNumberField("Khoảng cách miễn phí (km)"); container.addView(shippingFreeDistance);
+        shippingPerKmFee = shippingNumberField("Phí mỗi km vượt ngưỡng (₫/km)"); container.addView(shippingPerKmFee);
+        shippingPreview = new TextView(requireContext()); container.addView(shippingPreview);
+        android.text.TextWatcher watcher = new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { updateShippingPreview(); }
+            @Override public void afterTextChanged(android.text.Editable s) { }
+        };
+        shippingBaseFee.addTextChangedListener(watcher); shippingFreeDistance.addTextChangedListener(watcher);
+        shippingPerKmFee.addTextChangedListener(watcher);
+        Button save = buttonText("Lưu cấu hình phí"); container.addView(save);
+        save.setOnClickListener(v -> {
+            try {
+                double base = Double.parseDouble(shippingBaseFee.getText().toString().trim());
+                double free = Double.parseDouble(shippingFreeDistance.getText().toString().trim());
+                double perKm = Double.parseDouble(shippingPerKmFee.getText().toString().trim());
+                viewModel.saveShippingConfig(base, free, perKm, new AdminRepository.ActionCallback() {
+                    @Override public void onSuccess() {
+                        if (!isAdded()) return;
+                        Toast.makeText(requireContext(), "Đã lưu cấu hình và audit.", Toast.LENGTH_SHORT).show();
+                        loadShippingConfig();
+                    }
+                    @Override public void onError(AdminRepository.ErrorCode code, String error) {
+                        if (isAdded()) Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (NumberFormatException error) {
+                Toast.makeText(requireContext(), "Nhập đủ ba giá trị số hợp lệ.", Toast.LENGTH_LONG).show();
+            }
+        });
+        loadShippingConfig();
+    }
+
+    private EditText shippingNumberField(String hint) {
+        EditText field = editor(hint);
+        field.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        return field;
+    }
+
+    private void loadShippingConfig() {
+        message.setText("Đang tải cấu hình từ Firestore…");
+        viewModel.loadShippingConfig(new AdminRepository.DetailCallback() {
+            @Override public void onSuccess(Map<String, Object> data) {
+                if (!isAdded() || shippingBaseFee == null) return;
+                shippingBaseFee.setText(data.get("baseFeeVnd") == null ? "" : String.valueOf(data.get("baseFeeVnd")));
+                shippingFreeDistance.setText(data.get("freeDistanceKm") == null ? "" : String.valueOf(data.get("freeDistanceKm")));
+                shippingPerKmFee.setText(data.get("perKmFeeVnd") == null ? "" : String.valueOf(data.get("perKmFeeVnd")));
+                Object updater = data.get("updatedBy");
+                message.setText(data.isEmpty() ? "Chưa cấu hình phí giao hàng."
+                        : "Đã cập nhật bởi " + (updater == null ? "(chưa ghi nhận)" : updater));
+                updateShippingPreview();
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String error) {
+                if (isAdded()) message.setText(error);
+            }
+        });
+    }
+
+    private void updateShippingPreview() {
+        if (shippingPreview == null) return;
+        try {
+            double base = Double.parseDouble(shippingBaseFee.getText().toString());
+            double free = Double.parseDouble(shippingFreeDistance.getText().toString());
+            double perKm = Double.parseDouble(shippingPerKmFee.getText().toString());
+            double sample = base + Math.ceil(Math.max(0D, 10D - free) * perKm);
+            shippingPreview.setText("Ví dụ 10 km: " + NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(sample));
+        } catch (NumberFormatException ignored) { shippingPreview.setText("Nhập đủ giá trị để xem ví dụ phí cho 10 km."); }
     }
 
     private void renderItems(java.util.List<AdminListItem> items) {
@@ -373,6 +456,7 @@ public final class AdminResourceFragment extends Fragment {
         body.setPadding(padding, padding, padding, padding); scroll.addView(body);
         addDetailText(body, item.getTitle() + "\n" + item.getStatus() + " · ID " + item.getId());
         addDetailMap(body, detail, "");
+        if (section == Section.ORDERS) addOrderWarnings(body, detail);
         EditText actionReason = new EditText(requireContext());
         actionReason.setHint(R.string.admin_reason_hint); actionReason.setMinLines(2);
         actionReason.setMaxLines(4); actionReason.setVisibility(section == Section.ORDERS
@@ -412,6 +496,36 @@ public final class AdminResourceFragment extends Fragment {
             }
         }
         dialog.show();
+    }
+
+    private void addOrderWarnings(LinearLayout body, Map<String, Object> detail) {
+        List<String> warnings = new java.util.ArrayList<>();
+        Date created = asDate(detail.get("createdAt"));
+        long ageMs = created == null ? 0L : Math.max(0L, System.currentTimeMillis() - created.getTime());
+        String status = String.valueOf(detail.get("status"));
+        if ("PENDING".equals(status) && ageMs >= 24L * 60L * 60L * 1000L)
+            warnings.add("Đơn đang chờ xác nhận hơn 24 giờ.");
+        if ("BANK_TRANSFER".equals(String.valueOf(detail.get("paymentMethod")))
+                && !"PAID".equals(String.valueOf(detail.get("paymentStatus")))
+                && ageMs >= 60L * 60L * 1000L)
+            warnings.add("Chuyển khoản chưa được xác nhận sau hơn 1 giờ.");
+        if (!(detail.get("payment") instanceof Map<?, ?>)) warnings.add("Đơn hàng thiếu Payment record.");
+        if ("DELIVERY".equals(String.valueOf(detail.get("fulfillmentType")))) {
+            Object raw = detail.get("shipment");
+            if (!(raw instanceof Map<?, ?>)) warnings.add("Đơn giao hàng thiếu Shipment record.");
+            else {
+                Map<?, ?> shipment = (Map<?, ?>) raw;
+                String shipmentStatus = String.valueOf(shipment.get("status"));
+                if ("SHIPPING".equals(status) && !"SHIPPING".equals(shipmentStatus))
+                    warnings.add("Trạng thái Shipment không khớp trạng thái Order.");
+                if ("DELIVERED".equals(status) && !"DELIVERED".equals(shipmentStatus))
+                    warnings.add("Order đã hoàn tất nhưng Shipment chưa ở trạng thái DELIVERED.");
+            }
+        }
+        if (!warnings.isEmpty()) {
+            addDetailText(body, "\nCẢNH BÁO KIỂM TRA");
+            for (String warning : warnings) addDetailText(body, "• " + warning);
+        }
     }
 
     private void addReportActions(LinearLayout body, AlertDialog dialog, AdminListItem item,
@@ -490,6 +604,10 @@ public final class AdminResourceFragment extends Fragment {
                 image.setMaxHeight((int) (240 * getResources().getDisplayMetrics().density));
                 body.addView(image); Glide.with(this).load(value)
                         .error(android.R.drawable.ic_menu_report_image).centerCrop().into(image);
+            } else if (value instanceof Date || value instanceof com.google.firebase.Timestamp) {
+                Date date = asDate(value);
+                if (date != null) addDetailText(body, humanize(prefix + key) + ": "
+                        + new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date));
             } else if (value != null && !key.toLowerCase(Locale.ROOT).contains("publicid")) {
                 addDetailText(body, humanize(prefix + key) + ": " + value);
             }
@@ -564,6 +682,8 @@ public final class AdminResourceFragment extends Fragment {
                 + "\nTổng lượng đã giải cứu: " + String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())
                 + "\nTỷ lệ hoàn thành: " + String.format(Locale.getDefault(), "%.1f%%", value.getCompletionRate())
                 + " (rescued / target của Campaign đã duyệt)");
+        text.append("\nDoanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
+                + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
         container.addView(text);
     }
 

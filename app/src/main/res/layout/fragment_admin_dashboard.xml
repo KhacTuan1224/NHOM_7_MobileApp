@@ -38,5 +38,7 @@
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_orders_title" />
         <Button android:id="@+id/adminAnalyticsButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_analytics_title" />
+        <Button android:id="@+id/adminShippingSettingsButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="Cấu hình phí giao hàng" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

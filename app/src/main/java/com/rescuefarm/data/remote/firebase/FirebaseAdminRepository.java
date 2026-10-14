@@ -51,7 +51,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
                             response.optInt("openReports"), response.optDouble("deliveredRevenue"),
                             response.optInt("activeCampaigns"), response.optInt("criticalCampaigns"),
                             response.optInt("liveMobilePoints"), response.optDouble("totalRescuedQuantity"),
-                            response.optDouble("completionRate")));
+                            response.optDouble("completionRate"), response.optString("calculatedAt")));
                 } catch (Exception error) {
                     callback.onError(ErrorCode.UNKNOWN, "Không đọc được dữ liệu analytics từ backend.");
                 }
@@ -64,7 +64,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
 
     @Override public void loadSection(Section section, int limit, ListCallback callback) {
         if (!online(callback)) return;
-        if (section == null || section == Section.ANALYTICS || section.getCollection().isEmpty()) {
+        if (section == null || section == Section.ANALYTICS || section == Section.SHIPPING_SETTINGS
+                || section.getCollection().isEmpty()) {
             callback.onError(ErrorCode.VALIDATION, "Khu vực quản trị không hợp lệ."); return;
         }
         ensureAdmin(() -> db.collection(section.getCollection()).limit(Math.max(1, Math.min(100, limit)))
@@ -125,6 +126,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     query = query.whereEqualTo("fulfillmentType", requestedFilter.substring("FULFILLMENT:".length()));
                 else if (section == Section.ORDERS && requestedFilter.startsWith("PAYMENT:"))
                     query = query.whereEqualTo("paymentMethod", requestedFilter.substring("PAYMENT:".length()));
+                else if (section == Section.ORDERS && requestedFilter.startsWith("PAYMENT_STATUS:"))
+                    query = query.whereEqualTo("paymentStatus", requestedFilter.substring("PAYMENT_STATUS:".length()));
                 else query = query.whereEqualTo("status", section == Section.ORDERS
                         && requestedFilter.startsWith("STATUS:") ? requestedFilter.substring("STATUS:".length()) : requestedFilter);
             }
@@ -171,6 +174,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             return filter.substring("FULFILLMENT:".length()).equals(clean(document.getString("fulfillmentType")));
         if (section == Section.ORDERS && filter.startsWith("PAYMENT:"))
             return filter.substring("PAYMENT:".length()).equals(clean(document.getString("paymentMethod")));
+        if (section == Section.ORDERS && filter.startsWith("PAYMENT_STATUS:"))
+            return filter.substring("PAYMENT_STATUS:".length()).equals(clean(document.getString("paymentStatus")));
         String expected = section == Section.ORDERS && filter.startsWith("STATUS:")
                 ? filter.substring("STATUS:".length()) : filter;
         return expected.equals(item.getStatus());
@@ -396,9 +401,46 @@ public final class FirebaseAdminRepository implements AdminRepository {
         }, callback);
     }
 
+    @Override public void loadShippingConfig(DetailCallback callback) {
+        if (!online(callback)) return;
+        ensureAdmin(() -> db.document("appConfig/shipping").get().addOnSuccessListener(snapshot -> {
+            Map<String, Object> values = new HashMap<>();
+            if (snapshot.exists() && snapshot.getData() != null) values.putAll(snapshot.getData());
+            callback.onSuccess(values);
+        }).addOnFailureListener(error -> fail(error, callback)), callback);
+    }
+
+    @Override public void saveShippingConfig(double baseFeeVnd, double freeDistanceKm,
+            double perKmFeeVnd, ActionCallback callback) {
+        if (!online(callback)) return;
+        if (!Double.isFinite(baseFeeVnd) || !Double.isFinite(freeDistanceKm) || !Double.isFinite(perKmFeeVnd)
+                || baseFeeVnd < 0 || baseFeeVnd > 1_000_000 || perKmFeeVnd < 0 || perKmFeeVnd > 1_000_000
+                || freeDistanceKm < 0 || freeDistanceKm > 20040) {
+            callback.onError(ErrorCode.VALIDATION, "Phí phải từ 0 đến 1.000.000 ₫; khoảng cách miễn phí từ 0 đến 20.040 km.");
+            return;
+        }
+        ensureAdmin(() -> {
+            String adminId = auth.getCurrentUser().getUid();
+            DocumentReference config = db.document("appConfig/shipping");
+            DocumentReference audit = db.collection(AUDIT).document();
+            db.runTransaction(tx -> {
+                DocumentSnapshot current = tx.get(config);
+                Map<String, Object> data = new HashMap<>();
+                data.put("baseFeeVnd", baseFeeVnd); data.put("freeDistanceKm", freeDistanceKm);
+                data.put("perKmFeeVnd", perKmFeeVnd); data.put("updatedBy", adminId);
+                data.put("updatedAt", FieldValue.serverTimestamp()); tx.set(config, data);
+                tx.set(audit, auditMap(adminId, "SHIPPING_SETTINGS", "shipping",
+                        current.exists() ? "UPDATED" : "UNCONFIGURED", "UPDATED", "Updated global shipping pricing"));
+                return null;
+            }).addOnSuccessListener(unused -> callback.onSuccess())
+                    .addOnFailureListener(error -> fail(error, callback));
+        }, callback);
+    }
+
     @Override public void loadDetail(Section section, String resourceId, DetailCallback callback) {
         if (!online(callback)) return;
         String id = trim(resourceId);
+        if (section == Section.SHIPPING_SETTINGS) { loadShippingConfig(callback); return; }
         if (section == null || id.isEmpty() || section.getCollection().isEmpty()) {
             callback.onError(ErrorCode.VALIDATION, "Thiếu dữ liệu chi tiết cần xem."); return;
         }
@@ -417,7 +459,10 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     } else if (section == Section.ORDERS) {
                         Tasks.whenAllSuccess(db.collection("orders").document(id).collection("items").get(),
                                 db.collection("payments").document(id).get(),
-                                db.collection("shipments").document(id).get())
+                                db.collection("shipments").document(id).get(),
+                                db.collection("users").document(text(document, "ownerId")).get(),
+                                db.collection("sellerPublicProfiles").document(text(document, "sellerId")).get(),
+                                db.collection("notifications").whereEqualTo("referenceId", id).get())
                                 .addOnSuccessListener(results -> {
                                     QuerySnapshot items = (QuerySnapshot) results.get(0);
                                     List<Map<String, Object>> rows = new ArrayList<>();
@@ -429,8 +474,22 @@ public final class FirebaseAdminRepository implements AdminRepository {
                                     detail.put("items", rows);
                                     DocumentSnapshot payment = (DocumentSnapshot) results.get(1);
                                     DocumentSnapshot shipment = (DocumentSnapshot) results.get(2);
+                                    DocumentSnapshot customer = (DocumentSnapshot) results.get(3);
+                                    DocumentSnapshot seller = (DocumentSnapshot) results.get(4);
+                                    QuerySnapshot events = (QuerySnapshot) results.get(5);
                                     if (payment.exists()) detail.put("payment", payment.getData());
                                     if (shipment.exists()) detail.put("shipment", shipment.getData());
+                                    if (customer.exists()) detail.put("customerProfile", customer.getData());
+                                    if (seller.exists()) detail.put("sellerProfile", seller.getData());
+                                    List<Map<String, Object>> timeline = snapshotMaps(events);
+                                    timeline.sort((left, right) -> {
+                                        Date a = left.get("createdAt") instanceof com.google.firebase.Timestamp
+                                                ? ((com.google.firebase.Timestamp) left.get("createdAt")).toDate() : new Date(0);
+                                        Date b = right.get("createdAt") instanceof com.google.firebase.Timestamp
+                                                ? ((com.google.firebase.Timestamp) right.get("createdAt")).toDate() : new Date(0);
+                                        return a.compareTo(b);
+                                    });
+                                    detail.put("orderTimeline", timeline);
                                     callback.onSuccess(detail);
                                 }).addOnFailureListener(error -> fail(error, callback));
                     } else if (section == Section.PRODUCTS) {
@@ -858,7 +917,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
         }
         db.collection(USERS).document(auth.getCurrentUser().getUid()).get()
                 .addOnSuccessListener(document -> {
-                    if (!document.exists() || !"ADMIN".equals(clean(document.getString("role")))) {
+                    if (!document.exists() || !"ADMIN".equals(clean(document.getString("role")))
+                            || !"ACTIVE".equals(clean(document.getString("status")))) {
                         error(callback, ErrorCode.FORBIDDEN, "Chức năng chỉ dành cho ADMIN."); return;
                     }
                     action.run();
