@@ -271,16 +271,16 @@ public class CheckoutFragment extends Fragment {
         bankTransferAvailable = false;
         applyPaymentMethods();
         if (selectedSeller.isEmpty()) return;
-        FirebaseFirestore.getInstance().collection("sellerPublicProfiles").document(selectedSeller).get()
-                .addOnSuccessListener(profile -> {
-                    if (version != bankLoadVersion || !isAdded()) return;
-                    bankTransferAvailable = profile.exists()
-                            && !blank(profile.getString("bankCode"))
-                            && !blank(profile.getString("bankAccountName"))
-                            && !blank(profile.getString("bankAccountNumber"));
-                    applyPaymentMethods();
-                    scheduleShippingEstimate();
-                });
+        vm.loadStorefront(selectedSeller, new StorefrontRepository.Callback() {
+            public void success(SellerStorefront profile) {
+                if (version != bankLoadVersion || getView() == null) return;
+                bankTransferAvailable = profile.acceptsTransfer(); applyPaymentMethods();
+            }
+            public void error(String message) {
+                if (version != bankLoadVersion || getView() == null) return;
+                bankTransferAvailable = false; applyPaymentMethods();
+            }
+        });
     }
 
     private void applyPaymentMethods() {

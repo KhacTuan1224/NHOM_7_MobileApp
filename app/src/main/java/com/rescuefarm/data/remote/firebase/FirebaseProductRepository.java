@@ -282,6 +282,10 @@ public class FirebaseProductRepository implements ProductRepository {
                     saved.getUnit(), saved.getOrigin(), saved.getProvince(), saved.getImageUrls(), rating,
                     reviewCount, saved.getStatus());
             Map<String, Object> data = productMap(result);
+            if(existing.exists()) {
+                if(existing.contains("ratingSum"))data.put("ratingSum",existing.get("ratingSum"));
+                if(existing.contains("lastReviewId"))data.put("lastReviewId",existing.get("lastReviewId"));
+            }
             data.put("updatedAt", FieldValue.serverTimestamp());
             if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
             else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));

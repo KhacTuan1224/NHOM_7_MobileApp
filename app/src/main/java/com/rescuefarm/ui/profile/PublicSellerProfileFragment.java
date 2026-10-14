@@ -10,13 +10,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
-import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.FirebaseFirestore;
+import androidx.lifecycle.ViewModelProvider;
 import com.rescuefarm.R;
 
 /** Public seller card for customers; data comes from the intentionally public mirror collection. */
 public class PublicSellerProfileFragment extends Fragment {
-    private ListenerRegistration registration;
     private TextView name, description, address, bank;
     private ImageView avatar;
 
@@ -31,29 +29,24 @@ public class PublicSellerProfileFragment extends Fragment {
         avatar = view.findViewById(R.id.publicSellerAvatar);
         String sellerId = getArguments() == null ? "" : getArguments().getString("sellerId", "");
         if (sellerId.isEmpty()) { name.setText("Không tìm thấy người bán."); return; }
-        registration = FirebaseFirestore.getInstance().collection("sellerPublicProfiles").document(sellerId)
-                .addSnapshotListener((snapshot, error) -> {
-                    if (!isAdded()) return;
-                    if (error != null || snapshot == null || !snapshot.exists()) {
+        StorefrontViewModel vm = new ViewModelProvider(this,new StorefrontViewModelFactory(requireContext())).get(StorefrontViewModel.class);
+        vm.observe(sellerId).observe(getViewLifecycleOwner(), profile -> {
+                    if (profile == null || !profile.configured) {
                         name.setText("Người bán chưa công khai hồ sơ cửa hàng."); return;
                     }
-                    name.setText(value(snapshot.getString("shopName"), "Cửa hàng RescueFarm"));
-                    description.setText(value(snapshot.getString("shopDescription"), "Chưa có giới thiệu cửa hàng."));
-                    address.setText(value(snapshot.getString("address"), "Chưa cập nhật địa chỉ."));
-                    String bankCode = snapshot.getString("bankCode"), accountName = snapshot.getString("bankAccountName"),
-                            accountNumber = snapshot.getString("bankAccountNumber");
+                    name.setText(value(profile.shopName, "Cửa hàng RescueFarm"));
+                    description.setText(value(profile.description, "Chưa có giới thiệu cửa hàng."));
+                    address.setText(value(profile.address, "Chưa cập nhật địa chỉ.")
+                        + (profile.shippingConfigured ? "\nPhí giao hàng cố định: " + (long)profile.shippingFee + " đ" : ""));
+                    String bankCode = profile.bankName, accountName = profile.accountName, accountNumber = profile.bankAccount;
                     bank.setText(blank(bankCode) || blank(accountName) || blank(accountNumber)
                             ? "Cửa hàng chưa cấu hình tài khoản nhận chuyển khoản."
                             : "Chuyển khoản: " + accountName + " · " + bankCode + " · " + accountNumber);
-                    String url = snapshot.getString("shopAvatarUrl");
+                    String url = profile.avatarUrl;
                     if (!blank(url)) Glide.with(this).load(url).circleCrop().into(avatar);
                 });
     }
 
     private String value(String value, String fallback) { return blank(value) ? fallback : value; }
     private boolean blank(String value) { return value == null || value.trim().isEmpty(); }
-    @Override public void onStop() {
-        if (registration != null) { registration.remove(); registration = null; }
-        super.onStop();
-    }
 }

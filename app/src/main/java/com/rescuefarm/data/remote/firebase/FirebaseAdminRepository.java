@@ -190,6 +190,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             if (section == Section.USERS && "ADMIN".equals(clean(current.getString("role")))) {
                 throw new SecurityException("ADMIN_TARGET_FORBIDDEN");
             }
+            DocumentSnapshot reviewProduct = section == Section.REVIEWS
+                ? tx.get(db.collection("products").document(current.getString("productId"))) : null;
             Map<String, Object> changes = moderation(adminId, note);
             changes.put("status", target);
             if (section == Section.REPORTS) {
@@ -209,6 +211,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 tx.update(userRef, sellerChanges);
             }
             tx.update(ref, changes);
+            if (reviewProduct != null) FirebaseReviewSummary.update(tx, reviewProduct, current, id,
+                "PUBLISHED".equals(target) ? (int)number(current,"rating") : 0);
             tx.set(audit, auditMap(adminId, section, id, before, target, note));
             return true;
         }).addOnSuccessListener(value -> {

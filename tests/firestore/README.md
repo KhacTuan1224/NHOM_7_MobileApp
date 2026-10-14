@@ -23,11 +23,11 @@ $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 npm test
 ```
 
-Tests cover the missing-order idempotency read, private existing orders,
-restricted promotion reads, DELIVERY/COD transactions without an applicable
-promotion, repeat checkout without double reservation, and cross-customer
-creation rejection. These checks validate emulator behavior, not deployment
-status or live Android UI behavior.
+Tests cover missing-order reads, private orders, promotion fallbacks, fixed
+shipping fees, atomic cart cleanup, replay without double reservation, review
+creation/edit/withdrawal and summary updates, admin review moderation, public
+seller settings, and notifications tied to order transitions. These checks
+validate emulator behavior, not deployment status or live Android UI behavior.
 
 To publish the reviewed rules, run from the repository root with an authorized
 Firebase account:

@@ -86,6 +86,12 @@ public class SellerProfileFragment extends Fragment {
                 Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+        android.view.ViewGroup parent = (android.view.ViewGroup)view.findViewById(R.id.saveSellerProfileButton).getParent();
+        com.google.android.material.button.MaterialButton settings = new com.google.android.material.button.MaterialButton(requireContext());
+        settings.setText("Phí giao hàng cố định và ảnh QR");
+        settings.setOnClickListener(v -> { Bundle args = new Bundle(); args.putBoolean("edit",true);
+            Navigation.findNavController(view).navigate(R.id.storefrontFragment,args); });
+        parent.addView(settings, parent.indexOfChild(view.findViewById(R.id.saveSellerProfileButton))+1);
         view.findViewById(R.id.logoutButton).setOnClickListener(unused ->
                 new MaterialAlertDialogBuilder(requireContext())
                         .setTitle(R.string.logout_title)
