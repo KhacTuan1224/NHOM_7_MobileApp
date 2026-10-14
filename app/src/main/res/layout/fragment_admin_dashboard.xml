@@ -7,6 +7,9 @@
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/admin_dashboard_title"
             android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+        <Button android:id="@+id/adminDashboardBackButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_back_action"
+            android:layout_marginTop="@dimen/space_sm" android:layout_marginBottom="@dimen/space_sm" />
         <ProgressBar android:id="@+id/adminDashboardProgress" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
         <TextView android:id="@+id/adminDashboardMessage" android:layout_width="match_parent"

@@ -332,6 +332,7 @@
     <string name="admin_dashboard_title">Dashboard quản trị</string>
     <string name="admin_access_message">Tài khoản quản trị — mọi thao tác moderation đều được ghi audit.</string>
     <string name="admin_refresh_action">Làm mới dữ liệu quản trị</string>
+    <string name="admin_back_action">Quay lại</string>
     <string name="admin_sellers_title">Duyệt seller</string>
     <string name="admin_users_title">Quản lý người dùng</string>
     <string name="admin_posts_title">Kiểm duyệt bài viết</string>

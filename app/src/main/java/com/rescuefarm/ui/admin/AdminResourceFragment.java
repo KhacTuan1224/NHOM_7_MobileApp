@@ -63,6 +63,7 @@ public final class AdminResourceFragment extends Fragment {
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
+        view.findViewById(R.id.adminResourceBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
         if (section != Section.ANALYTICS) viewModel.observeSection(section).observe(
                 getViewLifecycleOwner(), this::renderItems);
         view.findViewById(R.id.refreshAdminResourceButton).setOnClickListener(v -> refresh());
