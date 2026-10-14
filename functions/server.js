@@ -24,6 +24,11 @@ function str(v) { return typeof v === "string" ? v.trim() : ""; }
 function num(v, fallback = 0) { return typeof v === "number" && Number.isFinite(v) ? v : fallback; }
 function millis(v) { return v && typeof v.toMillis === "function" ? v.toMillis() : 0; }
 function roundVnd(v) { return Math.max(0, Math.round(v)); }
+function distanceKm(aLat, aLng, bLat, bLng) {
+  const r = Math.PI / 180, dLat = (bLat - aLat) * r, dLng = (bLng - aLng) * r;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 async function auth(req, roles = []) {
   const match = /^Bearer\s+(.+)$/i.exec(req.get("authorization") || "");
   if (!match) throw httpError(401, "Missing Firebase ID token");
@@ -35,11 +40,6 @@ async function auth(req, roles = []) {
   const role = str(snap.get("role"));
   if (roles.length && !roles.includes(role)) throw httpError(403, "Role is not allowed");
   return {uid: decoded.uid, role};
-}
-function distanceKm(aLat, aLng, bLat, bLng) {
-  const r = Math.PI / 180, dLat = (bLat - aLat) * r, dLng = (bLng - aLng) * r;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLng / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 function quotePrice(product, promotion, quantity, now) {
   const rescue = num(product.rescuePrice), original = num(product.originalPrice);
@@ -108,13 +108,30 @@ app.post("/quoteCustomerCheckout", async (req, res, next) => {
     let shippingFee = 0, distance = 0;
     if (fulfillment === "DELIVERY") {
       const lat = Number(data.latitude), lng = Number(data.longitude);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) throw httpError(400, "Delivery address coordinates required");
+      if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180
+          || (lat === 0 && lng === 0)) throw httpError(400, "Delivery address coordinates required");
       const [seller, config] = await Promise.all([
         db.collection("sellerPublicProfiles").doc(sellerId).get(), db.collection("appConfig").doc("shipping").get()
       ]);
-      if (!seller.exists || !config.exists) throw httpError(409, "Shipping configuration unavailable");
-      distance = distanceKm(num(seller.get("latitude")), num(seller.get("longitude")), lat, lng);
-      shippingFee = num(config.get("baseFeeVnd")) + Math.ceil(Math.max(0, distance - num(config.get("freeDistanceKm"))) * num(config.get("perKmFeeVnd")));
+      if (!seller.exists) throw httpError(409, "Seller public profile is unavailable");
+      if (!config.exists) throw httpError(409, "Global shipping rate is not configured");
+      const sellerLat = num(seller.get("latitude"), NaN), sellerLng = num(seller.get("longitude"), NaN);
+      const baseFee = num(config.get("baseFeeVnd"), NaN), perKmFee = num(config.get("perKmFeeVnd"), NaN);
+      const freeDistance = num(config.get("freeDistanceKm"), NaN);
+      if (!Number.isFinite(sellerLat) || sellerLat < -90 || sellerLat > 90
+          || !Number.isFinite(sellerLng) || sellerLng < -180 || sellerLng > 180
+          || (sellerLat === 0 && sellerLng === 0)) {
+        throw httpError(409, "Seller GPS coordinates are not configured");
+      }
+      if (!Number.isFinite(baseFee) || baseFee < 0 || baseFee > 1000000
+          || !Number.isFinite(perKmFee) || perKmFee < 0 || perKmFee > 1000000
+          || !Number.isFinite(freeDistance) || freeDistance < 0 || freeDistance > 20040) {
+        throw httpError(409, "Global shipping rate is invalid");
+      }
+      distance = distanceKm(sellerLat, sellerLng, lat, lng);
+      shippingFee = baseFee + Math.ceil(Math.max(0, distance - freeDistance) * perKmFee);
+      if (!Number.isFinite(shippingFee) || shippingFee > 1000000)
+        throw httpError(409, "Calculated shipping fee exceeds the allowed limit");
     }
     if (payment === "BANK_TRANSFER") {
       const bank = await db.collection("sellerPublicProfiles").doc(sellerId).get();

@@ -16,12 +16,10 @@ import com.rescuefarm.data.repository.*;
 import com.rescuefarm.ui.common.CustomerUi;
 import com.rescuefarm.ui.home.*;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
-import java.text.NumberFormat;
-import java.util.Locale;
 
 public final class StorefrontFragment extends Fragment {
     private LinearLayout root, details, products;
-    private EditText name, description, address, fee, bank, account, accountName, qr;
+    private EditText name, description, address, bank, account, accountName, qr;
     private TextView message;
     private View upload;
     private String sellerId;
@@ -37,7 +35,7 @@ public final class StorefrontFragment extends Fragment {
         AuthRepository auth=AuthRepositoryFactory.create(requireContext());
         editing=getArguments()!=null&&getArguments().getBoolean("edit",false)&&auth.isAuthenticated();
         sellerId=editing?auth.getCurrentUserId():getArguments()==null?"":getArguments().getString("sellerId","");
-        CustomerUi.text(root,editing?"Cửa hàng, phí giao hàng và chuyển khoản":"Thông tin người bán").setTextSize(24);
+        CustomerUi.text(root,editing?"Cửa hàng và chuyển khoản":"Thông tin người bán").setTextSize(24);
         message=CustomerUi.text(root,""); details=CustomerUi.column(requireContext()); root.addView(details);
         vm=new ViewModelProvider(this,new StorefrontViewModelFactory(requireContext())).get(StorefrontViewModel.class);
         if(editing) buildEditor();
@@ -67,8 +65,8 @@ public final class StorefrontFragment extends Fragment {
         name=CustomerUi.input(details,"Tên cửa hàng",InputType.TYPE_CLASS_TEXT);
         description=CustomerUi.input(details,"Giới thiệu",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         address=CustomerUi.input(details,"Địa chỉ nhận hàng tại cửa hàng",InputType.TYPE_CLASS_TEXT);
-        fee=CustomerUi.input(details,"Phí giao hàng cố định (đ)",InputType.TYPE_CLASS_NUMBER);
-        CustomerUi.text(details,"Pickup và mua tại chỗ miễn phí. Để trống toàn bộ thông tin ngân hàng nếu chưa nhận chuyển khoản.");
+        CustomerUi.text(details,"Phí giao hàng được tính theo khoảng cách GPS từ vị trí cửa hàng đến địa chỉ nhận. Hãy cập nhật tọa độ cửa hàng trong hồ sơ Seller. Pickup và mua tại chỗ miễn phí.");
+        CustomerUi.text(details,"Để trống toàn bộ thông tin ngân hàng nếu chưa nhận chuyển khoản.");
         bank=CustomerUi.input(details,"Mã ngân hàng (ví dụ: VCB, MB)",InputType.TYPE_CLASS_TEXT);
         account=CustomerUi.input(details,"Số tài khoản",InputType.TYPE_CLASS_TEXT);
         accountName=CustomerUi.input(details,"Tên chủ tài khoản",InputType.TYPE_CLASS_TEXT);
@@ -78,26 +76,26 @@ public final class StorefrontFragment extends Fragment {
             try {
                 SellerStorefront value=new SellerStorefront(); value.sellerId=sellerId;
                 SellerStorefront previous=vm.storefront.getValue();
-                if(previous!=null){value.latitude=previous.latitude;value.longitude=previous.longitude;value.avatarUrl=previous.avatarUrl;}
+                if(previous!=null){value.latitude=previous.latitude;value.longitude=previous.longitude;value.avatarUrl=previous.avatarUrl;value.shippingFee=previous.shippingFee;}
                 value.shopName=CustomerUi.value(name); value.description=CustomerUi.value(description);
-                value.address=CustomerUi.value(address); value.shippingFee=Double.parseDouble(CustomerUi.value(fee));
+                value.address=CustomerUi.value(address);
                 value.bankName=CustomerUi.value(bank); value.bankAccount=CustomerUi.value(account);
                 value.accountName=CustomerUi.value(accountName); value.qrUrl=CustomerUi.value(qr); vm.save(value);
-            }catch(IllegalArgumentException e){message.setText("Kiểm tra phí giao hàng và các thông tin đã nhập.");}
+            }catch(IllegalArgumentException e){message.setText("Kiểm tra thông tin cửa hàng và thông tin ngân hàng.");}
         });
         vm.loading.observe(getViewLifecycleOwner(),loading->save.setEnabled(!Boolean.TRUE.equals(loading)));
     }
     private void render(SellerStorefront value) {
         if(editing) {
             name.setText(value.shopName); description.setText(value.description); address.setText(value.address);
-            fee.setText(String.valueOf((long)value.shippingFee)); bank.setText(value.bankName);
+            bank.setText(value.bankName);
             account.setText(value.bankAccount); accountName.setText(value.accountName); qr.setText(value.qrUrl);
         } else {
             details.removeAllViews();
             if(!value.configured){CustomerUi.text(details,"Người bán chưa cập nhật trang cửa hàng.");return;}
             CustomerUi.text(details,value.shopName).setTextSize(22);
             CustomerUi.text(details,value.description); CustomerUi.text(details,value.address);
-            CustomerUi.text(details,"Phí giao hàng: "+NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(value.shippingFee));
+            CustomerUi.text(details,"Phí giao hàng được tính theo khoảng cách GPS khi đặt giao hàng.");
         }
     }
 }

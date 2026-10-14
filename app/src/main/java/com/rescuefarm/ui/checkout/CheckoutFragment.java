@@ -19,6 +19,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.rescuefarm.R;
+import com.rescuefarm.data.repository.SellerStorefront;
+import com.rescuefarm.data.repository.StorefrontRepository;
 import com.rescuefarm.domain.enums.FulfillmentType;
 import com.rescuefarm.domain.enums.PaymentMethod;
 import com.rescuefarm.domain.model.Address;
@@ -226,6 +228,9 @@ public class CheckoutFragment extends Fragment {
                         .append("\nGiảm giá: ").append(money.format(quote.optDouble("totalDiscount")))
                         .append("\nPhí giao: ").append(money.format(quotedShippingFee))
                         .append("\nTổng: ").append(money.format(quote.optDouble("total")));
+                if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY)
+                    summary.append("\nKhoảng cách GPS đường chim bay: ")
+                            .append(String.format(Locale.US, "%.2f km", quote.optDouble("distanceKm")));
                 String campaignId = quote.optString("campaignId", "");
                 if (!campaignId.isEmpty()) summary.append("\nCampaign: ").append(quote.optString("campaignTitle"))
                         .append(" · ").append(campaignId);
@@ -238,9 +243,22 @@ public class CheckoutFragment extends Fragment {
             }
             @Override public void onError(String error) {
                 if (version != quoteVersion || !isAdded()) return;
-                quoteReady = false; estimate.setText("Không lấy được báo giá: " + error);
+                quoteReady = false; estimate.setText("Không lấy được báo giá: " + explainQuoteError(error));
             }
         });
+    }
+
+    private String explainQuoteError(String error) {
+        if (error == null) return "Không kết nối được máy chủ báo giá.";
+        if (error.contains("Global shipping rate"))
+            return "Admin chưa cấu hình hợp lệ appConfig/shipping trong Firestore.";
+        if (error.contains("Seller GPS") || error.contains("Seller public profile"))
+            return "Cửa hàng chưa có hồ sơ hoặc tọa độ GPS hợp lệ. Seller hãy cập nhật vị trí trong hồ sơ.";
+        if (error.contains("Delivery address coordinates"))
+            return "Địa chỉ nhận hàng chưa có tọa độ GPS hợp lệ. Hãy chọn địa chỉ đã lưu có tọa độ.";
+        if (error.contains("Shipping configuration unavailable"))
+            return "Thiếu appConfig/shipping hoặc hồ sơ vị trí công khai của cửa hàng.";
+        return error;
     }
 
     private void enableCheckoutSubmit() {
