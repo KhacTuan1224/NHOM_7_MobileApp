@@ -20,6 +20,8 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public final class SellerDashboardAggregator {
     /** Compatibility overload for callers that only have the pre-analytics dashboard inputs. */
@@ -32,17 +34,35 @@ public final class SellerDashboardAggregator {
     public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
             List<RescueCampaign> campaigns, List<Post> posts, List<Order> orders,
             List<OrderItem> deliveredItems, int promotions) {
+        return aggregate(sellerId, products, campaigns, posts, orders, deliveredItems, promotions, 30);
+    }
+
+    public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
+            List<RescueCampaign> campaigns, List<Post> posts, List<Order> orders,
+            List<OrderItem> deliveredItems, int promotions, int periodDays) {
         String seller = required(sellerId);
         List<Product> ps = filterProducts(seller, products);
         List<RescueCampaign> cs = filterCampaigns(seller, campaigns);
         List<Post> xs = filterPosts(seller, posts);
         List<Order> os = filterOrders(seller, orders);
+        long cutoff = periodDays <= 0 ? Long.MIN_VALUE
+                : System.currentTimeMillis() - periodDays * 24L * 60L * 60L * 1000L;
+        List<Order> periodOrders = new ArrayList<>();
+        for (Order order : os) if (time(order.getCreatedAt()) >= cutoff) periodOrders.add(order);
         Map<String, String> productNames = new HashMap<>();
         for (Product product : ps) productNames.put(product.getId(), product.getName());
 
         int activeProducts = 0, activeCampaigns = 0, completedCampaigns = 0;
         int mobile = 0, pendingPosts = 0, pendingOrders = 0, delivery = 0;
         double revenue = 0, rescued = 0, target = 0;
+        double[] trendValues = new double[7];
+        long trendEnd = System.currentTimeMillis();
+        long trendStart = periodDays > 0 ? trendEnd - periodDays * 24L * 60L * 60L * 1000L
+                : trendEnd - 30L * 24L * 60L * 60L * 1000L;
+        if (periodDays <= 0 && !periodOrders.isEmpty()) {
+            for (Order order : periodOrders) trendStart = Math.min(trendStart, time(order.getCreatedAt()));
+        }
+        long trendSpan = Math.max(7L, trendEnd - trendStart);
         EnumMap<RescueReason, Double> reasonQuantities = new EnumMap<>(RescueReason.class);
         for (Product product : ps) if (product.getStatus() == ProductStatus.ACTIVE) activeProducts++;
         for (RescueCampaign campaign : cs) {
@@ -61,40 +81,69 @@ public final class SellerDashboardAggregator {
             }
         }
         for (Post post : xs) if (post.getStatus() == PostStatus.PENDING_APPROVAL) pendingPosts++;
-        for (Order order : os) {
+        for (Order order : periodOrders) {
             if (order.getStatus() != OrderStatus.DELIVERED && order.getStatus() != OrderStatus.CANCELLED)
                 pendingOrders++;
             if (order.getFulfillmentType() == FulfillmentType.DELIVERY) delivery++;
             if (order.getStatus() == OrderStatus.DELIVERED)
-                revenue += Math.max(0D, order.getSubtotal() - order.getQuantityDiscount());
+            {
+                double amount = Math.max(0D, order.getSubtotal() - order.getQuantityDiscount());
+                revenue += amount;
+                int bucket = (int) Math.min(6, Math.max(0, (time(order.getCreatedAt()) - trendStart) * 7 / trendSpan));
+                trendValues[bucket] += amount;
+            }
         }
 
         Map<String, Double> productQuantities = new HashMap<>();
+        Map<String, Order> orderById = new HashMap<>();
+        for (Order order : periodOrders) if (order.getStatus() == OrderStatus.DELIVERED) orderById.put(order.getId(), order);
         if (deliveredItems != null) for (OrderItem item : deliveredItems) {
             if (item == null || item.getProductId() == null) continue;
-            String name = productNames.getOrDefault(item.getProductId(), item.getProductNameSnapshot());
-            if (name == null || name.trim().isEmpty()) name = "Sản phẩm đã ẩn";
-            productQuantities.put(name, productQuantities.getOrDefault(name, 0D) + item.getQuantity());
+            if (!orderById.containsKey(item.getOrderId())) continue;
+            String productId = item.getProductId();
+            productQuantities.put(productId, productQuantities.getOrDefault(productId, 0D) + item.getQuantity());
         }
-        List<SellerDashboardSnapshot.RankedMetric> topProducts = ranked(productQuantities);
+        List<SellerDashboardSnapshot.RankedMetric> topProducts = rankedProducts(productQuantities, productNames, deliveredItems);
+        List<SellerDashboardSnapshot.RankedMetric> revenueTrend = new ArrayList<>();
+        SimpleDateFormat trendDate = new SimpleDateFormat("dd/MM", Locale.getDefault());
+        for (int index = 0; index < trendValues.length; index++) {
+            long bucketStart = trendStart + trendSpan * index / trendValues.length;
+            revenueTrend.add(new SellerDashboardSnapshot.RankedMetric(
+                    trendDate.format(new Date(bucketStart)), trendValues[index]));
+        }
         Map<String, Double> reasons = new HashMap<>();
         for (Map.Entry<RescueReason, Double> entry : reasonQuantities.entrySet())
             reasons.put(entry.getKey().name(), entry.getValue());
         List<SellerDashboardSnapshot.RankedMetric> topReasons = ranked(reasons);
 
-        os.sort((a, b) -> Long.compare(time(b.getCreatedAt()), time(a.getCreatedAt())));
-        List<Order> recent = new ArrayList<>(os.subList(0, Math.min(5, os.size())));
+        periodOrders.sort((a, b) -> Long.compare(time(b.getCreatedAt()), time(a.getCreatedAt())));
+        List<Order> recent = new ArrayList<>(periodOrders.subList(0, Math.min(5, periodOrders.size())));
         double rescueRate = target <= 0D ? 0D : Math.min(100D, rescued / target * 100D);
         return new SellerDashboardSnapshot(ps.size(), activeProducts, cs.size(), activeCampaigns,
                 completedCampaigns, mobile, xs.size(), pendingPosts, os.size(), pendingOrders,
                 delivery, Math.max(0, promotions), revenue, rescued, rescueRate, topProducts,
-                topReasons, recent);
+                topReasons, recent, revenueTrend);
     }
 
     private static List<SellerDashboardSnapshot.RankedMetric> ranked(Map<String, Double> values) {
         List<SellerDashboardSnapshot.RankedMetric> result = new ArrayList<>();
         for (Map.Entry<String, Double> entry : values.entrySet())
             result.add(new SellerDashboardSnapshot.RankedMetric(entry.getKey(), entry.getValue()));
+        result.sort(Comparator.comparingDouble(SellerDashboardSnapshot.RankedMetric::getQuantity).reversed());
+        if (result.size() > 5) result = new ArrayList<>(result.subList(0, 5));
+        return Collections.unmodifiableList(result);
+    }
+    private static List<SellerDashboardSnapshot.RankedMetric> rankedProducts(Map<String, Double> quantities,
+            Map<String, String> names, List<OrderItem> items) {
+        Map<String, String> labels = new HashMap<>();
+        if (items != null) for (OrderItem item : items) {
+            if (item == null || item.getProductId() == null || labels.containsKey(item.getProductId())) continue;
+            String label = names.getOrDefault(item.getProductId(), item.getProductNameSnapshot());
+            labels.put(item.getProductId(), label == null || label.trim().isEmpty() ? "Sản phẩm đã ẩn" : label);
+        }
+        List<SellerDashboardSnapshot.RankedMetric> result = new ArrayList<>();
+        for (Map.Entry<String, Double> entry : quantities.entrySet())
+            result.add(new SellerDashboardSnapshot.RankedMetric(labels.getOrDefault(entry.getKey(), "Sản phẩm đã ẩn"), entry.getValue()));
         result.sort(Comparator.comparingDouble(SellerDashboardSnapshot.RankedMetric::getQuantity).reversed());
         if (result.size() > 5) result = new ArrayList<>(result.subList(0, 5));
         return Collections.unmodifiableList(result);
