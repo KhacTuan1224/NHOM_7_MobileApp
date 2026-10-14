@@ -27,5 +27,9 @@
         <item>PAYMENT:COD</item>
         <item>PAYMENT:CASH_ON_SITE</item>
         <item>PAYMENT:BANK_TRANSFER</item>
+        <item>PAYMENT_STATUS:UNPAID</item>
+        <item>PAYMENT_STATUS:PENDING</item>
+        <item>PAYMENT_STATUS:PAID</item>
+        <item>PAYMENT_STATUS:FAILED</item>
     </string-array>
 </resources>

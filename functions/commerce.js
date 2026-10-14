@@ -245,7 +245,8 @@ function createCommerce({db, admin, authenticate}) {
       }
       if (identity.ownerType === 'CUSTOMER') tx.create(db.collection('notifications').doc(`${requestId}_PENDING`), {
         id: `${requestId}_PENDING`, userId: identity.ownerId, type: 'ORDER', title: 'Đã tiếp nhận đơn hàng',
-        body: 'Đơn hàng đang chờ cửa hàng xác nhận.', referenceId: requestId, isRead: false, createdAt: stamp()});
+        body: 'Đơn hàng đang chờ cửa hàng xác nhận.', referenceId: requestId, orderStatus: 'PENDING',
+        isRead: false, createdAt: stamp()});
       if (identity.ownerType === 'GUEST') tx.create(codeRef, {orderId: requestId, phoneHash: hash(receiverPhone), createdAt: stamp()});
       return {order, replay: false};
     });

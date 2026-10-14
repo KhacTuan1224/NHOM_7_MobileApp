@@ -348,8 +348,8 @@
     <string name="admin_enable_action">Bật lại</string>
     <string name="admin_section_title_format">Quản trị: %1$s</string>
     <string name="admin_resource_row_format">%1$s\n%2$s\nTrạng thái: %3$s\nID: %4$s</string>
-    <string name="admin_dashboard_stats_format">Users: %1$d\nSeller applications: %2$d (%3$d chờ duyệt)\nProducts: %4$d\nCampaigns: %5$d (%6$d chờ duyệt)\nPosts: %7$d (%8$d chờ duyệt)\nOrders: %9$d\nReports đang mở: %10$d\nDoanh thu DELIVERED: %11$s</string>
-    <string name="admin_analytics_format">Tổng hàng đợi moderation: %1$d\nUsers: %2$d\nProducts: %3$d\nCampaigns: %4$d\nOrders: %5$d\nDoanh thu DELIVERED: %6$s</string>
+    <string name="admin_dashboard_stats_format">Users: %1$d\nSeller applications: %2$d (%3$d chờ duyệt)\nProducts: %4$d\nCampaigns: %5$d (%6$d chờ duyệt)\nPosts: %7$d (%8$d chờ duyệt)\nOrders: %9$d\nReports đang mở: %10$d\nDoanh thu DELIVERED (all-time, gồm phí giao hàng): %11$s</string>
+    <string name="admin_analytics_format">Tổng hàng đợi moderation: %1$d\nUsers: %2$d\nProducts: %3$d\nCampaigns: %4$d\nOrders: %5$d\nDoanh thu DELIVERED (all-time, gồm phí giao hàng): %6$s</string>
     <string name="see_more_action">Xem thêm</string>
     <string name="all_categories_title">Tất cả danh mục</string>
     <string name="all_critical_campaigns_title">Chiến dịch cần giải cứu gấp</string>

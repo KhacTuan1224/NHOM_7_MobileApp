@@ -11,6 +11,7 @@ public interface AdminRepository {
         SELLER_APPLICATIONS("sellerApplications"), USERS("users"), POSTS("posts"),
         PRODUCTS("products"), CAMPAIGNS("campaigns"), CATEGORIES("categories"),
         BANNERS("banners"), REVIEWS("reviews"), REPORTS("reports"), ORDERS("orders"),
+        SHIPPING_SETTINGS(""),
         ANALYTICS("");
 
         private final String collection;
@@ -77,6 +78,9 @@ public interface AdminRepository {
     void setActive(Section section, String resourceId, boolean active,
             String reason, ActionCallback callback);
     void saveCatalogResource(Section section, String resourceId, Map<String, Object> values,
+            ActionCallback callback);
+    void loadShippingConfig(DetailCallback callback);
+    void saveShippingConfig(double baseFeeVnd, double freeDistanceKm, double perKmFeeVnd,
             ActionCallback callback);
     void loadDetail(Section section, String resourceId, DetailCallback callback);
     void resolveReport(String reportId, ReportAction action, String reason, ActionCallback callback);

@@ -453,6 +453,7 @@ public class FirebaseOrderRepository implements OrderRepository {
         String id = orderId + "_" + status.name();
         Map<String,Object> data = new HashMap<>();
         data.put("id",id); data.put("userId",uid); data.put("type","ORDER"); data.put("referenceId",orderId);
+        data.put("orderStatus",status.name());
         data.put("title","Cập nhật đơn hàng");
         String[] labels={"Chờ xác nhận","Đã xác nhận","Đang chuẩn bị","Sẵn sàng nhận hàng","Đang giao","Đã giao","Đã hủy"};
         data.put("body", "Trạng thái đơn hàng: " + labels[status.ordinal()]);
