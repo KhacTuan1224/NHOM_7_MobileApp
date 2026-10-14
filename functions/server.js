@@ -38,6 +38,58 @@ async function auth(req, roles = []) {
 app.get("/health", (_, res) => res.json({ok: true}));
 const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth});
 app.use(commerce.router);
+app.post("/admin/dashboard", async (req, res, next) => {
+  try {
+    await auth(req, ["ADMIN"]);
+    const now = Date.now();
+    const count = query => query.count().get().then(result => result.data().count || 0);
+    const sum = async (query, field) => {
+      const result = await query.aggregate({value: admin.firestore.AggregateField.sum(field)}).get();
+      return num(result.data().value);
+    };
+    const names = ["sellerApplications", "users", "posts", "products", "campaigns",
+      "categories", "banners", "reviews", "reports", "orders"];
+    const totalValues = await Promise.all(names.map(name => count(db.collection(name))));
+    const totalKeys = ["SELLER_APPLICATIONS", "USERS", "POSTS", "PRODUCTS", "CAMPAIGNS",
+      "CATEGORIES", "BANNERS", "REVIEWS", "REPORTS", "ORDERS"];
+    const totals = Object.fromEntries(totalKeys.map((key, index) => [key, totalValues[index]]));
+    const activeCampaignsQuery = db.collection("campaigns").where("status", "==", "ACTIVE");
+    const approvedCampaigns = db.collection("campaigns").where("status", "in", ["ACTIVE", "COMPLETED", "EXPIRED", "STOPPED"]);
+    const recentMobileLocations = db.collection("campaigns")
+      .where("locationUpdatedAt", ">=", admin.firestore.Timestamp.fromMillis(now - 10 * 60 * 1000))
+      .where("locationUpdatedAt", "<=", admin.firestore.Timestamp.fromMillis(now)).get();
+    const [pendingSellers, pendingPosts, pendingCampaigns, pendingReviews, pendingReport,
+      inReviewReport, deliveredRevenue, activeCampaigns, criticalCampaigns, recentLocations,
+      totalRescuedQuantity, approvedTargetQuantity] = await Promise.all([
+      count(db.collection("sellerApplications").where("status", "==", "PENDING")),
+      count(db.collection("posts").where("status", "==", "PENDING_APPROVAL")),
+      count(db.collection("campaigns").where("status", "==", "PENDING_APPROVAL")),
+      count(db.collection("reviews").where("status", "==", "PENDING")),
+      count(db.collection("reports").where("status", "==", "PENDING")),
+      count(db.collection("reports").where("status", "==", "IN_REVIEW")),
+      sum(db.collection("orders").where("status", "==", "DELIVERED"), "totalAmount"),
+      count(activeCampaignsQuery),
+      count(activeCampaignsQuery.where("urgencyLevel", "==", "CRITICAL")),
+      recentMobileLocations,
+      sum(approvedCampaigns, "rescuedQuantity"), sum(approvedCampaigns, "targetQuantity")]);
+    const liveMobilePoints = recentLocations.docs.filter(campaign =>
+      str(campaign.get("status")) === "ACTIVE"
+      && str(campaign.get("rescueMode")) === "MOBILE_POINT"
+      && campaign.get("locationSharingEnabled") === true
+      && Number.isFinite(campaign.get("currentLatitude"))
+      && Number.isFinite(campaign.get("currentLongitude"))
+      && Math.abs(campaign.get("currentLatitude")) <= 90
+      && Math.abs(campaign.get("currentLongitude")) <= 180
+      && !(campaign.get("currentLatitude") === 0 && campaign.get("currentLongitude") === 0)).length;
+    res.json({ok: true, totals,
+      pendingSellers, pendingPosts, pendingCampaigns, pendingReviews,
+      openReports: pendingReport + inReviewReport,
+      deliveredRevenue, activeCampaigns, criticalCampaigns, liveMobilePoints,
+      totalRescuedQuantity,
+      completionRate: approvedTargetQuantity > 0 ? Math.min(100, totalRescuedQuantity * 100 / approvedTargetQuantity) : 0,
+      calculatedAt: new Date(now).toISOString()});
+  } catch (error) { next(error); }
+});
 
 app.post("/recalculate-rating", async (req, res, next) => {
   try {
@@ -155,5 +207,10 @@ app.post("/send-notification", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-app.use((error, _, res, __) => res.status(error.status || 500).json({error: error.status ? error.message : "Internal server error"}));
+app.use((error, req, res, __) => {
+  const status = error.status || 500;
+  if (status >= 500) console.error("[api]", req.method, req.originalUrl,
+    "code=", error.code || "", "message=", error.message || "", error.stack || "");
+  res.status(status).json({error: status >= 500 ? "Internal server error" : error.message});
+});
 app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));

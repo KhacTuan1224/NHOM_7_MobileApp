@@ -31,8 +31,13 @@ public class FirebaseCartRepository implements CartRepository {
         this.customerId = customerId; this.network = network;
         cart = new MutableLiveData<>(Cart.empty(CartOwnerType.CUSTOMER, customerId));
         listener = firestore.collection(CARTS).document(customerId).addSnapshotListener((snapshot, error) -> {
-            if (error == null && snapshot != null) cart.setValue(snapshot.exists()
-                    ? mapCart(snapshot) : Cart.empty(CartOwnerType.CUSTOMER, customerId));
+            if (error != null) {
+                android.util.Log.e("FirebaseCartRepository", "Listen for customerCarts/" + customerId + " failed: " + error.getMessage(), error);
+                return;
+            }
+            if (snapshot != null) {
+                cart.setValue(snapshot.exists() ? mapCart(snapshot) : Cart.empty(CartOwnerType.CUSTOMER, customerId));
+            }
         });
     }
 
@@ -45,6 +50,22 @@ public class FirebaseCartRepository implements CartRepository {
             CartItem existing = find(value, item.getId());
             value.addItem(existing == null ? item : item.withQuantity(
                     existing.getQuantity() + item.getQuantity()));
+        });
+    }
+
+    public void mergeItems(List<CartItem> incomingItems, ActionCallback callback) {
+        if (incomingItems == null || incomingItems.isEmpty()) {
+            if (callback != null) callback.onSuccess();
+            return;
+        }
+        mutate(callback, value -> {
+            for (CartItem item : incomingItems) {
+                if (item != null) {
+                    CartItem existing = find(value, item.getId());
+                    value.addItem(existing == null ? item : item.withQuantity(
+                            existing.getQuantity() + item.getQuantity()));
+                }
+            }
         });
     }
     @Override public void replace(CartItem item, ActionCallback callback) {
@@ -139,6 +160,7 @@ public class FirebaseCartRepository implements CartRepository {
         callback.onError(ErrorCode.NETWORK, "Giỏ customer chưa đồng bộ: thiết bị đang offline."); return false;
     }
     private void failure(Exception error, ActionCallback callback) {
+        android.util.Log.e("FirebaseCartRepository", "Cart operation failed: " + error.getMessage(), error);
         String message = error.getMessage();
         if ("NOT_FOUND".equals(message)) { callback.onError(ErrorCode.NOT_FOUND, "Item không còn trong giỏ."); return; }
         if (error instanceof FirebaseFirestoreException) {

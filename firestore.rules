@@ -387,7 +387,8 @@ service cloud.firestore {
 
     function validComment(data, postId) {
       return data.keys().hasOnly([
-            'id', 'postId', 'userId', 'status', 'content', 'createdAt', 'updatedAt'
+            'id', 'postId', 'userId', 'status', 'content', 'createdAt', 'updatedAt',
+            'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && data.id is string
           && data.postId == postId
@@ -736,6 +737,18 @@ service cloud.firestore {
             ])
             && hasNoCredentialFields(request.resource.data))
           || (lifecycleBatchMutation(resource.data, request.resource.data, batchId)
+            && validBatch(request.resource.data))
+          || (isAdmin()
+            && resource.data.activeCampaignId is string
+            && resource.data.activeCampaignId.size() > 0
+            && get(/databases/$(database)/documents/campaigns/$(resource.data.activeCampaignId)).data.status == 'ACTIVE'
+            && getAfter(/databases/$(database)/documents/campaigns/$(resource.data.activeCampaignId)).data.status == 'STOPPED'
+            && request.resource.data.activeCampaignId == null
+            && request.resource.data.inventoryVersion == resource.data.inventoryVersion + 1
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'activeCampaignId', 'inventoryVersion', 'updatedAt'
+            ])
             && validBatch(request.resource.data));
       // Keep batch references valid for delivered AND cancelled orders. Archive instead.
       allow delete: if false;
@@ -995,13 +1008,13 @@ service cloud.firestore {
       }
 
       match /comments/{commentId} {
-        allow get, list: if publishedPost(postId);
+        allow get, list: if publishedPost(postId) || isAdmin();
         allow create: if isActiveAccount() && publishedPost(postId)
             && request.resource.data.id == commentId
             && request.resource.data.userId == request.auth.uid
             && request.resource.data.status == 'ACTIVE'
             && validComment(request.resource.data, postId);
-        allow update: if isActiveAccount() && resource.data.userId == request.auth.uid
+        allow update: if (isActiveAccount() && resource.data.userId == request.auth.uid
             && publishedPost(postId)
             && resource.data.status in ['ACTIVE', 'EDITED']
             && request.resource.data.id == resource.data.id
@@ -1011,7 +1024,17 @@ service cloud.firestore {
             && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'status', 'updatedAt'])
             && request.resource.data.status in ['EDITED', 'DELETED']
-            && validComment(request.resource.data, postId);
+            && validComment(request.resource.data, postId))
+          || (isAdmin()
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.postId == resource.data.postId
+            && request.resource.data.userId == resource.data.userId
+            && request.resource.data.status == 'HIDDEN'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
+            ])
+            && hasAdminModerationFields(request.resource.data)
+            && validComment(request.resource.data, postId));
         allow delete: if false;
       }
     }
@@ -1132,7 +1155,7 @@ service cloud.firestore {
           && request.resource.data.description == resource.data.description
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.resolvedBy == request.auth.uid
-          && ((resource.data.status == 'PENDING' && request.resource.data.status == 'IN_REVIEW')
+          && ((resource.data.status == 'PENDING' && request.resource.data.status in ['IN_REVIEW', 'RESOLVED', 'REJECTED'])
             || (resource.data.status == 'IN_REVIEW' && request.resource.data.status in ['RESOLVED', 'REJECTED']))
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'status', 'resolvedBy', 'resolutionNote', 'updatedAt'
@@ -1186,7 +1209,7 @@ service cloud.firestore {
           && request.resource.data.adminId == request.auth.uid
           && request.resource.data.resourceType in [
             'SELLER_APPLICATIONS', 'USERS', 'POSTS', 'PRODUCTS', 'CAMPAIGNS',
-            'CATEGORIES', 'BANNERS', 'REVIEWS', 'REPORTS', 'ORDERS'
+            'CATEGORIES', 'BANNERS', 'REVIEWS', 'REPORTS', 'ORDERS', 'PRODUCT_BATCHES'
           ]
           && request.resource.data.resourceId is string
           && request.resource.data.resourceId.size() > 0

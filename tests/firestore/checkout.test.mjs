@@ -316,6 +316,25 @@ test('comment owner can edit and soft-delete; others, timestamp forgery and edit
   await assertFails(updateDoc(doc(owner, path), {content: 'Khôi phục trái phép', status: 'EDITED', updatedAt: serverTimestamp()}));
 });
 
+test('Admin can moderate comments while Customer cannot bypass moderation or forge its fields', async () => {
+  const path = 'posts/published/comments/moderated';
+  await seed({
+    'posts/published': {status: 'PUBLISHED'},
+    [path]: {id: 'moderated', postId: 'published', userId: 'customer-a', content: 'Original',
+      status: 'ACTIVE', createdAt: past, updatedAt: past}
+  });
+  const owner = env.authenticatedContext('customer-a').firestore();
+  const admin = env.authenticatedContext('admin').firestore();
+  const moderation = {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+    moderationReason: 'Inappropriate content', updatedAt: serverTimestamp()};
+  await assertFails(updateDoc(doc(owner, path), moderation));
+  await assertSucceeds(updateDoc(doc(admin, path), moderation));
+  await assertFails(updateDoc(doc(owner, path), {status: 'EDITED', content: 'Restored', updatedAt: serverTimestamp()}));
+  await seed({'posts/published': {status: 'HIDDEN'}});
+  await assertSucceeds(getDoc(doc(admin, path)));
+  await assertFails(getDoc(doc(owner, path)));
+});
+
 test('Guest cannot read order collections or backend capabilities and clients cannot forge viewCount', async () => {
   const guest = env.unauthenticatedContext().firestore();
   await assertFails(getDocs(collection(guest, 'orders')));

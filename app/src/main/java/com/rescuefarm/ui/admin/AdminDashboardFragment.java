@@ -70,5 +70,12 @@ public final class AdminDashboardFragment extends Fragment {
                 value.total(Section.ORDERS), value.getOpenReports(),
                 NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
                         .format(value.getDeliveredRevenue())));
+        stats.append("\n\nRESCUE ANALYTICS"
+                + "\nCampaign đang hoạt động: " + value.getActiveCampaigns()
+                + "\nCampaign CRITICAL: " + value.getCriticalCampaigns()
+                + "\nĐiểm mobile đang chia sẻ vị trí mới: " + value.getLiveMobilePoints()
+                + "\nTổng lượng đã giải cứu: " + String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())
+                + "\nTỷ lệ hoàn thành: " + String.format(Locale.getDefault(), "%.1f%%", value.getCompletionRate())
+                + " (rescued / target của Campaign đã duyệt)");
     }
 }

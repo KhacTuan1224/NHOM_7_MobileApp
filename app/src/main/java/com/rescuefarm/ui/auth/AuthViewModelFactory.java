@@ -25,7 +25,8 @@ public class AuthViewModelFactory implements ViewModelProvider.Factory {
         }
         return (T) new AuthViewModel(
                 AuthRepositoryFactory.create(applicationContext),
-                new SharedPreferencesGuestSessionRepository(applicationContext)
+                new SharedPreferencesGuestSessionRepository(applicationContext),
+                new com.rescuefarm.service.cart.CartMigrationService(applicationContext)
         );
     }
 }
