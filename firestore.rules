@@ -1017,7 +1017,21 @@ service cloud.firestore {
       allow update: if lifecycleActor(get(/databases/$(database)/documents/orders/$(shipmentId)).data)
           && request.resource.data.id == resource.data.id
           && request.resource.data.orderId == resource.data.orderId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+          && (
+            (isApprovedSeller(request.auth.uid)
+              && get(/databases/$(database)/documents/orders/$(shipmentId)).data.sellerId == request.auth.uid
+              && get(/databases/$(database)/documents/orders/$(shipmentId)).data.status in ['CONFIRMED', 'PREPARING', 'SHIPPING']
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'carrierName', 'trackingCode', 'updatedAt'
+              ])
+              && request.resource.data.carrierName is string
+              && request.resource.data.carrierName.size() > 0
+              && request.resource.data.carrierName.size() <= 120
+              && request.resource.data.trackingCode is string
+              && request.resource.data.trackingCode.size() > 0
+              && request.resource.data.trackingCode.size() <= 120
+              && request.resource.data.updatedAt == request.time)
+            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
           && ((getAfter(/databases/$(database)/documents/orders/$(shipmentId)).data.status == 'PREPARING'
                 && request.resource.data.status == 'READY')
             || (getAfter(/databases/$(database)/documents/orders/$(shipmentId)).data.status == 'SHIPPING'
@@ -1027,7 +1041,8 @@ service cloud.firestore {
             || (getAfter(/databases/$(database)/documents/orders/$(shipmentId)).data.status == 'CANCELLED'
                 && request.resource.data.status == 'CANCELLED')
             || (getAfter(/databases/$(database)/documents/orders/$(shipmentId)).data.status in ['PENDING', 'CONFIRMED']
-                && request.resource.data.status == 'PENDING'));
+                && request.resource.data.status == 'PENDING'))
+          ));
       allow delete: if false;
     }
 

@@ -42,6 +42,8 @@ public class OrderDetailFragment extends Fragment {
     private LinearLayout timeline;
     private Spinner target;
     private EditText reference;
+    private EditText shipmentCarrier, shipmentTracking;
+    private View shipmentTitle, saveShipment;
     private View transitionButton, confirmButton;
     private String orderId = "";
     private String lastObservedEvent = "";
@@ -59,6 +61,10 @@ public class OrderDetailFragment extends Fragment {
         timeline = view.findViewById(R.id.orderStatusTimeline);
         transitionButton = view.findViewById(R.id.transitionOrderButton);
         confirmButton = view.findViewById(R.id.confirmBankTransferButton);
+        shipmentTitle = view.findViewById(R.id.shipmentManagementTitle);
+        shipmentCarrier = view.findViewById(R.id.shipmentCarrierInput);
+        shipmentTracking = view.findViewById(R.id.shipmentTrackingInput);
+        saveShipment = view.findViewById(R.id.saveShipmentDetailsButton);
         target.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
                 OrderStatus.values()));
         Bundle args = getArguments(); orderId = args == null ? "" : args.getString("orderId", "");
@@ -66,6 +72,18 @@ public class OrderDetailFragment extends Fragment {
         vm.getState().observe(getViewLifecycleOwner(), this::render);
         transitionButton.setOnClickListener(unused -> vm.transition(orderId, (OrderStatus) target.getSelectedItem()));
         confirmButton.setOnClickListener(unused -> vm.confirmTransfer(orderId, reference.getText().toString().trim()));
+        saveShipment.setOnClickListener(unused -> vm.updateShipmentDetails(orderId,
+                shipmentCarrier.getText().toString(), shipmentTracking.getText().toString(),
+                new com.rescuefarm.data.repository.OrderRepository.ActionCallback() {
+                    @Override public void onSuccess() {
+                        if (isAdded()) Toast.makeText(requireContext(), R.string.shipment_details_saved,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    @Override public void onError(com.rescuefarm.data.repository.OrderRepository.ErrorCode error,
+                            String text) {
+                        if (isAdded()) Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show();
+                    }
+                }));
         if (orderId.isEmpty()) message.setText(R.string.order_id_missing);
     }
 
@@ -111,6 +129,18 @@ public class OrderDetailFragment extends Fragment {
         boolean pendingSellerBankConfirmation = seller && bank && payment.getStatus() == PaymentStatus.PENDING;
         reference.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
         confirmButton.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
+        boolean delivery = order.getFulfillmentType() == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY;
+        boolean shipmentEditable = seller && delivery && shipment != null
+                && (order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PREPARING
+                    || order.getStatus() == OrderStatus.SHIPPING);
+        shipmentTitle.setVisibility(seller && delivery ? View.VISIBLE : View.GONE);
+        shipmentCarrier.setVisibility(shipmentEditable ? View.VISIBLE : View.GONE);
+        shipmentTracking.setVisibility(shipmentEditable ? View.VISIBLE : View.GONE);
+        saveShipment.setVisibility(shipmentEditable ? View.VISIBLE : View.GONE);
+        if (shipment != null) {
+            if (!shipmentCarrier.hasFocus()) shipmentCarrier.setText(shipment.getCarrierName());
+            if (!shipmentTracking.hasFocus()) shipmentTracking.setText(shipment.getTrackingCode());
+        }
         boolean customer = uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
         renderItems(order, customer);
         if (bank && !seller) showSellerBankInfo(order, payment);

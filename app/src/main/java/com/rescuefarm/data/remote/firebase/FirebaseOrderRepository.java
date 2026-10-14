@@ -312,6 +312,56 @@ public class FirebaseOrderRepository implements OrderRepository {
         if (listener != null) listener.remove();
     }
 
+    @Override public void updateShipmentDetails(String orderId, String carrierName,
+            String trackingCode, ActionCallback callback) {
+        if (!network.isOnline()) {
+            callback.onError(ErrorCode.NETWORK, "Cần kết nối mạng để cập nhật thông tin vận chuyển.");
+            return;
+        }
+        String id = clean(orderId);
+        String carrier = clean(carrierName);
+        String tracking = clean(trackingCode);
+        if (id.isEmpty() || carrier.isEmpty() || carrier.length() > 120
+                || tracking.isEmpty() || tracking.length() > 120) {
+            callback.onError(ErrorCode.VALIDATION, "Hãng vận chuyển và mã vận đơn là bắt buộc (tối đa 120 ký tự).");
+            return;
+        }
+        DocumentReference orderRef = db.collection(ORDERS).document(id);
+        DocumentReference shipmentRef = db.collection(SHIPMENTS).document(id);
+        db.runTransaction(tx -> {
+            DocumentSnapshot orderDoc = tx.get(orderRef);
+            DocumentSnapshot shipmentDoc = tx.get(shipmentRef);
+            if (!orderDoc.exists() || !shipmentDoc.exists()) throw new IllegalStateException("NOT_FOUND");
+            String sellerId = clean(orderDoc.getString("sellerId"));
+            String currentUser = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
+                    : FirebaseAuth.getInstance().getCurrentUser().getUid();
+            if (!currentUser.equals(sellerId)
+                    || !FulfillmentType.DELIVERY.name().equals(orderDoc.getString("fulfillmentType"))) {
+                throw new IllegalStateException("FORBIDDEN");
+            }
+            OrderStatus status = enumValue(OrderStatus.class, orderDoc.getString("status"), OrderStatus.PENDING);
+            if (status != OrderStatus.CONFIRMED && status != OrderStatus.PREPARING
+                    && status != OrderStatus.SHIPPING) throw new IllegalStateException("SHIPMENT_LOCKED");
+            tx.update(shipmentRef, "carrierName", carrier, "trackingCode", tracking,
+                    "updatedAt", FieldValue.serverTimestamp());
+            return null;
+        }).addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(error -> {
+                    String reason = error.getMessage() == null ? "" : error.getMessage();
+                    if (reason.contains("SHIPMENT_LOCKED")) {
+                        callback.onError(ErrorCode.CONFLICT, "Chỉ được sửa vận đơn khi đơn đang xử lý giao hàng.");
+                    } else if (reason.contains("NOT_FOUND")) {
+                        callback.onError(ErrorCode.NOT_FOUND, "Không tìm thấy đơn hoặc shipment.");
+                    } else if (reason.contains("FORBIDDEN") || (error instanceof FirebaseFirestoreException
+                            && ((FirebaseFirestoreException) error).getCode()
+                            == FirebaseFirestoreException.Code.PERMISSION_DENIED)) {
+                        callback.onError(ErrorCode.FORBIDDEN, "Bạn không có quyền sửa shipment này.");
+                    } else {
+                        callback.onError(ErrorCode.UNKNOWN, "Không thể lưu thông tin vận chuyển.");
+                    }
+                });
+    }
+
     @Override public void transitionOrder(String orderId,OrderStatus target,LifecycleCallback callback){
         if(!network.isOnline()){callback.onError(ErrorCode.NETWORK,"Cập nhật trạng thái cần kết nối mạng.");return;}
         if(clean(orderId).isEmpty()||target==null){callback.onError(ErrorCode.VALIDATION,"Đơn hoặc trạng thái không hợp lệ.");return;}

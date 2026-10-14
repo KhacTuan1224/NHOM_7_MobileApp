@@ -263,7 +263,7 @@
         android:label="@string/order_detail_title"><deepLink app:uri="rescuefarm://orders/{orderId}" />
         <action android:id="@+id/action_orderDetailFragment_to_reviewFragment" app:destination="@id/reviewFragment" /></fragment>
     <fragment android:id="@+id/sellerOrderListFragment" android:name="com.rescuefarm.ui.order.SellerOrderListFragment"
-        android:label="@string/seller_orders_title"><action android:id="@+id/action_sellerOrderListFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" /></fragment>
+        android:label="@string/seller_orders_title"><argument android:name="deliveryOnly" android:defaultValue="false" app:argType="boolean" /><action android:id="@+id/action_sellerOrderListFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" /></fragment>
     <fragment android:id="@+id/sellerDashboardFragment" android:name="com.rescuefarm.ui.seller.SellerDashboardFragment" android:label="@string/seller_dashboard_title">
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerProductListFragment" app:destination="@id/sellerProductListFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerCampaignListFragment" app:destination="@id/sellerCampaignListFragment" />
