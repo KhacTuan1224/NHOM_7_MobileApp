@@ -32,6 +32,10 @@ public interface OrderRepository {
     void observeOrder(String orderId, LifecycleCallback callback);
     void stopObservingOrder(String orderId);
     void transitionOrder(String orderId, OrderStatus targetStatus, LifecycleCallback callback);
+    default void updateShipmentDetails(String orderId, String carrierName, String trackingCode,
+            ActionCallback callback) {
+        callback.onError(ErrorCode.NOT_FOUND, "Chức năng cập nhật shipment chưa được cấu hình.");
+    }
     void confirmBankTransfer(String orderId, String referenceCode, LifecycleCallback callback);
     default void close() { }
 }

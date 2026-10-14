@@ -295,7 +295,26 @@
     <string name="notifications_title">Thông báo</string><string name="notifications_empty">Chưa có thông báo.</string><string name="enable_notifications_action">Bật thông báo đẩy</string><string name="notification_permission_denied">Bạn chưa cấp quyền hiển thị thông báo.</string><string name="fcm_token_failed">Không lấy được FCM token. Hãy kiểm tra Firebase config/mạng.</string><string name="deep_link_unavailable">Không mở được nội dung liên kết.</string><string name="notification_channel_name">Cập nhật RescueFarm</string><string name="notification_channel_description">Đơn hàng, chiến dịch, khuyến mãi và kiểm duyệt.</string>
     <string name="admin_reports_title">Kiểm duyệt báo cáo</string><string name="report_admin_row_format">%1$s %2$s\n%3$s • %4$s</string><string name="review_report_action">Bắt đầu xử lý</string><string name="resolve_report_action">Đánh dấu đã xử lý</string><string name="reject_report_action">Từ chối báo cáo</string>
     <string name="seller_dashboard_title">Dashboard cửa hàng</string><string name="refresh_seller_dashboard">Tải lại dashboard</string><string name="seller_shipments_action">Giao hàng &amp; shipment</string><string name="seller_recent_orders_title">Đơn gần đây</string><string name="seller_more_orders_notice">Còn thêm đơn hàng — mở Quản lý đơn để xem toàn bộ.</string>
-    <string name="seller_dashboard_stats_format">Sản phẩm: %1$d (%2$d active)\nCampaign: %3$d (%4$d active, %5$d mobile)\nPost: %6$d (%7$d chờ duyệt)\nOrder: %8$d (%9$d đang xử lý, %10$d delivery)\nPromotion: %11$d\nDoanh thu DELIVERED: %12$s\nĐã giải cứu: %13$.1f</string>
+    <string name="seller_statistics_action">Xem thống kê giải cứu</string>
+    <string name="seller_analytics_summary_format">Thống kê Seller\nKhối lượng đã giải cứu (kg): %1$.2f\nCampaign hoàn thành: %2$d\nRescue rate (đã giải cứu / mục tiêu của Campaign đã kích hoạt): %3$.1f%%\nDoanh thu hàng của đơn DELIVERED (không gồm phí giao): %4$s\nTổng số đơn: %5$d</string>
+    <string name="seller_top_products_title">Top sản phẩm đã giao (số lượng)</string>
+    <string name="seller_top_rescue_reasons_title">Top Rescue Reason (khối lượng đã giải cứu)</string>
+    <string name="shipment_management_title">Thông tin giao hàng</string>
+    <string name="shipment_carrier_hint">Đơn vị vận chuyển</string>
+    <string name="shipment_tracking_hint">Mã vận đơn</string>
+    <string name="save_shipment_details_action">Lưu thông tin vận chuyển</string>
+    <string name="shipment_details_saved">Đã lưu thông tin vận chuyển.</string>
+    <string name="seller_shipments_title">Quản lý đơn giao hàng</string>
+    <string name="seller_shipments_empty">Chưa có đơn giao hàng.</string>
+    <string name="seller_shipment_row_format">%1$s · Shipment %2$s · Thanh toán %3$s</string>
+    <string name="batch_filter_all">Bộ lọc: tất cả lô</string>
+    <string name="batch_filter_low_stock">Bộ lọc: tồn thấp (≤10%)</string>
+    <string name="batch_filter_near_expiry">Bộ lọc: sắp hết hạn (≤3 ngày)</string>
+    <string name="batch_alert_low_stock">CẢNH BÁO TỒN THẤP · còn %1$.1f%% lượng ban đầu</string>
+    <string name="batch_alert_near_expiry">SẮP HẾT HẠN · còn %1$d ngày</string>
+    <string name="batch_alert_expired">ĐÃ HẾT HẠN · không được bán</string>
+    <string name="batch_alert_sold_out">ĐÃ HẾT TỒN KHẢ DỤNG</string>
+    <string name="seller_dashboard_stats_format">Sản phẩm: %1$d (%2$d active)\nCampaign: %3$d (%4$d active, %5$d mobile)\nPost: %6$d (%7$d chờ duyệt)\nOrder: %8$d (%9$d đang xử lý, %10$d delivery)\nPromotion: %11$d</string>
     <string name="seller_recent_order_format">%1$s • %2$s • %3$.0f ₫</string>
     <string name="admin_dashboard_title">Dashboard quản trị</string>
     <string name="admin_access_message">Tài khoản quản trị — mọi thao tác moderation đều được ghi audit.</string>

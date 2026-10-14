@@ -36,6 +36,19 @@ public class Shipment {
         status = updatedStatus;
     }
 
+    public void updateCarrierDetails(String updatedCarrierName, String updatedTrackingCode) {
+        String carrier = clean(updatedCarrierName);
+        String tracking = clean(updatedTrackingCode);
+        if (carrier.isEmpty() || carrier.length() > 120) {
+            throw new IllegalArgumentException("Hãng vận chuyển phải có từ 1 đến 120 ký tự.");
+        }
+        if (tracking.isEmpty() || tracking.length() > 120) {
+            throw new IllegalArgumentException("Mã vận đơn phải có từ 1 đến 120 ký tự.");
+        }
+        carrierName = carrier;
+        trackingCode = tracking;
+    }
+
     public String getId() { return id; }
     public String getOrderId() { return orderId; }
     public String getCarrierName() { return carrierName; }
