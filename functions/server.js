@@ -319,5 +319,10 @@ app.post("/send-notification", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-app.use((error, _, res, __) => res.status(error.status || 500).json({error: error.status ? error.message : "Internal server error"}));
+app.use((error, req, res, __) => {
+  const status = error.status || 500;
+  if (status >= 500) console.error("[api]", req.method, req.originalUrl,
+    "code=", error.code || "", "message=", error.message || "", error.stack || "");
+  res.status(status).json({error: status >= 500 ? "Internal server error" : error.message});
+});
 app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));
