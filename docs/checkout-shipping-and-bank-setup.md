@@ -1,14 +1,14 @@
 # Cấu hình phí giao hàng và chuyển khoản
 
-## 1. Triển khai Firestore Rules mới
+## 1. Triển khai backend, Rules và indexes
 
-Các luồng mới cần quyền đọc `sellerPublicProfiles/{sellerId}` và `appConfig/shipping`, cùng các trường tài khoản ngân hàng trong payment snapshot. Từ thư mục dự án chạy:
+Triển khai backend Render trước và chờ log báo `RescueFarm API listening`. Khi khởi động, backend tự chuyển mã ngân hàng, số tài khoản và QR cũ khỏi `sellerPublicProfiles` sang collection riêng `sellerPaymentProfiles`. Không cần chạy migration thủ công. Sau đó, từ thư mục dự án chạy lệnh để triển khai cả Rules và indexes:
 
 ```powershell
-firebase deploy --only firestore:rules
+firebase deploy --only firestore --project nhom7-rescuefarm
 ```
 
-Đảm bảo Firebase CLI đang đăng nhập đúng tài khoản và project RescueFarm trước khi deploy.
+Đảm bảo Firebase CLI đang đăng nhập đúng tài khoản trước khi deploy. Không phân phối APK mới trước khi backend migration và Rules deploy xong.
 
 ## 2. Cấu hình biểu phí theo km
 
@@ -32,7 +32,7 @@ Mỗi seller mở Hồ sơ cửa hàng, cập nhật và lưu:
 - Số tài khoản.
 - Vĩ độ và kinh độ địa điểm lấy hàng của cửa hàng.
 
-Khi seller lưu hồ sơ, ứng dụng tự tạo/cập nhật `sellerPublicProfiles/{sellerId}`. Tọa độ `0, 0` được coi là chưa khai báo. Thông tin ngân hàng trong hồ sơ công khai có thể được người mua xem để thanh toán; mỗi đơn chuyển khoản cũng chụp lại thông tin nhận tiền tại thời điểm đặt đơn.
+Khi seller lưu hồ sơ, ứng dụng tự cập nhật hồ sơ cửa hàng công khai và `sellerPaymentProfiles/{sellerId}` riêng tư. Chỉ Seller sở hữu và Admin được đọc hồ sơ thanh toán; backend dùng hồ sơ này để xác thực chuyển khoản và chụp thông tin vào Payment của đơn. Tọa độ `0, 0` được coi là chưa khai báo.
 
 Người mua chọn một địa chỉ đã lưu có tọa độ trong Checkout. Màn hình hiển thị phí ước tính; transaction khi đặt đơn tính lại phí từ Firestore và ghi đúng vào Order/Shipment. Không có cấu hình phí hoặc thiếu tọa độ thì đơn giao tận nơi bị chặn kèm thông báo.
 

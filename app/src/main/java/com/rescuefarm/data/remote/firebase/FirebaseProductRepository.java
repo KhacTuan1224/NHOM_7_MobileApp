@@ -11,6 +11,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.rescuefarm.data.local.dao.CatalogCacheDao;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 
 public class FirebaseProductRepository implements ProductRepository {
@@ -52,6 +54,9 @@ public class FirebaseProductRepository implements ProductRepository {
     private final CatalogCacheDao dao;
     private final ExecutorService cacheExecutor;
     private final NetworkStatusProvider network;
+    private final Map<String, DocumentSnapshot> sellerProductCursors = new HashMap<>();
+    private final Set<String> sellersWithMoreProducts = new HashSet<>();
+    private static final int SELLER_PAGE_SIZE = 50;
     private final InventoryService inventoryService = new InventoryService();
 
     public FirebaseProductRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
@@ -166,6 +171,40 @@ public class FirebaseProductRepository implements ProductRepository {
                         callback.onSuccess();
                     });
                 }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
+    @Override public void refreshSellerProductPage(String sellerId, boolean reset, ActionCallback callback) {
+        if (!online(callback, "Đang offline; sản phẩm seller tiếp tục dùng Room cache.")) return;
+        Query query = firestore.collection(PRODUCTS).whereEqualTo("sellerId", sellerId)
+                .orderBy("createdAt", Query.Direction.DESCENDING).limit(SELLER_PAGE_SIZE);
+        DocumentSnapshot cursor;
+        synchronized (sellerProductCursors) { cursor = sellerProductCursors.get(sellerId); }
+        if (!reset && cursor != null) query = query.startAfter(cursor);
+        query.get().addOnSuccessListener(snapshot -> {
+            List<ProductCacheEntity> values = new ArrayList<>(); long now = System.currentTimeMillis();
+            for (DocumentSnapshot document : snapshot.getDocuments()) {
+                Product product = mapProduct(document);
+                if (product != null) values.add(CatalogCacheMapper.toEntity(product, now));
+            }
+            synchronized (sellerProductCursors) {
+                if (reset) sellerProductCursors.remove(sellerId);
+                if (!snapshot.isEmpty()) sellerProductCursors.put(sellerId,
+                        snapshot.getDocuments().get(snapshot.size() - 1));
+                if (snapshot.size() == SELLER_PAGE_SIZE) sellersWithMoreProducts.add(sellerId);
+                else sellersWithMoreProducts.remove(sellerId);
+            }
+            cacheExecutor.execute(() -> {
+                database.runInTransaction(() -> {
+                    if (reset) dao.clearSellerProducts(sellerId);
+                    dao.replaceProducts(values);
+                });
+                callback.onSuccess();
+            });
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
+    @Override public boolean hasMoreSellerProducts(String sellerId) {
+        synchronized (sellerProductCursors) { return sellersWithMoreProducts.contains(sellerId); }
     }
 
     @Override public void refreshBatches(String productId, ActionCallback callback) {
