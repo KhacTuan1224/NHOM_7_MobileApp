@@ -19,6 +19,6 @@ public class SellerStorefrontTest {
         value.validate();assertTrue(value.acceptsTransfer());
         assertEquals(data.get("latitude"),value.toMap().get("latitude"));
         assertEquals(data.get("shopAvatarUrl"),value.toMap().get("shopAvatarUrl"));
-        assertEquals("VCB",value.toMap().get("bankCode"));
+        assertEquals("VCB",value.bankName);
     }
 }

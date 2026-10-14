@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -15,6 +16,7 @@ import com.google.android.material.button.MaterialButton;
 import com.rescuefarm.R;
 import com.rescuefarm.data.repository.AuthRepository;
 import com.rescuefarm.data.repository.AuthRepositoryFactory;
+import com.rescuefarm.data.repository.OrderRepository;
 import com.rescuefarm.domain.model.Order;
 import java.text.NumberFormat;
 import java.util.List;
@@ -34,15 +36,52 @@ public class CustomerOrderListFragment extends Fragment {
         TextView message = view.findViewById(R.id.customerOrdersMessage);
         View refresh = view.findViewById(R.id.refreshCustomerOrdersButton);
         View login = view.findViewById(R.id.customerOrdersLoginButton);
+        View guestLookupCard = view.findViewById(R.id.guestLookupCard);
+        EditText codeInput = view.findViewById(R.id.lookupOrderCodeInput);
+        EditText phoneInput = view.findViewById(R.id.lookupReceiverPhoneInput);
+        View lookupButton = view.findViewById(R.id.lookupOrderSubmitButton);
+
+        OrderViewModel vm = new ViewModelProvider(this,
+                new OrderViewModelFactory(requireContext())).get(OrderViewModel.class);
+
         login.setVisibility(signedIn ? View.GONE : View.VISIBLE);
+        guestLookupCard.setVisibility(signedIn ? View.GONE : View.VISIBLE);
         refresh.setVisibility(signedIn ? View.VISIBLE : View.GONE);
         login.setOnClickListener(v -> Navigation.findNavController(view).navigate(R.id.loginFragment));
+
+        lookupButton.setOnClickListener(v -> {
+            String code = codeInput.getText() == null ? "" : codeInput.getText().toString().trim();
+            String phone = phoneInput.getText() == null ? "" : phoneInput.getText().toString().trim();
+            if (code.isEmpty() || phone.isEmpty()) {
+                message.setVisibility(View.VISIBLE);
+                message.setText("Vui lòng nhập đầy đủ mã đơn và số điện thoại.");
+                return;
+            }
+            message.setVisibility(View.GONE);
+            lookupButton.setEnabled(false);
+            vm.findGuestOrder(code, phone, new OrderRepository.OrderCallback() {
+                @Override
+                public void onSuccess(Order order, boolean idempotentReplay) {
+                    lookupButton.setEnabled(true);
+                    Bundle args = new Bundle();
+                    args.putString("orderId", order.getId());
+                    Navigation.findNavController(view).navigate(
+                            R.id.action_customerOrderListFragment_to_orderDetailFragment, args);
+                }
+
+                @Override
+                public void onError(OrderRepository.ErrorCode error, String errorMsg) {
+                    lookupButton.setEnabled(true);
+                    message.setVisibility(View.VISIBLE);
+                    message.setText(errorMsg);
+                }
+            });
+        });
+
         if (!signedIn) {
             empty.setText(R.string.customer_orders_login_required);
             return;
         }
-        OrderViewModel vm = new ViewModelProvider(this,
-                new OrderViewModelFactory(requireContext())).get(OrderViewModel.class);
         vm.observeCustomerOrders(ownerId).observe(getViewLifecycleOwner(), orders -> {
             renderOrders(view, orders);
             empty.setVisibility(orders == null || orders.isEmpty() ? View.VISIBLE : View.GONE);
