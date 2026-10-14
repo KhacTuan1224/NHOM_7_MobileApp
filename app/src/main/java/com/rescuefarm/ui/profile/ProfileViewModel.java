@@ -84,6 +84,13 @@ public class ProfileViewModel extends ViewModel {
                     "Vui lòng nhập người đại diện, tên cửa hàng và địa chỉ kinh doanh."));
             return;
         }
+        if (!Double.isFinite(latitude) || !Double.isFinite(longitude)
+                || latitude < -90D || latitude > 90D || longitude < -180D || longitude > 180D
+                || (latitude == 0D && longitude == 0D)) {
+            state.setValue(ProfileScreenState.error(
+                    "Hãy lấy GPS cửa hàng hoặc nhập tọa độ hợp lệ trước khi lưu để tính phí giao hàng."));
+            return;
+        }
         String userId = requireUserId(); if (userId == null) return;
         state.setValue(ProfileScreenState.loading());
         userRepository.updateSellerProfile(userId, representativeName, shopName, shopDescription,
