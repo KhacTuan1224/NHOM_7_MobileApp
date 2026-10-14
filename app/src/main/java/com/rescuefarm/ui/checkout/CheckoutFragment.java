@@ -116,7 +116,7 @@ public class CheckoutFragment extends Fragment {
         vm.getState().observe(getViewLifecycleOwner(), result -> {
             message.setText(result.getMessage());
             view.findViewById(R.id.submitCheckoutButton).setEnabled(
-                    result.getStatus() != CheckoutState.Status.LOADING);
+                    quoteReady && result.getStatus() != CheckoutState.Status.LOADING);
             if (result.getStatus() == CheckoutState.Status.SUCCESS && vm.consumeCheckoutSuccessNavigation()) {
                 Bundle args = new Bundle(); args.putString("orderId", result.getOrder().getId());
                 args.putString("orderCode", result.getOrder().getOrderCode());
@@ -131,7 +131,7 @@ public class CheckoutFragment extends Fragment {
         });
         View submit = view.findViewById(R.id.submitCheckoutButton);
         submit.setOnClickListener(unused -> {
-            if (!vm.isGuest() && !quoteReady) {
+            if (!quoteReady) {
                 message.setText("Đang chờ báo giá mới nhất từ máy chủ. Hãy kiểm tra kết nối rồi thử lại.");
                 scheduleShippingEstimate(); return;
             }
@@ -140,10 +140,7 @@ public class CheckoutFragment extends Fragment {
                     text(note), quoteReady ? quotedSubtotal : Double.NaN,
                     quoteReady ? quotedShippingFee : Double.NaN);
         });
-        if (vm.isGuest()) {
-            submit.setEnabled(false);
-            message.setText("Checkout cần tài khoản Customer để máy chủ xác minh và giữ tồn kho.");
-        }
+        submit.setEnabled(quoteReady);
         refreshPaymentMethods();
     }
 
@@ -186,7 +183,7 @@ public class CheckoutFragment extends Fragment {
         quoteReady = false;
         quoteVersion++;
         View submit = getView() == null ? null : getView().findViewById(R.id.submitCheckoutButton);
-        if (submit != null && !vm.isGuest()) submit.setEnabled(false);
+        if (submit != null) submit.setEnabled(false);
         quoteHandler.removeCallbacks(quoteRunnable); quoteHandler.postDelayed(quoteRunnable, 400L);
     }
 
@@ -194,7 +191,6 @@ public class CheckoutFragment extends Fragment {
         TextView estimate = getView() == null ? null : getView().findViewById(R.id.checkoutShippingEstimate);
         if (estimate == null) return;
         int version = quoteVersion;
-        if (vm.isGuest()) { estimate.setText("Checkout chỉ dành cho Customer đăng nhập."); return; }
         if (currentCart == null) { estimate.setText("Đang tải giỏ hàng…"); return; }
         JSONArray items = new JSONArray(); int count = 0;
         for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems()) if (item.isSelected()) {
@@ -215,20 +211,19 @@ public class CheckoutFragment extends Fragment {
             request.put("paymentMethod", payment.getSelectedItem().toString()); request.put("latitude", customerLat);
             request.put("longitude", customerLng); }
         catch (org.json.JSONException error) { quoteReady = false; estimate.setText("Không tạo được request báo giá."); return; }
-        estimate.setText("Đang chờ Render khởi động/lấy báo giá từ backend…");
-        RenderBackendClient.post("/quoteCustomerCheckout", request, new RenderBackendClient.Callback() {
+        estimate.setText("Đang cập nhật giá và phí giao hàng…");
+        RenderBackendClient.Callback quoteCallback = new RenderBackendClient.Callback() {
             @Override public void onSuccess(JSONObject quote) {
                 if (version != quoteVersion || !isAdded()) return;
                 quotedSubtotal = quote.optDouble("subtotal", Double.NaN);
                 quotedShippingFee = quote.optDouble("shippingFee", Double.NaN);
                 NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-                StringBuilder summary = new StringBuilder("BÁO GIÁ TỪ BACKEND (transaction checkout vẫn kiểm tra lại)\n");
+                StringBuilder summary = new StringBuilder("Tạm tính đơn hàng\n");
                 JSONArray lines = quote.optJSONArray("lines");
                 if (lines != null) for (int i = 0; i < lines.length(); i++) {
                     JSONObject line = lines.optJSONObject(i); if (line == null) continue;
                     summary.append("• ").append(line.optString("productName")).append(" · ")
                             .append(line.optDouble("quantity")).append(' ').append(line.optString("unit"))
-                            .append(" · Batch ").append(line.optString("batchId"))
                             .append(" · ").append(money.format(line.optDouble("subtotal"))).append('\n');
                 }
                 summary.append("Tiền hàng: ").append(money.format(quotedSubtotal))
@@ -239,8 +234,7 @@ public class CheckoutFragment extends Fragment {
                     summary.append("\nKhoảng cách GPS đường chim bay: ")
                             .append(String.format(Locale.US, "%.2f km", quote.optDouble("distanceKm")));
                 String campaignId = quote.optString("campaignId", "");
-                if (!campaignId.isEmpty()) summary.append("\nCampaign: ").append(quote.optString("campaignTitle"))
-                        .append(" · ").append(campaignId);
+                if (!campaignId.isEmpty()) summary.append("\nChiến dịch: ").append(quote.optString("campaignTitle"));
                 if (fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE)
                     summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"))
                             .append(" · ").append(quote.optDouble("campaignLatitude"))
@@ -252,7 +246,9 @@ public class CheckoutFragment extends Fragment {
                 if (version != quoteVersion || !isAdded()) return;
                 quoteReady = false; estimate.setText("Không lấy được báo giá: " + explainQuoteError(error));
             }
-        });
+        };
+        if (vm.isGuest()) RenderBackendClient.postGuest("/quoteGuestCheckout", request, quoteCallback);
+        else RenderBackendClient.post("/quoteCustomerCheckout", request, quoteCallback);
     }
 
     private String explainQuoteError(String error) {
@@ -270,7 +266,8 @@ public class CheckoutFragment extends Fragment {
 
     private void enableCheckoutSubmit() {
         View submit = getView() == null ? null : getView().findViewById(R.id.submitCheckoutButton);
-        if (submit != null && quoteReady) submit.setEnabled(true);
+        if (submit != null && quoteReady && vm.getState().getValue() != null
+                && vm.getState().getValue().getStatus() != CheckoutState.Status.LOADING) submit.setEnabled(true);
     }
 
     private void updateFulfillmentFields() {

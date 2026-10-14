@@ -47,5 +47,14 @@ public interface PostRepository {
     void loadEngagement(String postId, String currentUserId, EngagementCallback callback);
     void toggleReaction(String postId, String userId, ReactionType type, ActionCallback callback);
     void addComment(String postId, String userId, String content, ActionCallback callback);
+    default void editComment(String postId, String commentId, String userId, String content, ActionCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, "Cần kết nối mạng để sửa bình luận.");
+    }
+    default void deleteComment(String postId, String commentId, String userId, ActionCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, "Cần kết nối mạng để xóa bình luận.");
+    }
+    default void recordView(String postId, ActionCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, "Lượt xem được ghi nhận khi có kết nối mạng.");
+    }
     default void close() { }
 }

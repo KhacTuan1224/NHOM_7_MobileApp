@@ -14,6 +14,7 @@ public final class PostRepositoryFactory {
         if (!FirebaseConfiguration.isConfigured(context)) return new OfflinePostRepository(
                 database.postCacheDao(), Executors.newSingleThreadExecutor());
         return new FirebasePostRepository(database, Executors.newSingleThreadExecutor(),
-                new AndroidNetworkStatusProvider(context));
+                new AndroidNetworkStatusProvider(context),
+                new com.rescuefarm.data.local.preferences.SharedPreferencesGuestSessionRepository(context).getOrCreateGuestId());
     }
 }

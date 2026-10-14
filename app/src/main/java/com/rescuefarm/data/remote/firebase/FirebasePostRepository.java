@@ -41,11 +41,13 @@ public class FirebasePostRepository implements PostRepository {
     private final RescueFarmDatabase database; private final PostCacheDao dao;
     private final ExecutorService cacheExecutor; private DocumentSnapshot lastPublishedDocument;
     private final NetworkStatusProvider networkStatusProvider;
+    private final String viewerId;
 
     public FirebasePostRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
-            NetworkStatusProvider networkStatusProvider) {
+            NetworkStatusProvider networkStatusProvider, String viewerId) {
         this.database = database; this.dao = database.postCacheDao(); this.cacheExecutor = cacheExecutor;
         this.networkStatusProvider = networkStatusProvider;
+        this.viewerId = viewerId;
     }
     @Override public LiveData<List<Post>> observePublishedPosts() {
         return Transformations.map(dao.observePublishedPosts(), PostCacheMapper::posts);
@@ -242,6 +244,45 @@ public class FirebasePostRepository implements PostRepository {
             Post value = mapPost(document); if (value != null) result.add(PostCacheMapper.toEntity(value, now));
         }
         return result;
+    }
+
+    @Override public void editComment(String postId, String commentId, String userId,
+            String content, ActionCallback callback) {
+        try { Comment.validateContent(content); }
+        catch (IllegalArgumentException error) { callback.onError(ErrorCode.VALIDATION, error.getMessage()); return; }
+        mutateComment(postId, commentId, userId, content.trim(), CommentStatus.EDITED, callback);
+    }
+
+    @Override public void deleteComment(String postId, String commentId, String userId, ActionCallback callback) {
+        mutateComment(postId, commentId, userId, "", CommentStatus.DELETED, callback);
+    }
+
+    private void mutateComment(String postId, String commentId, String userId, String content,
+            CommentStatus status, ActionCallback callback) {
+        if (!networkStatusProvider.isOnline()) { callback.onError(ErrorCode.NETWORK, "Cần kết nối mạng để sửa bình luận."); return; }
+        DocumentReference reference = firestore.collection(POSTS).document(postId).collection(COMMENTS).document(commentId);
+        firestore.runTransaction(tx -> {
+            DocumentSnapshot post = tx.get(firestore.collection(POSTS).document(postId));
+            DocumentSnapshot comment = tx.get(reference);
+            if (!post.exists() || !PostStatus.PUBLISHED.name().equals(post.getString("status"))) throw new IllegalStateException("POST_LOCKED");
+            if (!comment.exists()) throw new IllegalStateException("NOT_FOUND");
+            if (!clean(userId).equals(comment.getString("userId")) || clean(userId).isEmpty()) throw new IllegalStateException("FORBIDDEN");
+            if (!"ACTIVE".equals(comment.getString("status")) && !"EDITED".equals(comment.getString("status"))) throw new IllegalStateException("COMMENT_LOCKED");
+            tx.update(reference, "content", content, "status", status.name(), "updatedAt", FieldValue.serverTimestamp());
+            return null;
+        }).addOnSuccessListener(unused -> callback.onSuccess()).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
+    @Override public void recordView(String postId, ActionCallback callback) {
+        if (!networkStatusProvider.isOnline()) { callback.onError(ErrorCode.NETWORK, "Đang offline."); return; }
+        try {
+            org.json.JSONObject request = new org.json.JSONObject().put("postId", postId).put("viewerId", viewerId);
+            com.rescuefarm.service.backend.RenderBackendClient.postGuest("/recordPostView", request,
+                    new com.rescuefarm.service.backend.RenderBackendClient.Callback() {
+                public void onSuccess(org.json.JSONObject response) { callback.onSuccess(); }
+                public void onError(String message) { callback.onError(ErrorCode.NETWORK, message); }
+            });
+        } catch (org.json.JSONException invalid) { callback.onError(ErrorCode.VALIDATION, "Mã bài viết không hợp lệ."); }
     }
     private Post mapPost(DocumentSnapshot value) {
         try {

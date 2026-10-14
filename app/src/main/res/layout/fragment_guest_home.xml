@@ -31,7 +31,7 @@
                     <ImageButton android:id="@+id/notificationButton" android:layout_width="42dp"
                         android:layout_height="42dp" android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/notifications_title" android:padding="9dp"
-                        android:src="@drawable/ic_home_notifications" android:tint="@android:color/white" />
+                        android:src="@drawable/ic_home_notifications" app:tint="@android:color/white" />
                 </LinearLayout>
                 <com.google.android.material.card.MaterialCardView android:id="@+id/searchButton"
                     android:layout_width="match_parent" android:layout_height="44dp"
@@ -43,7 +43,7 @@
                         android:paddingStart="12dp" android:paddingEnd="12dp">
                         <ImageView android:layout_width="20dp" android:layout_height="20dp"
                             android:contentDescription="@null" android:src="@drawable/ic_home_search"
-                            android:tint="@color/rescue_splash_green" />
+                            app:tint="@color/rescue_splash_green" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:layout_marginStart="8dp" android:text="@string/home_search_hint"
                             android:textColor="@color/rescue_on_surface_variant" android:textSize="14sp" />
@@ -179,6 +179,13 @@
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
 
+        <TextView android:id="@+id/nearExpiryTitle" style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:text="Nông sản gần hết hạn"
+            android:textColor="@color/rescue_on_surface" />
+        <LinearLayout android:id="@+id/nearExpirySection" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -186,7 +193,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
             
-            <TextView android:id="@+id/valueTitle" 
+            <TextView android:id="@+id/valueTitle"
                 style="@style/TextAppearance.Material3.TitleMedium"
                 android:layout_width="0dp" 
                 android:layout_height="wrap_content"

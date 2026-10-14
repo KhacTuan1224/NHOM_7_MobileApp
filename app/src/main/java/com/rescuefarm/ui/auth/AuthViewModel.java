@@ -57,6 +57,17 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void continueAsGuest() {
+        if (screenState.getValue() != null && screenState.getValue().getStatus() == AuthScreenState.Status.LOADING) return;
+        if (authRepository.isAuthenticated()) {
+            screenState.setValue(AuthScreenState.loading());
+            authRepository.signOut(new AuthRepository.ActionCallback() {
+                public void onSuccess() { enterGuestSession(); }
+                public void onError(AuthRepository.ErrorCode error, String message) { screenState.setValue(AuthScreenState.error(message)); }
+            });
+        } else enterGuestSession();
+    }
+
+    private void enterGuestSession() {
         guestSessionRepository.markOnboardingCompleted();
         String guestId = guestSessionRepository.getOrCreateGuestId();
         screenState.setValue(AuthScreenState.guest(guestId));

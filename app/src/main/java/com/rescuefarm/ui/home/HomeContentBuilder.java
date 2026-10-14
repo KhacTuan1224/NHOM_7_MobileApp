@@ -92,13 +92,28 @@ public final class HomeContentBuilder {
         }
         valueProducts.sort(Comparator.comparingDouble(Product::calculateDiscountPercent).reversed());
 
+        List<ExpiringProduct> nearExpiry = new ArrayList<>();
+        long expiryLimit = safeNow.getTime() + TimeUnit.DAYS.toMillis(3);
+        if (productSource != null && batchesByProduct != null) for (Product product : productSource) {
+            if (product == null || !product.isAvailable()) continue;
+            List<ProductBatch> batches = batchesByProduct.get(product.getId());
+            ProductBatch earliest = null;
+            if (batches != null) for (ProductBatch batch : batches) {
+                if (batch != null && product.getId().equals(batch.getProductId()) && batch.isSellable(safeNow)
+                        && batch.getExpiryDate() != null && batch.getExpiryDate().getTime() <= expiryLimit
+                        && (earliest == null || batch.getExpiryDate().before(earliest.getExpiryDate()))) earliest = batch;
+            }
+            if (earliest != null) nearExpiry.add(new ExpiringProduct(product, earliest));
+        }
+        nearExpiry.sort(Comparator.comparing(value -> value.getBatch().getExpiryDate()));
+
         List<Category> categories = new ArrayList<>();
         if (categorySource != null) for (Category value : categorySource) {
             if (value != null && value.isActive()) categories.add(value);
         }
         categories.sort(Comparator.comparingInt(Category::getDisplayOrder).thenComparing(Category::getName));
         return new HomeViewState(banners, critical, mobile, fixed, endingSoon, valueProducts,
-                active, categories, distances, locationState, refreshing, message, freshness);
+                active, categories, distances, locationState, refreshing, message, freshness, nearExpiry);
     }
 
     private void refreshUrgency(RescueCampaign campaign,

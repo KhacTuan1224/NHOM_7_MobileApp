@@ -60,7 +60,9 @@ public class MainActivity extends AppCompatActivity {
         homeButton.setOnClickListener(unused -> navigateTo(navController, R.id.guestHomeFragment));
         communityButton.setOnClickListener(unused -> navigateTo(navController, R.id.feedFragment));
         ordersButton.setOnClickListener(unused -> navigateTo(navController,
-                currentRole == UserRole.SELLER ? R.id.sellerOrderListFragment : R.id.customerOrderListFragment));
+                currentRole == UserRole.SELLER ? R.id.sellerOrderListFragment
+                        : AuthRepositoryFactory.create(this).isAuthenticated() ? R.id.customerOrderListFragment
+                        : R.id.orderConfirmationFragment));
         profileButton.setOnClickListener(unused -> {
             if (!AuthRepositoryFactory.create(this).isAuthenticated()) {
                 navController.navigate(R.id.loginFragment);

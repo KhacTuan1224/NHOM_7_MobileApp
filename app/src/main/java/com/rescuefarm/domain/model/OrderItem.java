@@ -41,7 +41,7 @@ public class OrderItem {
         return value;
     }
 
-    public double calculateSubtotal() { return finalPriceSnapshot * quantity; }
+    public double calculateSubtotal() { return Math.round(finalPriceSnapshot * quantity); }
     public String getId() { return id; }
     public String getOrderId() { return orderId; }
     public String getProductId() { return productId; }

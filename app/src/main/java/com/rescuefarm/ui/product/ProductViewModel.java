@@ -187,7 +187,7 @@ public class ProductViewModel extends ViewModel {
 
     public void deleteBatch(String batchId, long expectedVersion) {
         state.setValue(ProductScreenState.loading());
-        repository.deleteBatch(batchId, expectedVersion, actionCallback("Đã xóa batch chưa phát sinh tồn kho."));
+        repository.deleteBatch(batchId, expectedVersion, actionCallback("Đã lưu trữ lô hàng; lịch sử giao dịch được giữ nguyên."));
     }
 
     private ProductRepository.ActionCallback actionCallback(String successMessage) {

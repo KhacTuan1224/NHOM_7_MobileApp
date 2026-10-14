@@ -23,16 +23,25 @@ public final class RenderBackendClient {
 
     public static void post(String path, JSONObject body, Callback callback) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String base = BuildConfig.RENDER_BACKEND_URL == null ? "" : BuildConfig.RENDER_BACKEND_URL.trim();
         if (user == null) { callback.onError("Bạn cần đăng nhập lại."); return; }
+        user.getIdToken(false).addOnSuccessListener(token -> send(path, body, token.getToken(), callback))
+                .addOnFailureListener(error -> callback.onError("Không lấy được phiên đăng nhập."));
+    }
+
+    public static void postGuest(String path, JSONObject body, Callback callback) {
+        send(path, body, null, callback);
+    }
+
+    private static void send(String path, JSONObject body, String token, Callback callback) {
+        String base = BuildConfig.RENDER_BACKEND_URL == null ? "" : BuildConfig.RENDER_BACKEND_URL.trim();
         if (base.isEmpty()) { callback.onError("Chưa cấu hình URL Render backend."); return; }
-        user.getIdToken(false).addOnSuccessListener(token -> IO.execute(() -> {
+        IO.execute(() -> {
             HttpURLConnection connection = null;
             try {
                 connection = (HttpURLConnection) new URL(base.replaceAll("/$", "") + path).openConnection();
                 connection.setRequestMethod("POST"); connection.setConnectTimeout(30000); connection.setReadTimeout(120000);
                 connection.setDoOutput(true); connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                connection.setRequestProperty("Authorization", "Bearer " + token.getToken());
+                if (token != null) connection.setRequestProperty("Authorization", "Bearer " + token);
                 byte[] data = body.toString().getBytes(StandardCharsets.UTF_8);
                 connection.setFixedLengthStreamingMode(data.length);
                 try (OutputStream output = connection.getOutputStream()) { output.write(data); }
@@ -45,12 +54,12 @@ public final class RenderBackendClient {
                     while ((read = input.read(buffer)) != -1) bytes.write(buffer, 0, read);
                 }
                 JSONObject response = new JSONObject(new String(bytes.toByteArray(), StandardCharsets.UTF_8));
-                if (status < 200 || status >= 300) throw new IllegalStateException(response.optString("error", "Backend HTTP " + status));
+                if (status < 200 || status >= 300) throw new IllegalStateException("HTTP " + status + ": " + response.optString("error", "Không thực hiện được yêu cầu."));
                 MAIN.post(() -> callback.onSuccess(response));
             } catch (Exception error) {
                 String message = error.getLocalizedMessage() == null ? "Không kết nối được Render backend." : error.getLocalizedMessage();
                 MAIN.post(() -> callback.onError(message));
             } finally { if (connection != null) connection.disconnect(); }
-        })).addOnFailureListener(error -> callback.onError("Không lấy được Firebase ID token: " + error.getLocalizedMessage()));
+        });
     }
 }

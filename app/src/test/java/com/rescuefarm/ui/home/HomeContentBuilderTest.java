@@ -14,10 +14,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 public class HomeContentBuilderTest {
-    @Test public void sectionOrder_hasExactlyNineFinalSections() {
-        assertEquals(9, HomeViewState.SECTION_ORDER.size());
+    @Test public void sectionOrder_includesBatchExpiryBeforeValueProducts() {
+        assertEquals(10, HomeViewState.SECTION_ORDER.size());
+        assertEquals(HomeViewState.Section.NEAR_EXPIRY, HomeViewState.SECTION_ORDER.get(5));
         assertEquals(HomeViewState.Section.BANNERS, HomeViewState.SECTION_ORDER.get(0));
-        assertEquals(HomeViewState.Section.RESCUE_FEED, HomeViewState.SECTION_ORDER.get(8));
+        assertEquals(HomeViewState.Section.RESCUE_FEED, HomeViewState.SECTION_ORDER.get(9));
     }
 
     @Test public void criticalIsFirst_andStaleMobileIsExcludedFromNearby() {
@@ -44,6 +45,45 @@ public class HomeContentBuilderTest {
                 null, null, new Date(), HomeViewState.LocationState.PERMISSION_REQUIRED,
                 false, "cache");
         assertEquals(HomeViewState.DataFreshness.STALE, state.getDataFreshness());
+    }
+
+    @Test public void nearExpiryUsesSellableBatchExpiry_withoutAnyCampaign_andKeepsTheCorrectBatch() {
+        Date now = new Date(TimeUnit.DAYS.toMillis(100));
+        com.rescuefarm.domain.model.Product a = product("a"), b = product("b");
+        java.util.Map<String, java.util.List<com.rescuefarm.domain.model.ProductBatch>> batches = new java.util.HashMap<>();
+        batches.put("a", Arrays.asList(batch("a-far", "a", now, 7, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE),
+                batch("a-soon", "a", now, 2, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE)));
+        batches.put("b", Collections.singletonList(batch("b-soon", "b", now, 1, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE)));
+        HomeViewState state = new HomeContentBuilder().build(Collections.emptyList(), Arrays.asList(a, b),
+                Collections.emptyList(), Collections.emptyList(), batches, null, null, now,
+                HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertEquals(2, state.getNearExpiry().size());
+        assertEquals("b-soon", state.getNearExpiry().get(0).getBatch().getId());
+        assertEquals("a-soon", state.getNearExpiry().get(1).getBatch().getId());
+    }
+
+    @Test public void nearExpiryNeverListsExpiredArchivedOrSoldOutBatches() {
+        Date now = new Date(TimeUnit.DAYS.toMillis(100));
+        java.util.List<com.rescuefarm.domain.model.ProductBatch> batches = Arrays.asList(
+                batch("expired", "a", now, -1, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE),
+                batch("flagged-expired", "a", now, 1, com.rescuefarm.domain.enums.BatchStatus.EXPIRED),
+                batch("archived", "a", now, 1, com.rescuefarm.domain.enums.BatchStatus.ARCHIVED),
+                batch("sold", "a", now, 1, com.rescuefarm.domain.enums.BatchStatus.SOLD_OUT));
+        HomeViewState state = new HomeContentBuilder().build(Collections.emptyList(), Collections.singletonList(product("a")),
+                Collections.emptyList(), Collections.emptyList(), Collections.singletonMap("a", batches), null, null, now,
+                HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertTrue(state.getNearExpiry().isEmpty());
+    }
+
+    private com.rescuefarm.domain.model.Product product(String id) {
+        return new com.rescuefarm.domain.model.Product(id, "seller", "category", "Rau " + id, "",
+                40000, 30000, "kg", "", "", Collections.emptyList(), com.rescuefarm.domain.enums.ProductStatus.ACTIVE);
+    }
+    private com.rescuefarm.domain.model.ProductBatch batch(String id, String product, Date now, int days,
+            com.rescuefarm.domain.enums.BatchStatus status) {
+        boolean sold = status == com.rescuefarm.domain.enums.BatchStatus.SOLD_OUT;
+        return com.rescuefarm.domain.model.ProductBatch.restore(id, product, "", new Date(now.getTime() - TimeUnit.DAYS.toMillis(10)),
+                new Date(now.getTime() + TimeUnit.DAYS.toMillis(days)), 10, sold ? 0 : 10, 0, sold ? 10 : 0, status, 1);
     }
 
     private RescueCampaign campaign(String id, UrgencyLevel urgency, RescueMode mode,

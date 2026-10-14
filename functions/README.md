@@ -13,7 +13,13 @@ This folder replaces Firebase Cloud Functions with an Express API. The Firebase 
 
 ## Routes
 
-- `POST /quoteCustomerCheckout`: Firebase ID token required; Customer only. Re-reads product, batch, promotion, campaign, seller and shipping configuration and returns a quote. Android checkout still performs its Firestore transaction and verifies the expected subtotal/shipping fee before creating an order.
+- `POST /quoteCustomerCheckout`: Firebase ID token required; Customer only. Re-reads product, batch, promotion, campaign, seller and shipping configuration. This is an estimate, not an inventory reservation.
+- `POST /checkoutCustomer`: Firebase ID token required; Customer only. The server transaction revalidates prices, stock, the approved Seller, campaign and shipping, then writes Order/items/Payment/optional Shipment, reserves batch/campaign stock and removes bought cart quantities. Client Firestore order/items/payment/shipment creation and checkout reservation writes are denied.
+- `POST /quoteGuestCheckout`: public, rate limited. Uses the same quote implementation.
+- `POST /checkoutGuest`: public, rate limited. Uses the same atomic transaction for Guest, with a random persisted guestId and private 32-byte guestToken. A requestId is a UUID; replays must have the same owner, token and order inputs. Guest is not a Firebase Auth User. The app consumes Guest cart quantities once in a Room transaction after success, using a local receipt to make retries safe.
+- `POST /lookupGuestOrder`: public, limited to 10 attempts per IP per 10-minute window. Requires the full server-generated order code and normalized receiver phone. Only Guest orders are returned. Correct lookup issues an order-scoped access token that expires after 24 hours.
+- `POST /guestOrderDetails`: requires the private original Guest checkout token or the scoped lookup token; returns order/items/payment/shipment. Android polls every 15 seconds only while Order Detail is open. The endpoint never grants direct Firestore reads of Guest orders or private access collections.
+- `POST /recordPostView`: public, rate limited; increments only PUBLISHED posts, atomically once per device/post/day. A persisted guestId identifies the device for both Guest and signed-in viewers. Clients cannot write viewCount directly.
 - `POST /recalculate-rating`: Firebase ID token required; Customer only. Accepts an owned `reviewId`, or `productId/orderId/orderItemId` after deletion. The endpoint checks ownership and delivered-order eligibility before recalculating the published review average/count.
 - `POST /send-notification`: Firebase ID token required. Order events are limited to an order's Customer/Seller participants and derive title/body from the current Firestore state. Seller promotion events fan out to customers who favorited that product; Admin campaign activation events fan out to customers who favorited products in its target batches. Other notification types require an Admin account and explicit Customer `userId`. It writes the inbox record and sends FCM to registered device tokens.
 
@@ -22,3 +28,15 @@ This folder replaces Firebase Cloud Functions with an Express API. The Firebase 
 Render Free web services sleep after 15 minutes without incoming traffic. The first request after sleep is slow, and the server cannot promise always-on Firestore event processing. Order notifications are requested by Order Detail after it observes an order/payment transition. Promotion notifications are requested after a Seller saves/activates a promotion; Campaign notifications are requested after Admin activates a campaign. If those apps are offline or the Render URL is not configured, the event request is missed. This is not equivalent to always-on Cloud Firestore triggers.
 
 Firestore remains subject to Spark daily read/write/storage quotas. FCM itself is free, but sending must happen from this trusted service, never from a credential embedded in the APK.
+
+## Coordinated upgrade and private data
+
+Deploy the updated backend, publish the matching Firestore rules, and distribute the new Android build together. Older APKs that create orders directly will be blocked by the new rules. Configure appConfig/shipping and Seller GPS/bank details as described in docs/checkout-shipping-and-bank-setup.md before testing delivery/transfers.
+
+The backend owns checkoutReceipts, guestOrderCodes, guestOrderGrants, postViewReceipts and requestLimits; the default Firestore deny rule keeps all of them private. These are technical receipts/access records, not new business domain classes. IPs, lookup phones and access secrets are stored as hashes. The limiter uses Express's socket IP by default, which may group users behind the same reverse proxy; do not trust arbitrary forwarded headers to bypass the limit. Expired request/view/grant receipts can be removed by a trusted maintenance task if volume requires it. Preserve checkoutReceipts and guestOrderCodes for idempotency and historical order access.
+
+The Android backup configuration excludes Guest access preferences from cloud backups. A user on another device can still look up a Guest order with its code and phone.
+
+## Regression tests
+
+Install functions dependencies with npm ci. From tests/firestore, run npm ci and npm test. The suite starts an isolated demo-rescuefarm Firestore Emulator, then checks rules and the actual HTTP handlers sequentially. No production credentials are required. The commerce tests refuse to run without a localhost emulator address.
