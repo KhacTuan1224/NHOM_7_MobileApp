@@ -63,7 +63,7 @@ public class LaunchLoadingFragment extends Fragment {
             case AUTHENTICATED:
                 UserRole role = state.getUser() == null ? UserRole.CUSTOMER : state.getUser().getRole();
                 if (role == UserRole.ADMIN) {
-                    pendingActionId = R.id.action_launchLoading_to_adminHome;
+                    pendingActionId = R.id.action_launchLoading_to_guestHome;
                 } else if (role == UserRole.SELLER) {
                     pendingActionId = R.id.action_launchLoading_to_guestHome;
                 } else {

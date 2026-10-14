@@ -27,6 +27,7 @@ public class CampaignViewModel extends ViewModel {
     private final MutableLiveData<CampaignScreenState> state =
             new MutableLiveData<>(CampaignScreenState.idle());
     private final MediatorLiveData<List<CampaignBatchOption>> batchOptions = new MediatorLiveData<>();
+    private final MutableLiveData<Boolean> sellerCampaignsHaveMore = new MutableLiveData<>(false);
     private final Map<String, LiveData<List<ProductBatch>>> batchSources = new HashMap<>();
     private final Map<String, List<ProductBatch>> batchesByProduct = new HashMap<>();
     private List<Product> sellerProducts = new ArrayList<>();
@@ -46,6 +47,7 @@ public class CampaignViewModel extends ViewModel {
     public LiveData<List<RescueCampaign>> getSellerCampaigns() {
         return repository.observeSellerCampaigns(currentUserId());
     }
+    public LiveData<Boolean> getSellerCampaignsHaveMore() { return sellerCampaignsHaveMore; }
     public LiveData<RescueCampaign> observeCampaign(String campaignId) {
         return repository.observeCampaign(campaignId);
     }
@@ -64,6 +66,13 @@ public class CampaignViewModel extends ViewModel {
     public void refreshActive() { repository.refreshActiveCampaigns(action(null)); }
     public void refreshSeller() {
         String id = requireSeller(); if (id != null) repository.refreshSellerCampaigns(id, action(null));
+    }
+    public void refreshSellerPage(boolean reset) {
+        String id = requireSeller(); if (id == null) return;
+        repository.refreshSellerCampaignPage(id, reset, new CampaignRepository.ActionCallback() {
+            @Override public void onSuccess() { sellerCampaignsHaveMore.postValue(repository.hasMoreSellerCampaigns(id)); }
+            @Override public void onError(CampaignRepository.ErrorCode error, String message) { state.postValue(CampaignScreenState.error(message)); }
+        });
     }
     public void load(String campaignId) {
         state.setValue(CampaignScreenState.loading());
