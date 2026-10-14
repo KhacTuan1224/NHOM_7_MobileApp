@@ -45,5 +45,21 @@ public class OrderViewModel extends ViewModel {
     }
     public void confirmTransfer(String id,String reference){state.setValue(OrderLifecycleState.loading());repository.confirmBankTransfer(id,reference,callback());}
     private OrderRepository.LifecycleCallback callback(){return new OrderRepository.LifecycleCallback(){@Override public void onSuccess(Order o,Payment p,Shipment s,boolean replay){state.postValue(OrderLifecycleState.success(o,p,s,replay));}@Override public void onError(OrderRepository.ErrorCode e,String message){state.postValue(OrderLifecycleState.error(message));}};}
+    public void findGuestOrder(String orderCode, String receiverPhone, OrderRepository.OrderCallback callback) {
+        state.setValue(OrderLifecycleState.loading());
+        repository.findGuestOrder(orderCode, receiverPhone, new OrderRepository.OrderCallback() {
+            @Override
+            public void onSuccess(Order order, boolean idempotentReplay) {
+                state.postValue(OrderLifecycleState.idle());
+                callback.onSuccess(order, idempotentReplay);
+            }
+
+            @Override
+            public void onError(OrderRepository.ErrorCode error, String message) {
+                state.postValue(OrderLifecycleState.error(message));
+                callback.onError(error, message);
+            }
+        });
+    }
     @Override protected void onCleared(){repository.close();}
 }

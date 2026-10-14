@@ -95,6 +95,11 @@ public final class FirebaseAdminRepository implements AdminRepository {
         ensureAdmin(() -> {
             String search = trim(searchTerm);
             String requestedFilter = clean(status);
+            if (section == Section.SELLER_APPLICATIONS) {
+                loadSellerAccountQueue(search, requestedFilter, trim(cursor),
+                        Math.max(1, Math.min(100, limit)), callback);
+                return;
+            }
             if (search.toLowerCase(java.util.Locale.ROOT).startsWith("id:") && search.length() > 3) {
                 String exactId = search.substring(3).trim();
                 db.collection(section.getCollection()).document(exactId).get()
@@ -217,13 +222,19 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 if (section == null || section == Section.ANALYTICS || section.getCollection().isEmpty()) return;
                 ensureAdmin(() -> {
                     if (!active) return;
-                    registration = db.collection(section.getCollection())
+                    String collection = section == Section.SELLER_APPLICATIONS
+                            ? USERS : section.getCollection();
+                    registration = db.collection(collection)
                             .limit(Math.max(1, Math.min(100, limit)))
                             .addSnapshotListener((snapshot, error) -> {
                                 if (error != null || snapshot == null) return;
                                 List<AdminListItem> result = new ArrayList<>();
-                                for (DocumentSnapshot document : snapshot.getDocuments())
-                                    result.add(mapItem(section, document));
+                                for (DocumentSnapshot document : snapshot.getDocuments()) {
+                                    if (section == Section.SELLER_APPLICATIONS) {
+                                        if ("SELLER".equals(clean(document.getString("role"))))
+                                            result.add(mapSellerAccount(document));
+                                    } else result.add(mapItem(section, document));
+                                }
                                 postValue(result);
                             });
                 }, new ListCallback() {
@@ -246,6 +257,15 @@ public final class FirebaseAdminRepository implements AdminRepository {
             callback.onError(ErrorCode.VALIDATION, "Thiếu dữ liệu chuyển trạng thái."); return;
         }
         ensureAdmin(() -> {
+            if (section == Section.SELLER_APPLICATIONS) {
+                db.collection(section.getCollection()).document(id).get()
+                        .addOnSuccessListener(application -> {
+                            if (application.exists())
+                                runTransition(section, id, target, note, java.util.Collections.emptyList(), callback);
+                            else runSellerAccountTransition(id, target, note, callback);
+                        }).addOnFailureListener(error -> fail(error, callback));
+                return;
+            }
             if (section == Section.PRODUCTS && "ACTIVE".equals(target)) {
                 db.collection("productBatches").whereEqualTo("productId", id).get()
                         .addOnSuccessListener(snapshot -> {
@@ -444,7 +464,12 @@ public final class FirebaseAdminRepository implements AdminRepository {
         if (section == null || id.isEmpty() || section.getCollection().isEmpty()) {
             callback.onError(ErrorCode.VALIDATION, "Thiếu dữ liệu chi tiết cần xem."); return;
         }
-        ensureAdmin(() -> db.collection(section.getCollection()).document(id).get()
+        ensureAdmin(() -> {
+            if (section == Section.SELLER_APPLICATIONS) {
+                loadSellerDetail(id, callback);
+                return;
+            }
+            db.collection(section.getCollection()).document(id).get()
                 .addOnSuccessListener(document -> {
                     if (!document.exists()) { callback.onError(ErrorCode.NOT_FOUND, "Không tìm thấy dữ liệu."); return; }
                     Map<String, Object> detail = new HashMap<>(document.getData() == null
@@ -519,7 +544,88 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     } else if (section == Section.REPORTS) {
                         loadReportedTarget(detail, callback);
                     } else loadModerationContext(section, detail, callback);
-                }).addOnFailureListener(error -> fail(error, callback)), callback);
+                }).addOnFailureListener(error -> fail(error, callback));
+        }, callback);
+    }
+
+    private void loadSellerAccountQueue(String search, String filter, String cursor, int limit,
+            PageCallback callback) {
+        db.collection(USERS).whereEqualTo("role", "SELLER")
+                .orderBy(com.google.firebase.firestore.FieldPath.documentId()).get()
+                .addOnSuccessListener(snapshot -> {
+                    String needle = search.toLowerCase(java.util.Locale.ROOT);
+                    if (needle.startsWith("id:")) needle = needle.substring(3).trim();
+                    List<AdminListItem> sellers = new ArrayList<>();
+                    for (DocumentSnapshot user : snapshot.getDocuments()) {
+                        String sellerStatus = clean(user.getString("sellerStatus"));
+                        String status = "PENDING_APPROVAL".equals(sellerStatus) ? "PENDING" : sellerStatus;
+                        if (!filter.isEmpty() && !filter.equals(status)) continue;
+                        String id = user.getId();
+                        String title = first(user, "shopName", "representativeName", "fullName", "email");
+                        String email = text(user, "email");
+                        if (!needle.isEmpty() && !(id.toLowerCase(java.util.Locale.ROOT).contains(needle)
+                                || title.toLowerCase(java.util.Locale.ROOT).contains(needle)
+                                || email.toLowerCase(java.util.Locale.ROOT).contains(needle))) continue;
+                        sellers.add(mapSellerAccount(user));
+                    }
+                    int start = 0;
+                    if (!cursor.isEmpty()) for (int i = 0; i < sellers.size(); i++)
+                        if (sellers.get(i).getId().equals(cursor)) { start = i + 1; break; }
+                    int end = Math.min(sellers.size(), start + limit);
+                    List<AdminListItem> page = new ArrayList<>(sellers.subList(start, end));
+                    callback.onSuccess(page, end == 0 ? "" : sellers.get(end - 1).getId(), end < sellers.size());
+                }).addOnFailureListener(error -> fail(error, callback));
+    }
+
+    private void loadSellerDetail(String sellerId, DetailCallback callback) {
+        DocumentReference applicationRef = db.collection("sellerApplications").document(sellerId);
+        DocumentReference userRef = db.collection(USERS).document(sellerId);
+        Tasks.whenAllSuccess(applicationRef.get(), userRef.get()).addOnSuccessListener(results -> {
+            DocumentSnapshot application = (DocumentSnapshot) results.get(0);
+            DocumentSnapshot user = (DocumentSnapshot) results.get(1);
+            if (!application.exists() && !user.exists()) {
+                callback.onError(ErrorCode.NOT_FOUND, "Không tìm thấy tài khoản seller.");
+                return;
+            }
+            Map<String, Object> detail = new HashMap<>();
+            if (application.exists() && application.getData() != null) detail.putAll(application.getData());
+            if (user.exists()) {
+                detail.put("sellerId", sellerId);
+                detail.put("sellerProfile", user.getData());
+            }
+            detail.put("id", sellerId);
+            if (!application.exists()) detail.put("applicationStatus", "CHƯA NỘP HỒ SƠ CHI TIẾT");
+            callback.onSuccess(detail);
+        }).addOnFailureListener(error -> fail(error, callback));
+    }
+
+    private static AdminListItem mapSellerAccount(DocumentSnapshot user) {
+        String sellerStatus = clean(user.getString("sellerStatus"));
+        String status = "PENDING_APPROVAL".equals(sellerStatus) ? "PENDING" : sellerStatus;
+        return new AdminListItem(user.getId(), first(user, "shopName", "representativeName", "fullName", "email"),
+                text(user, "email"), status, false);
+    }
+
+    private void runSellerAccountTransition(String sellerId, String target, String note,
+            ActionCallback callback) {
+        String adminId = auth.getCurrentUser().getUid();
+        DocumentReference userRef = db.collection(USERS).document(sellerId);
+        DocumentReference audit = db.collection(AUDIT).document();
+        db.runTransaction(tx -> {
+            DocumentSnapshot seller = tx.get(userRef);
+            if (!seller.exists() || !"SELLER".equals(clean(seller.getString("role"))))
+                throw new IllegalStateException("SELLER_NOT_FOUND");
+            String before = clean(seller.getString("sellerStatus"));
+            if (!"PENDING_APPROVAL".equals(before))
+                throw new IllegalStateException("ADMIN_TRANSITION_INVALID");
+            policy.validate(Section.SELLER_APPLICATIONS, "PENDING", target, note);
+            Map<String, Object> changes = moderation(adminId, note);
+            changes.put("sellerStatus", target);
+            tx.update(userRef, changes);
+            tx.set(audit, auditMap(adminId, Section.SELLER_APPLICATIONS, sellerId, "PENDING", target, note));
+            return null;
+        }).addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(error -> fail(error, callback));
     }
 
     private static List<Map<String, Object>> snapshotMaps(QuerySnapshot snapshot) {

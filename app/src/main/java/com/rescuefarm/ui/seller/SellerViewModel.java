@@ -95,40 +95,40 @@ public class SellerViewModel extends ViewModel {
         analyticsLoading = false;
         state.setValue(SellerDashboardState.of(SellerDashboardState.Status.LOADING, null,
                 "Đang tải dashboard seller…"));
-        productRepo.refreshSellerProducts(sellerId, action(this::done, this::fail));
+        productRepo.refreshSellerProducts(sellerId, productAction(this::done, this::fail));
         productRepo.getSellerPromotions(sellerId, new ProductRepository.PromotionListCallback() {
             @Override public void onSuccess(List<com.rescuefarm.domain.model.Promotion> value) {
                 promotionCount = value == null ? 0 : value.size(); done();
             }
             @Override public void onError(ProductRepository.ErrorCode error, String message) { fail(message); }
         });
-        campaignRepo.refreshSellerCampaigns(sellerId, action(this::done, this::fail));
-        postRepo.refreshSellerPosts(sellerId, action(this::done, this::fail));
-        orderRepo.refreshSellerOrders(sellerId, action(this::done, this::fail));
+        campaignRepo.refreshSellerCampaigns(sellerId, campaignAction(this::done, this::fail));
+        postRepo.refreshSellerPosts(sellerId, postAction(this::done, this::fail));
+        orderRepo.refreshSellerOrders(sellerId, orderAction(this::done, this::fail));
     }
 
-    private ProductRepository.ActionCallback action(Runnable success, java.util.function.Consumer<String> error) {
+    private ProductRepository.ActionCallback productAction(Runnable success, java.util.function.Consumer<String> error) {
         return new ProductRepository.ActionCallback() {
             @Override public void onSuccess() { success.run(); }
             @Override public void onError(ProductRepository.ErrorCode code, String message) { error.accept(message); }
         };
     }
 
-    private CampaignRepository.ActionCallback action(Runnable success, java.util.function.Consumer<String> error) {
+    private CampaignRepository.ActionCallback campaignAction(Runnable success, java.util.function.Consumer<String> error) {
         return new CampaignRepository.ActionCallback() {
             @Override public void onSuccess() { success.run(); }
             @Override public void onError(CampaignRepository.ErrorCode code, String message) { error.accept(message); }
         };
     }
 
-    private PostRepository.ActionCallback action(Runnable success, java.util.function.Consumer<String> error) {
+    private PostRepository.ActionCallback postAction(Runnable success, java.util.function.Consumer<String> error) {
         return new PostRepository.ActionCallback() {
             @Override public void onSuccess() { success.run(); }
             @Override public void onError(PostRepository.ErrorCode code, String message) { error.accept(message); }
         };
     }
 
-    private OrderRepository.ActionCallback action(Runnable success, java.util.function.Consumer<String> error) {
+    private OrderRepository.ActionCallback orderAction(Runnable success, java.util.function.Consumer<String> error) {
         return new OrderRepository.ActionCallback() {
             @Override public void onSuccess() { success.run(); }
             @Override public void onError(OrderRepository.ErrorCode code, String message) { error.accept(message); }
