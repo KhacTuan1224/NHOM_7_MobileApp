@@ -1,6 +1,7 @@
 package com.rescuefarm.ui.profile;
 
 import android.os.Bundle;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,9 +35,7 @@ public class SellerProfileFragment extends Fragment {
     private TextView avatarUploadStatus;
     private View uploadAvatarButton;
     private final ActivityResultLauncher<String> avatarPicker = registerForActivityResult(
-            new ActivityResultContracts.GetContent(), uri -> CloudinaryUploadUi.upload(this, uri,
-                    "shopAvatar", com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid(), 0, uploadAvatarButton, avatarUploadStatus, sellerAvatarView,
-                    url -> avatarInput.setText(url)));
+            new ActivityResultContracts.GetContent(), this::uploadShopAvatar);
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_seller_profile, container, false);
@@ -162,7 +161,7 @@ public class SellerProfileFragment extends Fragment {
         descriptionInput.setText(seller.getShopDescription());
         avatarInput.setText(seller.getShopAvatarUrl());
         avatarUploadStatus.setText(seller.getShopAvatarUrl() == null || seller.getShopAvatarUrl().trim().isEmpty()
-                ? R.string.no_avatar_selected : R.string.avatar_uploaded_status);
+                ? R.string.no_shop_avatar_selected : R.string.shop_avatar_saved_status);
         addressInput.setText(seller.getAddress());
         bankCodeInput.setText(seller.getBankCode()); bankAccountNameInput.setText(seller.getBankAccountName());
         bankAccountNumberInput.setText(seller.getBankAccountNumber());
@@ -185,6 +184,17 @@ public class SellerProfileFragment extends Fragment {
             sellerAvatarView.setImageTintList(android.content.res.ColorStateList.valueOf(
                     requireContext().getColor(R.color.rescue_primary)));
         }
+    }
+
+    private void uploadShopAvatar(Uri uri) {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        CloudinaryUploadUi.upload(this, uri, "shopAvatar", user.getUid(), 0, uploadAvatarButton,
+                avatarUploadStatus, sellerAvatarView, url -> avatarInput.setText(url));
     }
 
     private static String text(TextInputEditText input) {

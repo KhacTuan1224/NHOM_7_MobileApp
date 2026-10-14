@@ -28,10 +28,12 @@ import com.rescuefarm.domain.model.OrderItem;
 import com.rescuefarm.domain.model.Payment;
 import com.rescuefarm.domain.model.Shipment;
 import com.rescuefarm.service.backend.RenderBackendClient;
+import com.rescuefarm.service.order.OrderLifecycleService;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 import org.json.JSONObject;
 
 public class OrderDetailFragment extends Fragment {
@@ -47,6 +49,8 @@ public class OrderDetailFragment extends Fragment {
     private View transitionButton, confirmButton;
     private String orderId = "";
     private String lastObservedEvent = "";
+    private final OrderLifecycleService lifecycleService = new OrderLifecycleService();
+    private List<OrderStatus> displayedTargets = Collections.emptyList();
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
@@ -65,12 +69,14 @@ public class OrderDetailFragment extends Fragment {
         shipmentCarrier = view.findViewById(R.id.shipmentCarrierInput);
         shipmentTracking = view.findViewById(R.id.shipmentTrackingInput);
         saveShipment = view.findViewById(R.id.saveShipmentDetailsButton);
-        target.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
-                OrderStatus.values()));
         Bundle args = getArguments(); orderId = args == null ? "" : args.getString("orderId", "");
         vm = new ViewModelProvider(this, new OrderViewModelFactory(requireContext())).get(OrderViewModel.class);
         vm.getState().observe(getViewLifecycleOwner(), this::render);
-        transitionButton.setOnClickListener(unused -> vm.transition(orderId, (OrderStatus) target.getSelectedItem()));
+        transitionButton.setOnClickListener(unused -> {
+            Object selected = target.getSelectedItem();
+            if (selected instanceof OrderStatus && displayedTargets.contains(selected))
+                vm.transition(orderId, (OrderStatus) selected);
+        });
         confirmButton.setOnClickListener(unused -> vm.confirmTransfer(orderId, reference.getText().toString().trim()));
         saveShipment.setOnClickListener(unused -> vm.updateShipmentDetails(orderId,
                 shipmentCarrier.getText().toString(), shipmentTracking.getText().toString(),
@@ -123,8 +129,17 @@ public class OrderDetailFragment extends Fragment {
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
         boolean seller = uid.equals(order.getSellerId());
-        transitionButton.setVisibility(seller ? View.VISIBLE : View.GONE);
-        target.setVisibility(seller ? View.VISIBLE : View.GONE);
+        List<OrderStatus> nextStatuses = seller ? lifecycleService.getAllowedNextStatuses(
+                order.getFulfillmentType(), order.getStatus(), payment.getMethod(), payment.getStatus())
+                : Collections.emptyList();
+        if (!displayedTargets.equals(nextStatuses)) {
+            displayedTargets = nextStatuses;
+            target.setAdapter(new ArrayAdapter<>(requireContext(),
+                    android.R.layout.simple_spinner_dropdown_item, nextStatuses));
+        }
+        boolean canTransition = seller && !nextStatuses.isEmpty();
+        transitionButton.setVisibility(canTransition ? View.VISIBLE : View.GONE);
+        target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         boolean bank = payment.getMethod() == PaymentMethod.BANK_TRANSFER;
         boolean pendingSellerBankConfirmation = seller && bank && payment.getStatus() == PaymentStatus.PENDING;
         reference.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);

@@ -19,6 +19,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.rescuefarm.R;
+import com.rescuefarm.MainActivity;
+import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.data.repository.SellerStorefront;
 import com.rescuefarm.data.repository.StorefrontRepository;
 import com.rescuefarm.domain.enums.FulfillmentType;
@@ -60,6 +62,11 @@ public class CheckoutFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        if (requireActivity() instanceof MainActivity
+                && ((MainActivity) requireActivity()).getResolvedActorRole() == UserRole.SELLER) {
+            Navigation.findNavController(view).navigate(R.id.sellerDashboardFragment);
+            return;
+        }
         name = view.findViewById(R.id.checkoutName); phone = view.findViewById(R.id.checkoutPhone);
         address = view.findViewById(R.id.checkoutAddress); lat = view.findViewById(R.id.checkoutLatitude);
         lng = view.findViewById(R.id.checkoutLongitude); note = view.findViewById(R.id.checkoutNote);

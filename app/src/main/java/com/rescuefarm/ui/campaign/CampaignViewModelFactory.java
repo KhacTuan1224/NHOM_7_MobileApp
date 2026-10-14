@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import com.rescuefarm.data.repository.AuthRepositoryFactory;
 import com.rescuefarm.data.repository.CampaignRepositoryFactory;
+import com.rescuefarm.data.repository.ProductRepositoryFactory;
 import com.rescuefarm.service.location.LocationProviderFactory;
 
 public class CampaignViewModelFactory implements ViewModelProvider.Factory {
@@ -16,6 +17,7 @@ public class CampaignViewModelFactory implements ViewModelProvider.Factory {
             throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());
         }
         return (T) new CampaignViewModel(CampaignRepositoryFactory.create(context),
-                AuthRepositoryFactory.create(context), LocationProviderFactory.create(context));
+                AuthRepositoryFactory.create(context), ProductRepositoryFactory.create(context),
+                LocationProviderFactory.create(context));
     }
 }

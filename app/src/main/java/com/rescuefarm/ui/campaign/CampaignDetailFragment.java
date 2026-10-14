@@ -15,6 +15,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.rescuefarm.R;
+import com.rescuefarm.MainActivity;
+import com.rescuefarm.ui.navigation.ActorUiPolicy;
 import com.rescuefarm.data.repository.ProductRepository;
 import com.rescuefarm.data.repository.ProductRepositoryFactory;
 import com.rescuefarm.domain.enums.RescueMode;
@@ -74,8 +76,18 @@ public class CampaignDetailFragment extends Fragment {
             Navigation.findNavController(v).navigate(
                 R.id.action_campaignDetailFragment_to_reportFragment, bundle);
         });
+        applyActorActions(view);
+        if (requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).observeActorRole().observe(getViewLifecycleOwner(), role ->
+                    applyActorActions(view));
+        }
         
         viewModel.load(campaignId);
+    }
+
+    private void applyActorActions(View root) {
+        root.findViewById(R.id.reportCampaignButton).setVisibility(
+                ActorUiPolicy.isSellerReadOnly(this) ? View.GONE : View.VISIBLE);
     }
     
     private void render(View view, RescueCampaign value) {

@@ -21,6 +21,8 @@ import com.google.firebase.auth.FirebaseAuth;
 
 
 import com.rescuefarm.R;
+import com.rescuefarm.MainActivity;
+import com.rescuefarm.ui.navigation.ActorUiPolicy;
 import com.rescuefarm.domain.enums.OrderStatus;
 import com.rescuefarm.domain.model.Order;
 import com.rescuefarm.domain.model.OrderItem;
@@ -82,6 +84,11 @@ public class ReviewFragment extends Fragment {
         reviewStatus = view.findViewById(R.id.reviewListStatus);
         uploadImagesButton = view.findViewById(R.id.uploadReviewImagesButton);
         saveButton = view.findViewById(R.id.saveReviewButton);
+        applyActorMode(view);
+        if (requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).observeActorRole().observe(getViewLifecycleOwner(), role ->
+                    applyActorMode(view));
+        }
         uploadImagesButton.setOnClickListener(v -> {
             if (targets.isEmpty()) noEligibleOrder();
             else if (imageCount() >= 5) Toast.makeText(requireContext(),
@@ -215,6 +222,7 @@ public class ReviewFragment extends Fragment {
     }
 
     private void save() {
+        if (ActorUiPolicy.isSellerReadOnly(this)) return;
         if (targets.isEmpty()) { noEligibleOrder(); return; }
         try {
             List<String> urls = new ArrayList<>();
@@ -227,6 +235,14 @@ public class ReviewFragment extends Fragment {
         } catch (Exception error) {
             Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void applyActorMode(View root) {
+        boolean readOnly = ActorUiPolicy.isSellerReadOnly(this);
+        View composer = root.findViewById(R.id.reviewComposer);
+        View sellerNotice = root.findViewById(R.id.sellerReviewReadOnlyNotice);
+        if (composer != null) composer.setVisibility(readOnly ? View.GONE : View.VISIBLE);
+        if (sellerNotice != null) sellerNotice.setVisibility(readOnly ? View.VISIBLE : View.GONE);
     }
 
     private void appendImageUrl(String url) {

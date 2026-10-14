@@ -16,6 +16,8 @@ import androidx.navigation.Navigation;
 import com.bumptech.glide.Glide;
 import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
+import com.rescuefarm.MainActivity;
+import com.rescuefarm.ui.navigation.ActorUiPolicy;
 import com.rescuefarm.data.repository.PostRepository;
 import com.rescuefarm.domain.enums.ReactionType;
 import com.rescuefarm.domain.enums.PostStatus;
@@ -28,6 +30,7 @@ public class PostDetailFragment extends Fragment {
     private LinearLayout comments; private TextView reactionSummary;
     private boolean engagementRequested;
     private boolean commentSubmitted;
+    private boolean publishedPost;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_post_detail, parent, false);
@@ -47,7 +50,8 @@ public class PostDetailFragment extends Fragment {
             if (value.getStatus() == PostScreenState.Status.POST) {
                 renderPost(view, value.getPost());
                 boolean published = value.getPost().getStatus() == PostStatus.PUBLISHED;
-                setInteractionsEnabled(view, published);
+                publishedPost = published;
+                setInteractionsEnabled(view, publishedPost && !ActorUiPolicy.isSellerReadOnly(this));
                 if (!published) reactionSummary.setText("Post đang " + value.getPost().getStatus().name()
                         + "; tương tác chỉ mở sau khi được duyệt.");
                 else if (!engagementRequested) { engagementRequested = true; viewModel.loadEngagement(); }
@@ -63,7 +67,23 @@ public class PostDetailFragment extends Fragment {
         });
         String postId = getArguments() == null ? "" : getArguments().getString("postId", "");
         view.findViewById(R.id.reportPostButton).setOnClickListener(v -> { Bundle b=new Bundle();b.putString("targetType","POST");b.putString("targetId",postId);Navigation.findNavController(v).navigate(R.id.action_postDetailFragment_to_reportFragment,b); });
+        applyActorActions(view);
+        if (requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).observeActorRole().observe(getViewLifecycleOwner(), role ->
+                    applyActorActions(view));
+        }
         viewModel.loadPost(postId);
+    }
+    private void applyActorActions(View root) {
+        boolean readOnly = ActorUiPolicy.isSellerReadOnly(this);
+        int visibility = readOnly ? View.GONE : View.VISIBLE;
+        root.findViewById(R.id.likeButton).setVisibility(visibility);
+        root.findViewById(R.id.supportButton).setVisibility(visibility);
+        root.findViewById(R.id.careButton).setVisibility(visibility);
+        commentInput.setVisibility(visibility);
+        root.findViewById(R.id.sendCommentButton).setVisibility(visibility);
+        root.findViewById(R.id.reportPostButton).setVisibility(visibility);
+        setInteractionsEnabled(root, publishedPost && !readOnly);
     }
     private void renderPost(View root, Post post) {
         ((TextView) root.findViewById(R.id.postDetailTitle)).setText(post.getTitle());
