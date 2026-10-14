@@ -113,9 +113,11 @@ public class RegisterFragment extends Fragment {
             viewModel.clearTransientState();
         } else if (state.getStatus() == AuthScreenState.Status.AUTHENTICATED) {
             viewModel.clearTransientState();
-            NavHostFragment.findNavController(this).navigate(
-                    R.id.action_registerFragment_to_guestHomeFragment
-            );
+            int destination = state.getUser() != null
+                    && state.getUser().getRole() == UserRole.SELLER
+                    ? R.id.sellerApplicationFragment
+                    : R.id.action_registerFragment_to_guestHomeFragment;
+            NavHostFragment.findNavController(this).navigate(destination);
         }
     }
 
