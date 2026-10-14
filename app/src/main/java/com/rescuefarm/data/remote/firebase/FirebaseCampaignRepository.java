@@ -10,6 +10,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.rescuefarm.data.local.dao.CampaignCacheDao;
 import com.rescuefarm.data.local.dao.BannerCacheDao;
 import com.rescuefarm.data.local.dao.CatalogCacheDao;
@@ -44,7 +45,8 @@ public class FirebaseCampaignRepository implements CampaignRepository {
     private static final String CAMPAIGNS = "campaigns";
     private static final String BANNERS = "banners";
     private static final String BATCHES = "productBatches";
-    private static final int MAX_BATCHES = 8;
+    // Leave headroom under Firestore's 500-write transaction limit (campaign + two records/batch).
+    private static final int MAX_BATCHES = 200;
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
     private final RescueFarmDatabase database;
@@ -53,6 +55,8 @@ public class FirebaseCampaignRepository implements CampaignRepository {
     private final CatalogCacheDao catalogDao;
     private final ExecutorService cacheExecutor;
     private final NetworkStatusProvider network;
+    private final Map<String, DocumentSnapshot> sellerCampaignCursors = new HashMap<>();
+    private final Set<String> sellersWithMoreCampaigns = new HashSet<>();
     private final InventoryService inventoryService = new InventoryService();
 
     public FirebaseCampaignRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
@@ -130,6 +134,37 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+    @Override public void refreshSellerCampaignPage(String sellerId, boolean reset, ActionCallback callback) {
+        if (!online(callback, "Đang offline; campaign seller tiếp tục dùng Room cache.")) return;
+        Query query = firestore.collection(CAMPAIGNS).whereEqualTo("sellerId", sellerId)
+                .orderBy("createdAt", Query.Direction.DESCENDING).limit(50);
+        DocumentSnapshot cursor = sellerCampaignCursors.get(sellerId);
+        if (!reset && cursor != null) query = query.startAfter(cursor);
+        query.get().addOnSuccessListener(snapshot -> {
+            List<CampaignCacheEntity> entities = new ArrayList<>(); long now = System.currentTimeMillis();
+            for (DocumentSnapshot document : snapshot.getDocuments()) {
+                RescueCampaign campaign = mapCampaign(document);
+                if (campaign != null) entities.add(CampaignCacheMapper.toEntity(campaign, now));
+            }
+            if (reset) sellerCampaignCursors.remove(sellerId);
+            if (!snapshot.isEmpty()) sellerCampaignCursors.put(sellerId,
+                    snapshot.getDocuments().get(snapshot.size() - 1));
+            if (snapshot.size() == 50) sellersWithMoreCampaigns.add(sellerId);
+            else sellersWithMoreCampaigns.remove(sellerId);
+            cacheExecutor.execute(() -> {
+                database.runInTransaction(() -> {
+                    if (reset) campaignDao.clearSellerCampaigns(sellerId);
+                    campaignDao.replaceCampaigns(entities);
+                });
+                callback.onSuccess();
+            });
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
+    @Override public boolean hasMoreSellerCampaigns(String sellerId) {
+        return sellersWithMoreCampaigns.contains(sellerId);
+    }
+
     private void cacheCampaigns(List<DocumentSnapshot> documents, boolean activeOnly,
             String sellerId, ActionCallback callback) {
         List<CampaignCacheEntity> entities = new ArrayList<>(); long now = System.currentTimeMillis();
@@ -186,7 +221,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
             RescueCampaign saved = copyCampaign(reference.getId(), sellerId, source,
                     savedStatus, previous);
             if (saved.getBatchTargets().size() > MAX_BATCHES) {
-                throw new IllegalArgumentException("A campaign supports at most 8 batches");
+                throw new IllegalArgumentException("Mỗi Campaign hỗ trợ tối đa 200 lô để an toàn với giới hạn ghi Firestore.");
             }
             Map<String, Double> previousTargets = existing.exists()
                     ? targetMap(existing.get("batchTargets")) : new LinkedHashMap<>();
@@ -251,12 +286,16 @@ public class FirebaseCampaignRepository implements CampaignRepository {
             }
             campaign.setLocationSharingEnabled(sharingEnabled);
             if (sharingEnabled) campaign.updateCurrentLocation(latitude, longitude, new Date());
+            else campaign.clearCurrentLocation();
             Map<String, Object> updates = new HashMap<>();
             updates.put("locationSharingEnabled", sharingEnabled);
             updates.put("updatedAt", FieldValue.serverTimestamp());
             if (sharingEnabled) {
                 updates.put("currentLatitude", latitude); updates.put("currentLongitude", longitude);
                 updates.put("locationUpdatedAt", FieldValue.serverTimestamp());
+            } else {
+                updates.put("currentLatitude", 0D); updates.put("currentLongitude", 0D);
+                updates.put("locationUpdatedAt", null);
             }
             transaction.update(reference, updates); return campaign;
         }).addOnSuccessListener(campaign -> { cache(campaign); callback.onSuccess(campaign); })
