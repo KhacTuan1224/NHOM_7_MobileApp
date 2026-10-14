@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="admin_status_filters">
+        <item>Tất cả trạng thái</item>
+        <item>PENDING</item>
+        <item>DRAFT</item>
+        <item>PENDING_APPROVAL</item>
+        <item>ACTIVE</item>
+        <item>IN_REVIEW</item>
+        <item>PUBLISHED</item>
+        <item>HIDDEN</item>
+        <item>BLOCKED</item>
+        <item>REJECTED</item>
+        <item>STOPPED</item>
+        <item>COMPLETED</item>
+        <item>EXPIRED</item>
+        <item>CONFIRMED</item>
+        <item>PREPARING</item>
+        <item>SHIPPING</item>
+        <item>READY_FOR_PICKUP</item>
+        <item>DELIVERED</item>
+        <item>CANCELLED</item>
+        <item>INACTIVE</item>
+        <item>FULFILLMENT:DELIVERY</item>
+        <item>FULFILLMENT:PICKUP</item>
+        <item>FULFILLMENT:ON_SITE_RESCUE</item>
+        <item>PAYMENT:COD</item>
+        <item>PAYMENT:CASH_ON_SITE</item>
+        <item>PAYMENT:BANK_TRANSFER</item>
+    </string-array>
+</resources>
