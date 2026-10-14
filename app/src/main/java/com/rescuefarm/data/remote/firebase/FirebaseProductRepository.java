@@ -30,6 +30,8 @@ import com.rescuefarm.domain.model.Promotion;
 import com.rescuefarm.service.inventory.InventoryService;
 import com.rescuefarm.service.inventory.InventoryVersionPolicy;
 import com.rescuefarm.service.network.NetworkStatusProvider;
+import com.rescuefarm.service.backend.RenderBackendClient;
+import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -456,7 +458,7 @@ public class FirebaseProductRepository implements ProductRepository {
             else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
             transaction.set(promotionRef, data);
             return candidate;
-        }).addOnSuccessListener(callback::onSuccess)
+        }).addOnSuccessListener(saved -> { callback.onSuccess(saved); notifyPromotionCustomers(saved.getProductId()); })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
@@ -470,8 +472,18 @@ public class FirebaseProductRepository implements ProductRepository {
             requireOwner(product);
             transaction.update(promotionRef, "active", active, "updatedAt", FieldValue.serverTimestamp());
             return null;
-        }).addOnSuccessListener(unused -> callback.onSuccess())
+        }).addOnSuccessListener(unused -> { callback.onSuccess(); if (active) notifyPromotionCustomers(productId); })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
+    private void notifyPromotionCustomers(String productId) {
+        JSONObject request = new JSONObject();
+        try { request.put("type", "PROMOTION"); request.put("referenceId", productId); }
+        catch (org.json.JSONException ignored) { return; }
+        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
+            @Override public void onSuccess(JSONObject response) { }
+            @Override public void onError(String message) { }
+        });
     }
 
     @Override public void getCartQuote(String productId, String batchId, CartQuoteCallback callback) {

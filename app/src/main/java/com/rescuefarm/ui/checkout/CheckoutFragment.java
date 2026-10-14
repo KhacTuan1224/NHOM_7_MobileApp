@@ -23,15 +23,16 @@ import com.rescuefarm.domain.enums.FulfillmentType;
 import com.rescuefarm.domain.enums.PaymentMethod;
 import com.rescuefarm.domain.model.Address;
 import com.rescuefarm.domain.model.Cart;
+import com.rescuefarm.service.backend.RenderBackendClient;
 import com.google.firebase.firestore.FirebaseFirestore;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.HashMap;
-import java.util.Map;
 
 public class CheckoutFragment extends Fragment {
     private CheckoutViewModel vm;
@@ -186,61 +187,60 @@ public class CheckoutFragment extends Fragment {
         int version = quoteVersion;
         if (vm.isGuest()) { estimate.setText("Checkout chỉ dành cho Customer đăng nhập."); return; }
         if (currentCart == null) { estimate.setText("Đang tải giỏ hàng…"); return; }
-        double subtotal = 0D; int count = 0; String sellerId = "";
-        StringBuilder lines = new StringBuilder();
-        NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        JSONArray items = new JSONArray(); int count = 0;
         for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems()) if (item.isSelected()) {
-            if (!sellerId.isEmpty() && !sellerId.equals(item.getSellerId())) {
-                estimate.setText("Mỗi đơn chỉ gồm sản phẩm của một cửa hàng. Hãy tách giỏ theo Seller."); return;
-            }
-            sellerId = item.getSellerId(); count++;
-            double line = Math.round(item.calculateTotal()); subtotal += line;
-            lines.append("• Batch ").append(item.getBatchId()).append(" · ")
-                    .append(item.getQuantity()).append(" × ").append(money.format(item.getUnitPrice()))
-                    .append(" = ").append(money.format(line)).append('\n');
+            JSONObject line = new JSONObject();
+            try { line.put("productId", item.getProductId()); line.put("batchId", item.getBatchId());
+                line.put("sellerId", item.getSellerId()); line.put("quantity", item.getQuantity()); }
+            catch (org.json.JSONException ignored) { }
+            items.put(line); count++;
         }
         if (count == 0) { estimate.setText("Chọn mặt hàng để xem tạm tính."); return; }
-        final double itemSubtotal = subtotal;
-        final double customerLat, customerLng;
+        double customerLat = 0D, customerLng = 0D;
         if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY) {
             try { customerLat = Double.parseDouble(text(lat)); customerLng = Double.parseDouble(text(lng)); }
             catch (NumberFormatException error) { estimate.setText("Giao hàng cần tọa độ địa chỉ."); return; }
-        } else { customerLat = 0D; customerLng = 0D; }
-        quoteReady = true; quotedSubtotal = itemSubtotal;
-        estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines);
-        if (fulfillment.getSelectedItem() != FulfillmentType.DELIVERY) {
-            quotedShippingFee = 0D;
-            estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines
-                    + "Tiền hàng: " + money.format(itemSubtotal) + "\nPhí giao: " + money.format(0D)
-                    + "\nTổng tạm tính: " + money.format(itemSubtotal));
-            enableCheckoutSubmit();
-            return;
         }
-        final int requestVersion = version; final String shopId = sellerId;
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("sellerPublicProfiles").document(shopId).get().addOnSuccessListener(profile -> {
-            if (requestVersion != quoteVersion || !isAdded()) return;
-            db.collection("appConfig").document("shipping").get().addOnSuccessListener(config -> {
-                if (requestVersion != quoteVersion || !isAdded()) return;
-                if (!profile.exists() || !config.exists()) { quoteReady = false; estimate.setText("Thiếu tọa độ Seller hoặc cấu hình giao hàng."); return; }
-                double shopLat = number(profile.get("latitude")), shopLng = number(profile.get("longitude"));
-                double distance = distanceKm(shopLat, shopLng, customerLat, customerLng);
-                quotedShippingFee = number(config.get("baseFeeVnd")) + Math.ceil(Math.max(0D,
-                        distance - number(config.get("freeDistanceKm"))) * number(config.get("perKmFeeVnd")));
-                estimate.setText("ĐANG TẠM TÍNH — transaction checkout sẽ xác minh lại giá và tồn.\n" + lines
-                        + "Tiền hàng: " + money.format(itemSubtotal) + "\nKhoảng cách: "
-                        + String.format(Locale.getDefault(), "%.1f km", distance) + "\nPhí giao: "
-                        + money.format(quotedShippingFee) + "\nTổng tạm tính: " + money.format(itemSubtotal + quotedShippingFee));
-                enableCheckoutSubmit();
-            }).addOnFailureListener(error -> { quoteReady = false; estimate.setText("Không đọc được cấu hình giao hàng: " + error.getLocalizedMessage()); });
-        }).addOnFailureListener(error -> { quoteReady = false; estimate.setText("Không đọc được hồ sơ cửa hàng: " + error.getLocalizedMessage()); });
-    }
-
-    private double distanceKm(double lat1, double lng1, double lat2, double lng2) {
-        double radians = Math.PI / 180D, dLat = (lat2 - lat1) * radians, dLng = (lng2 - lng1) * radians;
-        double a = Math.sin(dLat / 2D) * Math.sin(dLat / 2D)
-                + Math.cos(lat1 * radians) * Math.cos(lat2 * radians) * Math.sin(dLng / 2D) * Math.sin(dLng / 2D);
-        return 6371D * 2D * Math.atan2(Math.sqrt(a), Math.sqrt(1D - a));
+        JSONObject request = new JSONObject();
+        try { request.put("items", items); request.put("fulfillmentType", fulfillment.getSelectedItem().toString());
+            request.put("paymentMethod", payment.getSelectedItem().toString()); request.put("latitude", customerLat);
+            request.put("longitude", customerLng); }
+        catch (org.json.JSONException error) { quoteReady = false; estimate.setText("Không tạo được request báo giá."); return; }
+        estimate.setText("Đang chờ Render khởi động/lấy báo giá từ backend…");
+        RenderBackendClient.post("/quoteCustomerCheckout", request, new RenderBackendClient.Callback() {
+            @Override public void onSuccess(JSONObject quote) {
+                if (version != quoteVersion || !isAdded()) return;
+                quotedSubtotal = quote.optDouble("subtotal", Double.NaN);
+                quotedShippingFee = quote.optDouble("shippingFee", Double.NaN);
+                NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+                StringBuilder summary = new StringBuilder("BÁO GIÁ TỪ BACKEND (transaction checkout vẫn kiểm tra lại)\n");
+                JSONArray lines = quote.optJSONArray("lines");
+                if (lines != null) for (int i = 0; i < lines.length(); i++) {
+                    JSONObject line = lines.optJSONObject(i); if (line == null) continue;
+                    summary.append("• ").append(line.optString("productName")).append(" · ")
+                            .append(line.optDouble("quantity")).append(' ').append(line.optString("unit"))
+                            .append(" · Batch ").append(line.optString("batchId"))
+                            .append(" · ").append(money.format(line.optDouble("subtotal"))).append('\n');
+                }
+                summary.append("Tiền hàng: ").append(money.format(quotedSubtotal))
+                        .append("\nGiảm giá: ").append(money.format(quote.optDouble("totalDiscount")))
+                        .append("\nPhí giao: ").append(money.format(quotedShippingFee))
+                        .append("\nTổng: ").append(money.format(quote.optDouble("total")));
+                String campaignId = quote.optString("campaignId", "");
+                if (!campaignId.isEmpty()) summary.append("\nCampaign: ").append(quote.optString("campaignTitle"))
+                        .append(" · ").append(campaignId);
+                if (fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE)
+                    summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"))
+                            .append(" · ").append(quote.optDouble("campaignLatitude"))
+                            .append(", ").append(quote.optDouble("campaignLongitude"));
+                estimate.setText(summary.toString()); quoteReady = Double.isFinite(quotedSubtotal)
+                        && Double.isFinite(quotedShippingFee); enableCheckoutSubmit();
+            }
+            @Override public void onError(String error) {
+                if (version != quoteVersion || !isAdded()) return;
+                quoteReady = false; estimate.setText("Không lấy được báo giá: " + error);
+            }
+        });
     }
 
     private void enableCheckoutSubmit() {
@@ -252,8 +252,8 @@ public class CheckoutFragment extends Fragment {
         if (fulfillment == null) return;
         boolean delivery = fulfillment.getSelectedItem() == FulfillmentType.DELIVERY;
         if (address != null) address.setVisibility(delivery ? View.VISIBLE : View.GONE);
-        if (lat != null && lat.getParent() != null)
-            lat.getParent().setVisibility(delivery ? View.VISIBLE : View.GONE);
+        if (lat != null && lat.getParent() instanceof View)
+            ((View) lat.getParent()).setVisibility(delivery ? View.VISIBLE : View.GONE);
     }
 
     private void bindPaymentMethods() {
@@ -300,7 +300,6 @@ public class CheckoutFragment extends Fragment {
 
     private boolean blank(String value) { return value == null || value.trim().isEmpty(); }
 
-    private double number(Object value) { return value instanceof Number ? ((Number) value).doubleValue() : 0D; }
     private String text(EditText field) { return field.getText().toString().trim(); }
     @Override public void onDestroyView() { quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; super.onDestroyView(); }
 }

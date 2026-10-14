@@ -26,6 +26,7 @@ import com.rescuefarm.domain.model.Order;
 import com.rescuefarm.domain.model.OrderItem;
 import com.rescuefarm.domain.model.Review;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
+import com.rescuefarm.service.backend.RenderBackendClient;
 import com.rescuefarm.ui.order.OrderViewModel;
 import com.rescuefarm.ui.order.OrderViewModelFactory;
 import java.util.ArrayList;
@@ -228,7 +229,8 @@ public class ReviewFragment extends Fragment {
                 if (!value.trim().isEmpty()) urls.add(value.trim());
             Review review = Review.create(uid, productId, text(order), text(item),
                     Integer.parseInt(text(rating)), text(content), urls, new Date());
-            vm.saveReview(review, editing);
+            vm.saveReview(review, editing, () -> requestRatingRecalculation(review.getId(),
+                    review.getOrderId(), review.getOrderItemId()));
         } catch (Exception error) {
             Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_LONG).show();
         }
@@ -277,7 +279,8 @@ public class ReviewFragment extends Fragment {
                 delete.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                         .setTitle("Xóa đánh giá?").setMessage("Đánh giá này sẽ bị gỡ khỏi sản phẩm.")
                         .setNegativeButton(android.R.string.cancel, null)
-                        .setPositiveButton("Xóa", (dialog, which) -> vm.deleteReview(review.getId(), productId)).show());
+                        .setPositiveButton("Xóa", (dialog, which) -> vm.deleteReview(review.getId(), productId,
+                                () -> requestRatingRecalculation("", review.getOrderId(), review.getOrderItemId()))).show());
                 actions.addView(edit); actions.addView(delete); row.addView(actions);
             }
             list.addView(row);
@@ -301,6 +304,21 @@ public class ReviewFragment extends Fragment {
     }
 
     private String targetKey(String orderId, String itemId) { return uid + "_" + orderId + "_" + itemId; }
+
+    private void requestRatingRecalculation(String reviewId, String orderId, String itemId) {
+        org.json.JSONObject payload = new org.json.JSONObject();
+        try {
+            if (reviewId != null && !reviewId.isEmpty()) payload.put("reviewId", reviewId);
+            payload.put("productId", productId); payload.put("orderId", orderId); payload.put("orderItemId", itemId);
+        } catch (org.json.JSONException ignored) { return; }
+        RenderBackendClient.post("/recalculate-rating", payload, new RenderBackendClient.Callback() {
+            @Override public void onSuccess(org.json.JSONObject response) { }
+            @Override public void onError(String error) {
+                if (isAdded()) Toast.makeText(requireContext(), "Chưa cập nhật được tổng rating: " + error,
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
     private String join(List<String> values) { return values == null ? "" : android.text.TextUtils.join("\n", values); }
     private double number(DocumentSnapshot document, String field) {
         Object value = document.get(field); return value instanceof Number ? ((Number) value).doubleValue() : 0D;

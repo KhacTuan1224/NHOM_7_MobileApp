@@ -15,6 +15,8 @@ import com.rescuefarm.data.repository.AdminRepository;
 import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
 import com.rescuefarm.service.admin.AdminTransitionPolicy;
+import com.rescuefarm.service.backend.RenderBackendClient;
+import org.json.JSONObject;
 import com.rescuefarm.service.network.NetworkStatusProvider;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -209,8 +211,21 @@ public final class FirebaseAdminRepository implements AdminRepository {
             tx.update(ref, changes);
             tx.set(audit, auditMap(adminId, section, id, before, target, note));
             return true;
-        }).addOnSuccessListener(value -> callback.onSuccess())
+        }).addOnSuccessListener(value -> {
+            callback.onSuccess();
+            if (section == Section.CAMPAIGNS && "ACTIVE".equals(target)) notifyCampaignCustomers(id);
+        })
                 .addOnFailureListener(error -> fail(error, callback));
+    }
+
+    private void notifyCampaignCustomers(String campaignId) {
+        JSONObject request = new JSONObject();
+        try { request.put("type", "CAMPAIGN"); request.put("referenceId", campaignId); }
+        catch (org.json.JSONException ignored) { return; }
+        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
+            @Override public void onSuccess(JSONObject response) { }
+            @Override public void onError(String message) { }
+        });
     }
 
     private void ensureAdmin(Runnable action, Object callback) {
