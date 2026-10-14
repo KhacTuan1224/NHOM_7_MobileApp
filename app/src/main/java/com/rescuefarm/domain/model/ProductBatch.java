@@ -122,7 +122,7 @@ public class ProductBatch {
     }
 
     private void refreshStatus() {
-        if (status == BatchStatus.EXPIRED) { return; }
+        if (status == BatchStatus.EXPIRED || status == BatchStatus.ARCHIVED) { return; }
         if (availableQuantity <= QUANTITY_TOLERANCE && reservedQuantity <= QUANTITY_TOLERANCE) {
             status = BatchStatus.SOLD_OUT;
         } else if (reservedQuantity > QUANTITY_TOLERANCE) {

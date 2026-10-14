@@ -13,6 +13,7 @@ import com.rescuefarm.domain.model.User;
 public class AuthViewModel extends ViewModel {
     private final AuthRepository authRepository;
     private final GuestSessionRepository guestSessionRepository;
+    private final com.rescuefarm.service.cart.CartMigrationService migrationService;
     private final MutableLiveData<AuthScreenState> screenState =
             new MutableLiveData<>(AuthScreenState.idle());
 
@@ -20,8 +21,17 @@ public class AuthViewModel extends ViewModel {
             AuthRepository authRepository,
             GuestSessionRepository guestSessionRepository
     ) {
+        this(authRepository, guestSessionRepository, null);
+    }
+
+    public AuthViewModel(
+            AuthRepository authRepository,
+            GuestSessionRepository guestSessionRepository,
+            com.rescuefarm.service.cart.CartMigrationService migrationService
+    ) {
         this.authRepository = authRepository;
         this.guestSessionRepository = guestSessionRepository;
+        this.migrationService = migrationService;
     }
 
     public LiveData<AuthScreenState> getScreenState() { return screenState; }
@@ -47,6 +57,17 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void continueAsGuest() {
+        if (screenState.getValue() != null && screenState.getValue().getStatus() == AuthScreenState.Status.LOADING) return;
+        if (authRepository.isAuthenticated()) {
+            screenState.setValue(AuthScreenState.loading());
+            authRepository.signOut(new AuthRepository.ActionCallback() {
+                public void onSuccess() { enterGuestSession(); }
+                public void onError(AuthRepository.ErrorCode error, String message) { screenState.setValue(AuthScreenState.error(message)); }
+            });
+        } else enterGuestSession();
+    }
+
+    private void enterGuestSession() {
         guestSessionRepository.markOnboardingCompleted();
         String guestId = guestSessionRepository.getOrCreateGuestId();
         screenState.setValue(AuthScreenState.guest(guestId));
@@ -147,7 +168,22 @@ public class AuthViewModel extends ViewModel {
         return new AuthRepository.AuthCallback() {
             @Override
             public void onSuccess(User user) {
-                screenState.postValue(AuthScreenState.authenticated(user));
+                String currentGuestId = guestSessionRepository.getOrCreateGuestId();
+                if (migrationService != null && currentGuestId != null && !currentGuestId.trim().isEmpty() && user != null) {
+                    migrationService.migrateGuestCartToUser(currentGuestId, user.getId(), new com.rescuefarm.data.repository.CartRepository.ActionCallback() {
+                        @Override
+                        public void onSuccess() {
+                            screenState.postValue(AuthScreenState.authenticated(user));
+                        }
+
+                        @Override
+                        public void onError(com.rescuefarm.data.repository.CartRepository.ErrorCode error, String message) {
+                            screenState.postValue(AuthScreenState.authenticated(user));
+                        }
+                    });
+                } else {
+                    screenState.postValue(AuthScreenState.authenticated(user));
+                }
             }
 
             @Override

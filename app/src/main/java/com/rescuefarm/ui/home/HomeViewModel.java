@@ -155,14 +155,7 @@ public class HomeViewModel extends ViewModel {
     }
 
     private void syncBatchSources() {
-        boolean neededForCampaigns = !campaigns.isEmpty();
-        if (!query.needsBatchData() && !neededForCampaigns) {
-            for (Map.Entry<String, LiveData<List<ProductBatch>>> entry : batchSources.entrySet()) {
-                homeState.removeSource(entry.getValue());
-            }
-            batchSources.clear(); productBatches.clear();
-            return;
-        }
+        // Home needs expiry/stock even when there is no campaign and no search filter.
         Set<String> needed = new HashSet<>();
         for (Product product : products) if (product != null && product.getId() != null) {
             needed.add(product.getId());
@@ -234,6 +227,7 @@ public class HomeViewModel extends ViewModel {
                 refreshing, message, freshness));
         publishSearch();
     }
+    public void refreshTimeSensitiveContent() { publish(); }
     private void publishSearch() {
         searchResults.postValue(discoveryEngine.search(products, campaigns, productBatches, sellerCoordinates, query,
                 latitude, longitude, new Date()));

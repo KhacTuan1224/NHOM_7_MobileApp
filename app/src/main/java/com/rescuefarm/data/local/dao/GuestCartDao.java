@@ -16,6 +16,9 @@ public interface GuestCartDao {
     @Query("SELECT * FROM guest_cart_items WHERE guestId = :guestId ORDER BY updatedAtEpochMillis DESC")
     LiveData<List<GuestCartItemEntity>> observeItems(String guestId);
 
+    @Query("SELECT * FROM guest_cart_items WHERE guestId = :guestId")
+    List<GuestCartItemEntity> getItems(String guestId);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(GuestCartItemEntity item);
 

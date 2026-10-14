@@ -1,5 +1,12 @@
 # Customer code changes
 
+Update 14/10/2026: the seven missing items from the full audit are now implemented
+in source. See [customer-seven-fixes.md](customer-seven-fixes.md) for validation
+and the coordinated backend/rules/APK upgrade. Checkout below has moved from an
+Android Firestore transaction to the trusted HTTP backend transaction. Guest
+checkout and code/phone lookup are enabled through scoped backend access; batch
+deletion now archives instead of removing Firestore data.
+
 The app keeps the 25 domain models specified in `final.md`. `SellerStorefront`
 is a data projection of `sellerPublicProfiles`, not an additional domain entity.
 
@@ -9,12 +16,13 @@ Implemented:
   changes are atomic for create, edit, withdrawal, and admin moderation.
 - Withdrawal retains the review record with `DELETED` status. Only published
   reviews contribute to rating sum, count and average.
-- Checkout removes only purchased quantities from the customer cart in the same
-  transaction that reserves inventory. A replay does not consume the cart twice.
+- Checkout now runs on the trusted HTTP backend and removes only purchased
+  quantities from the customer cart in the same transaction that reserves
+  inventory. A replay does not consume the cart twice.
 - Delivery shipping is calculated from the Haversine distance between the
   seller's public GPS coordinates and the Customer's selected address, using
   `appConfig/shipping` (`baseFeeVnd`, `freeDistanceKm`, `perKmFeeVnd`). Pickup
-  and on-site rescue cost zero shipping. Render quotes and the Android checkout
+  and on-site rescue cost zero shipping. Render quotes and the server checkout
   transaction both recalculate the fee; the Order and Shipment retain the
   distance used for the calculation.
 - Seller storefront settings preserve the seller coordinates and optional QR

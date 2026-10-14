@@ -37,7 +37,7 @@ proguard/
 *.jks
 *.keystore
 
-google-services.json
+app/google-services.json
 
 .DS_Store
 Thumbs.db

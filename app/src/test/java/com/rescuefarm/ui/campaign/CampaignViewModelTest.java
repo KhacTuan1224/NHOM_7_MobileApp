@@ -20,17 +20,17 @@ public class CampaignViewModelTest {
     @Rule public final InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
     @Test public void invalidTargets_doNotReachRepository() {
         FakeCampaignRepository repository = new FakeCampaignRepository();
-        CampaignViewModel viewModel = new CampaignViewModel(repository, new FakeAuth(), new FakeLocation());
+        CampaignViewModel viewModel = new CampaignViewModel(repository, new FakeAuth(), new FakeProducts(), new FakeLocation());
         viewModel.save("", "Campaign", "", RescueReason.OVER_SUPPLY, RescueMode.FIXED_POINT,
-                "bad-target", "2027-01-01", "2027-01-03", "10", "106", "A", true);
+                java.util.Collections.singletonMap("batch", -1D), "2027-01-01", "2027-01-03", "10", "106", "A", true);
         assertFalse(repository.saveCalled);
         assertEquals(CampaignScreenState.Status.ERROR, viewModel.getState().getValue().getStatus());
     }
     @Test public void validSubmit_reachesRepositoryAsPending() {
         FakeCampaignRepository repository = new FakeCampaignRepository();
-        CampaignViewModel viewModel = new CampaignViewModel(repository, new FakeAuth(), new FakeLocation());
+        CampaignViewModel viewModel = new CampaignViewModel(repository, new FakeAuth(), new FakeProducts(), new FakeLocation());
         viewModel.save("", "Campaign", "", RescueReason.OVER_SUPPLY, RescueMode.MOBILE_POINT,
-                "batch=10", "2027-01-01", "2027-01-03", "10", "106", "A", true);
+                java.util.Collections.singletonMap("batch", 10D), "2027-01-01", "2027-01-03", "10", "106", "A", true);
         assertTrue(repository.saveCalled); assertTrue(repository.submitCalled);
         assertEquals(CampaignScreenState.Status.SAVED, viewModel.getState().getValue().getStatus());
     }
@@ -63,5 +63,20 @@ public class CampaignViewModelTest {
     private static final class FakeLocation implements LocationProvider {
         @Override public void getCurrentLocation(LocationCallback callback) { callback.onLocationAvailable(10, 106); }
         @Override public void reverseGeocode(double lat, double lng, GeocodeCallback callback) { }
+    }
+    private static final class FakeProducts implements com.rescuefarm.data.repository.ProductRepository {
+        public LiveData<List<com.rescuefarm.domain.model.Category>> observeCategories() { return new MutableLiveData<>(new ArrayList<>()); }
+        public LiveData<List<com.rescuefarm.domain.model.Product>> observeProducts() { return new MutableLiveData<>(new ArrayList<>()); }
+        public LiveData<List<com.rescuefarm.domain.model.Product>> observeSellerProducts(String id) { return observeProducts(); }
+        public LiveData<List<com.rescuefarm.domain.model.ProductBatch>> observeBatches(String id) { return new MutableLiveData<>(new ArrayList<>()); }
+        public void refreshCatalog(ActionCallback callback) { callback.onSuccess(); }
+        public void refreshSellerProducts(String id, ActionCallback callback) { callback.onSuccess(); }
+        public void refreshBatches(String id, ActionCallback callback) { callback.onSuccess(); }
+        public void getProduct(String id, ProductCallback callback) { }
+        public void saveProduct(com.rescuefarm.domain.model.Product product, ProductCallback callback) { }
+        public void hideProduct(String id, ActionCallback callback) { }
+        public void saveBatch(com.rescuefarm.domain.model.ProductBatch batch, long version, BatchCallback callback) { }
+        public void deleteBatch(String id, long version, ActionCallback callback) { }
+        public void mutateStock(String id, long version, StockMutation mutation, double quantity, BatchCallback callback) { }
     }
 }

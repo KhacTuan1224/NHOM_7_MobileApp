@@ -1,6 +1,8 @@
 package com.rescuefarm.ui.profile;
 
 import android.os.Bundle;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,12 +27,26 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.bumptech.glide.Glide;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import java.util.Map;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerProfileFragment extends Fragment {
     private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput, addressInput,
             bankCodeInput, bankAccountNameInput, bankAccountNumberInput, latitudeInput, longitudeInput;
     private ImageView sellerAvatarView;
+    private ProfileViewModel viewModel;
+    private TextView locationStatus;
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                if (Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
+                    viewModel.requestCurrentLocation(true);
+                } else {
+                    Toast.makeText(requireContext(), "Bạn đã từ chối quyền vị trí. Có thể nhập địa chỉ thủ công.",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
     private boolean dirty, binding;
     private TextView avatarUploadStatus;
     private View uploadAvatarButton;
@@ -41,7 +57,7 @@ public class SellerProfileFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_seller_profile, container, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
-        ProfileViewModel viewModel = new ViewModelProvider(this,
+        viewModel = new ViewModelProvider(this,
                 new ProfileViewModelFactory(requireContext())).get(ProfileViewModel.class);
         representativeInput = view.findViewById(R.id.sellerRepresentativeInput);
         shopNameInput = view.findViewById(R.id.sellerShopNameInput);
@@ -57,6 +73,8 @@ public class SellerProfileFragment extends Fragment {
         avatarUploadStatus = view.findViewById(R.id.sellerAvatarUploadStatus);
         uploadAvatarButton = view.findViewById(R.id.uploadSellerAvatarButton);
         uploadAvatarButton.setOnClickListener(v -> avatarPicker.launch("image/*"));
+        locationStatus = view.findViewById(R.id.sellerLocationStatus);
+        view.findViewById(R.id.useSellerLocationButton).setOnClickListener(v -> requestSellerLocation());
         view.findViewById(R.id.openSellerApplicationButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(
                         R.id.action_sellerProfileFragment_to_sellerApplicationFragment));
@@ -107,6 +125,8 @@ public class SellerProfileFragment extends Fragment {
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == ProfileScreenState.Status.ERROR) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
+            } else if (value.getStatus() == ProfileScreenState.Status.LOCATION) {
+                renderSellerLocation(value);
             } else if (value.getStatus() == ProfileScreenState.Status.PROFILE
                     && value.getUser() instanceof Seller) {
                 Seller seller = (Seller) value.getUser();
@@ -148,6 +168,44 @@ public class SellerProfileFragment extends Fragment {
         viewModel.loadProfile();
     }
 
+    private void requestSellerLocation() {
+        boolean hasFine = ContextCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean hasCoarse = ContextCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        if (hasFine || hasCoarse) {
+            viewModel.requestCurrentLocation(true);
+        } else {
+            locationPermissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION});
+        }
+    }
+
+    private void renderSellerLocation(ProfileScreenState value) {
+        binding = true;
+        latitudeInput.setText(String.valueOf(value.getLatitude()));
+        longitudeInput.setText(String.valueOf(value.getLongitude()));
+        if (value.getGeocodedAddress() != null) {
+            String street = value.getGeocodedAddress().getStreet();
+            String ward = value.getGeocodedAddress().getWard();
+            String district = value.getGeocodedAddress().getDistrict();
+            String province = value.getGeocodedAddress().getProvince();
+            StringBuilder address = new StringBuilder();
+            for (String part : new String[]{street, ward, district, province}) {
+                if (part != null && !part.trim().isEmpty()) {
+                    if (address.length() > 0) address.append(", ");
+                    address.append(part.trim());
+                }
+            }
+            if (address.length() > 0) addressInput.setText(address.toString());
+        }
+        binding = false;
+        dirty = true;
+        String message = value.getMessage();
+        locationStatus.setText(message == null || message.trim().isEmpty()
+                ? "Đã lấy vị trí hiện tại và điền địa chỉ nếu có."
+                : message);
+    }
     private void navigateToLogin() {
         NavController navController = NavHostFragment.findNavController(this);
         NavOptions options = new NavOptions.Builder().setPopUpTo(R.id.main_navigation, true).build();

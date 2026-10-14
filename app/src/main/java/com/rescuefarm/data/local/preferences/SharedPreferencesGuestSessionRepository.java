@@ -34,6 +34,29 @@ public class SharedPreferencesGuestSessionRepository implements GuestSessionRepo
         return newGuestId;
     }
 
+    public synchronized String getOrCreateGuestToken() {
+        String token = preferences.getString("guest_checkout_token", "");
+        if (token != null && token.matches("[a-f0-9]{64}")) return token;
+        byte[] bytes = new byte[32]; new java.security.SecureRandom().nextBytes(bytes);
+        StringBuilder value = new StringBuilder();
+        for (byte part : bytes) value.append(String.format(java.util.Locale.ROOT, "%02x", part));
+        token = value.toString();
+        if (!preferences.edit().putString("guest_checkout_token", token).commit())
+            throw new IllegalStateException("Không lưu được phiên Guest trên thiết bị.");
+        return token;
+    }
+
+    public void saveOrderAccessToken(String orderId, String token) {
+        if (orderId == null || !orderId.matches("[A-Za-z0-9_-]{1,128}")
+                || token == null || !token.matches("[a-fA-F0-9]{64}"))
+            throw new IllegalArgumentException("Thông tin truy cập đơn Guest không hợp lệ.");
+        preferences.edit().putString("order_access_" + orderId, token).apply();
+    }
+
+    public String getOrderAccessToken(String orderId) {
+        return preferences.getString("order_access_" + orderId, "");
+    }
+
     @Override
     public boolean hasCompletedOnboarding() {
         return preferences.getBoolean(KEY_ONBOARDING_COMPLETED, false);

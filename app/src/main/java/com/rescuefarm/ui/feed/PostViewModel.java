@@ -16,6 +16,7 @@ public class PostViewModel extends ViewModel {
     private final MutableLiveData<PostScreenState> state = new MutableLiveData<>(PostScreenState.idle());
     private final MutableLiveData<Boolean> hasMore = new MutableLiveData<>(true);
     private String loadedPostId = "";
+    private final java.util.Set<String> recordedViews = new java.util.HashSet<>();
     public PostViewModel(PostRepository repository, AuthRepository authRepository) {
         this.repository = repository; this.authRepository = authRepository;
     }
@@ -41,7 +42,18 @@ public class PostViewModel extends ViewModel {
     public void loadPost(String postId) {
         loadedPostId = postId == null ? "" : postId; state.setValue(PostScreenState.loading());
         repository.getPost(loadedPostId, new PostRepository.PostCallback() {
-            @Override public void onSuccess(Post post) { state.postValue(PostScreenState.post(post)); }
+            @Override public void onSuccess(Post post) {
+                state.postValue(PostScreenState.post(post));
+                if (post.getStatus() == com.rescuefarm.domain.enums.PostStatus.PUBLISHED && recordedViews.add(post.getId())) {
+                    repository.recordView(post.getId(), new PostRepository.ActionCallback() {
+                        public void onSuccess() { repository.getPost(post.getId(), new PostRepository.PostCallback() {
+                            public void onSuccess(Post updated) { if (loadedPostId.equals(updated.getId())) state.postValue(PostScreenState.post(updated)); }
+                            public void onError(PostRepository.ErrorCode error, String message) { }
+                        }); }
+                        public void onError(PostRepository.ErrorCode error, String message) { recordedViews.remove(post.getId()); }
+                    });
+                }
+            }
             @Override public void onError(PostRepository.ErrorCode error, String message) { state.postValue(PostScreenState.error(message)); }
         });
     }
@@ -79,6 +91,14 @@ public class PostViewModel extends ViewModel {
         String userId = requireUser("Đăng nhập để bình luận."); if (userId == null) return;
         repository.addComment(loadedPostId, userId, content, action("Đã gửi bình luận."));
     }
+    public void editComment(String id, String content) {
+        String userId = requireUser("Đăng nhập để sửa bình luận."); if (userId == null) return;
+        repository.editComment(loadedPostId, id, userId, content, action("Đã sửa bình luận."));
+    }
+    public void deleteComment(String id) {
+        String userId = requireUser("Đăng nhập để xóa bình luận."); if (userId == null) return;
+        repository.deleteComment(loadedPostId, id, userId, action("Đã xóa bình luận."));
+    }
     private PostRepository.ActionCallback action(String successMessage) {
         return new PostRepository.ActionCallback() {
             @Override public void onSuccess() {
@@ -88,7 +108,7 @@ public class PostViewModel extends ViewModel {
             @Override public void onError(PostRepository.ErrorCode error, String message) { state.postValue(PostScreenState.error(message)); }
         };
     }
-    private String currentUserId() {
+    public String currentUserId() {
         String value = authRepository.getCurrentUserId(); return value == null ? "" : value;
     }
     private String requireUser(String message) {
