@@ -1,26 +1,45 @@
 package com.rescuefarm.ui.campaign;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.rescuefarm.data.repository.AuthRepository;
 import com.rescuefarm.data.repository.CampaignRepository;
+import com.rescuefarm.data.repository.ProductRepository;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.model.RescueCampaign;
+import com.rescuefarm.domain.model.Product;
+import com.rescuefarm.domain.model.ProductBatch;
 import com.rescuefarm.service.location.LocationProvider;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CampaignViewModel extends ViewModel {
     private final CampaignRepository repository; private final AuthRepository authRepository;
+    private final ProductRepository productRepository;
     private final LocationProvider locationProvider;
     private final MutableLiveData<CampaignScreenState> state =
             new MutableLiveData<>(CampaignScreenState.idle());
+    private final MediatorLiveData<List<CampaignBatchOption>> batchOptions = new MediatorLiveData<>();
+    private final Map<String, LiveData<List<ProductBatch>>> batchSources = new HashMap<>();
+    private final Map<String, List<ProductBatch>> batchesByProduct = new HashMap<>();
+    private List<Product> sellerProducts = new ArrayList<>();
     public CampaignViewModel(CampaignRepository repository, AuthRepository authRepository,
-            LocationProvider locationProvider) {
+            ProductRepository productRepository, LocationProvider locationProvider) {
         this.repository = repository; this.authRepository = authRepository;
-        this.locationProvider = locationProvider;
+        this.productRepository = productRepository; this.locationProvider = locationProvider;
+        batchOptions.setValue(new ArrayList<>());
+        String sellerId = currentUserId();
+        batchOptions.addSource(productRepository.observeSellerProducts(sellerId), values -> {
+            sellerProducts = values == null ? new ArrayList<>() : new ArrayList<>(values);
+            syncBatchSources(); publishBatchOptions();
+        });
     }
     public LiveData<CampaignScreenState> getState() { return state; }
     public LiveData<List<RescueCampaign>> getActiveCampaigns() { return repository.observeActiveCampaigns(); }
@@ -29,6 +48,18 @@ public class CampaignViewModel extends ViewModel {
     }
     public LiveData<RescueCampaign> observeCampaign(String campaignId) {
         return repository.observeCampaign(campaignId);
+    }
+    public LiveData<List<CampaignBatchOption>> getBatchOptions() { return batchOptions; }
+    public void loadSellerBatches(String campaignId) {
+        String sellerId = requireSeller(); if (sellerId == null) return;
+        productRepository.refreshSellerProducts(sellerId, new ProductRepository.ActionCallback() {
+            @Override public void onSuccess() {
+                // Room LiveData updates asynchronously; batch refresh starts when each product source appears.
+            }
+            @Override public void onError(ProductRepository.ErrorCode error, String message) {
+                state.postValue(CampaignScreenState.error("Không tải được sản phẩm của Seller: " + message));
+            }
+        });
     }
     public void refreshActive() { repository.refreshActiveCampaigns(action(null)); }
     public void refreshSeller() {
@@ -39,13 +70,12 @@ public class CampaignViewModel extends ViewModel {
         repository.getCampaign(campaignId, callback(false, null));
     }
     public void save(String id, String title, String description, RescueReason reason,
-            RescueMode mode, String targetsText, String startDate, String endDate,
+            RescueMode mode, Map<String, Double> targets, String startDate, String endDate,
             String latitude, String longitude, String locationName, boolean submit) {
-        String validation = CampaignValidator.validate(title, targetsText, startDate, endDate,
+        String validation = CampaignValidator.validate(title, targets, startDate, endDate,
                 latitude, longitude);
         if (validation != null) { state.setValue(CampaignScreenState.error(validation)); return; }
         String sellerId = requireSeller(); if (sellerId == null) return;
-        Map<String, Double> targets = CampaignValidator.parseTargets(targetsText);
         double target = 0D; for (double quantity : targets.values()) target += quantity;
         try {
             RescueCampaign campaign = new RescueCampaign(id, sellerId, target);
@@ -113,6 +143,40 @@ public class CampaignViewModel extends ViewModel {
     private String currentUserId() {
         String id = authRepository.getCurrentUserId(); return id == null ? "" : id;
     }
+    private void syncBatchSources() {
+        Set<String> needed = new HashSet<>();
+        for (Product product : sellerProducts) if (product != null && product.getId() != null
+                && !product.getId().trim().isEmpty()) needed.add(product.getId());
+        for (String id : new HashSet<>(batchSources.keySet())) if (!needed.contains(id)) {
+            batchOptions.removeSource(batchSources.remove(id)); batchesByProduct.remove(id);
+        }
+        for (Product product : sellerProducts) if (product != null && product.getId() != null
+                && !batchSources.containsKey(product.getId())) {
+            String productId = product.getId();
+            LiveData<List<ProductBatch>> source = productRepository.observeBatches(productId);
+            batchSources.put(productId, source);
+            batchOptions.addSource(source, values -> {
+                batchesByProduct.put(productId, values == null ? new ArrayList<>() : new ArrayList<>(values));
+                publishBatchOptions();
+            });
+            productRepository.refreshBatches(productId, new ProductRepository.ActionCallback() {
+                @Override public void onSuccess() { }
+                @Override public void onError(ProductRepository.ErrorCode error, String message) {
+                    state.postValue(CampaignScreenState.error("Không tải được batch của "
+                            + product.getName() + ": " + message));
+                }
+            });
+        }
+    }
+    private void publishBatchOptions() {
+        List<CampaignBatchOption> result = new ArrayList<>();
+        for (Product product : sellerProducts) {
+            List<ProductBatch> values = batchesByProduct.get(product.getId());
+            if (values != null) for (ProductBatch batch : values)
+                result.add(new CampaignBatchOption(product, batch));
+        }
+        batchOptions.setValue(result);
+    }
     private String requireSeller() {
         String id = currentUserId();
         if (!authRepository.isAuthenticated() || id.isEmpty()) {
@@ -121,6 +185,6 @@ public class CampaignViewModel extends ViewModel {
         return id;
     }
     @Override protected void onCleared() {
-        repository.close(); locationProvider.close(); super.onCleared();
+        repository.close(); productRepository.close(); locationProvider.close(); super.onCleared();
     }
 }

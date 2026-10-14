@@ -24,6 +24,8 @@ import com.rescuefarm.service.pricing.PriceBreakdown;
 import com.rescuefarm.ui.cart.CartScreenState;
 import com.rescuefarm.ui.cart.CartViewModel;
 import com.rescuefarm.ui.cart.CartViewModelFactory;
+import com.rescuefarm.ui.navigation.ActorUiPolicy;
+import com.rescuefarm.MainActivity;
 import com.rescuefarm.ui.engagement.*;
 import com.google.firebase.auth.FirebaseAuth;
 import java.util.ArrayList;
@@ -140,7 +142,24 @@ public class ProductDetailFragment extends Fragment {
             Navigation.findNavController(v).navigate(R.id.action_productDetailFragment_to_publicSellerProfileFragment, args);
         });
         view.findViewById(R.id.reportProductButton).setOnClickListener(v -> { Bundle b=new Bundle();b.putString("targetType","PRODUCT");b.putString("targetId",productId);Navigation.findNavController(v).navigate(R.id.action_productDetailFragment_to_reportFragment,b); });
+        applyActorActions(view);
+        if (requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).observeActorRole().observe(getViewLifecycleOwner(), role ->
+                    applyActorActions(view));
+        }
         viewModel.loadProduct(productId); viewModel.refreshBatches(productId);
+    }
+
+    private void applyActorActions(View root) {
+        boolean readOnly = ActorUiPolicy.isSellerReadOnly(this);
+        int visibility = readOnly ? View.GONE : View.VISIBLE;
+        root.findViewById(R.id.addToCartButton).setVisibility(visibility);
+        root.findViewById(R.id.openCartButton).setVisibility(visibility);
+        root.findViewById(R.id.favoriteProductButton).setVisibility(visibility);
+        root.findViewById(R.id.reportProductButton).setVisibility(visibility);
+        root.findViewById(R.id.pricingQuantityInput).setVisibility(visibility);
+        root.findViewById(R.id.recalculatePriceButton).setVisibility(visibility);
+        root.findViewById(R.id.priceBreakdownText).setVisibility(visibility);
     }
     private void render(View view, Product product) {
         currentProduct = product;
@@ -223,6 +242,7 @@ public class ProductDetailFragment extends Fragment {
                 batch.getAvailableQuantity(), batch.getReservedQuantity(), batch.getSoldQuantity()));
     }
     private void addToCart() {
+        if (ActorUiPolicy.isSellerReadOnly(this)) return;
         if (currentProduct == null || currentPrice == null) return;
         double quantity;
         try { quantity = Double.parseDouble(quantityInput.getText().toString().trim()); }

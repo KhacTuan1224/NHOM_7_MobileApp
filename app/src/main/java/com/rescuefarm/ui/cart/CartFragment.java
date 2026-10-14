@@ -19,6 +19,8 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.rescuefarm.R;
+import com.rescuefarm.MainActivity;
+import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.domain.model.Cart;
 import com.rescuefarm.domain.model.CartItem;
 import com.rescuefarm.domain.model.Product;
@@ -51,6 +53,11 @@ public class CartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state);
+        if (requireActivity() instanceof MainActivity
+                && ((MainActivity) requireActivity()).getResolvedActorRole() == UserRole.SELLER) {
+            Navigation.findNavController(view).navigate(R.id.sellerDashboardFragment);
+            return;
+        }
         groups = view.findViewById(R.id.cartSellerGroups);
         summary = view.findViewById(R.id.cartSummaryText);
         noticeCard = view.findViewById(R.id.cartNoticeCard);

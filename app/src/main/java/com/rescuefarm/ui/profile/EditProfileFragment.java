@@ -3,6 +3,7 @@ package com.rescuefarm.ui.profile;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,9 +41,7 @@ public class EditProfileFragment extends Fragment {
     private TextView avatarStatus;
     private View uploadAvatarButton;
     private final ActivityResultLauncher<String> avatarPicker = registerForActivityResult(
-            new ActivityResultContracts.GetContent(), uri -> CloudinaryUploadUi.upload(this, uri,
-                    "avatar", com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid(), 0, uploadAvatarButton, avatarStatus, avatarPreview,
-                    url -> avatarInput.setText(url)));
+            new ActivityResultContracts.GetContent(), this::uploadProfileAvatar);
     private double latitude, longitude;
     private boolean dirty, binding;
     private final ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
@@ -189,8 +188,19 @@ public class EditProfileFragment extends Fragment {
         } else {
             Glide.with(this).load(url.trim()).circleCrop().placeholder(R.drawable.ic_nav_profile)
                     .error(R.drawable.ic_nav_profile).into(avatarPreview);
-            avatarStatus.setText(R.string.avatar_uploaded_status);
+            avatarStatus.setText(R.string.account_avatar_saved_status);
         }
+    }
+
+    private void uploadProfileAvatar(Uri uri) {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        CloudinaryUploadUi.upload(this, uri, "avatar", user.getUid(), 0, uploadAvatarButton,
+                avatarStatus, avatarPreview, url -> avatarInput.setText(url));
     }
 
     @Override public void onDestroyView() {

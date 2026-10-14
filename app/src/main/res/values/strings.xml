@@ -69,12 +69,19 @@
     <string name="nav_home">Trang chủ</string>
     <string name="nav_community">Cộng đồng</string>
     <string name="nav_cart">Giỏ hàng</string>
+    <string name="nav_seller_storefront">Hồ sơ người bán</string>
+    <string name="nav_seller_dashboard">Dashboard người bán</string>
+    <string name="nav_action_loading">Đang xác định loại tài khoản</string>
     <string name="nav_orders">Đơn hàng</string>
     <string name="nav_profile">Hồ sơ</string>
     <string name="firebase_setup_notice">Firebase chưa được cấu hình. Guest Mode vẫn sử dụng được.</string>
     <string name="loading_content_description">Đang xử lý</string>
     <string name="profile_title">Hồ sơ của bạn</string>
     <string name="profile_avatar_description">Ảnh đại diện hồ sơ</string>
+    <string name="account_avatar_description">Ảnh đại diện tài khoản</string>
+    <string name="shop_avatar_description">Logo hoặc ảnh cửa hàng</string>
+    <string name="account_avatar_section">Ảnh đại diện tài khoản</string>
+    <string name="shop_avatar_section">Logo / ảnh cửa hàng</string>
     <string name="logout_action">Đăng xuất</string>
     <string name="logout_title">Đăng xuất tài khoản?</string>
     <string name="logout_confirmation">Bạn có chắc chắn muốn đăng xuất khỏi RescueFarm không?</string>
@@ -95,6 +102,12 @@
     <string name="upload_shop_avatar_action">Tải ảnh cửa hàng lên</string>
     <string name="no_avatar_selected">Chưa chọn ảnh đại diện</string>
     <string name="avatar_uploaded_status">Đã có ảnh đại diện</string>
+    <string name="shop_avatar_uploaded_status">Đã có ảnh cửa hàng</string>
+    <string name="image_upload_save_pending">Ảnh đã tải lên. Nhấn Lưu hồ sơ để cập nhật.</string>
+    <string name="image_upload_failed_existing_kept">Không tải được ảnh mới. Thông tin đã lưu chưa thay đổi.</string>
+    <string name="account_avatar_saved_status">Ảnh đại diện tài khoản đã lưu</string>
+    <string name="shop_avatar_saved_status">Ảnh cửa hàng đã lưu</string>
+    <string name="no_shop_avatar_selected">Chưa chọn ảnh cửa hàng</string>
     <string name="upload_proof_image_action">Tải ảnh minh chứng lên</string>
     <string name="no_image_selected">Chưa chọn ảnh</string>
     <string name="image_uploaded_status">Đã tải ảnh lên</string>
@@ -191,7 +204,7 @@
     <string name="campaign_description_hint">Mô tả chiến dịch</string>
     <string name="rescue_reason_label">Nguyên nhân giải cứu</string>
     <string name="rescue_mode_label">Hình thức điểm giải cứu</string>
-    <string name="campaign_targets_hint">Mỗi dòng: batchId=số lượng</string>
+    <string name="campaign_targets_hint">Chọn các lô hàng và nhập lượng mục tiêu cho từng lô (tối đa 8)</string>
     <string name="start_date_hint">Ngày bắt đầu (yyyy-MM-dd)</string>
     <string name="end_date_hint">Ngày kết thúc (yyyy-MM-dd)</string>
     <string name="latitude_hint">Vĩ độ điểm bán</string>

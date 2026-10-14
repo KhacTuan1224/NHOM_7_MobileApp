@@ -22,11 +22,13 @@
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_sm" android:text="@string/rescue_mode_label" />
         <Spinner android:id="@+id/campaignModeSpinner" android:layout_width="match_parent" android:layout_height="48dp" />
-        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:hint="@string/campaign_targets_hint">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/campaignTargetsInput"
-                android:layout_width="match_parent" android:layout_height="wrap_content" android:minLines="3" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:text="@string/campaign_targets_hint"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
+        <TextView android:id="@+id/campaignBatchLoading" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="Đang tải lô hàng của cửa hàng…" />
+        <LinearLayout android:id="@+id/campaignBatchOptions" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
         <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent"
             android:layout_height="wrap_content" android:hint="@string/start_date_hint">
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/campaignStartInput"

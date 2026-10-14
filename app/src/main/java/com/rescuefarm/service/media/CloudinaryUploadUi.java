@@ -29,13 +29,13 @@ public final class CloudinaryUploadUi {
                     progressView.setEnabled(true);
                     if (error != null) {
                         String message = error.getCause() != null ? error.getCause().getMessage() : error.getMessage();
-                        if (statusView != null) statusView.setText("Chưa có ảnh");
+                        if (statusView != null) statusView.setText(com.rescuefarm.R.string.image_upload_failed_existing_kept);
                         Toast.makeText(fragment.requireContext(), message, Toast.LENGTH_LONG).show();
                         return;
                     }
                     callback.onUploaded(url);
                     if (preview != null) Glide.with(fragment).load(url).centerCrop().into(preview);
-                    if (statusView != null) statusView.setText("Đã tải ảnh lên Cloudinary");
+                    if (statusView != null) statusView.setText(com.rescuefarm.R.string.image_upload_save_pending);
                 }));
     }
 

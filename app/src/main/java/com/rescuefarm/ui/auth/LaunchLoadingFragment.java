@@ -65,7 +65,7 @@ public class LaunchLoadingFragment extends Fragment {
                 if (role == UserRole.ADMIN) {
                     pendingActionId = R.id.action_launchLoading_to_adminHome;
                 } else if (role == UserRole.SELLER) {
-                    pendingActionId = R.id.action_launchLoading_to_sellerHome;
+                    pendingActionId = R.id.action_launchLoading_to_guestHome;
                 } else {
                     pendingActionId = R.id.action_launchLoading_to_guestHome;
                 }
