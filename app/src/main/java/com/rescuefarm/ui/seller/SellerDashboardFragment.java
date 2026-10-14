@@ -1,7 +1,152 @@
 package com.rescuefarm.ui.seller;
-import android.os.Bundle;import android.view.*;import android.widget.*;import androidx.annotation.*;import androidx.fragment.app.Fragment;import androidx.lifecycle.ViewModelProvider;import androidx.navigation.Navigation;import com.rescuefarm.R;import com.rescuefarm.domain.model.Order;import com.rescuefarm.service.seller.*;import java.text.NumberFormat;import java.util.*;
-public class SellerDashboardFragment extends Fragment{private SellerViewModel vm;private TextView message,stats,analytics;private ProgressBar progress;private LinearLayout recent;private final SellerRoutePolicy routes=new SellerRoutePolicy();@Nullable public View onCreateView(@NonNull LayoutInflater i,@Nullable ViewGroup p,@Nullable Bundle s){return i.inflate(R.layout.fragment_seller_dashboard,p,false);}@Override public void onViewCreated(@NonNull View v,@Nullable Bundle s){message=v.findViewById(R.id.sellerDashboardMessage);stats=v.findViewById(R.id.sellerDashboardStats);analytics=v.findViewById(R.id.sellerDashboardAnalytics);progress=v.findViewById(R.id.sellerDashboardProgress);recent=v.findViewById(R.id.sellerRecentOrders);vm=new ViewModelProvider(this,new SellerViewModelFactory(requireContext())).get(SellerViewModel.class);vm.getState().observe(getViewLifecycleOwner(),this::render);v.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(x->vm.refresh());bind(v,R.id.dashboardProductsButton,"products");bind(v,R.id.dashboardBatchesButton,"batches");bind(v,R.id.dashboardPromotionsButton,"promotions");bind(v,R.id.dashboardCampaignsButton,"campaigns");bind(v,R.id.dashboardMobileButton,"mobile");bind(v,R.id.dashboardPostsButton,"posts");bind(v,R.id.dashboardOrdersButton,"orders");bind(v,R.id.dashboardShipmentsButton,"shipments");v.findViewById(R.id.dashboardStatisticsButton).setOnClickListener(x->navigate(routes.destinationFor("statistics"),"statistics"));vm.refresh();}
- private void bind(View root,int id,String key){root.findViewById(id).setOnClickListener(v->navigate(routes.destinationFor(key),key));}private void navigate(SellerRoutePolicy.Destination d,String key){int action;if(d==SellerRoutePolicy.Destination.STATISTICS){analytics.requestFocus();return;}if(d==SellerRoutePolicy.Destination.PRODUCTS)action=R.id.action_sellerDashboardFragment_to_sellerProductListFragment;else if(d==SellerRoutePolicy.Destination.CAMPAIGNS)action=R.id.action_sellerDashboardFragment_to_sellerCampaignListFragment;else if(d==SellerRoutePolicy.Destination.POSTS)action=R.id.action_sellerDashboardFragment_to_sellerPostListFragment;else if(d==SellerRoutePolicy.Destination.ORDERS){Bundle args=new Bundle();args.putBoolean("deliveryOnly","shipments".equals(key));Navigation.findNavController(requireView()).navigate(R.id.action_sellerDashboardFragment_to_sellerOrderListFragment,args);return;}else action=R.id.action_sellerDashboardFragment_to_sellerProfileFragment;Navigation.findNavController(requireView()).navigate(action);}
- private void render(SellerDashboardState s){progress.setVisibility(s.getStatus()==SellerDashboardState.Status.LOADING||s.getStatus()==SellerDashboardState.Status.VERIFYING?View.VISIBLE:View.GONE);message.setText(s.getMessage());boolean enabled=s.getStatus()==SellerDashboardState.Status.READY||s.getStatus()==SellerDashboardState.Status.EMPTY;for(int id:new int[]{R.id.dashboardProductsButton,R.id.dashboardBatchesButton,R.id.dashboardPromotionsButton,R.id.dashboardCampaignsButton,R.id.dashboardMobileButton,R.id.dashboardPostsButton,R.id.dashboardOrdersButton,R.id.dashboardShipmentsButton,R.id.dashboardStatisticsButton})requireView().findViewById(id).setEnabled(enabled);if(s.getSnapshot()==null){stats.setText("");analytics.setText("");recent.removeAllViews();return;}SellerDashboardSnapshot x=s.getSnapshot();stats.setText(getString(R.string.seller_dashboard_stats_format,x.getProducts(),x.getActiveProducts(),x.getCampaigns(),x.getActiveCampaigns(),x.getMobileCampaigns(),x.getPosts(),x.getPendingPosts(),x.getOrders(),x.getPendingOrders(),x.getDeliveryOrders(),x.getPromotions(),NumberFormat.getCurrencyInstance(new Locale("vi","VN")).format(x.getRevenue()),x.getRescuedQuantity()));StringBuilder details=new StringBuilder(getString(R.string.seller_analytics_summary_format,x.getRescuedQuantity(),x.getCompletedCampaigns(),x.getRescueRate(),NumberFormat.getCurrencyInstance(new Locale("vi","VN")).format(x.getRevenue()),x.getOrders()));appendMetrics(details,getString(R.string.seller_top_products_title),x.getTopProducts());appendMetrics(details,getString(R.string.seller_top_rescue_reasons_title),x.getTopReasons());analytics.setText(details.toString());recent.removeAllViews();for(Order o:x.getRecentOrders()){Button b=new Button(requireContext());b.setAllCaps(false);b.setText(getString(R.string.seller_recent_order_format,o.getOrderCode(),o.getStatus().name(),o.getTotalAmount()));b.setOnClickListener(v->{Bundle a=new Bundle();a.putString("orderId",o.getId());Navigation.findNavController(requireView()).navigate(R.id.action_sellerDashboardFragment_to_orderDetailFragment,a);});recent.addView(b);}if(x.hasMoreOrders()){TextView more=new TextView(requireContext());more.setText(R.string.seller_more_orders_notice);recent.addView(more);}}
- private void appendMetrics(StringBuilder output,String title,List<SellerDashboardSnapshot.RankedMetric> values){output.append("\n\n").append(title);if(values.isEmpty()){output.append("\n—");return;}for(SellerDashboardSnapshot.RankedMetric metric:values)output.append("\n• ").append(metric.getLabel()).append(": ").append(String.format(Locale.getDefault(),"%.2f",metric.getQuantity()));}
+
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
+import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
+import com.rescuefarm.R;
+import com.rescuefarm.domain.model.Order;
+import com.rescuefarm.service.seller.SellerDashboardSnapshot;
+import com.rescuefarm.service.seller.SellerRoutePolicy;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+
+public class SellerDashboardFragment extends Fragment {
+    private SellerViewModel viewModel;
+    private Spinner periodSpinner;
+    private TextView message, stats, analytics;
+    private ProgressBar progress;
+    private LinearLayout recent;
+    private final SellerRoutePolicy routes = new SellerRoutePolicy();
+
+    @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup parent, @Nullable Bundle state) {
+        return inflater.inflate(R.layout.fragment_seller_dashboard, parent, false);
+    }
+
+    @Override public void onViewCreated(@NonNull View view, @Nullable Bundle savedState) {
+        message = view.findViewById(R.id.sellerDashboardMessage);
+        stats = view.findViewById(R.id.sellerDashboardStats);
+        analytics = view.findViewById(R.id.sellerDashboardAnalytics);
+        progress = view.findViewById(R.id.sellerDashboardProgress);
+        recent = view.findViewById(R.id.sellerRecentOrders);
+        viewModel = new ViewModelProvider(requireActivity(), new SellerViewModelFactory(requireContext()))
+                .get(SellerViewModel.class);
+        periodSpinner = view.findViewById(R.id.sellerStatsPeriodSpinner);
+        periodSpinner.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                getResources().getStringArray(R.array.seller_stats_periods)));
+        periodSpinner.setSelection(1);
+        periodSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View selected,
+                    int position, long id) {
+                viewModel.setStatisticsPeriodDays(position == 0 ? 7 : position == 1 ? 30 : position == 2 ? 90 : 0);
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
+        });
+        viewModel.getState().observe(getViewLifecycleOwner(), this::render);
+        view.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(unused -> viewModel.refresh());
+        bind(view, R.id.dashboardProductsButton, "products");
+        bind(view, R.id.dashboardBatchesButton, "batches");
+        bind(view, R.id.dashboardPromotionsButton, "promotions");
+        bind(view, R.id.dashboardCampaignsButton, "campaigns");
+        bind(view, R.id.dashboardMobileButton, "mobile");
+        bind(view, R.id.dashboardPostsButton, "posts");
+        bind(view, R.id.dashboardOrdersButton, "orders");
+        bind(view, R.id.dashboardShipmentsButton, "shipments");
+        view.findViewById(R.id.dashboardStatisticsButton).setOnClickListener(unused ->
+                navigate(routes.destinationFor("statistics"), "statistics"));
+        viewModel.refresh();
+    }
+
+    private void bind(View root, int id, String key) {
+        root.findViewById(id).setOnClickListener(unused -> navigate(routes.destinationFor(key), key));
+    }
+
+    private void navigate(SellerRoutePolicy.Destination destination, String key) {
+        if (destination == SellerRoutePolicy.Destination.STATISTICS) {
+            Navigation.findNavController(requireView()).navigate(
+                    R.id.action_sellerDashboardFragment_to_sellerStatisticsFragment);
+            return;
+        }
+        int action;
+        if (destination == SellerRoutePolicy.Destination.PRODUCTS)
+            action = R.id.action_sellerDashboardFragment_to_sellerProductListFragment;
+        else if (destination == SellerRoutePolicy.Destination.CAMPAIGNS)
+            action = R.id.action_sellerDashboardFragment_to_sellerCampaignListFragment;
+        else if (destination == SellerRoutePolicy.Destination.POSTS)
+            action = R.id.action_sellerDashboardFragment_to_sellerPostListFragment;
+        else if (destination == SellerRoutePolicy.Destination.ORDERS) {
+            Bundle args = new Bundle(); args.putBoolean("deliveryOnly", "shipments".equals(key));
+            Navigation.findNavController(requireView()).navigate(
+                    R.id.action_sellerDashboardFragment_to_sellerOrderListFragment, args); return;
+        } else action = R.id.action_sellerDashboardFragment_to_sellerProfileFragment;
+        Navigation.findNavController(requireView()).navigate(action);
+    }
+
+    private void render(SellerDashboardState value) {
+        progress.setVisibility(value.getStatus() == SellerDashboardState.Status.LOADING
+                || value.getStatus() == SellerDashboardState.Status.VERIFYING ? View.VISIBLE : View.GONE);
+        message.setText(value.getMessage());
+        boolean enabled = value.getStatus() == SellerDashboardState.Status.READY
+                || value.getStatus() == SellerDashboardState.Status.EMPTY;
+        for (int id : new int[]{R.id.dashboardProductsButton, R.id.dashboardBatchesButton,
+                R.id.dashboardPromotionsButton, R.id.dashboardCampaignsButton, R.id.dashboardMobileButton,
+                R.id.dashboardPostsButton, R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
+                R.id.dashboardStatisticsButton}) requireView().findViewById(id).setEnabled(enabled);
+        if (value.getSnapshot() == null) { stats.setText(""); analytics.setText(""); recent.removeAllViews(); return; }
+        SellerDashboardSnapshot snapshot = value.getSnapshot();
+        NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        stats.setText(getString(R.string.seller_dashboard_stats_format, snapshot.getProducts(),
+                snapshot.getActiveProducts(), snapshot.getCampaigns(), snapshot.getActiveCampaigns(),
+                snapshot.getMobileCampaigns(), snapshot.getPosts(), snapshot.getPendingPosts(),
+                snapshot.getOrders(), snapshot.getPendingOrders(), snapshot.getDeliveryOrders(),
+                snapshot.getPromotions(), currency.format(snapshot.getRevenue()), snapshot.getRescuedQuantity()));
+        String[] periods = getResources().getStringArray(R.array.seller_stats_periods);
+        String period = periods[Math.min(periodSpinner.getSelectedItemPosition(), periods.length - 1)];
+        StringBuilder details = new StringBuilder(getString(R.string.seller_stats_period_label, period));
+        details.append("\n\n").append(getString(R.string.seller_analytics_summary_format,
+                snapshot.getRescuedQuantity(), snapshot.getCompletedCampaigns(), snapshot.getRescueRate(),
+                currency.format(snapshot.getRevenue()), snapshot.getOrders()));
+        appendMetrics(details, getString(R.string.seller_top_products_title), snapshot.getTopProducts());
+        appendMetrics(details, getString(R.string.seller_top_rescue_reasons_title), snapshot.getTopReasons());
+        analytics.setText(details.toString());
+        recent.removeAllViews();
+        for (Order order : snapshot.getRecentOrders()) {
+            Button row = new Button(requireContext()); row.setAllCaps(false);
+            row.setText(getString(R.string.seller_recent_order_format, order.getOrderCode(),
+                    order.getStatus().name(), order.getTotalAmount()));
+            row.setOnClickListener(unused -> {
+                Bundle args = new Bundle(); args.putString("orderId", order.getId());
+                Navigation.findNavController(requireView()).navigate(
+                        R.id.action_sellerDashboardFragment_to_orderDetailFragment, args);
+            });
+            recent.addView(row);
+        }
+        if (snapshot.hasMoreOrders()) {
+            TextView more = new TextView(requireContext()); more.setText(R.string.seller_more_orders_notice);
+            recent.addView(more);
+        }
+    }
+
+    private void appendMetrics(StringBuilder output, String title,
+            List<SellerDashboardSnapshot.RankedMetric> values) {
+        output.append("\n\n").append(title);
+        if (values.isEmpty()) { output.append("\n—"); return; }
+        for (SellerDashboardSnapshot.RankedMetric metric : values)
+            output.append("\n• ").append(metric.getLabel()).append(": ")
+                    .append(String.format(Locale.getDefault(), "%.2f", metric.getQuantity()));
+    }
 }

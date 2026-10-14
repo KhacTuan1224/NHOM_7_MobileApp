@@ -16,21 +16,23 @@ public final class SellerDashboardSnapshot {
     private final int products, activeProducts, campaigns, activeCampaigns, completedCampaigns;
     private final int mobileCampaigns, posts, pendingPosts, orders, pendingOrders, deliveryOrders, promotions;
     private final double revenue, rescuedQuantity, rescueRate;
-    private final List<RankedMetric> topProducts, topReasons;
+    private final List<RankedMetric> topProducts, topReasons, revenueTrend;
     private final List<Order> recentOrders;
 
     public SellerDashboardSnapshot(int products, int activeProducts, int campaigns, int activeCampaigns,
             int completedCampaigns, int mobileCampaigns, int posts, int pendingPosts, int orders,
             int pendingOrders, int deliveryOrders, int promotions, double revenue,
             double rescuedQuantity, double rescueRate, List<RankedMetric> topProducts,
-            List<RankedMetric> topReasons, List<Order> recentOrders) {
+            List<RankedMetric> topReasons, List<Order> recentOrders,
+            List<RankedMetric> revenueTrend) {
         this.products = products; this.activeProducts = activeProducts; this.campaigns = campaigns;
         this.activeCampaigns = activeCampaigns; this.completedCampaigns = completedCampaigns;
         this.mobileCampaigns = mobileCampaigns; this.posts = posts; this.pendingPosts = pendingPosts;
         this.orders = orders; this.pendingOrders = pendingOrders; this.deliveryOrders = deliveryOrders;
         this.promotions = promotions; this.revenue = revenue; this.rescuedQuantity = rescuedQuantity;
         this.rescueRate = rescueRate; this.topProducts = immutable(topProducts);
-        this.topReasons = immutable(topReasons); this.recentOrders = Collections.unmodifiableList(
+        this.topReasons = immutable(topReasons); this.revenueTrend = immutable(revenueTrend);
+        this.recentOrders = Collections.unmodifiableList(
                 new ArrayList<>(recentOrders));
     }
     private static List<RankedMetric> immutable(List<RankedMetric> value) {
@@ -54,6 +56,7 @@ public final class SellerDashboardSnapshot {
     public double getRescueRate() { return rescueRate; }
     public List<RankedMetric> getTopProducts() { return topProducts; }
     public List<RankedMetric> getTopReasons() { return topReasons; }
+    public List<RankedMetric> getRevenueTrend() { return revenueTrend; }
     public List<Order> getRecentOrders() { return recentOrders; }
     public boolean isEmpty() { return products + campaigns + posts + orders == 0; }
     public boolean hasMoreOrders() { return orders > recentOrders.size(); }
