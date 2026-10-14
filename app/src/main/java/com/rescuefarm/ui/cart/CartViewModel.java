@@ -33,10 +33,26 @@ public class CartViewModel extends ViewModel {
         this.cart = cartRepository.observeCart();
     }
     public LiveData<Cart> getCart() { return cart; }
+    public LiveData<List<Product>> getProducts() { return productRepository.observeProducts(); }
     public LiveData<CartScreenState> getState() { return state; }
     public boolean isGuestCart() { return cartRepository.getOwnerType() == CartOwnerType.GUEST; }
     public Map<String, List<CartItem>> groupSelectedBySeller(Cart cart) {
         return groupingService.groupSelectedBySeller(cart);
+    }
+
+    public void increaseQuantity(CartItem item, double step) {
+        if (item == null) return;
+        updateQuantity(item.getId(), Math.round((item.getQuantity() + step) * 10.0) / 10.0);
+    }
+
+    public void decreaseQuantity(CartItem item, double step) {
+        if (item == null) return;
+        double newQuantity = Math.round((item.getQuantity() - step) * 10.0) / 10.0;
+        if (newQuantity <= 0.0) {
+            remove(item.getId());
+        } else {
+            updateQuantity(item.getId(), newQuantity);
+        }
     }
 
     public void add(Product product, ProductBatch batch, double quantity, double displayedUnitPrice) {

@@ -1,125 +1,116 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" 
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/rescue_background"
     android:fillViewport="true">
-    
-    <LinearLayout 
-        android:layout_width="match_parent" 
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical" 
+        android:orientation="vertical"
         android:padding="16dp"
-        android:paddingBottom="80dp">
-        
-        <!-- Title -->
-        <TextView 
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content"
-            android:text="@string/cart_title" 
-            android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium"
-            android:layout_marginBottom="8dp" />
-        
-        <!-- Owner info -->
-        <TextView 
-            android:id="@+id/cartOwnerText" 
+        android:paddingBottom="96dp">
+
+        <!-- Top Header: Title and Clear Cart Action -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
-            android:textColor="@color/rescue_on_surface_variant"
-            android:layout_marginBottom="8dp" />
-        
-        <!-- Sync status card -->
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/cart_title"
+                android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cartClearButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Xóa tất cả"
+                android:textColor="@color/rescue_critical" />
+        </LinearLayout>
+
+
+        <!-- Dynamic Notice / Warning Banner (Visible only when prices change or inventory issue arises) -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cartNoticeCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="@color/rescue_primary_container"
             app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:strokeWidth="0dp"
-            app:cardBackgroundColor="@color/rescue_primary_container">
-            
-            <TextView 
-                android:id="@+id/cartSyncText" 
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
+
+            <TextView
+                android:id="@+id/cartNoticeText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="12dp"
                 android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
                 android:textColor="@color/rescue_on_primary_container" />
         </com.google.android.material.card.MaterialCardView>
-        
-        <!-- Action buttons -->
-        <LinearLayout 
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-            
-            <com.google.android.material.button.MaterialButton 
-                android:id="@+id/cartRefreshButton"
-                android:layout_width="0dp" 
-                android:layout_height="@dimen/touch_target_min"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="@string/cart_revalidate_action"
-                style="@style/Widget.Material3.Button.TonalButton" />
-            
-            <com.google.android.material.button.MaterialButton 
-                android:id="@+id/cartClearButton"
-                style="@style/Widget.Material3.Button.OutlinedButton" 
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/touch_target_min" 
-                android:text="@string/cart_clear_action" />
-        </LinearLayout>
-        
-        <!-- Cart items by seller -->
-        <LinearLayout 
-            android:id="@+id/cartSellerGroups" 
+
+        <!-- Cart items grouped by seller -->
+        <LinearLayout
+            android:id="@+id/cartSellerGroups"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_marginBottom="16dp" />
-        
+
         <!-- Summary card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:strokeWidth="0dp"
-            app:cardBackgroundColor="@color/rescue_primary_container">
-            
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:strokeColor="@color/rescue_outline"
+            app:strokeWidth="1dp"
+            app:cardBackgroundColor="@color/rescue_surface">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
-                
-                <TextView 
-                    android:id="@+id/cartSummaryText" 
+
+                <TextView
+                    android:id="@+id/cartSummaryText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textStyle="bold" 
-                    android:textSize="18sp"
-                    android:textColor="@color/rescue_on_primary_container"
-                    android:layout_marginBottom="8dp" />
-                
-                <TextView 
-                    android:layout_width="match_parent" 
+                    android:textStyle="bold"
+                    android:textSize="17sp"
+                    android:textColor="@color/rescue_on_surface"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/cart_no_reservation_notice"
                     android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
-                    android:textColor="@color/rescue_on_primary_container" />
+                    android:textColor="@color/rescue_on_surface_variant" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-        
+
         <!-- Checkout button -->
-        <com.google.android.material.button.MaterialButton 
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/cartCheckoutButton"
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min"
-            android:text="@string/checkout_action" />
+            android:backgroundTint="@color/rescue_primary"
+            android:text="@string/checkout_action"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="12dp" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
