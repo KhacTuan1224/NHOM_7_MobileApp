@@ -871,9 +871,16 @@ public final class FirebaseAdminRepository implements AdminRepository {
             }
             if (section == Section.SELLER_APPLICATIONS) {
                 changes.put("rejectionReason", target.equals("REJECTED") ? note : "");
-                DocumentReference userRef = db.collection(USERS).document(id);
+                String userId = clean(current.getString("sellerId"));
+                if (userId.isEmpty()) userId = clean(current.getString("id"));
+                if (userId.isEmpty()) userId = id;
+                DocumentReference userRef = db.collection(USERS).document(userId);
                 DocumentSnapshot seller = tx.get(userRef);
-                if (!seller.exists() || !"SELLER".equals(clean(seller.getString("role")))) {
+                if (!seller.exists()) {
+                    throw new IllegalStateException("SELLER_NOT_FOUND");
+                }
+                String role = clean(seller.getString("role"));
+                if (!role.isEmpty() && !"SELLER".equals(role)) {
                     throw new IllegalStateException("SELLER_NOT_FOUND");
                 }
                 Map<String, Object> sellerChanges = moderation(adminId, note);
