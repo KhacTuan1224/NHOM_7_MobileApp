@@ -40,6 +40,7 @@ public class FirebasePostRepository implements PostRepository {
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private final RescueFarmDatabase database; private final PostCacheDao dao;
     private final ExecutorService cacheExecutor; private DocumentSnapshot lastPublishedDocument;
+    private final Map<String, DocumentSnapshot> sellerPostCursors = new HashMap<>();
     private final NetworkStatusProvider networkStatusProvider;
     private final String viewerId;
 
@@ -114,6 +115,32 @@ public class FirebasePostRepository implements PostRepository {
                         callback.onSuccess();
                     });
                 }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+    @Override public void refreshSellerPostPage(String sellerId, boolean reset, int requestedPageSize,
+            PageCallback callback) {
+        if (!networkStatusProvider.isOnline()) { callback.onError(ErrorCode.NETWORK, "Đang offline; bài đăng tiếp tục dùng cache."); return; }
+        if (clean(sellerId).isEmpty()) { callback.onError(ErrorCode.UNAUTHENTICATED, "Vui lòng đăng nhập seller."); return; }
+        int pageSize = Math.max(1, Math.min(MAX_PAGE_SIZE, requestedPageSize));
+        Query query = firestore.collection(POSTS).whereEqualTo("sellerId", sellerId)
+                .orderBy("createdAt", Query.Direction.DESCENDING).limit(pageSize);
+        DocumentSnapshot cursor = sellerPostCursors.get(sellerId);
+        if (!reset && cursor != null) query = query.startAfter(cursor);
+        query.get().addOnSuccessListener(snapshot -> {
+            List<PostCacheEntity> entities = mapPostEntities(snapshot.getDocuments());
+            if (reset) sellerPostCursors.remove(sellerId);
+            if (!snapshot.isEmpty()) sellerPostCursors.put(sellerId, snapshot.getDocuments().get(snapshot.size() - 1));
+            cacheExecutor.execute(() -> {
+                try {
+                    database.runInTransaction(() -> {
+                        if (reset) dao.clearSellerPosts(sellerId);
+                        dao.replacePosts(entities);
+                    });
+                    callback.onSuccess(snapshot.size() == pageSize);
+                } catch (RuntimeException error) {
+                    callback.onError(ErrorCode.UNKNOWN, "Không thể cập nhật cache bài đăng Seller.");
+                }
+            });
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
     @Override public void getPost(String postId, PostCallback callback) {
         if (!networkStatusProvider.isOnline()) { fallback(postId, callback); return; }

@@ -134,13 +134,21 @@ public class FirebaseUserRepository implements UserRepository {
         publicProfile.put("shopDescription", clean(shopDescription));
         publicProfile.put("shopAvatarUrl", clean(shopAvatarUrl)); publicProfile.put("address", clean(address));
         publicProfile.put("latitude", latitude); publicProfile.put("longitude", longitude);
-        publicProfile.put("bankCode", clean(bankCode)); publicProfile.put("bankAccountName", clean(bankAccountName));
-        publicProfile.put("bankAccountNumber", clean(bankAccountNumber));
+        publicProfile.put("bankCode", FieldValue.delete());
+        publicProfile.put("bankAccountName", FieldValue.delete());
+        publicProfile.put("bankAccountNumber", FieldValue.delete());
+        publicProfile.put("qrUrl", FieldValue.delete());
         publicProfile.put("updatedAt", FieldValue.serverTimestamp());
+        Map<String,Object> paymentProfile = new HashMap<>();
+        paymentProfile.put("sellerId", sellerId); paymentProfile.put("bankCode", clean(bankCode));
+        paymentProfile.put("bankAccountName", clean(bankAccountName));
+        paymentProfile.put("bankAccountNumber", clean(bankAccountNumber));
+        paymentProfile.put("updatedAt", FieldValue.serverTimestamp());
         user(sellerId).get().addOnSuccessListener(previous -> {
             com.google.firebase.firestore.WriteBatch batch = firestore.batch();
             batch.update(user(sellerId), fields);
             batch.set(firestore.collection("sellerPublicProfiles").document(sellerId), publicProfile, com.google.firebase.firestore.SetOptions.merge());
+            batch.set(firestore.collection("sellerPaymentProfiles").document(sellerId), paymentProfile, com.google.firebase.firestore.SetOptions.merge());
             batch.commit().addOnSuccessListener(unused -> {
                     com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
                             previous.getString("shopAvatarUrl"), shopAvatarUrl);

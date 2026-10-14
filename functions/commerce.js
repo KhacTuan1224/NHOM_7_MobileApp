@@ -57,7 +57,7 @@ function distanceKm(aLat, aLng, bLat, bLng) {
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-function createCommerce({db, admin, authenticate}) {
+function createCommerce({db, admin, authenticate, notifyNewOrder = null}) {
   const router = express.Router();
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
   const timestamp = millis => admin.firestore.Timestamp.fromMillis(millis);
@@ -117,11 +117,16 @@ function createCommerce({db, admin, authenticate}) {
         throw error(409, "Vị trí điểm giải cứu di động cần được cập nhật lại.");
       }
     }
-    let profile = null, shippingFee = 0, distance = 0;
-    if (data.fulfillmentType === 'DELIVERY' || data.paymentMethod === 'BANK_TRANSFER') {
+    let profile = null, paymentProfile = null, shippingFee = 0, distance = 0;
+    if (data.fulfillmentType === 'DELIVERY') {
       const p = await read(db.collection('sellerPublicProfiles').doc(sellerId));
       if (!p.exists) throw error(409, "Cửa hàng chưa khai báo thông tin nhận hàng/thanh toán.");
       profile = p.data();
+    }
+    if (data.paymentMethod === 'BANK_TRANSFER') {
+      const p = await read(db.collection('sellerPaymentProfiles').doc(sellerId));
+      if (!p.exists) throw error(409, "Cửa hàng chưa khai báo thông tin nhận thanh toán.");
+      paymentProfile = p.data();
     }
     if (data.fulfillmentType === 'DELIVERY') {
       const c = await read(db.collection('appConfig').doc('shipping'));
@@ -136,14 +141,14 @@ function createCommerce({db, admin, authenticate}) {
       shippingFee = config.baseFeeVnd + Math.ceil(Math.max(0, distance - config.freeDistanceKm) * config.perKmFeeVnd);
       if (shippingFee > 1000000) throw error(409, "Phí giao hàng vượt giới hạn cho phép.");
     }
-    if (data.paymentMethod === 'BANK_TRANSFER' && !['bankCode', 'bankAccountName', 'bankAccountNumber'].every(key => text(profile[key]))) {
+    if (data.paymentMethod === 'BANK_TRANSFER' && !['bankCode', 'bankAccountName', 'bankAccountNumber'].every(key => text(paymentProfile[key]))) {
       throw error(409, "Cửa hàng chưa cấu hình đủ tài khoản nhận chuyển khoản.");
     }
     const lines = rows.map(({item, product, price: value}) => ({...item, productName: text(product.name),
       unit: text(product.unit), subtotal: value.subtotal, finalUnitPrice: value.unit, originalSubtotal: value.originalSubtotal}));
     const subtotal = lines.reduce((sum, line) => sum + line.subtotal, 0);
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
-    return {rows, campaign, campaignRef, campaignQuantity, profile, sellerId,
+    return {rows, campaign, campaignRef, campaignQuantity, profile, paymentProfile, sellerId,
       public: {lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
         distanceKm: distance, total: subtotal + shippingFee, campaignId: campaign ? campaign.id : '',
         campaignTitle: campaign ? text(campaign.title) : '', campaignLocationName: campaign ? text(campaign.locationName) : '',
@@ -209,6 +214,13 @@ function createCommerce({db, admin, authenticate}) {
       tx.create(orderRef, order);
       tx.create(receiptRef, {ownerId: identity.ownerId, ownerType: identity.ownerType, fingerprint,
         tokenHash: identity.tokenHash || '', createdAt: stamp()});
+      const sellerNotificationId = `${requestId}_SELLER_PENDING`;
+      tx.create(db.collection('notifications').doc(sellerNotificationId), {
+        id: sellerNotificationId, userId: q.sellerId, type: 'ORDER',
+        title: `Có đơn hàng mới ${order.orderCode}`,
+        body: 'Bạn vừa nhận được đơn hàng mới. Mở RescueFarm để xác nhận.',
+        referenceId: requestId, orderStatus: 'PENDING', isRead: false, createdAt: stamp()
+      });
       for (const row of q.rows) {
         const item = row.item, batch = row.batch, p = row.product;
         tx.create(orderRef.collection('items').doc(item.batchId), {id: item.batchId, orderId: requestId,
@@ -223,7 +235,7 @@ function createCommerce({db, admin, authenticate}) {
       }
       if (q.campaign) tx.update(q.campaignRef, {reservedQuantity: q.campaign.reservedQuantity + q.campaignQuantity,
         lastReservationOrderId: requestId, lastReservationQuantity: q.campaignQuantity, updatedAt: stamp()});
-      const bank = q.profile || {};
+      const bank = q.paymentProfile || {};
       tx.create(db.collection('payments').doc(requestId), {id: requestId, orderId: requestId,
         method: normalized.paymentMethod, status: paymentStatus, amount: order.totalAmount, referenceCode: '',
         bankCode: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.bankCode) : '',
@@ -253,6 +265,15 @@ function createCommerce({db, admin, authenticate}) {
     // Re-read committed server timestamps; never serialize FieldValue sentinels to Android.
     result.order = (await orderRef.get()).data();
     if (identity.ownerType === 'GUEST') result.accessToken = data.guestToken;
+    if (typeof notifyNewOrder === 'function' && !result.replay) {
+      try {
+        await notifyNewOrder(q.sellerId, requestId,
+          `Có đơn hàng mới ${str(result.order.orderCode)}`,
+          "Bạn vừa nhận được đơn hàng mới. Mở RescueFarm để xác nhận.");
+      } catch (notificationError) {
+        console.error("Seller order notification could not be delivered:", notificationError.message || notificationError);
+      }
+    }
     return serialize(result);
   }
 

@@ -28,6 +28,7 @@ public class ProductViewModel extends ViewModel {
     private final MutableLiveData<PriceBreakdown> priceBreakdown = new MutableLiveData<>();
     private final MutableLiveData<Promotion> promotion = new MutableLiveData<>();
     private final MutableLiveData<List<Promotion>> sellerPromotions = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<Boolean> sellerProductsHaveMore = new MutableLiveData<>(false);
     public ProductViewModel(ProductRepository repository, AuthRepository authRepository) {
         this.repository = repository; this.authRepository = authRepository;
     }
@@ -41,6 +42,7 @@ public class ProductViewModel extends ViewModel {
     public LiveData<List<Product>> getSellerProducts() {
         return repository.observeSellerProducts(currentUserId());
     }
+    public LiveData<Boolean> getSellerProductsHaveMore() { return sellerProductsHaveMore; }
     public LiveData<Product> observeProduct(String productId) {
         return repository.observeProduct(productId);
     }
@@ -57,6 +59,13 @@ public class ProductViewModel extends ViewModel {
     public void refreshCatalog() { repository.refreshCatalog(actionCallback(null)); }
     public void refreshSellerProducts() {
         String sellerId = requireUserId(); if (sellerId != null) repository.refreshSellerProducts(sellerId, actionCallback(null));
+    }
+    public void refreshSellerProductPage(boolean reset) {
+        String sellerId = requireUserId(); if (sellerId == null) return;
+        repository.refreshSellerProductPage(sellerId, reset, new ProductRepository.ActionCallback() {
+            @Override public void onSuccess() { sellerProductsHaveMore.postValue(repository.hasMoreSellerProducts(sellerId)); }
+            @Override public void onError(ProductRepository.ErrorCode error, String message) { state.postValue(ProductScreenState.error(message)); }
+        });
     }
     public void refreshBatches(String productId) { repository.refreshBatches(productId, actionCallback(null)); }
     public void loadProduct(String productId) {

@@ -543,14 +543,17 @@ service cloud.firestore {
     }
 
     match /sellerPublicProfiles/{sellerId} {
-      // Public shop and payment details are needed by customer checkout and seller discovery.
-      allow get: if true;
+      // Historical documents stay unreadable until the backend migrates payment fields out.
+      allow get: if !exists(/databases/$(database)/documents/sellerPublicProfiles/$(sellerId))
+          || !resource.data.keys().hasAny([
+              'bankCode', 'bankAccountName', 'bankAccountNumber', 'qrUrl'
+            ]);
       allow list: if isAdmin();
       allow create, update: if hasRole(sellerId, 'SELLER')
           && request.auth.uid == sellerId
           && request.resource.data.keys().hasOnly([
             'sellerId', 'shopName', 'shopDescription', 'shopAvatarUrl', 'address',
-            'latitude', 'longitude', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'shippingFee', 'qrUrl', 'updatedAt'
+            'latitude', 'longitude', 'shippingFee', 'updatedAt'
           ])
           && request.resource.data.sellerId == sellerId
           && request.resource.data.shopName is string && request.resource.data.shopName.size() <= 120
@@ -561,15 +564,29 @@ service cloud.firestore {
           && request.resource.data.latitude <= 90
           && request.resource.data.longitude is number && request.resource.data.longitude >= -180
           && request.resource.data.longitude <= 180
+          && request.resource.data.get('shippingFee', 0) is number
+          && request.resource.data.get('shippingFee', 0) >= 0 && request.resource.data.get('shippingFee', 0) <= 1000000
+          && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin() || (request.auth.uid == sellerId && hasRole(sellerId, 'SELLER'));
+    }
+
+    match /sellerPaymentProfiles/{sellerId} {
+      allow get: if request.auth != null
+          && (request.auth.uid == sellerId && hasRole(sellerId, 'SELLER') || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isApprovedSeller(request.auth.uid)
+          && request.auth.uid == sellerId
+          && request.resource.data.keys().hasOnly([
+            'sellerId', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'qrUrl', 'updatedAt'
+          ])
+          && request.resource.data.sellerId == sellerId
           && request.resource.data.bankCode is string && request.resource.data.bankCode.size() <= 24
           && request.resource.data.bankAccountName is string && request.resource.data.bankAccountName.size() <= 120
           && request.resource.data.bankAccountNumber is string && request.resource.data.bankAccountNumber.size() <= 40
-          && request.resource.data.get('shippingFee', 0) is number
-          && request.resource.data.get('shippingFee', 0) >= 0 && request.resource.data.get('shippingFee', 0) <= 1000000
           && request.resource.data.get('qrUrl', '') is string && request.resource.data.get('qrUrl', '').size() <= 2048
           && (request.resource.data.get('qrUrl', '') == '' || request.resource.data.qrUrl.matches('https://.*'))
           && request.resource.data.updatedAt == request.time;
-      allow delete: if isAdmin() || (request.auth.uid == sellerId && hasRole(sellerId, 'SELLER'));
+      allow delete: if false;
     }
 
     match /appConfig/shipping {

@@ -271,7 +271,11 @@
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerOrderListFragment" app:destination="@id/sellerOrderListFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerProfileFragment" app:destination="@id/sellerProfileFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" />
+        <action android:id="@+id/action_sellerDashboardFragment_to_sellerStatisticsFragment" app:destination="@id/sellerStatisticsFragment" />
     </fragment>
+    <fragment android:id="@+id/sellerStatisticsFragment"
+        android:name="com.rescuefarm.ui.seller.SellerStatisticsFragment"
+        android:label="@string/seller_statistics_title" />
     <fragment android:id="@+id/sellerProductListFragment"
         android:name="com.rescuefarm.ui.product.SellerProductListFragment" android:label="@string/seller_products_title">
         <action android:id="@+id/action_sellerProductListFragment_to_productEditorFragment"
