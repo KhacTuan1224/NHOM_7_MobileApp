@@ -26,6 +26,25 @@ public final class CampaignValidator {
         return null;
     }
 
+    public static String validate(String title, Map<String, Double> targets, String startDate,
+            String endDate, String latitude, String longitude) {
+        if (clean(title).length() < 3) return "Tên chiến dịch phải có ít nhất 3 ký tự.";
+        if (targets == null || targets.isEmpty()) return "Hãy chọn ít nhất một lô hàng cho Campaign.";
+        if (targets.size() > 8) return "Mỗi chiến dịch hỗ trợ tối đa 8 batch.";
+        for (Map.Entry<String, Double> entry : targets.entrySet()) {
+            if (clean(entry.getKey()).isEmpty() || entry.getValue() == null
+                    || !Double.isFinite(entry.getValue()) || entry.getValue() <= 0D)
+                return "Mỗi batch đã chọn phải có lượng mục tiêu lớn hơn 0.";
+        }
+        Date start = parseDate(startDate); Date end = parseDate(endDate);
+        if (start == null || end == null) return "Ngày phải theo định dạng yyyy-MM-dd.";
+        if (!end.after(start)) return "Ngày kết thúc phải sau ngày bắt đầu.";
+        Double lat = number(latitude); Double lng = number(longitude);
+        if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180)
+            return "Tọa độ điểm bán không hợp lệ.";
+        return null;
+    }
+
     public static Map<String, Double> parseTargets(String raw) {
         Map<String, Double> result = new LinkedHashMap<>();
         if (raw == null) return result;

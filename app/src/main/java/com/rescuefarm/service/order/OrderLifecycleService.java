@@ -5,9 +5,27 @@ import com.rescuefarm.domain.enums.OrderStatus;
 import com.rescuefarm.domain.enums.PaymentMethod;
 import com.rescuefarm.domain.enums.PaymentStatus;
 import com.rescuefarm.domain.enums.ShipmentStatus;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /** Pure lifecycle policy shared by the repository, UI and unit tests. */
 public final class OrderLifecycleService {
+    /** Returns only transitions allowed by the same policy enforced during writes. */
+    public List<OrderStatus> getAllowedNextStatuses(FulfillmentType fulfillment, OrderStatus current,
+            PaymentMethod paymentMethod, PaymentStatus paymentStatus) {
+        if (fulfillment == null || current == null) return Collections.emptyList();
+        List<OrderStatus> allowed = new ArrayList<>();
+        for (OrderStatus candidate : OrderStatus.values()) {
+            if (candidate == current) continue;
+            try {
+                requireLegalTransition(fulfillment, current, candidate, paymentMethod, paymentStatus);
+                allowed.add(candidate);
+            } catch (IllegalArgumentException | IllegalStateException ignored) { }
+        }
+        return Collections.unmodifiableList(allowed);
+    }
+
     public boolean isReplay(OrderStatus current, OrderStatus target) {
         return current != null && current == target;
     }

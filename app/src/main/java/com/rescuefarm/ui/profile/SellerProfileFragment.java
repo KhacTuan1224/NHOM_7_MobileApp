@@ -1,6 +1,7 @@
 package com.rescuefarm.ui.profile;
 
 import android.os.Bundle;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,15 +28,14 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerProfileFragment extends Fragment {
-    private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput, addressInput;
+    private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput, addressInput,
+            bankCodeInput, bankAccountNameInput, bankAccountNumberInput, latitudeInput, longitudeInput;
     private ImageView sellerAvatarView;
     private boolean dirty, binding;
     private TextView avatarUploadStatus;
     private View uploadAvatarButton;
     private final ActivityResultLauncher<String> avatarPicker = registerForActivityResult(
-            new ActivityResultContracts.GetContent(), uri -> CloudinaryUploadUi.upload(this, uri,
-                    "shopAvatar", com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid(), 0, uploadAvatarButton, avatarUploadStatus, sellerAvatarView,
-                    url -> avatarInput.setText(url)));
+            new ActivityResultContracts.GetContent(), this::uploadShopAvatar);
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_seller_profile, container, false);
@@ -48,6 +48,11 @@ public class SellerProfileFragment extends Fragment {
         descriptionInput = view.findViewById(R.id.sellerDescriptionInput);
         avatarInput = view.findViewById(R.id.sellerAvatarInput);
         addressInput = view.findViewById(R.id.sellerAddressInput);
+        bankCodeInput = view.findViewById(R.id.sellerBankCodeInput);
+        bankAccountNameInput = view.findViewById(R.id.sellerBankAccountNameInput);
+        bankAccountNumberInput = view.findViewById(R.id.sellerBankAccountNumberInput);
+        latitudeInput = view.findViewById(R.id.sellerLatitudeInput);
+        longitudeInput = view.findViewById(R.id.sellerLongitudeInput);
         sellerAvatarView = view.findViewById(R.id.sellerProfileAvatar);
         avatarUploadStatus = view.findViewById(R.id.sellerAvatarUploadStatus);
         uploadAvatarButton = view.findViewById(R.id.uploadSellerAvatarButton);
@@ -70,21 +75,33 @@ public class SellerProfileFragment extends Fragment {
         view.findViewById(R.id.openSellerOrdersButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(
                         R.id.action_sellerProfileFragment_to_sellerOrderListFragment));
-        view.findViewById(R.id.saveSellerProfileButton).setOnClickListener(v ->
+        view.findViewById(R.id.saveSellerProfileButton).setOnClickListener(v -> {
+            try {
                 viewModel.updateSellerProfile(text(representativeInput), text(shopNameInput),
-                        text(descriptionInput), text(avatarInput), text(addressInput)));
+                        text(descriptionInput), text(avatarInput), text(addressInput),
+                        text(bankCodeInput), text(bankAccountNameInput), text(bankAccountNumberInput),
+                        coordinate(latitudeInput, true), coordinate(longitudeInput, false));
+            } catch (IllegalArgumentException error) {
+                Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+        android.view.ViewGroup parent = (android.view.ViewGroup)view.findViewById(R.id.saveSellerProfileButton).getParent();
+        com.google.android.material.button.MaterialButton settings = new com.google.android.material.button.MaterialButton(requireContext());
+        settings.setText("Phí giao hàng cố định và ảnh QR");
+        settings.setOnClickListener(v -> { Bundle args = new Bundle(); args.putBoolean("edit",true);
+            Navigation.findNavController(view).navigate(R.id.storefrontFragment,args); });
+        parent.addView(settings, parent.indexOfChild(view.findViewById(R.id.saveSellerProfileButton))+1);
         view.findViewById(R.id.logoutButton).setOnClickListener(unused ->
                 new MaterialAlertDialogBuilder(requireContext())
                         .setTitle(R.string.logout_title)
                         .setMessage(R.string.logout_confirmation)
                         .setNegativeButton(R.string.cancel_action, null)
                         .setPositiveButton(R.string.logout_action, (dialog, which) -> {
-                            viewModel.signOut();
-                            NavController navController = NavHostFragment.findNavController(this);
-                            NavOptions options = new NavOptions.Builder()
-                                    .setPopUpTo(R.id.main_navigation, true)
-                                    .build();
-                            navController.navigate(R.id.loginFragment, null, options);
+                            viewModel.signOut(new com.rescuefarm.data.repository.AuthRepository.ActionCallback() {
+                                @Override public void onSuccess() { if (isAdded()) navigateToLogin(); }
+                                @Override public void onError(com.rescuefarm.data.repository.AuthRepository.ErrorCode error,
+                                        String message) { if (isAdded()) navigateToLogin(); }
+                            });
                         })
                         .show());
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
@@ -119,6 +136,9 @@ public class SellerProfileFragment extends Fragment {
         descriptionInput.addTextChangedListener(watcher);
         avatarInput.addTextChangedListener(watcher);
         addressInput.addTextChangedListener(watcher);
+        bankCodeInput.addTextChangedListener(watcher); bankAccountNameInput.addTextChangedListener(watcher);
+        bankAccountNumberInput.addTextChangedListener(watcher); latitudeInput.addTextChangedListener(watcher);
+        longitudeInput.addTextChangedListener(watcher);
         viewModel.observeProfile().observe(getViewLifecycleOwner(), user -> {
             if (user instanceof Seller) {
                 if (!dirty) populate((Seller) user);
@@ -128,6 +148,12 @@ public class SellerProfileFragment extends Fragment {
         viewModel.loadProfile();
     }
 
+    private void navigateToLogin() {
+        NavController navController = NavHostFragment.findNavController(this);
+        NavOptions options = new NavOptions.Builder().setPopUpTo(R.id.main_navigation, true).build();
+        navController.navigate(R.id.loginFragment, null, options);
+    }
+
     private void populate(Seller seller) {
         binding = true;
         representativeInput.setText(seller.getRepresentativeName());
@@ -135,8 +161,12 @@ public class SellerProfileFragment extends Fragment {
         descriptionInput.setText(seller.getShopDescription());
         avatarInput.setText(seller.getShopAvatarUrl());
         avatarUploadStatus.setText(seller.getShopAvatarUrl() == null || seller.getShopAvatarUrl().trim().isEmpty()
-                ? R.string.no_avatar_selected : R.string.avatar_uploaded_status);
+                ? R.string.no_shop_avatar_selected : R.string.shop_avatar_saved_status);
         addressInput.setText(seller.getAddress());
+        bankCodeInput.setText(seller.getBankCode()); bankAccountNameInput.setText(seller.getBankAccountName());
+        bankAccountNumberInput.setText(seller.getBankAccountNumber());
+        latitudeInput.setText(seller.getLatitude() == 0D ? "" : String.valueOf(seller.getLatitude()));
+        longitudeInput.setText(seller.getLongitude() == 0D ? "" : String.valueOf(seller.getLongitude()));
         binding = false;
     }
 
@@ -156,7 +186,29 @@ public class SellerProfileFragment extends Fragment {
         }
     }
 
+    private void uploadShopAvatar(Uri uri) {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        CloudinaryUploadUi.upload(this, uri, "shopAvatar", user.getUid(), 0, uploadAvatarButton,
+                avatarUploadStatus, sellerAvatarView, url -> avatarInput.setText(url));
+    }
+
     private static String text(TextInputEditText input) {
         return input.getText() == null ? "" : input.getText().toString();
+    }
+    private double coordinate(TextInputEditText input, boolean latitude) {
+        String value = text(input).trim(); if (value.isEmpty()) return 0D;
+        try {
+            double parsed = Double.parseDouble(value.replace(',', '.'));
+            if (!Double.isFinite(parsed) || (latitude ? parsed < -90D || parsed > 90D
+                    : parsed < -180D || parsed > 180D)) throw new NumberFormatException();
+            return parsed;
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException(latitude ? "Vĩ độ không hợp lệ." : "Kinh độ không hợp lệ.");
+        }
     }
 }

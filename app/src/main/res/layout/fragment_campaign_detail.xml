@@ -139,6 +139,14 @@
             android:layout_marginBottom="16dp" />
         
         <!-- Buttons directly on background -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/campaignDirectionsButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min"
+            android:text="Mở chỉ đường"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_marginBottom="8dp" />
+
         <com.google.android.material.button.MaterialButton 
             android:id="@+id/viewCampaignProductsButton"
             android:layout_width="match_parent" 

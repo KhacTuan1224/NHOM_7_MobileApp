@@ -32,6 +32,14 @@ public interface ProductRepository {
         void onSuccess(List<Promotion> promotions);
         void onError(ErrorCode error, String message);
     }
+    interface ProductListCallback {
+        void onSuccess(List<Product> products);
+        void onError(ErrorCode error, String message);
+    }
+    interface BatchListCallback {
+        void onSuccess(List<ProductBatch> batches);
+        void onError(ErrorCode error, String message);
+    }
     interface CartQuoteCallback {
         void onSuccess(Product product, ProductBatch batch, Promotion promotion);
         void onError(ErrorCode error, String message);
@@ -51,6 +59,12 @@ public interface ProductRepository {
     void refreshSellerProducts(String sellerId, ActionCallback callback);
     void refreshBatches(String productId, ActionCallback callback);
     void getProduct(String productId, ProductCallback callback);
+    default void getCampaignProducts(List<String> batchIds, ProductListCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, "Không thể tải sản phẩm của chiến dịch.");
+    }
+    default void getBatchesByIds(List<String> batchIds, BatchListCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, "Không thể tải các lô hàng của chiến dịch.");
+    }
     void saveProduct(Product product, ProductCallback callback);
     void hideProduct(String productId, ActionCallback callback);
     void saveBatch(ProductBatch batch, long expectedVersion, BatchCallback callback);

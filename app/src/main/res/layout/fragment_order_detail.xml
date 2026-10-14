@@ -3,8 +3,33 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/order_detail_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <TextView android:id="@+id/orderDetailText" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_md" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Tiến trình đơn hàng" android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
+            android:paddingTop="@dimen/space_md" />
+        <LinearLayout android:id="@+id/orderStatusTimeline" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
         <TextView android:id="@+id/paymentInstructionsText" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_md" />
+        <LinearLayout android:id="@+id/orderItemsContainer" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:paddingTop="@dimen/space_md" />
+        <TextView android:id="@+id/orderBankInfo" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:visibility="gone" android:paddingTop="@dimen/space_md" />
+        <ImageView android:id="@+id/orderBankQr" android:layout_width="220dp" android:layout_height="220dp"
+            android:layout_gravity="center_horizontal" android:visibility="gone"
+            android:contentDescription="QR chuyển khoản" android:scaleType="fitCenter" />
         <TextView android:id="@+id/orderLifecycleMessage" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_sm" />
+        <TextView android:id="@+id/shipmentManagementTitle" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/shipment_management_title"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
+            android:paddingTop="@dimen/space_md" android:visibility="gone" />
+        <EditText android:id="@+id/shipmentCarrierInput" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="@string/shipment_carrier_hint"
+            android:maxLength="120" android:visibility="gone" />
+        <EditText android:id="@+id/shipmentTrackingInput" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="@string/shipment_tracking_hint"
+            android:maxLength="120" android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/saveShipmentDetailsButton"
+            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:text="@string/save_shipment_details_action" android:visibility="gone" />
         <Spinner android:id="@+id/orderStatusTarget" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" />
         <com.google.android.material.button.MaterialButton android:id="@+id/transitionOrderButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/update_order_status_action" />
         <EditText android:id="@+id/bankReferenceInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/bank_reference_hint" />

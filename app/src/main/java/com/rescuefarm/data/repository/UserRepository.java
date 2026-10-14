@@ -11,6 +11,12 @@ import com.rescuefarm.domain.model.User;
 import java.util.List;
 
 public interface UserRepository {
+    default LiveData<SellerStorefront> observePublicStorefront(String sellerId) {
+        return new androidx.lifecycle.MutableLiveData<>();
+    }
+    default void getPublicStorefront(String sellerId, StorefrontRepository.Callback callback) {
+        callback.error("Chưa kết nối dữ liệu cửa hàng.");
+    }
     enum ProfileError {
         NOT_FOUND,
         DISABLED,
@@ -78,6 +84,11 @@ public interface UserRepository {
             String shopDescription,
             String shopAvatarUrl,
             String address,
+            String bankCode,
+            String bankAccountName,
+            String bankAccountNumber,
+            double latitude,
+            double longitude,
             UserCallback callback
     );
     void getAddresses(String customerId, AddressListCallback callback);

@@ -1,1 +1,44 @@
-<?xml version="1.0" encoding="utf-8"?><ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/rescue_background"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg"><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/seller_dashboard_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"/><ProgressBar android:id="@+id/sellerDashboardProgress" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal"/><TextView android:id="@+id/sellerDashboardMessage" android:layout_width="match_parent" android:layout_height="wrap_content"/><TextView android:id="@+id/sellerDashboardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="@dimen/space_md" android:background="@color/rescue_primary_container"/><Button android:id="@+id/refreshSellerDashboardButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/refresh_seller_dashboard"/><Button android:id="@+id/dashboardProductsButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/seller_products_action"/><Button android:id="@+id/dashboardBatchesButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/manage_batches_action"/><Button android:id="@+id/dashboardPromotionsButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/manage_promotion_action"/><Button android:id="@+id/dashboardCampaignsButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/seller_campaigns_action"/><Button android:id="@+id/dashboardMobileButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/mobile_rescue_action"/><Button android:id="@+id/dashboardPostsButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/seller_posts_action"/><Button android:id="@+id/dashboardOrdersButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/seller_orders_action"/><Button android:id="@+id/dashboardShipmentsButton" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:text="@string/seller_shipments_action"/><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/seller_recent_orders_title" android:textAppearance="@style/TextAppearance.RescueFarm.SectionTitle"/><LinearLayout android:id="@+id/sellerRecentOrders" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/></LinearLayout></ScrollView>
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/rescue_background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/seller_dashboard_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+        <ProgressBar android:id="@+id/sellerDashboardProgress" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
+        <TextView android:id="@+id/sellerDashboardMessage" android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <TextView android:id="@+id/sellerDashboardStats" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:padding="@dimen/space_md"
+            android:background="@color/rescue_primary_container" />
+        <Button android:id="@+id/dashboardStatisticsButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/seller_statistics_action" />
+        <TextView android:id="@+id/sellerDashboardAnalytics" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:focusable="true" android:padding="@dimen/space_md"
+            android:background="@color/rescue_surface" />
+        <Button android:id="@+id/refreshSellerDashboardButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/refresh_seller_dashboard" />
+        <Button android:id="@+id/dashboardProductsButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/seller_products_action" />
+        <Button android:id="@+id/dashboardBatchesButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/manage_batches_action" />
+        <Button android:id="@+id/dashboardPromotionsButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/manage_promotion_action" />
+        <Button android:id="@+id/dashboardCampaignsButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/seller_campaigns_action" />
+        <Button android:id="@+id/dashboardMobileButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/mobile_rescue_action" />
+        <Button android:id="@+id/dashboardPostsButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/seller_posts_action" />
+        <Button android:id="@+id/dashboardOrdersButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/seller_orders_action" />
+        <Button android:id="@+id/dashboardShipmentsButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/seller_shipments_action" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/seller_recent_orders_title" android:textAppearance="@style/TextAppearance.RescueFarm.SectionTitle" />
+        <LinearLayout android:id="@+id/sellerRecentOrders" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

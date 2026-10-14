@@ -106,6 +106,27 @@
             android:layout_width="match_parent"
             android:layout_height="48dp" />
 
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Khoảng giá (₫)" android:textStyle="bold" android:layout_marginTop="8dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/minPriceInput"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:hint="Từ" android:inputType="numberDecimal" />
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/maxPriceInput"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:hint="Đến" android:inputType="numberDecimal" />
+        </LinearLayout>
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/radiusInput"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Bán kính từ vị trí hiện tại (km)" android:inputType="numberDecimal" />
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/expiryDaysInput"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Chỉ lấy lô hết hạn trong N ngày" android:inputType="number" />
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/minStockInput"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Tồn kho tối thiểu" android:inputType="numberDecimal" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

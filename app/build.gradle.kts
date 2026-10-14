@@ -17,6 +17,7 @@ android {
         versionName = "1.0"
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${providers.gradleProperty("CLOUDINARY_CLOUD_NAME").orElse("").get()}\"")
         buildConfigField("String", "CLOUDINARY_SIGNING_URL", "\"${providers.gradleProperty("CLOUDINARY_SIGNING_URL").orElse("").get()}\"")
+        buildConfigField("String", "RENDER_BACKEND_URL", "\"${providers.gradleProperty("RENDER_BACKEND_URL").orElse("").get()}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         javaCompileOptions {

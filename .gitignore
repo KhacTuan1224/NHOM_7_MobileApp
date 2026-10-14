@@ -12,6 +12,8 @@ gen/
 out/
 build/
 app/build/
+functions/node_modules/
+.firebase/
 
 .gradle/
 buildOutputCleanup/
@@ -44,3 +46,6 @@ Thumbs.db
 *.swp
 *~
 serviceAccountKey.json
+functions/serviceAccountKey.json
+.env
+functions/.env

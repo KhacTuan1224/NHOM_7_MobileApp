@@ -49,6 +49,7 @@ public class ProfileViewModel extends ViewModel {
     public String getCurrentUserId() { return authRepository.getCurrentUserId(); }
 
     public void signOut() { authRepository.signOut(); }
+    public void signOut(AuthRepository.ActionCallback callback) { authRepository.signOut(callback); }
 
     public void loadProfile() {
         String userId = requireUserId(); if (userId == null) return;
@@ -74,7 +75,8 @@ public class ProfileViewModel extends ViewModel {
     }
 
     public void updateSellerProfile(String representativeName, String shopName,
-            String shopDescription, String shopAvatarUrl, String address) {
+            String shopDescription, String shopAvatarUrl, String address, String bankCode,
+            String bankAccountName, String bankAccountNumber, double latitude, double longitude) {
         if (representativeName == null || representativeName.trim().length() < 2
                 || shopName == null || shopName.trim().length() < 2
                 || address == null || address.trim().length() < 5) {
@@ -85,7 +87,8 @@ public class ProfileViewModel extends ViewModel {
         String userId = requireUserId(); if (userId == null) return;
         state.setValue(ProfileScreenState.loading());
         userRepository.updateSellerProfile(userId, representativeName, shopName, shopDescription,
-                shopAvatarUrl, address, new UserRepository.UserCallback() {
+                shopAvatarUrl, address, bankCode, bankAccountName, bankAccountNumber, latitude, longitude,
+                new UserRepository.UserCallback() {
                     @Override public void onSuccess(User user) {
                         state.postValue(ProfileScreenState.saved("Đã cập nhật hồ sơ người bán."));
                     }

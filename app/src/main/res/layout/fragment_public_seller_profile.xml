@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/rescue_background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp">
+        <ImageView android:id="@+id/publicSellerAvatar" android:layout_width="96dp" android:layout_height="96dp"
+            android:layout_gravity="center_horizontal" android:contentDescription="Ảnh cửa hàng"
+            android:scaleType="centerCrop" android:src="@drawable/ic_nav_profile" />
+        <TextView android:id="@+id/publicSellerName" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="16dp"
+            android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
+        <TextView android:id="@+id/publicSellerDescription" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" />
+        <TextView android:id="@+id/publicSellerAddress" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" />
+        <TextView android:id="@+id/publicSellerBank" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="20dp" />
+    </LinearLayout>
+</ScrollView>

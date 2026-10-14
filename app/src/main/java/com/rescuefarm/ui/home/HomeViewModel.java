@@ -13,10 +13,17 @@ import com.rescuefarm.domain.model.Banner;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.RescueCampaign;
+import com.rescuefarm.domain.model.ProductBatch;
 import com.rescuefarm.service.location.LocationProvider;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import com.rescuefarm.data.repository.SellerStorefront;
+
 
 public class HomeViewModel extends ViewModel {
     private final ProductRepository productRepository;
@@ -35,6 +42,10 @@ public class HomeViewModel extends ViewModel {
     private List<Category> categories = new ArrayList<>();
     private List<RescueCampaign> campaigns = new ArrayList<>();
     private List<Banner> banners = new ArrayList<>();
+    private final Map<String, List<ProductBatch>> productBatches = new HashMap<>();
+    private final Map<String, LiveData<List<ProductBatch>>> batchSources = new HashMap<>();
+    private final Map<String, LiveData<SellerStorefront>> sellerLocationSources = new HashMap<>();
+    private final Map<String, double[]> sellerCoordinates = new HashMap<>();
     private DiscoveryQuery query = DiscoveryQuery.empty();
     private Double latitude;
     private Double longitude;
@@ -68,13 +79,13 @@ public class HomeViewModel extends ViewModel {
         this.query = DiscoveryQueryState.restore(savedState);
         loadGreetingName();
         homeState.addSource(productRepository.observeProducts(), values -> {
-            products = safe(values); publish();
+            products = safe(values); syncBatchSources(); syncSellerLocationSources(); publish();
         });
         homeState.addSource(productRepository.observeCategories(), values -> {
             categories = safe(values); publish();
         });
         homeState.addSource(campaignRepository.observeActiveCampaigns(), values -> {
-            campaigns = safe(values); publish();
+            campaigns = safe(values); syncBatchSources(); publish();
         });
         homeState.addSource(campaignRepository.observeActiveBanners(), values -> {
             banners = safe(values); publish();
@@ -87,6 +98,7 @@ public class HomeViewModel extends ViewModel {
     public LiveData<String> getGreetingName() { return greetingName; }
     public List<Category> getCategoriesSnapshot() { return new ArrayList<>(categories); }
     public DiscoveryQuery getQuery() { return query; }
+    public List<Product> getProductsSnapshot() { return new ArrayList<>(products); }
     public boolean isAuthenticated() { return authRepository.isAuthenticated(); }
 
     private void loadGreetingName() {
@@ -121,6 +133,7 @@ public class HomeViewModel extends ViewModel {
         locationProvider.getCurrentLocation(new LocationProvider.LocationCallback() {
             @Override public void onLocationAvailable(double valueLatitude, double valueLongitude) {
                 latitude = valueLatitude; longitude = valueLongitude;
+                syncSellerLocationSources();
                 locationState = HomeViewState.LocationState.AVAILABLE;
                 message = "Đã sắp xếp điểm giải cứu gần vị trí hiện tại."; publish();
             }
@@ -136,8 +149,62 @@ public class HomeViewModel extends ViewModel {
     }
 
     public void setQuery(DiscoveryQuery value) {
-        query = value == null ? DiscoveryQuery.empty() : value; publishSearch();
+        query = value == null ? DiscoveryQuery.empty() : value;
+        syncBatchSources(); syncSellerLocationSources(); publishSearch();
         DiscoveryQueryState.save(savedState, query);
+    }
+
+    private void syncBatchSources() {
+        boolean neededForCampaigns = !campaigns.isEmpty();
+        if (!query.needsBatchData() && !neededForCampaigns) {
+            for (Map.Entry<String, LiveData<List<ProductBatch>>> entry : batchSources.entrySet()) {
+                homeState.removeSource(entry.getValue());
+            }
+            batchSources.clear(); productBatches.clear();
+            return;
+        }
+        Set<String> needed = new HashSet<>();
+        for (Product product : products) if (product != null && product.getId() != null) {
+            needed.add(product.getId());
+        }
+        List<String> removed = new ArrayList<>();
+        for (Map.Entry<String, LiveData<List<ProductBatch>>> entry : batchSources.entrySet()) {
+            if (!needed.contains(entry.getKey())) {
+                homeState.removeSource(entry.getValue()); removed.add(entry.getKey());
+            }
+        }
+        for (String productId : removed) { batchSources.remove(productId); productBatches.remove(productId); }
+        for (String productId : needed) if (!batchSources.containsKey(productId)) {
+            LiveData<List<ProductBatch>> source = productRepository.observeBatches(productId);
+            batchSources.put(productId, source);
+            homeState.addSource(source, values -> {
+                productBatches.put(productId, safe(values)); publish();
+            });
+        }
+    }
+
+    private void syncSellerLocationSources() {
+        boolean needs = latitude != null && longitude != null
+                && (query.getRadiusKm() > 0D || query.getSort() == DiscoveryQuery.Sort.DISTANCE);
+        Set<String> needed = new HashSet<>();
+        if (needs) for (Product product : products) if (product != null && product.getSellerId() != null
+                && !product.getSellerId().trim().isEmpty()) needed.add(product.getSellerId());
+        List<String> removed = new ArrayList<>();
+        for (Map.Entry<String, LiveData<SellerStorefront>> entry : sellerLocationSources.entrySet()) {
+            if (!needed.contains(entry.getKey())) { homeState.removeSource(entry.getValue()); removed.add(entry.getKey()); }
+        }
+        for (String id : removed) { sellerLocationSources.remove(id); sellerCoordinates.remove(id); }
+        for (String id : needed) if (!sellerLocationSources.containsKey(id)) {
+            if (userRepository == null) continue;
+            LiveData<SellerStorefront> source = userRepository.observePublicStorefront(id);
+            sellerLocationSources.put(id, source);
+            homeState.addSource(source, value -> {
+                if (value == null || !value.configured || value.latitude == 0D && value.longitude == 0D)
+                    sellerCoordinates.remove(id);
+                else sellerCoordinates.put(id, new double[]{value.latitude, value.longitude});
+                publishSearch();
+            });
+        }
     }
 
     private CampaignRepository.ActionCallback callback() {
@@ -163,17 +230,20 @@ public class HomeViewModel extends ViewModel {
     }
     private void publish() {
         homeState.postValue(contentBuilder.build(banners, products, campaigns, categories,
-                latitude, longitude, new Date(), locationState, refreshing, message, freshness));
+                productBatches, latitude, longitude, new Date(), locationState,
+                refreshing, message, freshness));
         publishSearch();
     }
     private void publishSearch() {
-        searchResults.postValue(discoveryEngine.search(products, campaigns, query,
+        searchResults.postValue(discoveryEngine.search(products, campaigns, productBatches, sellerCoordinates, query,
                 latitude, longitude, new Date()));
     }
     private static <T> List<T> safe(List<T> values) {
         return values == null ? new ArrayList<>() : new ArrayList<>(values);
     }
     @Override protected void onCleared() {
+        for (LiveData<SellerStorefront> source : sellerLocationSources.values()) homeState.removeSource(source);
+        sellerLocationSources.clear(); sellerCoordinates.clear();
         productRepository.close(); campaignRepository.close(); locationProvider.close();
     }
 }

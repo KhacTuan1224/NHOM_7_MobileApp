@@ -9,6 +9,8 @@ import com.rescuefarm.service.order.CheckoutRequest;
 import java.util.List;
 
 public interface OrderRepository {
+    interface ItemCallback { void success(List<com.rescuefarm.domain.model.OrderItem> items); void error(String message); }
+    default void getOrderItems(String id, ItemCallback callback) { callback.error("Cần kết nối mạng để tải sản phẩm của đơn."); }
     enum ErrorCode { VALIDATION, INSUFFICIENT_STOCK, MULTI_SELLER, CAMPAIGN_CONFLICT,
         FORBIDDEN, NETWORK, NOT_FOUND, CONFLICT, UNKNOWN }
     interface OrderCallback {
@@ -27,7 +29,13 @@ public interface OrderRepository {
     void refreshSellerOrders(String sellerId, ActionCallback callback);
     void findGuestOrder(String orderCode, String receiverPhone, OrderCallback callback);
     void getOrder(String orderId, LifecycleCallback callback);
+    void observeOrder(String orderId, LifecycleCallback callback);
+    void stopObservingOrder(String orderId);
     void transitionOrder(String orderId, OrderStatus targetStatus, LifecycleCallback callback);
+    default void updateShipmentDetails(String orderId, String carrierName, String trackingCode,
+            ActionCallback callback) {
+        callback.onError(ErrorCode.NOT_FOUND, "Chức năng cập nhật shipment chưa được cấu hình.");
+    }
     void confirmBankTransfer(String orderId, String referenceCode, LifecycleCallback callback);
     default void close() { }
 }

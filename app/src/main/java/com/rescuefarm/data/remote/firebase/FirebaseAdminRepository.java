@@ -15,6 +15,8 @@ import com.rescuefarm.data.repository.AdminRepository;
 import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
 import com.rescuefarm.service.admin.AdminTransitionPolicy;
+import com.rescuefarm.service.backend.RenderBackendClient;
+import org.json.JSONObject;
 import com.rescuefarm.service.network.NetworkStatusProvider;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -188,6 +190,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             if (section == Section.USERS && "ADMIN".equals(clean(current.getString("role")))) {
                 throw new SecurityException("ADMIN_TARGET_FORBIDDEN");
             }
+            DocumentSnapshot reviewProduct = section == Section.REVIEWS
+                ? tx.get(db.collection("products").document(current.getString("productId"))) : null;
             Map<String, Object> changes = moderation(adminId, note);
             changes.put("status", target);
             if (section == Section.REPORTS) {
@@ -207,10 +211,25 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 tx.update(userRef, sellerChanges);
             }
             tx.update(ref, changes);
+            if (reviewProduct != null) FirebaseReviewSummary.update(tx, reviewProduct, current, id,
+                "PUBLISHED".equals(target) ? (int)number(current,"rating") : 0);
             tx.set(audit, auditMap(adminId, section, id, before, target, note));
             return true;
-        }).addOnSuccessListener(value -> callback.onSuccess())
+        }).addOnSuccessListener(value -> {
+            callback.onSuccess();
+            if (section == Section.CAMPAIGNS && "ACTIVE".equals(target)) notifyCampaignCustomers(id);
+        })
                 .addOnFailureListener(error -> fail(error, callback));
+    }
+
+    private void notifyCampaignCustomers(String campaignId) {
+        JSONObject request = new JSONObject();
+        try { request.put("type", "CAMPAIGN"); request.put("referenceId", campaignId); }
+        catch (org.json.JSONException ignored) { return; }
+        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
+            @Override public void onSuccess(JSONObject response) { }
+            @Override public void onError(String message) { }
+        });
     }
 
     private void ensureAdmin(Runnable action, Object callback) {

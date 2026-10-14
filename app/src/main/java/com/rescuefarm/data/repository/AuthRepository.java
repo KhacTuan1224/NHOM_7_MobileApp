@@ -55,4 +55,7 @@ public interface AuthRepository {
     void signInWithGoogleIdToken(String idToken, AuthCallback callback);
     void sendPasswordResetEmail(String email, ActionCallback callback);
     void signOut();
+    default void signOut(ActionCallback callback) {
+        signOut(); if (callback != null) callback.onSuccess();
+    }
 }

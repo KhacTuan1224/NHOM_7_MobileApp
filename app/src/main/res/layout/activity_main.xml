@@ -110,7 +110,7 @@
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/centerCartButton"
+            android:id="@+id/centerActionButton"
             android:layout_width="68dp"
             android:layout_height="68dp"
             android:layout_gravity="top|center_horizontal"
