@@ -161,9 +161,9 @@ public class CampaignEditorFragment extends Fragment {
             card.addView(quantity);
             batchChecks.put(batchId, check); quantityInputs.put(batchId, quantity);
             check.setOnCheckedChangeListener((button, checked) -> {
-                if (checked && selectedTargets.size() >= 8 && !selectedTargets.containsKey(batchId)) {
+                if (checked && selectedTargets.size() >= 200 && !selectedTargets.containsKey(batchId)) {
                     button.setChecked(false);
-                    Toast.makeText(requireContext(), "Mỗi Campaign chỉ chọn tối đa 8 lô hàng.",
+                    Toast.makeText(requireContext(), "Mỗi Campaign hỗ trợ tối đa 200 lô để an toàn với Firestore.",
                             Toast.LENGTH_SHORT).show();
                     return;
                 }

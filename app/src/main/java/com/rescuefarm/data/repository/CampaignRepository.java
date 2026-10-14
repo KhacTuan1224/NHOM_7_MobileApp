@@ -33,6 +33,10 @@ public interface CampaignRepository {
     void refreshActiveCampaigns(ActionCallback callback);
     default void refreshBanners(ActionCallback callback) { callback.onSuccess(); }
     void refreshSellerCampaigns(String sellerId, ActionCallback callback);
+    default void refreshSellerCampaignPage(String sellerId, boolean reset, ActionCallback callback) {
+        refreshSellerCampaigns(sellerId, callback);
+    }
+    default boolean hasMoreSellerCampaigns(String sellerId) { return false; }
     void getCampaign(String campaignId, CampaignCallback callback);
     void saveCampaign(RescueCampaign campaign, boolean submitForApproval,
             CampaignCallback callback);
