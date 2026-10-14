@@ -100,6 +100,13 @@
                 android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                 android:hint="Kinh độ" android:inputType="numberDecimal|numberSigned" />
         </LinearLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/useSellerLocationButton"
+            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:layout_marginTop="@dimen/space_sm"
+            android:text="Lấy GPS và tự điền địa chỉ" />
+        <TextView android:id="@+id/sellerLocationStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:paddingTop="@dimen/space_xs"
+            android:textColor="@color/rescue_on_surface_variant" android:textSize="12sp" />
         <com.google.android.material.button.MaterialButton android:id="@+id/saveSellerProfileButton"
             style="@style/Widget.RescueFarm.ProfilePrimaryButton"
             android:layout_width="match_parent" android:layout_height="42dp"

@@ -3,6 +3,9 @@ package com.rescuefarm.ui.profile;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +30,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
 import com.rescuefarm.domain.model.User;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
+import com.rescuefarm.ui.navigation.ActorUiPolicy;
 import com.bumptech.glide.Glide;
 import java.util.Map;
 import java.util.Locale;
@@ -34,7 +38,8 @@ import java.util.Locale;
 public class EditProfileFragment extends Fragment {
     private ProfileViewModel viewModel;
     private TextInputEditText nameInput, phoneInput, avatarInput;
-    private TextView locationView;
+    private TextView locationView, sellerLocationTitle, sellerLocationDescription, mapCaption;
+    private View openGoogleMapsButton;
     private View mapContainer;
     private WebView locationMap;
     private ImageView avatarPreview;
@@ -60,6 +65,24 @@ public class EditProfileFragment extends Fragment {
         avatarStatus = view.findViewById(R.id.avatarUploadStatus);
         uploadAvatarButton = view.findViewById(R.id.uploadAvatarButton);
         locationView = view.findViewById(R.id.profileLocationText);
+        sellerLocationTitle = view.findViewById(R.id.sellerLocationTitle);
+        sellerLocationDescription = view.findViewById(R.id.sellerLocationDescription);
+        mapCaption = view.findViewById(R.id.profileMapCaption);
+        openGoogleMapsButton = view.findViewById(R.id.openGoogleMapsButton);
+        boolean sellerMap = ActorUiPolicy.isSeller(this);
+        int sellerVisibility = sellerMap ? View.VISIBLE : View.GONE;
+        sellerLocationTitle.setVisibility(sellerVisibility);
+        sellerLocationDescription.setVisibility(sellerVisibility);
+        mapCaption.setVisibility(sellerVisibility);
+        openGoogleMapsButton.setVisibility(sellerVisibility);
+        locationView.setVisibility(sellerMap ? View.GONE : View.VISIBLE);
+        if (sellerMap) {
+            com.google.android.material.button.MaterialButton gpsButton = view.findViewById(R.id.useProfileLocationButton);
+            gpsButton.setText("Lấy GPS hiện tại");
+            gpsButton.setTextColor(Color.parseColor("#1769FF"));
+            gpsButton.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#CED7E5")));
+        }
+        openGoogleMapsButton.setOnClickListener(v -> openGoogleMaps());
         mapContainer = view.findViewById(R.id.profileMapContainer);
         locationMap = view.findViewById(R.id.profileLocationMap);
         configureMap();
@@ -127,9 +150,23 @@ public class EditProfileFragment extends Fragment {
     }
     private void showCoordinates() {
         locationView.setText(getString(R.string.coordinates_format, latitude, longitude));
+        if (ActorUiPolicy.isSeller(this)) {
+            mapCaption.setText("Vị trí GPS hồ sơ" + System.lineSeparator()
+                    + "Vĩ độ " + String.format(Locale.US, "%.6f", latitude)
+                    + " · Kinh độ " + String.format(Locale.US, "%.6f", longitude));
+            openGoogleMapsButton.setEnabled(Double.isFinite(latitude) && Double.isFinite(longitude)
+                    && (latitude != 0D || longitude != 0D));
+        }
         showMap(latitude, longitude);
     }
 
+    private void openGoogleMaps() {
+        if (!Double.isFinite(latitude) || !Double.isFinite(longitude)
+                || (latitude == 0D && longitude == 0D)) return;
+        Uri location = Uri.parse("https://www.google.com/maps/search/?api=1&query="
+                + latitude + "%2C" + longitude);
+        startActivity(new Intent(Intent.ACTION_VIEW, location));
+    }
     private void configureMap() {
         WebSettings settings = locationMap.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -158,21 +195,29 @@ public class EditProfileFragment extends Fragment {
     private String mapHtml(double lat, double lon) {
         String latitudeText = String.format(Locale.US, "%.6f", lat);
         String longitudeText = String.format(Locale.US, "%.6f", lon);
+        boolean sellerMap = ActorUiPolicy.isSeller(this);
+        String tileUrl = sellerMap
+                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+                : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+        String attribution = sellerMap
+                ? "Sources: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, &copy; OpenStreetMap contributors"
+                : "Sources: <a href=\"https://www.esri.com/\">Esri</a>, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, "
+                        + "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, and the GIS User Community";
         return "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">"
                 + "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\">"
                 + "<style>html,body,#map{height:100%;width:100%;margin:0;background:#f8faf6}"
+                + (sellerMap ? ".leaflet-tile{filter:grayscale(.94) brightness(1.08) contrast(.92)}.map-pin{width:26px;height:26px;position:relative;transform:rotate(-45deg);border-radius:50% 50% 50% 0;background:#1769ff;border:3px solid #fff;box-shadow:0 2px 8px #0004}.map-pin span{position:absolute;width:8px;height:8px;left:6px;top:6px;border-radius:50%;background:#fff;transform:rotate(45deg)}" : "")
                 + "#status{position:absolute;z-index:1000;inset:0;display:flex;align-items:center;justify-content:center;"
                 + "padding:16px;text-align:center;font:14px sans-serif;color:#586159;background:#f8faf6}"
                 + ".leaflet-popup-content{font:13px sans-serif}</style></head><body><div id=\"map\"></div>"
                 + "<div id=\"status\">" + getString(R.string.profile_map_loading) + "</div>"
                 + "<script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"></script><script>"
-                + "const p=[" + latitudeText + "," + longitudeText + "],status=document.getElementById('status');"
+                + "const p=[" + latitudeText + "," + longitudeText + "],sellerMap=" + sellerMap + ",status=document.getElementById('status');"
                 + "try{const map=L.map('map',{scrollWheelZoom:false}).setView(p,15);"
-                + "const marker=L.circleMarker(p,{radius:9,color:'#fff',weight:3,fillColor:'#2e6b45',fillOpacity:1}).addTo(map);"
-                + "marker.bindPopup('Vĩ độ " + latitudeText + "<br>Kinh độ " + longitudeText + "').openPopup();"
-                + "const tiles=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,"
-                + "attribution:'Sources: <a href=\"https://www.esri.com/\">Esri</a>, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, "
-                + "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, and the GIS User Community'}).addTo(map);"
+                + "const pin=L.divIcon({className:'',html:'<div class=map-pin><span></span></div>',iconSize:[32,42],iconAnchor:[16,40]});const marker=sellerMap?L.marker(p,{icon:pin}):L.circleMarker(p,{radius:9,color:'#fff',weight:3,fillColor:'#2e6b45',fillOpacity:1});marker.addTo(map);"
+                + "if(!sellerMap)marker.bindPopup('Vĩ độ " + latitudeText + "<br>Kinh độ " + longitudeText + "').openPopup();"
+                + "const tiles=L.tileLayer('" + tileUrl + "',{maxZoom:19,"
+                + "attribution:'" + attribution + "'}).addTo(map);"
                 + "let ready=false;tiles.once('tileload',()=>{ready=true;status.style.display='none'});"
                 + "tiles.on('tileerror',()=>{if(!ready)status.textContent='"
                 + getString(R.string.profile_map_unavailable) + "'});"
