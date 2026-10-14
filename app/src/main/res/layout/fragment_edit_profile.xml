@@ -37,6 +37,15 @@
             android:textColor="@color/rescue_on_surface_variant" android:textSize="12sp" />
         <com.google.android.material.textfield.TextInputEditText android:id="@+id/editAvatarInput"
             android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+        <TextView android:id="@+id/sellerLocationTitle" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md"
+            android:text="Vị trí GPS hồ sơ" android:textSize="18sp" android:textStyle="bold"
+            android:visibility="gone" />
+        <TextView android:id="@+id/sellerLocationDescription" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="4dp"
+            android:text="Lưu vị trí hiện tại để xác định chính xác khu vực hoạt động của bạn. Tọa độ được dùng để hiển thị vị trí cửa hàng cho khách hàng."
+            android:textColor="@color/rescue_on_surface_variant" android:textSize="14sp"
+            android:visibility="gone" />
         <TextView android:id="@+id/profileLocationText" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" />
         <com.google.android.material.button.MaterialButton android:id="@+id/useProfileLocationButton"
@@ -46,9 +55,21 @@
             android:layout_height="220dp" android:layout_marginTop="@dimen/space_sm"
             android:background="@drawable/bg_profile_map" android:clipToOutline="true"
             android:visibility="gone">
+
             <WebView android:id="@+id/profileLocationMap" android:layout_width="match_parent"
                 android:layout_height="match_parent" android:background="@android:color/transparent" />
+            <TextView android:id="@+id/profileMapCaption" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_gravity="bottom"
+                android:background="#F7F8FA" android:elevation="4dp"
+                android:paddingStart="12dp" android:paddingTop="8dp" android:paddingEnd="12dp"
+                android:paddingBottom="8dp" android:textColor="#243247" android:textSize="12sp"
+                android:visibility="gone" />
         </FrameLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/openGoogleMapsButton"
+            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:layout_marginTop="@dimen/space_sm"
+            android:text="⌖  Chuyển sang Google Maps  ↗" android:textColor="#1769FF"
+            app:strokeColor="#CED7E5" android:visibility="gone" />
         <com.google.android.material.button.MaterialButton android:id="@+id/saveProfileButton"
             android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
             android:layout_marginTop="@dimen/space_md" android:text="@string/save_action" />

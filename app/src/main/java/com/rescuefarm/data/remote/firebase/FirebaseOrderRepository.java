@@ -18,6 +18,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.rescuefarm.data.repository.OrderRepository;
 import com.rescuefarm.data.local.dao.OrderCacheDao;
 import com.rescuefarm.data.local.database.RescueFarmDatabase;
@@ -58,6 +59,10 @@ public class FirebaseOrderRepository implements OrderRepository {
     private final RescueFarmDatabase database; private final OrderCacheDao orderDao;
     private final ExecutorService cacheExecutor;
     private final Map<String, ListenerRegistration> orderDetailListeners = new HashMap<>();
+    private final Map<String, DocumentSnapshot> sellerOrderCursors = new HashMap<>();
+    private final Map<String, Boolean> sellerOrderHasMore = new HashMap<>();
+    private final Map<String, ListenerRegistration> sellerOrderListeners = new HashMap<>();
+    private static final int SELLER_ORDER_PAGE_SIZE = 50;
     private final SharedPreferencesGuestSessionRepository guestSession;
     private final Handler guestHandler = new Handler(Looper.getMainLooper());
     private final Map<String, Runnable> guestPolls = new HashMap<>();
@@ -102,8 +107,41 @@ public class FirebaseOrderRepository implements OrderRepository {
         });
         return result;
     }
-    @Override public LiveData<List<Order>> observeSellerOrders(String sellerId){return Transformations.map(
-            orderDao.observeSellerOrders(sellerId),OrderCacheMapper::orders);}
+    @Override public LiveData<List<Order>> observeSellerOrders(String sellerId){
+        MediatorLiveData<List<Order>> result = new MediatorLiveData<>();
+        result.addSource(Transformations.map(orderDao.observeSellerOrders(sellerId), OrderCacheMapper::orders), result::setValue);
+        LiveData<List<Order>> remote = new LiveData<List<Order>>() {
+            private ListenerRegistration registration;
+            @Override protected void onActive() {
+                if (sellerId == null || sellerId.trim().isEmpty()) { postValue(new ArrayList<>()); return; }
+                registration = db.collection(ORDERS).whereEqualTo("sellerId", sellerId)
+                        .orderBy("createdAt", Query.Direction.DESCENDING).limit(SELLER_ORDER_PAGE_SIZE)
+                        .addSnapshotListener((snapshot, error) -> {
+                            if (error != null || snapshot == null) return;
+                            if (!snapshot.getDocuments().isEmpty()) {
+                                synchronized (sellerOrderCursors) {
+                                  if (!sellerOrderCursors.containsKey(sellerId)) {
+                                    sellerOrderCursors.put(sellerId, snapshot.getDocuments().get(snapshot.size() - 1));
+                                    sellerOrderHasMore.put(sellerId, snapshot.size() == SELLER_ORDER_PAGE_SIZE);
+                                  }
+                                }
+                            }
+                            List<Order> values = new ArrayList<>();
+                            for (DocumentSnapshot document : snapshot.getDocuments()) values.add(mapOrder(document, new ArrayList<>()));
+                            postValue(values);
+                            cacheExecutor.execute(() -> orderDao.replaceOrders(toEntities(values)));
+                        });
+                sellerOrderListeners.put(sellerId, registration);
+            }
+            @Override protected void onInactive() {
+                if (registration != null) registration.remove();
+                if (sellerId != null) sellerOrderListeners.remove(sellerId);
+                registration = null;
+            }
+        };
+        result.addSource(remote, unused -> { });
+        return result;
+    }
 
     @Override public void checkout(CheckoutRequest request, OrderCallback callback) {
         if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Đặt hàng cần kết nối mạng."); return; }
@@ -179,10 +217,35 @@ public class FirebaseOrderRepository implements OrderRepository {
     }
     @Override public void refreshSellerOrders(String sellerId,ActionCallback callback){
         if(!network.isOnline()){callback.onError(ErrorCode.NETWORK,"Không thể tải đơn seller khi offline.");return;}
-        db.collection(ORDERS).whereEqualTo("sellerId",sellerId).get().addOnSuccessListener(s->{
+        db.collection(ORDERS).whereEqualTo("sellerId",sellerId).orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(SELLER_ORDER_PAGE_SIZE).get().addOnSuccessListener(s->{
             List<Order> values=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())values.add(mapOrder(d,new ArrayList<>()));
+            synchronized (sellerOrderCursors) {
+                sellerOrderHasMore.put(sellerId, s.size() == SELLER_ORDER_PAGE_SIZE);
+                if (s.isEmpty()) sellerOrderCursors.remove(sellerId);
+                else sellerOrderCursors.put(sellerId, s.getDocuments().get(s.size() - 1));
+            }
             cacheExecutor.execute(()->{database.runInTransaction(()->{orderDao.clearSellerOrders(sellerId);
                 orderDao.replaceOrders(toEntities(values));});callback.onSuccess();});}).addOnFailureListener(e->failure(e,callback));
+    }
+    @Override public void loadMoreSellerOrders(String sellerId, ActionCallback callback) {
+        if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Tải thêm đơn cần kết nối mạng."); return; }
+        DocumentSnapshot cursor; boolean hasMore;
+        synchronized (sellerOrderCursors) { cursor = sellerOrderCursors.get(sellerId); hasMore = Boolean.TRUE.equals(sellerOrderHasMore.get(sellerId)); }
+        if (!hasMore || cursor == null) { callback.onSuccess(); return; }
+        db.collection(ORDERS).whereEqualTo("sellerId", sellerId).orderBy("createdAt", Query.Direction.DESCENDING)
+                .startAfter(cursor).limit(SELLER_ORDER_PAGE_SIZE).get().addOnSuccessListener(snapshot -> {
+                    List<Order> values = new ArrayList<>();
+                    for (DocumentSnapshot document : snapshot.getDocuments()) values.add(mapOrder(document, new ArrayList<>()));
+                    synchronized (sellerOrderCursors) {
+                        sellerOrderHasMore.put(sellerId, snapshot.size() == SELLER_ORDER_PAGE_SIZE);
+                        if (!snapshot.isEmpty()) sellerOrderCursors.put(sellerId, snapshot.getDocuments().get(snapshot.size() - 1));
+                    }
+                    cacheExecutor.execute(() -> { orderDao.replaceOrders(toEntities(values)); callback.onSuccess(); });
+                }).addOnFailureListener(error -> failure(error, callback));
+    }
+    @Override public boolean hasMoreSellerOrders(String sellerId) {
+        synchronized (sellerOrderCursors) { return Boolean.TRUE.equals(sellerOrderHasMore.get(sellerId)); }
     }
     @Override public void findGuestOrder(String code,String phone,OrderCallback callback){
         try {
@@ -453,6 +516,7 @@ public class FirebaseOrderRepository implements OrderRepository {
         String id = orderId + "_" + status.name();
         Map<String,Object> data = new HashMap<>();
         data.put("id",id); data.put("userId",uid); data.put("type","ORDER"); data.put("referenceId",orderId);
+        data.put("orderStatus",status.name());
         data.put("title","Cập nhật đơn hàng");
         String[] labels={"Chờ xác nhận","Đã xác nhận","Đang chuẩn bị","Sẵn sàng nhận hàng","Đang giao","Đã giao","Đã hủy"};
         data.put("body", "Trạng thái đơn hàng: " + labels[status.ordinal()]);
@@ -486,5 +550,5 @@ public class FirebaseOrderRepository implements OrderRepository {
     private static double number(DocumentSnapshot d,String f){Object v=d==null?null:d.get(f);return v instanceof Number?((Number)v).doubleValue():0D;}
     private static long longValue(DocumentSnapshot d,String f){Long v=d.getLong(f);return v==null?0L:v;}private static Date date(DocumentSnapshot d,String f){Timestamp v=d.getTimestamp(f);return v==null?null:v.toDate();}private static String clean(String v){return v==null?"":v.trim();}private static <T extends Enum<T>>T enumValue(Class<T> t,String v,T fallback){try{return Enum.valueOf(t,v==null?"":v);}catch(Exception e){return fallback;}}
     @Override public void close(){for(Runnable poll:guestPolls.values())guestHandler.removeCallbacks(poll);guestPolls.clear();for(ListenerRegistration listener:orderDetailListeners.values())listener.remove();
-        orderDetailListeners.clear();cacheExecutor.shutdownNow();}
+        orderDetailListeners.clear();for(ListenerRegistration listener:sellerOrderListeners.values())listener.remove();sellerOrderListeners.clear();cacheExecutor.shutdownNow();}
 }

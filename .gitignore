@@ -2,6 +2,8 @@
 *.aar
 *.ap_
 *.aab
+Packages/*.apk
+Packages/*.sha256
 
 *.dex
 
@@ -37,7 +39,7 @@ proguard/
 *.jks
 *.keystore
 
-google-services.json
+app/google-services.json
 
 .DS_Store
 Thumbs.db

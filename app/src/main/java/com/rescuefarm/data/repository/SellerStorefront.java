@@ -19,8 +19,7 @@ public final class SellerStorefront {
     public Map<String, Object> toMap() {
         Map<String, Object> m = new HashMap<>();
         m.put("sellerId", sellerId); m.put("shopName", shopName); m.put("shopDescription", description);
-        m.put("address", address); m.put("bankCode", bankName); m.put("bankAccountNumber", bankAccount);
-        m.put("bankAccountName", accountName); m.put("qrUrl", qrUrl); m.put("shippingFee", shippingFee);
+        m.put("address", address); m.put("shippingFee", shippingFee);
         m.put("latitude", latitude); m.put("longitude", longitude);
         m.put("shopAvatarUrl", avatarUrl);
         return m;

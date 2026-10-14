@@ -174,6 +174,15 @@ public final class AdminViewModel extends ViewModel {
         });
     }
 
+    public void loadShippingConfig(AdminRepository.DetailCallback callback) {
+        repository.loadShippingConfig(callback);
+    }
+
+    public void saveShippingConfig(double baseFee, double freeDistanceKm, double perKmFee,
+            AdminRepository.ActionCallback callback) {
+        repository.saveShippingConfig(baseFee, freeDistanceKm, perKmFee, callback);
+    }
+
     private AdminRepository.ActionCallback actionCallback() {
         return new AdminRepository.ActionCallback() {
             @Override public void onSuccess() { refreshSection(currentSection); }
