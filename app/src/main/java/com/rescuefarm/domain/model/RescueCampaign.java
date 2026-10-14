@@ -183,6 +183,15 @@ public class RescueCampaign {
         locationUpdatedAt = copy(updatedAt);
     }
 
+    public void clearCurrentLocation() {
+        if (rescueMode != RescueMode.MOBILE_POINT) {
+            throw new IllegalStateException("Only a mobile rescue campaign has a current location");
+        }
+        currentLatitude = 0D;
+        currentLongitude = 0D;
+        locationUpdatedAt = null;
+    }
+
     public void updateFixedLocation(double latitude, double longitude, String locationName) {
         validateCoordinates(latitude, longitude);
         this.latitude = latitude;
