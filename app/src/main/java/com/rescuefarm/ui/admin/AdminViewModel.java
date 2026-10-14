@@ -9,6 +9,7 @@ import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
 import java.util.Collections;
 import java.util.List;
+import java.util.Date;
 
 public final class AdminViewModel extends ViewModel {
     private static final int PAGE_SIZE = 40;
@@ -17,6 +18,9 @@ public final class AdminViewModel extends ViewModel {
             AdminScreenState.dashboard(AdminScreenState.Status.IDLE, null, ""));
     private Section currentSection = Section.ANALYTICS;
     private String statusFilter = "";
+    private String searchTerm = "";
+    private Date orderFromDate;
+    private Date orderThroughDate;
     private String cursor = "";
     private boolean hasMore;
     private int pageRequestVersion;
@@ -73,6 +77,21 @@ public final class AdminViewModel extends ViewModel {
         refreshSection(currentSection);
     }
 
+    public void setSearchTerm(String value) {
+        String next = value == null ? "" : value.trim();
+        if (next.equals(searchTerm)) return;
+        searchTerm = next;
+        refreshSection(currentSection);
+    }
+
+    public Date getOrderFromDate() { return orderFromDate == null ? null : new Date(orderFromDate.getTime()); }
+    public Date getOrderThroughDate() { return orderThroughDate == null ? null : new Date(orderThroughDate.getTime()); }
+    public void setOrderDateRange(Date from, Date through) {
+        orderFromDate = from == null ? null : new Date(from.getTime());
+        orderThroughDate = through == null ? null : new Date(through.getTime());
+        refreshSection(currentSection);
+    }
+
     public boolean hasMore() { return hasMore; }
 
     public void loadNextPage() {
@@ -87,7 +106,9 @@ public final class AdminViewModel extends ViewModel {
         int version = ++pageRequestVersion;
         state.setValue(AdminScreenState.list(AdminScreenState.Status.LOADING, currentSection,
                 append ? currentItems() : Collections.emptyList(), "Đang tải dữ liệu quản trị…"));
-        repository.loadSectionPage(requestedSection, PAGE_SIZE, requestedFilter, requestedCursor,
+        repository.loadSectionPage(requestedSection, PAGE_SIZE, requestedFilter, requestedCursor, searchTerm,
+                requestedSection == Section.ORDERS ? orderFromDate : null,
+                requestedSection == Section.ORDERS ? orderThroughDate : null,
                 new AdminRepository.PageCallback() {
             @Override public void onSuccess(List<AdminListItem> items, String nextCursor, boolean more) {
                 if (version != pageRequestVersion || requestedSection != currentSection) return;
@@ -138,6 +159,19 @@ public final class AdminViewModel extends ViewModel {
         state.setValue(AdminScreenState.list(AdminScreenState.Status.LOADING, currentSection,
                 currentItems(), "Đang lưu ảnh Cloudinary…"));
         repository.setResourceImage(currentSection, id, imageUrl, actionCallback());
+    }
+
+    public void saveCatalogResource(String id, java.util.Map<String, Object> values,
+            AdminRepository.ActionCallback callback) {
+        repository.saveCatalogResource(currentSection, id, values, new AdminRepository.ActionCallback() {
+            @Override public void onSuccess() {
+                if (callback != null) callback.onSuccess();
+                refreshSection(currentSection);
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                if (callback != null) callback.onError(code, message);
+            }
+        });
     }
 
     private AdminRepository.ActionCallback actionCallback() {
