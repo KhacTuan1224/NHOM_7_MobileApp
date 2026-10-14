@@ -27,6 +27,8 @@ public interface OrderRepository {
     void checkout(CheckoutRequest request, OrderCallback callback);
     void refreshOrders(String ownerId, ActionCallback callback);
     void refreshSellerOrders(String sellerId, ActionCallback callback);
+    default void loadMoreSellerOrders(String sellerId, ActionCallback callback) { callback.onSuccess(); }
+    default boolean hasMoreSellerOrders(String sellerId) { return false; }
     void findGuestOrder(String orderCode, String receiverPhone, OrderCallback callback);
     void getOrder(String orderId, LifecycleCallback callback);
     void observeOrder(String orderId, LifecycleCallback callback);
