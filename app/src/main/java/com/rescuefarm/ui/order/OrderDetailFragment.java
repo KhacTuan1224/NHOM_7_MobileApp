@@ -112,7 +112,8 @@ public class OrderDetailFragment extends Fragment {
         if (state.getStatus() != OrderLifecycleState.Status.SUCCESS) return;
         Order order = state.getOrder(); Payment payment = state.getPayment(); Shipment shipment = state.getShipment();
         String eventKey = order.getStatus().name() + "_" + payment.getStatus().name();
-        if (!lastObservedEvent.isEmpty() && !lastObservedEvent.equals(eventKey)) notifyOrderEvent();
+        if (order.getOwnerType() == com.rescuefarm.domain.enums.OrderOwnerType.CUSTOMER
+                && !lastObservedEvent.isEmpty() && !lastObservedEvent.equals(eventKey)) notifyOrderEvent();
         lastObservedEvent = eventKey;
         String shipmentStatus = order.getFulfillmentType() != com.rescuefarm.domain.enums.FulfillmentType.DELIVERY
                 ? getString(R.string.shipment_not_required)

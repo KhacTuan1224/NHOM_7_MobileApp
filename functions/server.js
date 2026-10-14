@@ -23,12 +23,6 @@ function httpError(status, message) { const e = new Error(message); e.status = s
 function str(v) { return typeof v === "string" ? v.trim() : ""; }
 function num(v, fallback = 0) { return typeof v === "number" && Number.isFinite(v) ? v : fallback; }
 function millis(v) { return v && typeof v.toMillis === "function" ? v.toMillis() : 0; }
-function roundVnd(v) { return Math.max(0, Math.round(v)); }
-function distanceKm(aLat, aLng, bLat, bLng) {
-  const r = Math.PI / 180, dLat = (bLat - aLat) * r, dLng = (bLng - aLng) * r;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLng / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 async function auth(req, roles = []) {
   const match = /^Bearer\s+(.+)$/i.exec(req.get("authorization") || "");
   if (!match) throw httpError(401, "Missing Firebase ID token");
@@ -41,115 +35,9 @@ async function auth(req, roles = []) {
   if (roles.length && !roles.includes(role)) throw httpError(403, "Role is not allowed");
   return {uid: decoded.uid, role};
 }
-function quotePrice(product, promotion, quantity, now) {
-  const rescue = num(product.rescuePrice), original = num(product.originalPrice);
-  let promoDiscount = 0, volumeDiscount = 0;
-  if (promotion && promotion.active && millis(promotion.startDate) <= now && millis(promotion.endDate) > now) {
-    if (promotion.type === "PERCENT") promoDiscount = rescue * num(promotion.value) / 100;
-    if (promotion.type === "FIXED") promoDiscount = num(promotion.value);
-    promoDiscount = Math.min(rescue, promoDiscount);
-    for (const [threshold, discount] of Object.entries(promotion.quantityDiscountTiers || {}))
-      if (quantity >= Number(threshold)) volumeDiscount = Math.max(volumeDiscount, num(discount));
-  }
-  const unit = roundVnd(Math.max(0, rescue - promoDiscount) * (1 - volumeDiscount / 100));
-  const subtotal = roundVnd(unit * quantity);
-  return {unit, subtotal, originalSubtotal: roundVnd(original * quantity), promoDiscount, volumeDiscount};
-}
-
 app.get("/health", (_, res) => res.json({ok: true}));
-app.post("/quoteCustomerCheckout", async (req, res, next) => {
-  try {
-    const user = await auth(req, ["CUSTOMER"]), data = req.body || {}, items = data.items;
-    if (!Array.isArray(items) || !items.length || items.length > 20) throw httpError(400, "Checkout accepts 1–20 items");
-    const fulfillment = str(data.fulfillmentType), payment = str(data.paymentMethod);
-    if (!["DELIVERY", "PICKUP", "ON_SITE_RESCUE"].includes(fulfillment)) throw httpError(400, "Invalid fulfillment type");
-    if (!["COD", "BANK_TRANSFER", "CASH_ON_SITE"].includes(payment)) throw httpError(400, "Invalid payment method");
-    if ((payment === "COD") !== (fulfillment === "DELIVERY") && payment !== "BANK_TRANSFER")
-      throw httpError(400, "Payment method does not match fulfillment");
-    if (items.some(i => !i || !str(i.productId) || !str(i.batchId) || !str(i.sellerId)
-        || !Number.isFinite(Number(i.quantity)) || Number(i.quantity) <= 0)) throw httpError(400, "Invalid cart item");
-    const itemKeys = items.map(i => `${str(i.productId)}::${str(i.batchId)}`);
-    if (new Set(itemKeys).size !== itemKeys.length) throw httpError(400, "Duplicate product batch in checkout request");
-    const sellers = new Set(items.map(i => str(i.sellerId)));
-    if (sellers.size !== 1) throw httpError(400, "Split cart by seller before checkout");
-    const sellerId = [...sellers][0], now = Date.now();
-    const docs = await Promise.all(items.map(async item => {
-      const [p, b, promo] = await Promise.all([
-        db.collection("products").doc(str(item.productId)).get(),
-        db.collection("productBatches").doc(str(item.batchId)).get(),
-        db.collection("promotions").doc(str(item.productId)).get()
-      ]);
-      if (!p.exists || p.get("sellerId") !== sellerId || p.get("status") !== "ACTIVE") throw httpError(409, "Product unavailable");
-      const qty = Number(item.quantity), available = num(b.get("availableQuantity"));
-      if (!b.exists || b.get("productId") !== p.id || !["AVAILABLE", "RESERVED_PARTIAL"].includes(str(b.get("status")))
-          || available < qty || millis(b.get("expiryDate")) <= now) throw httpError(409, "Batch unavailable or stock changed");
-      const product = p.data(), promotion = promo.exists ? promo.data() : null;
-      return {item, p: product, batch: b.data(), price: quotePrice(product, promotion, qty, now)};
-    }));
-    const campaignIds = new Set(docs.map(x => str(x.batch.activeCampaignId)).filter(Boolean));
-    if (campaignIds.size > 1) throw httpError(409, "Split cart by campaign before checkout");
-    if (fulfillment === "ON_SITE_RESCUE" && campaignIds.size !== 1) throw httpError(409, "On-site rescue requires an active campaign batch");
-    let campaign = null;
-    if (campaignIds.size) {
-      const c = await db.collection("campaigns").doc([...campaignIds][0]).get();
-      if (!c.exists || c.get("sellerId") !== sellerId || c.get("status") !== "ACTIVE" || millis(c.get("endDate")) <= now)
-        throw httpError(409, "Campaign is closed");
-      campaign = {id: c.id, ...c.data()};
-      const targetMap = campaign.batchTargets || {};
-      for (const row of docs) if (str(row.batch.activeCampaignId)
-          && num(targetMap[row.item.batchId]) < Number(row.item.quantity)) throw httpError(409, "Campaign batch allocation is insufficient");
-      const targetLeft = num(campaign.targetQuantity) - num(campaign.reservedQuantity) - num(campaign.rescuedQuantity);
-      const requested = docs.reduce((n, row) => n + (str(row.batch.activeCampaignId) ? Number(row.item.quantity) : 0), 0);
-      if (targetLeft < requested) throw httpError(409, "Campaign remaining quantity is insufficient");
-      if (fulfillment === "ON_SITE_RESCUE" && campaign.rescueMode === "MOBILE_POINT"
-          && (campaign.locationSharingEnabled !== true || now - millis(campaign.locationUpdatedAt) > 600000
-            || millis(campaign.locationUpdatedAt) > now)) throw httpError(409, "Mobile campaign location is stale");
-    }
-    let shippingFee = 0, distance = 0;
-    if (fulfillment === "DELIVERY") {
-      const lat = Number(data.latitude), lng = Number(data.longitude);
-      if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180
-          || (lat === 0 && lng === 0)) throw httpError(400, "Delivery address coordinates required");
-      const [seller, config] = await Promise.all([
-        db.collection("sellerPublicProfiles").doc(sellerId).get(), db.collection("appConfig").doc("shipping").get()
-      ]);
-      if (!seller.exists) throw httpError(409, "Seller public profile is unavailable");
-      if (!config.exists) throw httpError(409, "Global shipping rate is not configured");
-      const sellerLat = num(seller.get("latitude"), NaN), sellerLng = num(seller.get("longitude"), NaN);
-      const baseFee = num(config.get("baseFeeVnd"), NaN), perKmFee = num(config.get("perKmFeeVnd"), NaN);
-      const freeDistance = num(config.get("freeDistanceKm"), NaN);
-      if (!Number.isFinite(sellerLat) || sellerLat < -90 || sellerLat > 90
-          || !Number.isFinite(sellerLng) || sellerLng < -180 || sellerLng > 180
-          || (sellerLat === 0 && sellerLng === 0)) {
-        throw httpError(409, "Seller GPS coordinates are not configured");
-      }
-      if (!Number.isFinite(baseFee) || baseFee < 0 || baseFee > 1000000
-          || !Number.isFinite(perKmFee) || perKmFee < 0 || perKmFee > 1000000
-          || !Number.isFinite(freeDistance) || freeDistance < 0 || freeDistance > 20040) {
-        throw httpError(409, "Global shipping rate is invalid");
-      }
-      distance = distanceKm(sellerLat, sellerLng, lat, lng);
-      shippingFee = baseFee + Math.ceil(Math.max(0, distance - freeDistance) * perKmFee);
-      if (!Number.isFinite(shippingFee) || shippingFee > 1000000)
-        throw httpError(409, "Calculated shipping fee exceeds the allowed limit");
-    }
-    if (payment === "BANK_TRANSFER") {
-      const bank = await db.collection("sellerPublicProfiles").doc(sellerId).get();
-      if (!["bankCode", "bankAccountName", "bankAccountNumber"].every(k => str(bank.get(k)))) throw httpError(409, "Seller bank details unavailable");
-    }
-    const lines = docs.map(({item, p, price}) => ({productId: item.productId, batchId: item.batchId,
-      productName: str(p.name), unit: str(p.unit), quantity: Number(item.quantity), subtotal: price.subtotal,
-      finalUnitPrice: price.unit, originalSubtotal: price.originalSubtotal}));
-    const subtotal = lines.reduce((n, line) => n + line.subtotal, 0);
-    const originalSubtotal = lines.reduce((n, line) => n + line.originalSubtotal, 0);
-    res.json({lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal),
-      shippingFee, distanceKm: distance, total: subtotal + shippingFee,
-      campaignId: campaign ? campaign.id : "", campaignTitle: campaign ? str(campaign.title) : "",
-      campaignLocationName: campaign ? str(campaign.locationName) : "", rescueMode: campaign ? str(campaign.rescueMode) : "",
-      campaignLatitude: campaign ? num(campaign.currentLatitude || campaign.latitude) : 0,
-      campaignLongitude: campaign ? num(campaign.currentLongitude || campaign.longitude) : 0, quoteIsEstimate: true});
-  } catch (error) { next(error); }
-});
+const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth});
+app.use(commerce.router);
 
 app.post("/recalculate-rating", async (req, res, next) => {
   try {

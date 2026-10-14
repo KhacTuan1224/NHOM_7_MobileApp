@@ -110,8 +110,9 @@ public class BatchManagerFragment extends Fragment {
         alerts.setVisibility(warning.length() == 0 ? View.GONE : View.VISIBLE);
         LinearLayout actions = new LinearLayout(requireContext());
         Button edit = new Button(requireContext()); edit.setText(R.string.edit_action); edit.setOnClickListener(v -> edit(batch));
-        Button delete = new Button(requireContext()); delete.setText(R.string.delete_action);
-        delete.setEnabled(batch.getReservedQuantity() == 0D && batch.getSoldQuantity() == 0D
+        edit.setEnabled(batch.getStatus() != BatchStatus.ARCHIVED);
+        Button delete = new Button(requireContext()); delete.setText("Lưu trữ lô");
+        delete.setEnabled(batch.getStatus() != BatchStatus.ARCHIVED && batch.getReservedQuantity() == 0D && batch.getSoldQuantity() == 0D
                 && (batch.getActiveCampaignId() == null || batch.getActiveCampaignId().isEmpty()));
         delete.setOnClickListener(v -> viewModel.deleteBatch(batch.getId(), batch.getInventoryVersion()));
         actions.addView(edit); actions.addView(delete); body.addView(info); body.addView(alerts);

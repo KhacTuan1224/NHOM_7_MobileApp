@@ -50,6 +50,13 @@ public class AuthViewModelTest {
         assertTrue(guestSessionRepository.onboardingCompleted);
     }
 
+    @Test public void guestModeEndsAnyExistingAuthenticatedSession() {
+        authRepository.authenticated = true;
+        viewModel.continueAsGuest();
+        org.junit.Assert.assertFalse(authRepository.isAuthenticated());
+        assertEquals(AuthScreenState.Status.GUEST, viewModel.getScreenState().getValue().getStatus());
+    }
+
     @Test
     public void validLogin_usesRepositoryAndEmitsAuthenticatedState() {
         viewModel.signIn("customer@example.com", "strongPass123");
@@ -91,6 +98,7 @@ public class AuthViewModelTest {
     }
 
     private static final class FakeAuthRepository implements AuthRepository {
+        private boolean authenticated;
         private boolean signInCalled;
         private UserRole registeredRole;
 
@@ -98,7 +106,7 @@ public class AuthViewModelTest {
         public boolean isAvailable() { return true; }
 
         @Override
-        public boolean isAuthenticated() { return false; }
+        public boolean isAuthenticated() { return authenticated; }
 
         @Override
         public String getCurrentUserId() { return null; }
@@ -129,7 +137,7 @@ public class AuthViewModelTest {
         }
 
         @Override
-        public void signOut() { }
+        public void signOut() { authenticated = false; }
 
         private User customer() {
             return new Customer(

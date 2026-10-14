@@ -163,7 +163,7 @@ service cloud.firestore {
             'initialQuantity', 'availableQuantity', 'reservedQuantity', 'soldQuantity',
             'status', 'inventoryVersion', 'createdAt', 'updatedAt',
             'lastReservationOrderId', 'lastReservationQuantity',
-            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity'
+            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity', 'everOrdered'
           ])
           && data.id is string && data.productId is string
           && data.initialQuantity is number
@@ -183,7 +183,7 @@ service cloud.firestore {
           && data.harvestDate < data.expiryDate
           && data.inventoryVersion is int && data.inventoryVersion >= 1
           && data.createdAt is timestamp && data.updatedAt is timestamp
-          && data.status in ['AVAILABLE', 'RESERVED_PARTIAL', 'SOLD_OUT', 'EXPIRED'];
+          && data.status in ['AVAILABLE', 'RESERVED_PARTIAL', 'SOLD_OUT', 'EXPIRED', 'ARCHIVED'];
     }
 
     function validPromotion(data, promotionId) {
@@ -215,129 +215,10 @@ service cloud.firestore {
           && hasNoCredentialFields(data);
     }
 
-    function validOrderShipping(data, orderId) {
-      return data.fulfillmentType == 'DELIVERY'
-        ? exists(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId))
-          && exists(/databases/$(database)/documents/appConfig/shipping)
-          && existsAfter(/databases/$(database)/documents/shipments/$(orderId))
-          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm is number
-          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm >= 0
-          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm <= 20040
-          && !(data.receiverLatitude == 0 && data.receiverLongitude == 0)
-          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude is number
-          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude is number
-          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude >= -90
-          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude <= 90
-          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude >= -180
-          && get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude <= 180
-          && (get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.latitude != 0
-            || get(/databases/$(database)/documents/sellerPublicProfiles/$(data.sellerId)).data.longitude != 0)
-          && get(/databases/$(database)/documents/appConfig/shipping).data.baseFeeVnd is number
-          && get(/databases/$(database)/documents/appConfig/shipping).data.baseFeeVnd >= 0
-          && get(/databases/$(database)/documents/appConfig/shipping).data.perKmFeeVnd is number
-          && get(/databases/$(database)/documents/appConfig/shipping).data.perKmFeeVnd >= 0
-          && get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm is number
-          && get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm >= 0
-          && data.shippingFee == get(/databases/$(database)/documents/appConfig/shipping).data.baseFeeVnd
-            + math.ceil((getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm > get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm
-              ? getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.distanceKm - get(/databases/$(database)/documents/appConfig/shipping).data.freeDistanceKm : 0)
-              * get(/databases/$(database)/documents/appConfig/shipping).data.perKmFeeVnd)
-          && getAfter(/databases/$(database)/documents/shipments/$(orderId)).data.shippingFee == data.shippingFee
-        : data.shippingFee == 0;
-    }
-
-    function validOrder(data, orderId) {
-      return data.keys().hasOnly([
-            'id', 'requestId', 'ownerType', 'ownerId', 'sellerId', 'campaignId',
-            'orderCode', 'fulfillmentType', 'receiverName', 'receiverPhone',
-            'receiverAddress', 'receiverLatitude', 'receiverLongitude', 'subtotal',
-            'quantityDiscount', 'shippingFee', 'totalAmount', 'paymentMethod',
-            'paymentStatus', 'status', 'note', 'campaignReservedQuantity',
-            'batchReservations', 'inventoryFinalized', 'finalizedStatus',
-            'createdAt', 'updatedAt'
-          ])
-          && data.id == orderId && data.requestId == orderId
-          && data.ownerType == 'CUSTOMER' && data.ownerId is string
-          && data.sellerId is string && data.orderCode is string
-          && data.fulfillmentType in ['DELIVERY', 'PICKUP', 'ON_SITE_RESCUE']
-          && data.receiverName is string && data.receiverPhone is string
-          && data.receiverPhone.size() >= 9 && data.receiverAddress is string
-          && data.receiverName.size() >= 2 && data.receiverName.size() <= 100
-          && data.receiverPhone.size() <= 32 && data.receiverAddress.size() <= 500
-          && data.receiverLatitude is number && data.receiverLatitude >= -90 && data.receiverLatitude <= 90
-          && data.receiverLongitude is number && data.receiverLongitude >= -180 && data.receiverLongitude <= 180
-          && data.note is string && data.note.size() <= 1000
-          && data.subtotal is number && data.subtotal >= 0
-          && data.quantityDiscount is number && data.quantityDiscount >= 0
-          && data.shippingFee is number && data.shippingFee >= 0
-          && data.shippingFee <= 1000000
-          && validOrderShipping(data, orderId)
-          && data.totalAmount is number && data.totalAmount >= 0
-          && data.totalAmount == data.subtotal - data.quantityDiscount + data.shippingFee
-          && data.paymentMethod in ['COD', 'BANK_TRANSFER', 'CASH_ON_SITE']
-          && (data.paymentMethod == 'BANK_TRANSFER'
-            || (data.fulfillmentType == 'DELIVERY' && data.paymentMethod == 'COD')
-            || (data.fulfillmentType != 'DELIVERY' && data.paymentMethod == 'CASH_ON_SITE'))
-          && data.paymentStatus in ['UNPAID', 'PENDING'] && data.status == 'PENDING'
-          && data.campaignReservedQuantity is number && data.campaignReservedQuantity >= 0
-          && data.batchReservations is map && data.batchReservations.size() > 0
-          && data.batchReservations.size() <= 20
-          && data.inventoryFinalized == false && data.finalizedStatus == ''
-          && data.createdAt is timestamp && data.updatedAt is timestamp;
-    }
-
     function checkoutOwnerAllowed(order) {
       return order.ownerType == 'CUSTOMER'
           && isSignedIn() && order.ownerId == request.auth.uid
           && hasRole(order.ownerId, 'CUSTOMER');
-    }
-
-    function checkoutBatchReservation(before, after, batchId) {
-      let orderId = after.lastReservationOrderId;
-      let order = getAfter(/databases/$(database)/documents/orders/$(orderId)).data;
-      let quantity = order.batchReservations[batchId];
-      let product = get(/databases/$(database)/documents/products/$(before.productId)).data;
-      let item = getAfter(/databases/$(database)/documents/orders/$(orderId)/items/$(batchId)).data;
-      return order.status == 'PENDING' && checkoutOwnerAllowed(order)
-          && order.sellerId == product.sellerId && product.status == 'ACTIVE'
-          && item.orderId == orderId && item.batchId == batchId
-          && item.productId == before.productId && item.quantity == quantity
-          && item.finalPriceSnapshot is number && item.finalPriceSnapshot > 0
-          && item.finalPriceSnapshot <= product.rescuePrice
-          && before.expiryDate > request.time
-          && before.availableQuantity >= quantity
-          && before.status in ['AVAILABLE', 'RESERVED_PARTIAL']
-          && ((before.activeCampaignId == null && order.campaignId == '')
-            || before.activeCampaignId == '' && order.campaignId == ''
-            || before.activeCampaignId == order.campaignId)
-          && quantity is number && quantity > 0
-          && after.availableQuantity == before.availableQuantity - quantity
-          && after.reservedQuantity == before.reservedQuantity + quantity
-          && after.soldQuantity == before.soldQuantity
-          && after.initialQuantity == before.initialQuantity
-          && after.inventoryVersion == before.inventoryVersion + 1
-          && after.lastReservationQuantity == quantity
-          && after.diff(before).affectedKeys().hasOnly([
-            'availableQuantity', 'reservedQuantity', 'status', 'inventoryVersion',
-            'lastReservationOrderId', 'lastReservationQuantity', 'updatedAt'
-          ]);
-    }
-
-    function checkoutCampaignReservation(before, after) {
-      let orderId = after.lastReservationOrderId;
-      let order = getAfter(/databases/$(database)/documents/orders/$(orderId)).data;
-      return order.status == 'PENDING' && checkoutOwnerAllowed(order)
-          && order.sellerId == before.sellerId
-          && order.campaignId == before.id
-          && order.campaignReservedQuantity > 0
-          && before.reservedQuantity + order.campaignReservedQuantity
-              + before.rescuedQuantity <= before.targetQuantity + 0.000001
-          && after.reservedQuantity == before.reservedQuantity + order.campaignReservedQuantity
-          && after.rescuedQuantity == before.rescuedQuantity
-          && after.lastReservationQuantity == order.campaignReservedQuantity
-          && after.diff(before).affectedKeys().hasOnly([
-            'reservedQuantity', 'lastReservationOrderId', 'lastReservationQuantity', 'updatedAt'
-          ]);
     }
 
     function lifecycleActor(order) {
@@ -846,20 +727,18 @@ service cloud.firestore {
             && request.resource.data.reservedQuantity == 0
             && request.resource.data.soldQuantity == 0
             && request.resource.data.availableQuantity == request.resource.data.initialQuantity
+            && (!resource.data.get('everOrdered', false)
+              || (request.resource.data.status == 'ARCHIVED'
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'inventoryVersion', 'updatedAt'])))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               'harvestDate', 'expiryDate', 'initialQuantity', 'availableQuantity',
               'status', 'inventoryVersion', 'updatedAt'
             ])
             && hasNoCredentialFields(request.resource.data))
-          || (checkoutBatchReservation(resource.data, request.resource.data, batchId)
-            && validBatch(request.resource.data))
           || (lifecycleBatchMutation(resource.data, request.resource.data, batchId)
             && validBatch(request.resource.data));
-      allow delete: if isApprovedSeller(request.auth.uid)
-          && ownsProduct(resource.data.productId)
-          && resource.data.reservedQuantity == 0
-          && resource.data.soldQuantity == 0
-          && (resource.data.activeCampaignId == null || resource.data.activeCampaignId == '');
+      // Keep batch references valid for delivered AND cancelled orders. Archive instead.
+      allow delete: if false;
     }
 
     match /promotions/{promotionId} {
@@ -910,37 +789,15 @@ service cloud.firestore {
           || (exists(/databases/$(database)/documents/orders/$(orderId))
             && orderReadable(resource.data));
       allow list: if orderReadable(resource.data);
-      allow create: if validOrder(request.resource.data, orderId)
-          && checkoutOwnerAllowed(request.resource.data)
-          && !exists(/databases/$(database)/documents/orders/$(orderId));
+      // Trusted HTTP checkout creates the order, items, payment and reservations atomically.
+      allow create: if false;
       allow update: if lifecycleOrderUpdate(resource.data, request.resource.data)
           || bankConfirmationOrderUpdate(resource.data, request.resource.data);
       allow delete: if false;
       match /items/{itemId} {
         allow get, list: if orderReadable(
             get(/databases/$(database)/documents/orders/$(orderId)).data);
-        allow create: if getAfter(/databases/$(database)/documents/orders/$(orderId)).data.status == 'PENDING'
-            && checkoutOwnerAllowed(getAfter(/databases/$(database)/documents/orders/$(orderId)).data)
-            && request.resource.data.id == itemId && request.resource.data.orderId == orderId
-            && request.resource.data.batchId == itemId
-            && request.resource.data.quantity is number && request.resource.data.quantity > 0
-            && request.resource.data.productId is string
-            && request.resource.data.productNameSnapshot is string
-            && request.resource.data.productNameSnapshot.size() <= 120
-            && request.resource.data.productImageSnapshot is string
-            && request.resource.data.productImageSnapshot.size() <= 2048
-            && request.resource.data.unitSnapshot is string
-            && request.resource.data.unitSnapshot.size() <= 40
-            && request.resource.data.originalPriceSnapshot is number
-            && request.resource.data.originalPriceSnapshot > 0
-            && request.resource.data.rescuePriceSnapshot is number
-            && request.resource.data.rescuePriceSnapshot > 0
-            && request.resource.data.finalPriceSnapshot is number
-            && request.resource.data.finalPriceSnapshot > 0
-            && request.resource.data.finalPriceSnapshot <= request.resource.data.rescuePriceSnapshot
-            && request.resource.data.subtotal is number
-            && request.resource.data.subtotal == request.resource.data.finalPriceSnapshot * request.resource.data.quantity
-            && request.resource.data.originalPriceSnapshot >= request.resource.data.rescuePriceSnapshot;
+        allow create: if false;
         allow update, delete: if false;
       }
     }
@@ -949,28 +806,7 @@ service cloud.firestore {
       allow get: if orderReadable(
           get(/databases/$(database)/documents/orders/$(paymentId)).data);
       allow list: if false;
-      allow create: if request.resource.data.keys().hasOnly([
-            'id', 'orderId', 'method', 'status', 'amount', 'referenceCode',
-            'bankCode', 'bankAccountName', 'bankAccountNumber', 'qrUrl', 'paidAt', 'createdAt', 'updatedAt'
-          ])
-          && paymentId == request.resource.data.orderId
-          && request.resource.data.id == paymentId
-          && request.resource.data.amount is number && request.resource.data.amount >= 0
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time
-          && request.resource.data.amount == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.totalAmount
-          && request.resource.data.method == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.paymentMethod
-          && request.resource.data.get('qrUrl', '') is string
-          && request.resource.data.get('qrUrl', '').size() <= 2048
-          && request.resource.data.status == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.paymentStatus
-          && request.resource.data.bankCode is string && request.resource.data.bankCode.size() <= 24
-          && request.resource.data.bankAccountName is string && request.resource.data.bankAccountName.size() <= 120
-          && request.resource.data.bankAccountNumber is string && request.resource.data.bankAccountNumber.size() <= 40
-          && (request.resource.data.method != 'BANK_TRANSFER'
-            || (request.resource.data.bankCode.size() > 0
-              && request.resource.data.bankAccountName.size() > 0
-              && request.resource.data.bankAccountNumber.size() > 0))
-          && checkoutOwnerAllowed(getAfter(/databases/$(database)/documents/orders/$(paymentId)).data);
+      allow create: if false;
       allow update: if request.resource.data.id == resource.data.id
           && request.resource.data.orderId == resource.data.orderId
           && request.resource.data.method == resource.data.method
@@ -1000,20 +836,7 @@ service cloud.firestore {
       allow get: if orderReadable(
           get(/databases/$(database)/documents/orders/$(shipmentId)).data);
       allow list: if false;
-      allow create: if request.resource.data.keys().hasOnly([
-            'id', 'orderId', 'carrierName', 'trackingCode', 'status', 'distanceKm',
-            'shippingFee', 'createdAt', 'updatedAt'
-          ])
-          && shipmentId == request.resource.data.orderId
-          && request.resource.data.id == shipmentId && request.resource.data.status == 'PENDING'
-          && request.resource.data.carrierName is string && request.resource.data.carrierName.size() <= 120
-          && request.resource.data.trackingCode is string && request.resource.data.trackingCode.size() <= 120
-          && request.resource.data.distanceKm is number && request.resource.data.distanceKm >= 0
-          && request.resource.data.shippingFee is number && request.resource.data.shippingFee >= 0
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time
-          && getAfter(/databases/$(database)/documents/orders/$(shipmentId)).data.fulfillmentType == 'DELIVERY'
-          && checkoutOwnerAllowed(getAfter(/databases/$(database)/documents/orders/$(shipmentId)).data);
+      allow create: if false;
       allow update: if lifecycleActor(get(/databases/$(database)/documents/orders/$(shipmentId)).data)
           && request.resource.data.id == resource.data.id
           && request.resource.data.orderId == resource.data.orderId
@@ -1075,7 +898,6 @@ service cloud.firestore {
               ])
               && (request.resource.data.locationSharingEnabled == false
                 || request.resource.data.locationUpdatedAt == request.time))
-            || (checkoutCampaignReservation(resource.data, request.resource.data))
             || (lifecycleCampaignMutation(resource.data, request.resource.data))
             || (isAdmin()
               && ((resource.data.status == 'PENDING_APPROVAL'
@@ -1180,10 +1002,14 @@ service cloud.firestore {
             && request.resource.data.status == 'ACTIVE'
             && validComment(request.resource.data, postId);
         allow update: if isActiveAccount() && resource.data.userId == request.auth.uid
+            && publishedPost(postId)
             && resource.data.status in ['ACTIVE', 'EDITED']
             && request.resource.data.id == resource.data.id
             && request.resource.data.userId == resource.data.userId
             && request.resource.data.postId == resource.data.postId
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'status', 'updatedAt'])
             && request.resource.data.status in ['EDITED', 'DELETED']
             && validComment(request.resource.data, postId);
         allow delete: if false;

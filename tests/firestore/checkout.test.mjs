@@ -26,7 +26,8 @@ beforeEach(async () => {
     'users/seller': { id: 'seller', email: 'seller@example.com', fullName: 'Test seller', phone: '', avatarUrl: '',
       role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED', latitude: 0, longitude: 0, createdAt: past, updatedAt: past },
     'users/admin': { role: 'ADMIN', status: 'ACTIVE' },
-    'sellerPublicProfiles/seller': { sellerId: 'seller', shopName: 'Test', shippingFee: 15000 },
+    'sellerPublicProfiles/seller': { sellerId: 'seller', shopName: 'Test', shippingFee: 15000, latitude: 10.8, longitude: 106.7 },
+    'appConfig/shipping': { baseFeeVnd: 15000, perKmFeeVnd: 0, freeDistanceKm: 0 },
     'products/product-a': { sellerId: 'seller', status: 'ACTIVE', rescuePrice: 30000, reviewCount: 0, averageRating: 0 },
     'products/hidden': { sellerId: 'seller', status: 'HIDDEN', rescuePrice: 30000 },
     'productBatches/batch-a': {
@@ -96,7 +97,7 @@ async function checkout(db, overrideFee = null) {
       id: 'new-order', requestId: 'new-order', ownerType: 'CUSTOMER', ownerId: 'customer-a',
       sellerId: 'seller', campaignId: '', orderCode: 'RF-TEST', fulfillmentType: 'DELIVERY',
       receiverName: 'Test Customer', receiverPhone: '0912345678', receiverAddress: 'Test address',
-      receiverLatitude: 0, receiverLongitude: 0, subtotal: 90000, quantityDiscount: 0,
+      receiverLatitude: 10.8, receiverLongitude: 106.7, subtotal: 90000, quantityDiscount: 0,
       shippingFee: fee, totalAmount: 90000 + fee, paymentMethod: 'COD', paymentStatus: 'UNPAID',
       status: 'PENDING', note: '', campaignReservedQuantity: 0,
       batchReservations: { 'batch-a': 3 }, inventoryFinalized: false, finalizedStatus: '',
@@ -135,30 +136,20 @@ async function checkout(db, overrideFee = null) {
 }
 
 for (const promotionState of ['missing', 'expired', 'inactive']) {
-  test(`DELIVERY/COD checkout succeeds with ${promotionState} promotion and reserves once`, async () => {
-    if (promotionState !== 'missing') {
-      await seed({ 'promotions/product-a': {
-        productId: 'product-a', sellerId: 'seller', active: promotionState !== 'inactive',
-        startDate: Timestamp.fromMillis(now - 2 * 86400000),
-        endDate: promotionState === 'expired' ? past : future
-      } });
-    }
+  test(`direct client checkout is denied even with ${promotionState} promotion`, async () => {
+    if (promotionState !== 'missing') await seed({'promotions/product-a': {
+      productId: 'product-a', sellerId: 'seller', active: promotionState !== 'inactive',
+      startDate: past, endDate: promotionState === 'expired' ? past : future
+    }});
     const db = env.authenticatedContext('customer-a').firestore();
-    await assertSucceeds(checkout(db));
-    await assertSucceeds(checkout(db));
+    await assertFails(checkout(db));
+    assert.equal((await getDoc(doc(db, 'orders/new-order'))).exists(), false);
     const batch = (await getDoc(doc(db, 'productBatches/batch-a'))).data();
-    assert.equal(batch.availableQuantity, 7);
-    assert.equal(batch.reservedQuantity, 3);
-    assert.equal(batch.soldQuantity, 0);
-    assert.equal((await getDoc(doc(db, 'orders/new-order'))).data().status, 'PENDING');
-    assert.equal((await getDoc(doc(db, 'payments/new-order'))).data().status, 'UNPAID');
-    assert.equal((await getDoc(doc(db, 'shipments/new-order'))).data().status, 'PENDING');
-    assert.equal((await getDoc(doc(db, 'orders/new-order'))).data().shippingFee, 15000);
-    assert.equal((await getDoc(doc(db, 'orders/new-order'))).data().totalAmount, 105000);
-    assert.deepEqual((await getDoc(doc(db, 'customerCarts/customer-a'))).data().items.map(item => item.id), ['keep']);
-    assert.equal((await getDoc(doc(db, 'notifications/new-order_PENDING'))).data().isRead, false);
+    assert.equal(batch.availableQuantity, 10); assert.equal(batch.reservedQuantity, 0);
+    assert.equal((await getDoc(doc(db, 'customerCarts/customer-a'))).data().items.length, 2);
   });
 }
+
 
 test('a different customer cannot create an order for customer-a', async () => {
   await assertFails(checkout(env.authenticatedContext('customer-b').firestore()));
@@ -264,7 +255,7 @@ test('notifications cannot be forged outside an atomic order status change', asy
 
 test('seller status transition creates a notification visible only to the order customer', async () => {
   const customer = env.authenticatedContext('customer-a').firestore();
-  await assertSucceeds(checkout(customer));
+  await seed({'orders/new-order': {id: 'new-order', ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller', status: 'PENDING', paymentMethod: 'COD', paymentStatus: 'UNPAID', fulfillmentType: 'DELIVERY', inventoryFinalized: false, finalizedStatus: ''}});
   const seller = env.authenticatedContext('seller').firestore();
   await assertSucceeds(runTransaction(seller, async tx => {
     const order = await tx.get(doc(seller, 'orders/new-order'));
@@ -276,4 +267,62 @@ test('seller status transition creates a notification visible only to the order 
   }));
   await assertSucceeds(getDoc(doc(customer, 'notifications/new-order_CONFIRMED')));
   await assertFails(getDoc(doc(env.authenticatedContext('customer-b').firestore(), 'notifications/new-order_CONFIRMED')));
+});
+
+test('customer cannot create an unreserved order or append items/payments/shipments to an existing order', async () => {
+  const db = env.authenticatedContext('customer-a').firestore();
+  await assertFails(setDoc(doc(db, 'orders/unreserved'), {
+    id: 'unreserved', requestId: 'unreserved', ownerType: 'CUSTOMER', ownerId: 'customer-a',
+    sellerId: 'seller', campaignId: '', orderCode: 'RF-AUDIT', fulfillmentType: 'PICKUP',
+    receiverName: 'Customer', receiverPhone: '0912345678', receiverAddress: '',
+    receiverLatitude: 0, receiverLongitude: 0, subtotal: 1, quantityDiscount: 0, shippingFee: 0,
+    totalAmount: 1, paymentMethod: 'CASH_ON_SITE', paymentStatus: 'UNPAID', status: 'PENDING', note: '',
+    campaignReservedQuantity: 0, batchReservations: {'batch-a': 1000}, inventoryFinalized: false,
+    finalizedStatus: '', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(db, 'orders/existing/items/new'), {id: 'new', quantity: 1000}));
+  await assertFails(setDoc(doc(db, 'payments/existing'), {id: 'existing', amount: 1}));
+  await assertFails(setDoc(doc(db, 'shipments/existing'), {id: 'existing', shippingFee: 0}));
+  await assertFails(updateDoc(doc(db, 'productBatches/batch-a'), {availableQuantity: 0, reservedQuantity: 10}));
+  assert.equal((await getDoc(doc(db, 'productBatches/batch-a'))).data().availableQuantity, 10);
+});
+
+test('batch referenced by a cancelled order cannot be deleted; archiving preserves the reference', async () => {
+  await seed({'orders/cancelled': {ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller', status: 'CANCELLED'},
+    'orders/cancelled/items/batch-a': {batchId: 'batch-a', productId: 'product-a'},
+    'productBatches/batch-a': {id: 'batch-a', productId: 'product-a', activeCampaignId: '', harvestDate: past,
+      expiryDate: future, initialQuantity: 10, availableQuantity: 10, reservedQuantity: 0, soldQuantity: 0,
+      inventoryVersion: 1, status: 'AVAILABLE', createdAt: past, updatedAt: past, everOrdered: true}});
+  const db = env.authenticatedContext('seller').firestore(), remove = writeBatch(db);
+  remove.delete(doc(db, 'productBatches/batch-a')); await assertFails(remove.commit());
+  await assertFails(updateDoc(doc(db, 'productBatches/batch-a'), {expiryDate: Timestamp.fromMillis(now + 864000000),
+    inventoryVersion: 2, updatedAt: serverTimestamp()}));
+  await assertSucceeds(updateDoc(doc(db, 'productBatches/batch-a'), {status: 'ARCHIVED', inventoryVersion: 2, updatedAt: serverTimestamp()}));
+  assert.equal((await getDoc(doc(db, 'productBatches/batch-a'))).data().status, 'ARCHIVED');
+  assert.equal((await getDoc(doc(db, 'orders/cancelled/items/batch-a'))).exists(), true);
+});
+
+test('comment owner can edit and soft-delete; others, timestamp forgery and edits after deletion are denied', async () => {
+  await seed({'posts/published': {status: 'PUBLISHED'}});
+  const owner = env.authenticatedContext('customer-a').firestore(), other = env.authenticatedContext('customer-b').firestore();
+  const path = 'posts/published/comments/comment-a';
+  await assertSucceeds(setDoc(doc(owner, path), {id: 'comment-a', postId: 'published', userId: 'customer-a',
+    content: 'Bình luận ban đầu', status: 'ACTIVE', createdAt: past, updatedAt: past}));
+  await assertFails(updateDoc(doc(other, path), {content: 'Mạo danh', status: 'EDITED', updatedAt: serverTimestamp()}));
+  await assertFails(updateDoc(doc(owner, path), {content: 'Giả ngày tạo', status: 'EDITED', createdAt: future, updatedAt: serverTimestamp()}));
+  await assertSucceeds(updateDoc(doc(owner, path), {content: 'Nội dung đã sửa', status: 'EDITED', updatedAt: serverTimestamp()}));
+  await assertSucceeds(updateDoc(doc(owner, path), {content: '', status: 'DELETED', updatedAt: serverTimestamp()}));
+  assert.equal((await getDoc(doc(owner, path))).data().content, '');
+  await assertFails(updateDoc(doc(owner, path), {content: 'Khôi phục trái phép', status: 'EDITED', updatedAt: serverTimestamp()}));
+});
+
+test('Guest cannot read order collections or backend capabilities and clients cannot forge viewCount', async () => {
+  const guest = env.unauthenticatedContext().firestore();
+  await assertFails(getDocs(collection(guest, 'orders')));
+  await assertFails(getDoc(doc(guest, 'checkoutReceipts/receipt')));
+  await assertFails(getDoc(doc(guest, 'guestOrderGrants/grant')));
+  await assertFails(getDoc(doc(guest, 'guestOrderCodes/RF-TEST')));
+  await seed({'posts/published': {status: 'PUBLISHED', viewCount: 0}});
+  await assertFails(updateDoc(doc(guest, 'posts/published'), {viewCount: 999}));
+  await assertFails(updateDoc(doc(env.authenticatedContext('customer-a').firestore(), 'posts/published'), {viewCount: 999}));
 });

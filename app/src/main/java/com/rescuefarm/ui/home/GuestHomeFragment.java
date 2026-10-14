@@ -48,10 +48,16 @@ public class GuestHomeFragment extends Fragment {
     private TextView feedTitle;
     private ViewPager2 bannerPager;
     private LinearLayout bannerDots, criticalSection, nearbyMobileSection, nearbyFixedSection,
-            endingSoonSection, valueSection, campaignSection, categorySection, feedSection;
+            endingSoonSection, nearExpirySection, valueSection, campaignSection, categorySection, feedSection;
     private BannerPagerAdapter bannerAdapter;
     private ViewPager2.OnPageChangeCallback bannerPageCallback;
     private final Handler bannerHandler = new Handler(Looper.getMainLooper());
+    private final Runnable freshnessTick = new Runnable() {
+        @Override public void run() {
+            if (viewModel != null) viewModel.refreshTimeSensitiveContent();
+            bannerHandler.postDelayed(this, 60000L);
+        }
+    };
     private final Runnable bannerAutoScroll = new Runnable() {
         @Override public void run() {
             if (bannerAdapter != null && bannerAdapter.getItemCount() > 1 && bannerPager != null) {
@@ -88,6 +94,7 @@ public class GuestHomeFragment extends Fragment {
         nearbyMobileSection = view.findViewById(R.id.nearbyMobileSection);
         nearbyFixedSection = view.findViewById(R.id.nearbyFixedSection);
         endingSoonSection = view.findViewById(R.id.endingSoonSection);
+        nearExpirySection = view.findViewById(R.id.nearExpirySection);
         valueSection = view.findViewById(R.id.valueSection);
         campaignSection = view.findViewById(R.id.campaignSection);
         categorySection = view.findViewById(R.id.categorySection);
@@ -160,6 +167,7 @@ public class GuestHomeFragment extends Fragment {
         renderCampaigns(endingSoonSection, state.getEndingSoon(), state,
                 "Chưa có chiến dịch sắp kết thúc.");
         renderProducts(state.getValueProducts());
+        renderNearExpiry(state.getNearExpiry());
         List<RescueCampaign> otherCampaigns = new ArrayList<>();
         for (RescueCampaign campaign : state.getActiveCampaigns()) {
             if (campaign.getUrgencyLevel() != com.rescuefarm.domain.enums.UrgencyLevel.CRITICAL) {
@@ -211,6 +219,22 @@ public class GuestHomeFragment extends Fragment {
         valueSection.removeAllViews();
         if (values.isEmpty()) { valueSection.addView(renderer.message("Chưa có nông sản giảm giá trong cache.")); return; }
         addGrid(valueSection, values, value -> renderer.product(value, v -> openProduct(value.getId())));
+    }
+    private void renderNearExpiry(List<ExpiringProduct> values) {
+        nearExpirySection.removeAllViews();
+        if (values.isEmpty()) { nearExpirySection.addView(renderer.message("Chưa có lô còn bán được sẽ hết hạn trong 3 ngày tới.")); return; }
+        java.text.SimpleDateFormat date = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.forLanguageTag("vi-VN"));
+        addGrid(nearExpirySection, values, value -> {
+            LinearLayout column = new LinearLayout(requireContext()); column.setOrientation(LinearLayout.VERTICAL);
+            column.addView(renderer.product(value.getProduct(), v -> {
+                Bundle args = new Bundle(); args.putString("productId", value.getProduct().getId());
+                args.putString("batchId", value.getBatch().getId());
+                Navigation.findNavController(requireView()).navigate(R.id.action_guestHomeFragment_to_productDetailFragment, args);
+            }));
+            TextView expiry = renderer.message("Hạn dùng: " + date.format(value.getBatch().getExpiryDate())
+                    + "\nCòn " + value.getBatch().getAvailableQuantity() + " " + value.getProduct().getUnit());
+            column.addView(expiry); return column;
+        });
     }
     private void renderCategories(List<Category> values) {
         categorySection.removeAllViews();
@@ -311,16 +335,20 @@ public class GuestHomeFragment extends Fragment {
 
     @Override public void onResume() {
         super.onResume();
+        bannerHandler.removeCallbacks(freshnessTick);
+        bannerHandler.post(freshnessTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
         bannerHandler.postDelayed(bannerAutoScroll, 4500L);
     }
 
     @Override public void onPause() {
+        bannerHandler.removeCallbacks(freshnessTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
         super.onPause();
     }
 
     @Override public void onDestroyView() {
+        bannerHandler.removeCallbacks(freshnessTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
         if (bannerPager != null && bannerPageCallback != null) {
             bannerPager.unregisterOnPageChangeCallback(bannerPageCallback);

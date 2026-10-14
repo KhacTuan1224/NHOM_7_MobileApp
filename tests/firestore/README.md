@@ -11,6 +11,7 @@ From this directory:
 
 ```powershell
 npm ci
+npm --prefix ../../functions ci
 npm test
 ```
 
@@ -23,10 +24,13 @@ $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 npm test
 ```
 
-Tests cover missing-order reads, private orders, promotion fallbacks, fixed
-shipping fees, atomic cart cleanup, replay without double reservation, review
-creation/edit/withdrawal and summary updates, admin review moderation, public
-seller settings, and notifications tied to order transitions. These checks
+Tests cover denied direct client checkout, atomic server checkout and cart cleanup,
+concurrent buyers, idempotent replay, rounded fractional quantities, all Guest
+fulfillment/payment paths, lookup/access-token isolation and rate limits,
+Seller completion/cancellation of Guest orders, archival of historical batches,
+owned comment edits/soft deletion, deduplicated public post views, reviews and
+private notifications. Tests run sequentially because they share one isolated
+emulator project. These checks
 validate emulator behavior, not deployment status or live Android UI behavior.
 
 To publish the reviewed rules, run from the repository root with an authorized

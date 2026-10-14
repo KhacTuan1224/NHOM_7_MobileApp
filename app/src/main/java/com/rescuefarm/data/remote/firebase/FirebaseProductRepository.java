@@ -366,9 +366,21 @@ public class FirebaseProductRepository implements ProductRepository {
                     || !clean(batchSnapshot.getString("activeCampaignId")).isEmpty()) {
                 throw new IllegalStateException("BATCH_IN_USE");
             }
-            transaction.delete(batchRef); return null;
+            transaction.update(batchRef, "status", BatchStatus.ARCHIVED.name(),
+                    "inventoryVersion", expectedVersion + 1L, "updatedAt", FieldValue.serverTimestamp());
+            return null;
         }).addOnSuccessListener(unused -> {
-            cacheExecutor.execute(() -> dao.deleteBatch(batchId)); callback.onSuccess();
+            refreshBatchesForArchived(batchId, callback);
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
+    private void refreshBatchesForArchived(String batchId, ActionCallback callback) {
+        firestore.collection(BATCHES).document(batchId).get().addOnSuccessListener(doc -> {
+            ProductBatch archived = mapBatch(doc);
+            if (archived != null) cacheExecutor.execute(() -> {
+                dao.replaceBatch(CatalogCacheMapper.toEntity(archived, System.currentTimeMillis()));
+            });
+            callback.onSuccess();
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
