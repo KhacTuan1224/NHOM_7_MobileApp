@@ -333,6 +333,7 @@
     <string name="admin_access_message">Tài khoản quản trị — mọi thao tác moderation đều được ghi audit.</string>
     <string name="admin_refresh_action">Làm mới dữ liệu quản trị</string>
     <string name="admin_view_detail_action">Xem chi tiết và xử lý</string>
+    <string name="admin_back_action">Quay lại</string>
     <string name="admin_sellers_title">Duyệt seller</string>
     <string name="admin_users_title">Quản lý người dùng</string>
     <string name="admin_posts_title">Kiểm duyệt bài viết</string>
@@ -346,6 +347,7 @@
     <string name="admin_reason_hint">Lý do kiểm duyệt (bắt buộc khi từ chối, ẩn, dừng hoặc khóa)</string>
     <string name="admin_disable_action">Tắt / ẩn</string>
     <string name="admin_enable_action">Bật lại</string>
+    <string name="admin_add_catalog_resource">Thêm mới danh mục / banner</string>
     <string name="admin_section_title_format">Quản trị: %1$s</string>
     <string name="admin_resource_row_format">%1$s\n%2$s\nTrạng thái: %3$s\nID: %4$s</string>
     <string name="admin_dashboard_stats_format">Users: %1$d\nSeller applications: %2$d (%3$d chờ duyệt)\nProducts: %4$d\nCampaigns: %5$d (%6$d chờ duyệt)\nPosts: %7$d (%8$d chờ duyệt)\nOrders: %9$d\nReports đang mở: %10$d\nDoanh thu DELIVERED (all-time, gồm phí giao hàng): %11$s</string>

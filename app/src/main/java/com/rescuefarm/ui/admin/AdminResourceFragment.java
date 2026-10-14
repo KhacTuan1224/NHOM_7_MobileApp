@@ -147,6 +147,9 @@ public final class AdminResourceFragment extends Fragment {
             searchInput.setVisibility(View.GONE); statusFilter.setVisibility(View.GONE);
             loadMoreButton.setVisibility(View.GONE);
         }
+        view.findViewById(R.id.adminResourceBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
+        if (section != Section.ANALYTICS) viewModel.observeSection(section).observe(
+                getViewLifecycleOwner(), this::renderItems);
         view.findViewById(R.id.refreshAdminResourceButton).setOnClickListener(v -> refresh());
         refresh();
     }
