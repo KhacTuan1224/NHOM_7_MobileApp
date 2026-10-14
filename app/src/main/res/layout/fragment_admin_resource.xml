@@ -10,6 +10,9 @@
         <Button android:id="@+id/adminResourceBackButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_back_action"
             android:layout_marginTop="@dimen/space_sm" android:layout_marginBottom="@dimen/space_sm" />
+        <Button android:id="@+id/adminAddCatalogResourceButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_add_catalog_resource"
+            android:visibility="gone" android:layout_marginBottom="@dimen/space_sm" />
         <EditText android:id="@+id/adminModerationReason" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md"
             android:hint="@string/admin_reason_hint" android:maxLength="500"
