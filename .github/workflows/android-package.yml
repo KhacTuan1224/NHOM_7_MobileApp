@@ -18,25 +18,32 @@ concurrency:
 jobs:
   build:
     name: Build Android APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Install Android API 37
         shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null
-          sdkmanager --install "platforms;android-37"
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit 2>/dev/null || true)"
+          if [[ -z "$SDKMANAGER" ]]; then
+            echo "::error::sdkmanager was not found under $SDK_ROOT/cmdline-tools."
+            echo "ANDROID_HOME=${ANDROID_HOME:-<unset>} ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-<unset>}"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null
+          "$SDKMANAGER" --install "platforms;android-37"
 
       - name: Prepare Firebase configuration
         env:
@@ -76,6 +83,8 @@ jobs:
           CLOUDINARY_SIGNING_URL: ${{ vars.CLOUDINARY_SIGNING_URL }}
         shell: bash
         run: |
+          chmod +x ./gradlew
+          test -f ./gradlew
           ./gradlew --no-daemon :app:assembleDebug \
             "-PRENDER_BACKEND_URL=$RENDER_BACKEND_URL" \
             "-PCLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME" \
@@ -109,7 +118,7 @@ jobs:
     name: Publish tagged APK release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       actions: read
