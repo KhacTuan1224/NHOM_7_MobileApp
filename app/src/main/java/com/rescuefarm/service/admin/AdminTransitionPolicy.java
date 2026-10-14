@@ -25,7 +25,7 @@ public final class AdminTransitionPolicy {
                 return status.equals("HIDDEN") ? list("PUBLISHED") : none();
             case PRODUCTS:
                 if (status.equals("ACTIVE") || status.equals("INACTIVE") || status.equals("SOLD_OUT")) return list("HIDDEN");
-                return status.equals("HIDDEN") ? list("INACTIVE") : none();
+                return status.equals("HIDDEN") ? list("ACTIVE", "INACTIVE", "SOLD_OUT") : none();
             case CAMPAIGNS:
                 if (status.equals("PENDING_APPROVAL")) return list("ACTIVE", "REJECTED");
                 return status.equals("ACTIVE") ? list("STOPPED") : none();

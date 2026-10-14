@@ -4,6 +4,7 @@ import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 
 public interface AdminRepository {
     enum Section {
@@ -60,6 +61,14 @@ public interface AdminRepository {
             @Override public void onError(ErrorCode code, String message) { callback.onError(code, message); }
         });
     }
+    default void loadSectionPage(Section section, int limit, String status, String cursor,
+            String searchTerm, PageCallback callback) {
+        loadSectionPage(section, limit, status, cursor, callback);
+    }
+    default void loadSectionPage(Section section, int limit, String status, String cursor,
+            String searchTerm, Date fromDate, Date throughDate, PageCallback callback) {
+        loadSectionPage(section, limit, status, cursor, searchTerm, callback);
+    }
     default androidx.lifecycle.LiveData<List<AdminListItem>> observeSection(Section section, int limit) {
         return new androidx.lifecycle.MutableLiveData<>(java.util.Collections.emptyList());
     }
@@ -67,6 +76,8 @@ public interface AdminRepository {
             String reason, ActionCallback callback);
     void setActive(Section section, String resourceId, boolean active,
             String reason, ActionCallback callback);
+    void saveCatalogResource(Section section, String resourceId, Map<String, Object> values,
+            ActionCallback callback);
     void loadDetail(Section section, String resourceId, DetailCallback callback);
     void resolveReport(String reportId, ReportAction action, String reason, ActionCallback callback);
     default void setResourceImage(Section section, String resourceId, String imageUrl,

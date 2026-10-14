@@ -129,7 +129,7 @@ service cloud.firestore {
             'id', 'sellerId', 'categoryId', 'name', 'description', 'originalPrice',
             'rescuePrice', 'unit', 'origin', 'province', 'imageUrls', 'imagePublicIds', 'averageRating',
             'reviewCount', 'status', 'createdAt', 'updatedAt', 'moderatedBy',
-            'moderatedAt', 'moderationReason', 'ratingSum', 'lastReviewId'
+            'moderatedAt', 'moderationReason', 'moderationPreviousStatus', 'ratingSum', 'lastReviewId'
           ])
           && data.id is string && data.sellerId is string
           && data.name is string
@@ -153,6 +153,7 @@ service cloud.firestore {
           && data.averageRating is number && data.averageRating >= 0 && data.averageRating <= 5
           && data.reviewCount is int && data.reviewCount >= 0
           && data.createdAt is timestamp && data.updatedAt is timestamp
+          && data.get('moderationPreviousStatus', '') in ['', 'ACTIVE', 'INACTIVE', 'SOLD_OUT']
           && get(/databases/$(database)/documents/categories/$(data.categoryId)).data.active == true
           && data.status in ['ACTIVE', 'INACTIVE', 'SOLD_OUT', 'HIDDEN'];
     }
@@ -627,22 +628,39 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validAdminCategory(data, categoryId) {
+      return data.keys().hasOnly([
+            'id', 'name', 'description', 'imageUrl', 'imagePublicId', 'active', 'displayOrder',
+            'createdAt', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
+          ])
+          && data.id == categoryId
+          && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+          && data.get('description', '') is string && data.get('description', '').size() <= 500
+          && data.imageUrl is string && data.imageUrl.size() <= 2048
+          && (data.imageUrl == '' || data.imageUrl.matches('https://res\\.cloudinary\\.com/.+'))
+          && data.get('imagePublicId', '') is string && data.get('imagePublicId', '').size() <= 300
+          && data.active is bool
+          && data.displayOrder is int && data.displayOrder >= 0 && data.displayOrder <= 10000
+          && data.get('createdAt', request.time) is timestamp
+          && data.updatedAt == request.time;
+    }
+
     match /categories/{categoryId} {
       allow get, list: if resource.data.active == true || isAdmin();
+      allow create: if isAdmin()
+          && validAdminCategory(request.resource.data, categoryId)
+          && request.resource.data.createdAt == request.time
+          && hasAdminModerationFields(request.resource.data);
       allow update: if isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'active', 'imageUrl', 'imagePublicId', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
+            'name', 'description', 'imageUrl', 'imagePublicId', 'active', 'displayOrder',
+            'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
-          && request.resource.data.active is bool
-          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imageUrl'])
-            || (request.resource.data.imageUrl is string
-              && request.resource.data.imageUrl.matches('https://res\\.cloudinary\\.com/.+')))
-          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imagePublicId'])
-            || (request.resource.data.imagePublicId is string && request.resource.data.imagePublicId.size() <= 300))
+          && validAdminCategory(request.resource.data, categoryId)
           && (request.resource.data.active == true
             || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
-      allow create, delete: if false;
+      allow delete: if false;
     }
 
     function reviewSummaryWritten(productId, reviewId) {
@@ -688,16 +706,22 @@ service cloud.firestore {
           && request.resource.data.reviewCount == resource.data.reviewCount
           && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
           && request.resource.data.get('lastReviewId', '') == resource.data.get('lastReviewId', '')
+          && request.resource.data.get('moderationPreviousStatus', '')
+              == resource.data.get('moderationPreviousStatus', '')
           && validProduct(request.resource.data)
           && hasNoCredentialFields(request.resource.data))
         || (isAdmin()
           && request.resource.data.id == resource.data.id
           && request.resource.data.sellerId == resource.data.sellerId
           && ((resource.data.status in ['ACTIVE', 'INACTIVE', 'SOLD_OUT']
-                && request.resource.data.status == 'HIDDEN')
-            || (resource.data.status == 'HIDDEN' && request.resource.data.status == 'INACTIVE'))
+                && request.resource.data.status == 'HIDDEN'
+                && request.resource.data.moderationPreviousStatus == resource.data.status)
+            || (resource.data.status == 'HIDDEN'
+                && request.resource.data.status == resource.data.get('moderationPreviousStatus', 'INACTIVE')
+                && request.resource.data.get('moderationPreviousStatus', '') == ''))
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
+            'status', 'moderatedBy', 'moderatedAt', 'moderationReason',
+            'moderationPreviousStatus', 'updatedAt'
           ])
           && validProduct(request.resource.data)
           && (request.resource.data.status != 'HIDDEN'
@@ -931,22 +955,45 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validAdminBanner(data, bannerId) {
+      return data.keys().hasOnly([
+            'id', 'title', 'imageUrl', 'imagePublicId', 'campaignId', 'displayOrder',
+            'startDate', 'endDate', 'active', 'createdAt', 'updatedAt',
+            'moderatedBy', 'moderatedAt', 'moderationReason'
+          ])
+          && data.id == bannerId
+          && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
+          && data.imageUrl is string && data.imageUrl.size() <= 2048
+          && (data.imageUrl == '' || data.imageUrl.matches('https://res\\.cloudinary\\.com/.+'))
+          && data.get('imagePublicId', '') is string && data.get('imagePublicId', '').size() <= 300
+          && data.campaignId is string && data.campaignId.size() <= 128
+          && (data.campaignId == ''
+            || get(/databases/$(database)/documents/campaigns/$(data.campaignId)).data.status == 'ACTIVE')
+          && data.displayOrder is int && data.displayOrder >= 0 && data.displayOrder <= 10000
+          && data.startDate is timestamp && data.endDate is timestamp && data.startDate < data.endDate
+          && data.active is bool
+          && (!data.active || data.imageUrl.size() > 0)
+          && data.get('createdAt', request.time) is timestamp
+          && data.updatedAt == request.time;
+    }
+
     match /banners/{bannerId} {
       allow get, list: if resource.data.active == true || isAdmin();
+      allow create: if isAdmin()
+          && validAdminBanner(request.resource.data, bannerId)
+          && request.resource.data.createdAt == request.time
+          && hasAdminModerationFields(request.resource.data);
       allow update: if isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'active', 'imageUrl', 'imagePublicId', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
+            'title', 'imageUrl', 'imagePublicId', 'campaignId', 'displayOrder',
+            'startDate', 'endDate', 'active', 'updatedAt', 'moderatedBy',
+            'moderatedAt', 'moderationReason'
           ])
-          && request.resource.data.active is bool
-          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imageUrl'])
-            || (request.resource.data.imageUrl is string
-              && request.resource.data.imageUrl.matches('https://res\\.cloudinary\\.com/.+')))
-          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imagePublicId'])
-            || (request.resource.data.imagePublicId is string && request.resource.data.imagePublicId.size() <= 300))
+          && validAdminBanner(request.resource.data, bannerId)
           && (request.resource.data.active == true
             || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
-      allow create, delete: if false;
+      allow delete: if false;
     }
 
     match /posts/{postId} {
@@ -1204,7 +1251,7 @@ service cloud.firestore {
       allow get, list: if isAdmin();
       allow create: if isAdmin()
           && request.resource.data.keys().hasOnly([
-            'adminId', 'resourceType', 'resourceId', 'fromState', 'toState', 'reason', 'createdAt'
+            'adminId', 'resourceType', 'resourceId', 'fromState', 'toState', 'reason', 'createdAt', 'reportId'
           ])
           && request.resource.data.adminId == request.auth.uid
           && request.resource.data.resourceType in [
@@ -1217,6 +1264,8 @@ service cloud.firestore {
           && request.resource.data.toState is string
           && request.resource.data.reason is string
           && request.resource.data.reason.size() <= 500
+          && request.resource.data.get('reportId', '') is string
+          && request.resource.data.get('reportId', '').size() <= 128
           && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
     }
