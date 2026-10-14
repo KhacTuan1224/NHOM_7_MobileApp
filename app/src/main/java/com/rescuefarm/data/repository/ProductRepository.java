@@ -57,6 +57,10 @@ public interface ProductRepository {
     LiveData<List<ProductBatch>> observeBatches(String productId);
     void refreshCatalog(ActionCallback callback);
     void refreshSellerProducts(String sellerId, ActionCallback callback);
+    default void refreshSellerProductPage(String sellerId, boolean reset, ActionCallback callback) {
+        refreshSellerProducts(sellerId, callback);
+    }
+    default boolean hasMoreSellerProducts(String sellerId) { return false; }
     void refreshBatches(String productId, ActionCallback callback);
     void getProduct(String productId, ProductCallback callback);
     default void getCampaignProducts(List<String> batchIds, ProductListCallback callback) {

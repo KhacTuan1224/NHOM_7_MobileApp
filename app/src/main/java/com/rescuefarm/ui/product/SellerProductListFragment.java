@@ -19,7 +19,7 @@ import com.rescuefarm.domain.model.Product;
 import java.util.List;
 
 public class SellerProductListFragment extends Fragment {
-    private ProductViewModel viewModel; private LinearLayout container;
+    private ProductViewModel viewModel; private LinearLayout container; private List<Product> currentProducts;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_seller_product_list, parent, false);
@@ -31,19 +31,27 @@ public class SellerProductListFragment extends Fragment {
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);
         viewModel.getSellerProducts().observe(getViewLifecycleOwner(), this::render);
+        viewModel.getSellerProductsHaveMore().observe(getViewLifecycleOwner(), unused -> {
+            if (currentProducts != null) render(currentProducts);
+        });
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == ProductScreenState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
             else if (value.getStatus() == ProductScreenState.Status.SAVED) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show();
-                viewModel.refreshSellerProducts();
+                viewModel.refreshSellerProductPage(true);
             }
         });
-        viewModel.refreshSellerProducts();
     }
+    @Override public void onResume() { super.onResume(); if (viewModel != null) viewModel.refreshSellerProductPage(true); }
     private void render(List<Product> products) {
+        currentProducts = products;
         container.removeAllViews(); if (products == null) return;
         for (Product product : products) container.addView(card(product));
+        if (viewModel != null && Boolean.TRUE.equals(viewModel.getSellerProductsHaveMore().getValue())) {
+            Button more = new Button(requireContext()); more.setAllCaps(false); more.setText("Tải thêm sản phẩm");
+            more.setOnClickListener(v -> viewModel.refreshSellerProductPage(false)); container.addView(more);
+        }
     }
     private View card(Product product) {
         MaterialCardView card = new MaterialCardView(requireContext());

@@ -7,6 +7,48 @@ admin.initializeApp({credential: admin.credential.cert(JSON.parse(serviceAccount
 const db = admin.firestore();
 const app = express();
 app.use(express.json({limit: "256kb"}));
+
+async function migrateSellerPaymentProfiles() {
+  const marker = db.collection("systemMigrations").doc("sellerPaymentProfilesV1");
+  if ((await marker.get()).exists) return;
+  let cursor = null;
+  while (true) {
+    let query = db.collection("sellerPublicProfiles")
+      .orderBy(admin.firestore.FieldPath.documentId()).limit(200);
+    if (cursor) query = query.startAfter(cursor);
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
+    const privateSnapshots = await Promise.all(snapshot.docs.map(doc =>
+      db.collection("sellerPaymentProfiles").doc(doc.id).get()));
+    const batch = db.batch();
+    snapshot.docs.forEach((doc, index) => {
+      const privateProfile = privateSnapshots[index];
+      const privateData = privateProfile.exists ? privateProfile.data() : {};
+      const paymentData = {
+        sellerId: doc.id,
+        bankCode: str(privateData.bankCode) || str(doc.get("bankCode")),
+        bankAccountName: str(privateData.bankAccountName) || str(doc.get("bankAccountName")),
+        bankAccountNumber: str(privateData.bankAccountNumber) || str(doc.get("bankAccountNumber")),
+        qrUrl: str(privateData.qrUrl) || str(doc.get("qrUrl")),
+        updatedAt: privateData.updatedAt || doc.get("updatedAt")
+          || admin.firestore.FieldValue.serverTimestamp()
+      };
+      if (paymentData.bankCode || paymentData.bankAccountName
+          || paymentData.bankAccountNumber || paymentData.qrUrl) {
+        batch.set(db.collection("sellerPaymentProfiles").doc(doc.id), paymentData, {merge: true});
+      }
+      batch.update(doc.ref, {
+        bankCode: admin.firestore.FieldValue.delete(),
+        bankAccountName: admin.firestore.FieldValue.delete(),
+        bankAccountNumber: admin.firestore.FieldValue.delete(),
+        qrUrl: admin.firestore.FieldValue.delete()
+      });
+    });
+    await batch.commit();
+    cursor = snapshot.docs[snapshot.docs.length - 1];
+  }
+  await marker.set({completedAt: admin.firestore.FieldValue.serverTimestamp()});
+}
 const port = Number(process.env.PORT || 3000);
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(x => x.trim()).filter(Boolean);
 app.use((req, res, next) => {
@@ -36,7 +78,9 @@ async function auth(req, roles = []) {
   return {uid: decoded.uid, role};
 }
 app.get("/health", (_, res) => res.json({ok: true}));
-const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth});
+const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth,
+  notifyNewOrder: (sellerId, orderId, title, message) => notifyCustomer(
+    sellerId, "ORDER", title, message, orderId, `${orderId}_SELLER_PENDING`)});
 app.use(commerce.router);
 app.post("/admin/dashboard", async (req, res, next) => {
   try {
@@ -123,12 +167,13 @@ app.post("/recalculate-rating", async (req, res, next) => {
 async function notifyCustomer(userId, type, title, message, referenceId, eventKey) {
   const notificationId = `${type}_${eventKey}_${userId}`.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 120);
   const notificationRef = db.collection("notifications").doc(notificationId);
-  const created = await db.runTransaction(async tx => {
+  const persistInbox = !eventKey.endsWith("_SELLER_PENDING");
+  const created = persistInbox ? await db.runTransaction(async tx => {
     if ((await tx.get(notificationRef)).exists) return false;
     tx.create(notificationRef, {id: notificationId, userId, type, title, body: message, referenceId,
       isRead: false, createdAt: admin.firestore.FieldValue.serverTimestamp()});
     return true;
-  });
+  }) : true;
   if (!created) return {duplicate: true, sent: 0};
   const devices = await db.collection("users").doc(userId).collection("devices").get();
   const tokens = devices.docs.map(d => str(d.get("token"))).filter(Boolean);
@@ -213,4 +258,9 @@ app.use((error, req, res, __) => {
     "code=", error.code || "", "message=", error.message || "", error.stack || "");
   res.status(status).json({error: status >= 500 ? "Internal server error" : error.message});
 });
-app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));
+migrateSellerPaymentProfiles().then(() => {
+  app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));
+}).catch(error => {
+  console.error("Seller payment profile migration failed; API will not start:", error);
+  process.exit(1);
+});

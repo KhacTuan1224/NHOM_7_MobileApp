@@ -69,5 +69,11 @@ public class SellerOrderListFragment extends Fragment {
             });
             container.addView(row);
         }
+        if (viewModel.hasMoreSellerOrders(sellerId)) {
+            Button more = new Button(requireContext()); more.setAllCaps(false);
+            more.setText(deliveryOnly ? "Tải thêm đơn giao hàng" : "Tải đơn cũ hơn");
+            more.setOnClickListener(unused -> viewModel.loadMoreSellerOrders(sellerId));
+            container.addView(more);
+        }
     }
 }

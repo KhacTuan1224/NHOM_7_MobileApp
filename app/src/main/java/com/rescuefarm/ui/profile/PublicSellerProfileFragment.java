@@ -38,10 +38,7 @@ public class PublicSellerProfileFragment extends Fragment {
                     description.setText(value(profile.description, "Chưa có giới thiệu cửa hàng."));
                     address.setText(value(profile.address, "Chưa cập nhật địa chỉ.")
                         + "\nPhí giao hàng được tính theo khoảng cách GPS khi đặt hàng.");
-                    String bankCode = profile.bankName, accountName = profile.accountName, accountNumber = profile.bankAccount;
-                    bank.setText(blank(bankCode) || blank(accountName) || blank(accountNumber)
-                            ? "Cửa hàng chưa cấu hình tài khoản nhận chuyển khoản."
-                            : "Chuyển khoản: " + accountName + " · " + bankCode + " · " + accountNumber);
+                    bank.setText("Thông tin chuyển khoản sẽ hiển thị an toàn trong chi tiết đơn hàng.");
                     String url = profile.avatarUrl;
                     if (!blank(url)) Glide.with(this).load(url).circleCrop().into(avatar);
                 });
