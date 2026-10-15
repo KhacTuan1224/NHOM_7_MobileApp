@@ -166,6 +166,17 @@
     <string name="product_no_sellable_batches">Hiện không có lô còn hạn và khả dụng.</string>
     <string name="product_campaign_batches_unavailable">Các lô thuộc chiến dịch này hiện không còn khả dụng.</string>
     <string name="campaign_progress_quantities_format">%1$.0f%% hoàn thành\nMục tiêu %2$.2f %6$s · Đã giải cứu %3$.2f · Đang giữ %4$.2f · Còn khả dụng %5$.2f</string>
+    <string name="campaign_rescue_now_action">Cứu trợ ngay</string>
+    <string name="campaign_target_quantity_label">Mục tiêu</string>
+    <string name="campaign_rescued_quantity_label">Đã giải cứu</string>
+    <string name="campaign_available_quantity_label">Còn khả dụng</string>
+    <string name="campaign_mode_mobile">Điểm giải cứu di động đang di chuyển</string>
+    <string name="campaign_mode_fixed">Điểm giải cứu cố định (Kho / HTX)</string>
+    <string name="campaign_distance_format">Cách vị trí của bạn: ~%1$.1f km</string>
+    <string name="campaign_distance_permission_prompt">Bật định vị để xem khoảng cách thực tế</string>
+    <string name="campaign_product_section_title">Nông sản chiến dịch</string>
+    <string name="campaign_quantity_label">Số lượng cứu trợ:</string>
+    <string name="campaign_no_batches_available">Chiến dịch hiện chưa có lô hàng khả dụng.</string>
     <string name="seller_products_action">Quản lý sản phẩm</string>
     <string name="seller_products_title">Sản phẩm của cửa hàng</string>
     <string name="seller_approval_catalog_notice">Chỉ seller đã được phê duyệt mới có thể tạo hoặc sửa sản phẩm và batch.</string>

@@ -301,6 +301,10 @@
         <deepLink app:uri="rescuefarm://campaigns/{campaignId}" />
         <action android:id="@+id/action_campaignDetailFragment_to_productDetailFragment"
             app:destination="@id/productDetailFragment" />
+        <action android:id="@+id/action_campaignDetailFragment_to_checkoutFragment"
+            app:destination="@id/checkoutFragment" />
+        <action android:id="@+id/action_campaignDetailFragment_to_cartFragment"
+            app:destination="@id/cartFragment" />
         <action android:id="@+id/action_campaignDetailFragment_to_reportFragment" app:destination="@id/reportFragment" />
     </fragment>
     <fragment android:id="@+id/sellerCampaignListFragment"
