@@ -29,7 +29,7 @@ public class CampaignViewModelTest {
     @Test public void validSubmit_reachesRepositoryAsPending() {
         FakeCampaignRepository repository = new FakeCampaignRepository();
         CampaignViewModel viewModel = new CampaignViewModel(repository, new FakeAuth(), new FakeProducts(), new FakeLocation());
-        viewModel.save("", "Campaign", "", RescueReason.OVER_SUPPLY, RescueMode.MOBILE_POINT,
+        viewModel.save("", "Campaign", "Nội dung câu chuyện giải cứu chi tiết", RescueReason.OVER_SUPPLY, RescueMode.MOBILE_POINT,
                 java.util.Collections.singletonMap("batch", 10D), "2027-01-01", "2027-01-03", "10", "106", "A", true);
         assertTrue(repository.saveCalled); assertTrue(repository.submitCalled);
         assertEquals(CampaignScreenState.Status.SAVED, viewModel.getState().getValue().getStatus());

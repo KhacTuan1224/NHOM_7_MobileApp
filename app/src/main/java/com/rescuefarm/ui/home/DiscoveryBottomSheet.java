@@ -193,16 +193,20 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
                 == PackageManager.PERMISSION_GRANTED;
         boolean coarse = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED;
-        if (fine || coarse) viewModel.requestNearbyLocation();
-        else permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+        if (fine || coarse) {
+            Toast.makeText(requireContext(), "Đang lấy vị trí hiện tại…", Toast.LENGTH_SHORT).show();
+            viewModel.requestNearbyLocation();
+        } else permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION});
     }
 
     private void onPermissions(Map<String, Boolean> values) {
         if (Boolean.TRUE.equals(values.get(Manifest.permission.ACCESS_FINE_LOCATION))
                 || Boolean.TRUE.equals(values.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
+            Toast.makeText(requireContext(), "Đang lấy vị trí hiện tại…", Toast.LENGTH_SHORT).show();
             viewModel.requestNearbyLocation();
         } else {
+            Toast.makeText(requireContext(), "Chưa có quyền vị trí.", Toast.LENGTH_SHORT).show();
             viewModel.onLocationPermissionDenied();
         }
     }

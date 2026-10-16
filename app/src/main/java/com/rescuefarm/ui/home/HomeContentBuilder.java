@@ -44,6 +44,16 @@ public final class HomeContentBuilder {
             Map<String, List<ProductBatch>> batchesByProduct, Double latitude, Double longitude,
             Date now, HomeViewState.LocationState locationState, boolean refreshing,
             String message, HomeViewState.DataFreshness freshness) {
+        return build(bannerSource, productSource, campaignSource, categorySource,
+                batchesByProduct, latitude, longitude, now, locationState, refreshing,
+                message, freshness, "");
+    }
+
+    public HomeViewState build(List<Banner> bannerSource, List<Product> productSource,
+            List<RescueCampaign> campaignSource, List<Category> categorySource,
+            Map<String, List<ProductBatch>> batchesByProduct, Double latitude, Double longitude,
+            Date now, HomeViewState.LocationState locationState, boolean refreshing,
+            String message, HomeViewState.DataFreshness freshness, String locationLabel) {
         Date safeNow = now == null ? new Date() : now;
         List<Banner> banners = new ArrayList<>();
         if (bannerSource != null) for (Banner value : bannerSource) {
@@ -113,7 +123,8 @@ public final class HomeContentBuilder {
         }
         categories.sort(Comparator.comparingInt(Category::getDisplayOrder).thenComparing(Category::getName));
         return new HomeViewState(banners, critical, mobile, fixed, endingSoon, valueProducts,
-                active, categories, distances, locationState, refreshing, message, freshness, nearExpiry);
+                active, categories, distances, locationState, refreshing, message, freshness,
+                nearExpiry, locationLabel);
     }
 
     private void refreshUrgency(RescueCampaign campaign,

@@ -37,6 +37,7 @@ public final class HomeViewState {
     private final boolean refreshing;
     private final String message;
     private final DataFreshness dataFreshness;
+    private final String locationLabel;
 
     public HomeViewState(List<Banner> banners, List<RescueCampaign> critical,
             List<RescueCampaign> nearbyMobile, List<RescueCampaign> nearbyFixed,
@@ -65,6 +66,17 @@ public final class HomeViewState {
             List<RescueCampaign> activeCampaigns, List<Category> categories,
             Map<String, Double> distances, LocationState locationState, boolean refreshing,
             String message, DataFreshness dataFreshness, List<ExpiringProduct> nearExpiry) {
+        this(banners, critical, nearbyMobile, nearbyFixed, endingSoon, valueProducts,
+                activeCampaigns, categories, distances, locationState, refreshing, message,
+                dataFreshness, nearExpiry, "");
+    }
+    public HomeViewState(List<Banner> banners, List<RescueCampaign> critical,
+            List<RescueCampaign> nearbyMobile, List<RescueCampaign> nearbyFixed,
+            List<RescueCampaign> endingSoon, List<Product> valueProducts,
+            List<RescueCampaign> activeCampaigns, List<Category> categories,
+            Map<String, Double> distances, LocationState locationState, boolean refreshing,
+            String message, DataFreshness dataFreshness, List<ExpiringProduct> nearExpiry,
+            String locationLabel) {
         this.banners = copy(banners); this.critical = copy(critical);
         this.nearbyMobile = copy(nearbyMobile); this.nearbyFixed = copy(nearbyFixed);
         this.endingSoon = copy(endingSoon); this.valueProducts = copy(valueProducts);
@@ -74,6 +86,7 @@ public final class HomeViewState {
         this.locationState = locationState; this.refreshing = refreshing;
         this.message = message == null ? "" : message;
         this.dataFreshness = dataFreshness == null ? DataFreshness.STALE : dataFreshness;
+        this.locationLabel = locationLabel == null ? "" : locationLabel;
     }
     private static <T> List<T> copy(List<T> values) {
         return Collections.unmodifiableList(new ArrayList<>(values));
@@ -94,4 +107,5 @@ public final class HomeViewState {
     public boolean isRefreshing() { return refreshing; }
     public String getMessage() { return message; }
     public DataFreshness getDataFreshness() { return dataFreshness; }
+    public String getLocationLabel() { return locationLabel == null ? "" : locationLabel; }
 }
