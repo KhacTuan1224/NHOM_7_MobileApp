@@ -75,15 +75,13 @@ public class PostDetailFragment extends Fragment {
         viewModel.loadPost(postId);
     }
     private void applyActorActions(View root) {
-        boolean readOnly = ActorUiPolicy.isSellerReadOnly(this);
-        int visibility = readOnly ? View.GONE : View.VISIBLE;
-        root.findViewById(R.id.likeButton).setVisibility(visibility);
-        root.findViewById(R.id.supportButton).setVisibility(visibility);
-        root.findViewById(R.id.careButton).setVisibility(visibility);
-        commentInput.setVisibility(visibility);
-        root.findViewById(R.id.sendCommentButton).setVisibility(visibility);
-        root.findViewById(R.id.reportPostButton).setVisibility(visibility);
-        setInteractionsEnabled(root, publishedPost && !readOnly);
+        root.findViewById(R.id.likeButton).setVisibility(View.GONE);
+        root.findViewById(R.id.supportButton).setVisibility(View.GONE);
+        root.findViewById(R.id.careButton).setVisibility(View.GONE);
+        commentInput.setVisibility(View.GONE);
+        root.findViewById(R.id.sendCommentButton).setVisibility(View.GONE);
+        root.findViewById(R.id.reportPostButton).setVisibility(View.GONE);
+        setInteractionsEnabled(root, false);
     }
     private void renderPost(View root, Post post) {
         ((TextView) root.findViewById(R.id.postDetailTitle)).setText(post.getTitle());
@@ -108,18 +106,6 @@ public class PostDetailFragment extends Fragment {
             boolean deleted = comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.DELETED;
             row.addView(textView(deleted ? "Bình luận đã được xóa" : comment.getContent()
                     + (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED ? " · đã chỉnh sửa" : "")));
-            if (!deleted && comment.getUserId().equals(viewModel.currentUserId())
-                    && !ActorUiPolicy.isSellerReadOnly(this)) {
-                LinearLayout actions = new LinearLayout(requireContext());
-                com.google.android.material.button.MaterialButton edit = new com.google.android.material.button.MaterialButton(requireContext());
-                edit.setText("Sửa"); edit.setOnClickListener(v -> editComment(comment));
-                com.google.android.material.button.MaterialButton delete = new com.google.android.material.button.MaterialButton(requireContext());
-                delete.setText("Xóa"); delete.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                        .setTitle("Xóa bình luận?").setMessage("Nội dung sẽ được gỡ khỏi bài viết.")
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .setPositiveButton("Xóa", (dialog, which) -> viewModel.deleteComment(comment.getId())).show());
-                actions.addView(edit); actions.addView(delete); row.addView(actions);
-            }
             comments.addView(row);
         }
     }

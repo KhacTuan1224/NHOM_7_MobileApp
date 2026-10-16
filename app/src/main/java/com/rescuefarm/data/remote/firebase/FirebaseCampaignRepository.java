@@ -204,8 +204,11 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         DocumentReference reference = clean(source.getId()).isEmpty()
                 ? firestore.collection(CAMPAIGNS).document()
                 : firestore.collection(CAMPAIGNS).document(source.getId());
+        List<String> previousImages = new ArrayList<>();
         firestore.runTransaction(transaction -> {
             DocumentSnapshot existing = transaction.get(reference);
+            previousImages.clear();
+            if (existing.exists()) previousImages.addAll(strings(existing.get("imageUrls")));
             if (existing.exists() && !sellerId.equals(existing.getString("sellerId"))) {
                 throw new IllegalStateException("FORBIDDEN");
             }
@@ -269,7 +272,10 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                         "updatedAt", FieldValue.serverTimestamp());
             }
             return saved;
-        }).addOnSuccessListener(saved -> { cache(saved); callback.onSuccess(saved); })
+        }).addOnSuccessListener(saved -> {
+            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages, saved.getImageUrls());
+            cache(saved); callback.onSuccess(saved);
+        })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
@@ -360,7 +366,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
 
     private RescueCampaign mapCampaign(DocumentSnapshot value) {
         try {
-            return RescueCampaign.restore(value.getId(), value.getString("sellerId"),
+            RescueCampaign campaign = RescueCampaign.restore(value.getId(), value.getString("sellerId"),
                     value.getString("title"), value.getString("description"),
                     enumValue(RescueReason.class, value.getString("rescueReason"), RescueReason.OVER_SUPPLY),
                     enumValue(UrgencyLevel.class, value.getString("urgencyLevel"), UrgencyLevel.NORMAL),
@@ -373,6 +379,9 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                     date(value, "locationUpdatedAt"), Boolean.TRUE.equals(value.getBoolean("locationSharingEnabled")),
                     value.getString("locationName"),
                     enumValue(CampaignStatus.class, value.getString("status"), CampaignStatus.DRAFT));
+            campaign.setStoryMedia(strings(value.get("imageUrls")), strings(value.get("imagePublicIds")));
+            campaign.setViewCount(longValue(value, "viewCount"));
+            return campaign;
         } catch (IllegalArgumentException | IllegalStateException error) { return null; }
     }
 
@@ -400,7 +409,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
 
     private RescueCampaign copyCampaign(String id, String sellerId, RescueCampaign source,
             CampaignStatus status, RescueCampaign previous) {
-        return RescueCampaign.restore(id, sellerId, source.getTitle(), source.getDescription(),
+        RescueCampaign result = RescueCampaign.restore(id, sellerId, source.getTitle(), source.getDescription(),
                 source.getRescueReason(), source.getUrgencyLevel(), source.getRescueMode(),
                 source.getBatchTargets(), source.getTargetQuantity(),
                 previous == null ? 0D : previous.getReservedQuantity(),
@@ -411,6 +420,9 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                 previous == null ? null : previous.getLocationUpdatedAt(),
                 previous != null && source.getRescueMode() == RescueMode.MOBILE_POINT
                         && previous.isLocationSharingEnabled(), source.getLocationName(), status);
+        result.setStoryMedia(source.getImageUrls(), source.getImagePublicIds());
+        result.setViewCount(previous == null ? 0L : previous.getViewCount());
+        return result;
     }
 
     private ProductBatch copyBatch(ProductBatch source, long version) {
@@ -423,7 +435,9 @@ public class FirebaseCampaignRepository implements CampaignRepository {
     private Map<String, Object> campaignMap(RescueCampaign value) {
         Map<String, Object> data = new HashMap<>(); data.put("id", value.getId());
         data.put("sellerId", value.getSellerId()); data.put("title", value.getTitle());
-        data.put("description", value.getDescription()); data.put("rescueReason", value.getRescueReason().name());
+        data.put("description", value.getDescription()); data.put("imageUrls", value.getImageUrls());
+        data.put("imagePublicIds", value.getImagePublicIds()); data.put("viewCount", value.getViewCount());
+        data.put("rescueReason", value.getRescueReason().name());
         data.put("urgencyLevel", value.getUrgencyLevel().name()); data.put("rescueMode", value.getRescueMode().name());
         data.put("batchTargets", value.getBatchTargets()); data.put("targetQuantity", value.getTargetQuantity());
         data.put("reservedQuantity", value.getReservedQuantity()); data.put("rescuedQuantity", value.getRescuedQuantity());
@@ -442,6 +456,13 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         data.put("initialQuantity", value.getInitialQuantity()); data.put("availableQuantity", value.getAvailableQuantity());
         data.put("reservedQuantity", value.getReservedQuantity()); data.put("soldQuantity", value.getSoldQuantity());
         data.put("status", value.getStatus().name()); data.put("inventoryVersion", value.getInventoryVersion()); return data;
+    }
+
+    private List<String> strings(Object raw) {
+        List<String> result = new ArrayList<>();
+        if (raw instanceof List<?>) for (Object item : (List<?>) raw)
+            if (item instanceof String && !((String) item).trim().isEmpty()) result.add(((String) item).trim());
+        return result;
     }
 
     private void fallback(String id, CampaignCallback callback) {

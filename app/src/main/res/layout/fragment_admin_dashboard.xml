@@ -23,8 +23,6 @@
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_sellers_title" />
         <Button android:id="@+id/adminUsersButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_users_title" />
-        <Button android:id="@+id/adminPostsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_posts_title" />
         <Button android:id="@+id/adminProductsButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_products_title" />
         <Button android:id="@+id/adminCampaignsButton" android:layout_width="match_parent"

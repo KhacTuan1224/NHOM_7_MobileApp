@@ -63,7 +63,6 @@ public class SellerDashboardFragment extends Fragment {
         bind(view, R.id.dashboardPromotionsButton, "promotions");
         bind(view, R.id.dashboardCampaignsButton, "campaigns");
         bind(view, R.id.dashboardMobileButton, "mobile");
-        bind(view, R.id.dashboardPostsButton, "posts");
         bind(view, R.id.dashboardOrdersButton, "orders");
         bind(view, R.id.dashboardShipmentsButton, "shipments");
         view.findViewById(R.id.dashboardStatisticsButton).setOnClickListener(unused ->
@@ -86,8 +85,6 @@ public class SellerDashboardFragment extends Fragment {
             action = R.id.action_sellerDashboardFragment_to_sellerProductListFragment;
         else if (destination == SellerRoutePolicy.Destination.CAMPAIGNS)
             action = R.id.action_sellerDashboardFragment_to_sellerCampaignListFragment;
-        else if (destination == SellerRoutePolicy.Destination.POSTS)
-            action = R.id.action_sellerDashboardFragment_to_sellerPostListFragment;
         else if (destination == SellerRoutePolicy.Destination.ORDERS) {
             Bundle args = new Bundle(); args.putBoolean("deliveryOnly", "shipments".equals(key));
             Navigation.findNavController(requireView()).navigate(
@@ -104,15 +101,14 @@ public class SellerDashboardFragment extends Fragment {
                 || value.getStatus() == SellerDashboardState.Status.EMPTY;
         for (int id : new int[]{R.id.dashboardProductsButton, R.id.dashboardBatchesButton,
                 R.id.dashboardPromotionsButton, R.id.dashboardCampaignsButton, R.id.dashboardMobileButton,
-                R.id.dashboardPostsButton, R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
+                R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
                 R.id.dashboardStatisticsButton}) requireView().findViewById(id).setEnabled(enabled);
         if (value.getSnapshot() == null) { stats.setText(""); analytics.setText(""); recent.removeAllViews(); return; }
         SellerDashboardSnapshot snapshot = value.getSnapshot();
         NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         stats.setText(getString(R.string.seller_dashboard_stats_format, snapshot.getProducts(),
                 snapshot.getActiveProducts(), snapshot.getCampaigns(), snapshot.getActiveCampaigns(),
-                snapshot.getMobileCampaigns(), snapshot.getPosts(), snapshot.getPendingPosts(),
-                snapshot.getOrders(), snapshot.getPendingOrders(), snapshot.getDeliveryOrders(),
+                snapshot.getMobileCampaigns(), snapshot.getOrders(), snapshot.getPendingOrders(), snapshot.getDeliveryOrders(),
                 snapshot.getPromotions(), currency.format(snapshot.getRevenue()), snapshot.getRescuedQuantity()));
         String[] periods = getResources().getStringArray(R.array.seller_stats_periods);
         String period = periods[Math.min(periodSpinner.getSelectedItemPosition(), periods.length - 1)];

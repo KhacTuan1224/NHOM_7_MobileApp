@@ -32,8 +32,6 @@
             android:layout_height="@dimen/touch_target_min" android:text="@string/seller_campaigns_action" />
         <Button android:id="@+id/dashboardMobileButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/mobile_rescue_action" />
-        <Button android:id="@+id/dashboardPostsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/seller_posts_action" />
         <Button android:id="@+id/dashboardOrdersButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/seller_orders_action" />
         <Button android:id="@+id/dashboardShipmentsButton" android:layout_width="match_parent"
