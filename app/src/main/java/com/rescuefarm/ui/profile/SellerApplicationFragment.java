@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.textfield.TextInputEditText;
+import com.rescuefarm.ui.common.VietnamAddressView;
 import com.rescuefarm.R;
 import com.rescuefarm.domain.enums.ApplicationStatus;
 import com.rescuefarm.domain.model.SellerApplication;
@@ -22,7 +23,8 @@ import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerApplicationFragment extends Fragment {
     private ProfileViewModel viewModel; private View form, submit;
-    private TextView status; private TextInputEditText representative, shop, address, proof;
+    private TextView status; private TextInputEditText representative, shop, proof;
+    private VietnamAddressView address;
     private boolean dirty, binding;
     private TextView proofStatus;
     private View proofUploadButton;
@@ -53,10 +55,13 @@ public class SellerApplicationFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) { }
         };
         representative.addTextChangedListener(watcher); shop.addTextChangedListener(watcher);
-        address.addTextChangedListener(watcher); proof.addTextChangedListener(watcher);
+        address.setOnAddressChangedListener(() -> { if (!binding) dirty = true; });
+        proof.addTextChangedListener(watcher);
         viewModel.observeSellerApplication().observe(getViewLifecycleOwner(), this::renderApplication);
-        submit.setOnClickListener(v -> viewModel.submitSellerApplication(text(representative), text(shop),
-                text(address), text(proof)));
+        submit.setOnClickListener(v -> {
+            if (address.validate()) viewModel.submitSellerApplication(text(representative), text(shop),
+                    address.formattedAddress(), text(proof));
+        });
         viewModel.loadSellerApplication();
     }
     private void render(ProfileScreenState state) {
@@ -74,7 +79,7 @@ public class SellerApplicationFragment extends Fragment {
             status.setText(R.string.application_not_submitted);
             if (!dirty) {
                 binding = true;
-                representative.setText(""); shop.setText(""); address.setText(""); proof.setText("");
+                representative.setText(""); shop.setText(""); address.clear(); proof.setText("");
                 proofStatus.setText(R.string.no_image_selected);
                 binding = false;
             }
@@ -84,7 +89,7 @@ public class SellerApplicationFragment extends Fragment {
             if (editable && !dirty) {
                 binding = true;
                 representative.setText(application.getRepresentativeName()); shop.setText(application.getShopName());
-                address.setText(application.getAddress()); proof.setText(application.getProofImageUrl());
+                address.setFormattedAddress(application.getAddress()); proof.setText(application.getProofImageUrl());
                 proofStatus.setText(application.getProofImageUrl() == null || application.getProofImageUrl().isEmpty()
                         ? R.string.no_image_selected : R.string.image_uploaded_status);
                 binding = false;

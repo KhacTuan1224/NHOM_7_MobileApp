@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, collection, query, where, setDoc,
-  deleteField, runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
+  deleteDoc, deleteField, runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 
 let env;
 const now = Date.now();
@@ -54,6 +54,78 @@ async function seed(values) {
       setDoc(doc(context.firestore(), path), value)));
   });
 }
+
+function addressData(owner, id = 'home', isDefault = false) {
+  return { id, customerId: owner, receiverName: 'Người nhận', receiverPhone: '0912345678',
+    province: 'Thành phố Hà Nội', district: 'Quận Ba Đình', ward: 'Phường Phúc Xá',
+    street: '12 Đường Test', latitude: 21.04, longitude: 105.84, type: 'HOME',
+    isDefault, updatedAt: serverTimestamp() };
+}
+
+test('all three active roles can manage only their own private addresses', async () => {
+  for (const owner of ['customer-a', 'seller', 'admin']) {
+    const db = env.authenticatedContext(owner).firestore();
+    const ref = doc(db, `users/${owner}/addresses/home`);
+    await assertSucceeds(setDoc(ref, addressData(owner)));
+    await assertSucceeds(getDoc(ref));
+    assert.equal((await assertSucceeds(getDocs(collection(db, `users/${owner}/addresses`)))).size, 1);
+    await assertSucceeds(updateDoc(ref, { street: '34 Đường Mới', updatedAt: serverTimestamp() }));
+    for (const other of ['customer-a', 'seller', 'admin'].filter(id => id !== owner)) {
+      const foreign = env.authenticatedContext(other).firestore();
+      const foreignRef = doc(foreign, `users/${owner}/addresses/home`);
+      await assertFails(getDoc(foreignRef));
+      await assertFails(getDocs(collection(foreign, `users/${owner}/addresses`)));
+      await assertFails(updateDoc(foreignRef, { street: 'Unauthorized', updatedAt: serverTimestamp() }));
+      await assertFails(setDoc(doc(foreign, `users/${owner}/addresses/other`), addressData(owner, 'other')));
+      await assertFails(deleteDoc(foreignRef));
+    }
+    await assertFails(updateDoc(ref, { customerId: 'customer-b', updatedAt: serverTimestamp() }));
+    await assertSucceeds(deleteDoc(ref));
+  }
+});
+
+test('address permissions reject guests, inactive users and forged roles', async () => {
+  for (const role of ['CUSTOMER', 'SELLER', 'ADMIN', 'UNKNOWN']) {
+    const owner = `disabled-${role}`;
+    await seed({ [`users/${owner}`]: { role, status: role === 'UNKNOWN' ? 'ACTIVE' : 'BLOCKED' } });
+    const db = env.authenticatedContext(owner).firestore();
+    await assertFails(setDoc(doc(db, `users/${owner}/addresses/home`), addressData(owner)));
+    await assertFails(getDocs(collection(db, `users/${owner}/addresses`)));
+  }
+  const guest = env.unauthenticatedContext().firestore();
+  await assertFails(setDoc(doc(guest, 'users/customer-a/addresses/home'), addressData('customer-a')));
+  await assertFails(getDocs(collection(guest, 'users/customer-a/addresses')));
+});
+
+test('default addresses can be switched atomically by every role and cannot be deleted', async () => {
+  for (const [owner, role] of [['customer-a', 'CUSTOMER'], ['seller', 'SELLER'], ['admin', 'ADMIN']]) {
+    await seed({ [`users/${owner}`]: {
+      id: owner, email: `${owner}@example.com`, fullName: 'Test Owner', phone: '', avatarUrl: '',
+      role, status: 'ACTIVE', ...(role === 'SELLER' ? { sellerStatus: 'APPROVED' } : {}),
+      latitude: 0, longitude: 0, createdAt: past, updatedAt: past
+    } });
+    const db = env.authenticatedContext(owner).firestore();
+    const user = doc(db, `users/${owner}`);
+    const home = doc(db, `users/${owner}/addresses/home`);
+    const work = doc(db, `users/${owner}/addresses/work`);
+    const first = writeBatch(db);
+    first.set(home, addressData(owner, 'home', true));
+    first.update(user, { defaultAddressId: 'home', updatedAt: serverTimestamp() });
+    await assertSucceeds(first.commit());
+    await assertSucceeds(setDoc(work, addressData(owner, 'work')));
+    await assertFails(deleteDoc(home));
+    await assertSucceeds(runTransaction(db, async tx => {
+      await tx.get(user); await tx.get(work);
+      tx.update(home, { isDefault: false, updatedAt: serverTimestamp() });
+      tx.update(work, { isDefault: true, updatedAt: serverTimestamp() });
+      tx.update(user, { defaultAddressId: 'work', updatedAt: serverTimestamp() });
+    }));
+    assert.equal((await getDoc(home)).data().isDefault, false);
+    assert.equal((await getDoc(work)).data().isDefault, true);
+    await assertSucceeds(deleteDoc(home));
+    await assertFails(deleteDoc(work));
+  }
+});
 
 test('active customer can check a missing order; guest and blocked customer cannot', async () => {
   const db = env.authenticatedContext('customer-a').firestore();

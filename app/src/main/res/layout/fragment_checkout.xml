@@ -41,6 +41,7 @@
 
         <Spinner android:id="@+id/checkoutSavedAddressSpinner" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:visibility="gone"
+            android:contentDescription="@string/checkout_saved_address_label"
             android:layout_marginBottom="8dp" />
         
         <EditText 
@@ -62,17 +63,11 @@
             android:padding="12dp"
             android:layout_marginBottom="8dp" />
         
-        <EditText 
-            android:id="@+id/checkoutAddress" 
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content" 
-            android:hint="@string/receiver_address_hint"
-            android:background="@color/rescue_surface"
-            android:padding="12dp"
-            android:minLines="2"
-            android:layout_marginBottom="8dp" />
+        <com.rescuefarm.ui.common.VietnamAddressView android:id="@+id/checkoutAddress" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <TextView android:id="@+id/checkoutLocationHint" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_location_hint" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/checkoutUseLocation" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_location_action" />
         
-        <LinearLayout
+        <LinearLayout android:id="@+id/checkoutCoordinates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"

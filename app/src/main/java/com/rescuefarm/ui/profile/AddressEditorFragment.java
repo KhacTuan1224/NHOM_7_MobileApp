@@ -23,11 +23,13 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
 import com.rescuefarm.domain.enums.AddressType;
+import com.rescuefarm.ui.common.VietnamAddressView;
 import java.util.Map;
 
 public class AddressEditorFragment extends Fragment {
     private ProfileViewModel viewModel;
-    private TextInputEditText name, phone, province, district, ward, street;
+    private TextInputEditText name, phone;
+    private VietnamAddressView address;
     private RadioGroup typeGroup; private CheckBox defaultCheck; private TextView locationText;
     private String id = ""; private double latitude, longitude;
     private boolean dirty, binding;
@@ -40,8 +42,7 @@ public class AddressEditorFragment extends Fragment {
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         name = view.findViewById(R.id.receiverNameInput); phone = view.findViewById(R.id.receiverPhoneInput);
-        province = view.findViewById(R.id.provinceInput); district = view.findViewById(R.id.districtInput);
-        ward = view.findViewById(R.id.wardInput); street = view.findViewById(R.id.streetInput);
+        address = view.findViewById(R.id.addressForm);
         typeGroup = view.findViewById(R.id.addressTypeGroup); defaultCheck = view.findViewById(R.id.defaultAddressCheck);
         locationText = view.findViewById(R.id.addressLocationText);
         readArguments();
@@ -56,24 +57,26 @@ public class AddressEditorFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) { }
         };
         name.addTextChangedListener(watcher); phone.addTextChangedListener(watcher);
-        province.addTextChangedListener(watcher); district.addTextChangedListener(watcher);
-        ward.addTextChangedListener(watcher); street.addTextChangedListener(watcher);
+        address.setOnAddressChangedListener(() -> {
+            if (!binding) { dirty = true; latitude = 0; longitude = 0; showCoordinates(); }
+        });
         defaultCheck.setOnCheckedChangeListener((button, checked) -> { if (!binding) dirty = true; });
         typeGroup.setOnCheckedChangeListener((group, checkedId) -> { if (!binding) dirty = true; });
         if (!id.isEmpty()) viewModel.observeAddress(id).observe(getViewLifecycleOwner(), value -> {
             if (value != null && !dirty) populate(value);
         });
         view.findViewById(R.id.useAddressLocationButton).setOnClickListener(v -> requestLocation());
-        view.findViewById(R.id.saveAddressButton).setOnClickListener(v -> viewModel.saveAddress(
-                id, text(name), text(phone), text(province), text(district), text(ward), text(street),
-                latitude, longitude, selectedType(), defaultCheck.isChecked()));
+        view.findViewById(R.id.saveAddressButton).setOnClickListener(v -> {
+            if (!address.validate()) return;
+            viewModel.saveAddress(id, text(name), text(phone), address.province(), address.district(),
+                    address.ward(), address.street(), latitude, longitude, selectedType(), defaultCheck.isChecked());
+        });
     }
 
     private void populate(com.rescuefarm.domain.model.Address value) {
         binding = true;
         name.setText(value.getReceiverName()); phone.setText(value.getReceiverPhone());
-        province.setText(value.getProvince()); district.setText(value.getDistrict());
-        ward.setText(value.getWard()); street.setText(value.getStreet());
+        address.setAddress(value.getProvince(), value.getDistrict(), value.getWard(), value.getStreet());
         latitude = value.getLatitude(); longitude = value.getLongitude();
         defaultCheck.setChecked(value.isDefault());
         if (value.getType() == AddressType.WORK) typeGroup.check(R.id.addressTypeWork);
@@ -86,9 +89,9 @@ public class AddressEditorFragment extends Fragment {
     private void readArguments() {
         Bundle args = getArguments(); if (args == null) return;
         id = safe(args.getString("id")); name.setText(args.getString("receiverName"));
-        phone.setText(args.getString("receiverPhone")); province.setText(args.getString("province"));
-        district.setText(args.getString("district")); ward.setText(args.getString("ward"));
-        street.setText(args.getString("street")); latitude = args.getDouble("latitude");
+        phone.setText(args.getString("receiverPhone"));
+        address.setAddress(args.getString("province"), args.getString("district"), args.getString("ward"), args.getString("street"));
+        latitude = args.getDouble("latitude");
         longitude = args.getDouble("longitude"); defaultCheck.setChecked(args.getBoolean("isDefault"));
         String type = args.getString("type");
         if (AddressType.WORK.name().equals(type)) typeGroup.check(R.id.addressTypeWork);
@@ -99,9 +102,8 @@ public class AddressEditorFragment extends Fragment {
         if (state.getStatus() == ProfileScreenState.Status.LOCATION) {
             latitude = state.getLatitude(); longitude = state.getLongitude(); showCoordinates();
             if (state.getGeocodedAddress() != null) {
-                province.setText(state.getGeocodedAddress().getProvince());
-                district.setText(state.getGeocodedAddress().getDistrict());
-                ward.setText(state.getGeocodedAddress().getWard()); street.setText(state.getGeocodedAddress().getStreet());
+                address.setAddress(state.getGeocodedAddress().getProvince(), state.getGeocodedAddress().getDistrict(),
+                        state.getGeocodedAddress().getWard(), state.getGeocodedAddress().getStreet());
             }
             if (state.getMessage() != null) {
                 Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_LONG).show();
@@ -136,5 +138,12 @@ public class AddressEditorFragment extends Fragment {
     }
     private void showCoordinates() { locationText.setText(getString(R.string.coordinates_format, latitude, longitude)); }
     private static String text(TextInputEditText input) { return input.getText() == null ? "" : input.getText().toString(); }
+    @Override public void onViewStateRestored(@Nullable Bundle state) {
+        super.onViewStateRestored(state);
+        if (state != null) { dirty = true; latitude = state.getDouble("latitude"); longitude = state.getDouble("longitude"); showCoordinates(); }
+    }
+    @Override public void onSaveInstanceState(@NonNull Bundle state) {
+        super.onSaveInstanceState(state); state.putDouble("latitude", latitude); state.putDouble("longitude", longitude);
+    }
     private static String safe(String value) { return value == null ? "" : value; }
 }

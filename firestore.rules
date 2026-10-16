@@ -16,6 +16,12 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/users/$(userId)).data.status == 'ACTIVE';
     }
 
+    function canManageOwnAddresses(userId) {
+      return isOwner(userId)
+          && get(/databases/$(database)/documents/users/$(userId)).data.status == 'ACTIVE'
+          && get(/databases/$(database)/documents/users/$(userId)).data.role in ['CUSTOMER', 'SELLER', 'ADMIN'];
+    }
+
     function isApprovedSeller(userId) {
       return hasRole(userId, 'SELLER')
           && get(/databases/$(database)/documents/users/$(userId)).data.sellerStatus == 'APPROVED';
@@ -529,8 +535,8 @@ service cloud.firestore {
       allow delete: if false;
 
       match /addresses/{addressId} {
-        allow get, list: if hasRole(userId, 'CUSTOMER');
-        allow create: if hasRole(userId, 'CUSTOMER')
+        allow get, list: if canManageOwnAddresses(userId);
+        allow create: if canManageOwnAddresses(userId)
             && request.resource.data.keys().hasOnly([
               'id', 'customerId', 'receiverName', 'receiverPhone', 'province',
               'district', 'ward', 'street', 'latitude', 'longitude', 'type',
@@ -540,7 +546,7 @@ service cloud.firestore {
             && validAddress(request.resource.data, userId)
             && request.resource.data.updatedAt == request.time
             && hasNoCredentialFields(request.resource.data);
-        allow update: if hasRole(userId, 'CUSTOMER')
+        allow update: if canManageOwnAddresses(userId)
             && request.resource.data.keys().hasOnly([
               'id', 'customerId', 'receiverName', 'receiverPhone', 'province',
               'district', 'ward', 'street', 'latitude', 'longitude', 'type',
@@ -551,7 +557,7 @@ service cloud.firestore {
             && validAddress(request.resource.data, userId)
             && request.resource.data.updatedAt == request.time
             && hasNoCredentialFields(request.resource.data);
-        allow delete: if hasRole(userId, 'CUSTOMER') && resource.data.isDefault == false;
+        allow delete: if canManageOwnAddresses(userId) && resource.data.isDefault == false;
       }
       match /devices/{deviceId} {
         allow get, list: if hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER');

@@ -111,7 +111,7 @@ public class ProfileFragment extends Fragment {
                     requireContext().getColor(R.color.rescue_primary)));
         }
         roleView.setText(user.getRole().name());
-        addressButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
+        addressButton.setVisibility(View.VISIBLE);
         sellerButton.setVisibility(user.getRole() == UserRole.SELLER ? View.VISIBLE : View.GONE);
         favoritesButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         if (user instanceof Seller) {

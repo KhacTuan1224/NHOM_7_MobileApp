@@ -59,6 +59,7 @@ public final class FirebaseStorefrontRepository implements com.rescuefarm.data.r
         Map<String,Object> privateFields = new java.util.HashMap<>();
         for (String field : new String[]{"shopName", "shopDescription", "address", "bankCode", "bankAccountName", "bankAccountNumber"})
             privateFields.put(field, data.get(field));
+        privateFields.put("latitude", value.latitude); privateFields.put("longitude", value.longitude);
         privateFields.put("updatedAt", FieldValue.serverTimestamp());
         batch.update(db.collection("users").document(value.sellerId), privateFields);
         batch.commit()

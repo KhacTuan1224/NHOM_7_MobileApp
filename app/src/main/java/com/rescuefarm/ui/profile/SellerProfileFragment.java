@@ -28,12 +28,14 @@ import com.bumptech.glide.Glide;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
+import com.rescuefarm.ui.common.VietnamAddressView;
 import java.util.Map;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerProfileFragment extends Fragment {
-    private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput, addressInput,
+    private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput,
             bankCodeInput, bankAccountNameInput, bankAccountNumberInput, latitudeInput, longitudeInput;
+    private VietnamAddressView addressInput;
     private ImageView sellerAvatarView;
     private ProfileViewModel viewModel;
     private TextView locationStatus;
@@ -91,9 +93,10 @@ public class SellerProfileFragment extends Fragment {
                 Navigation.createNavigateOnClickListener(
                         R.id.action_sellerProfileFragment_to_sellerOrderListFragment));
         view.findViewById(R.id.saveSellerProfileButton).setOnClickListener(v -> {
+            if (!addressInput.validate()) return;
             try {
                 viewModel.updateSellerProfile(text(representativeInput), text(shopNameInput),
-                        text(descriptionInput), text(avatarInput), text(addressInput),
+                        text(descriptionInput), text(avatarInput), addressInput.formattedAddress(),
                         text(bankCodeInput), text(bankAccountNameInput), text(bankAccountNumberInput),
                         coordinate(latitudeInput, true), coordinate(longitudeInput, false));
             } catch (IllegalArgumentException error) {
@@ -152,7 +155,9 @@ public class SellerProfileFragment extends Fragment {
         shopNameInput.addTextChangedListener(watcher);
         descriptionInput.addTextChangedListener(watcher);
         avatarInput.addTextChangedListener(watcher);
-        addressInput.addTextChangedListener(watcher);
+        addressInput.setOnAddressChangedListener(() -> {
+            if (!binding) { dirty = true; latitudeInput.setText(""); longitudeInput.setText(""); }
+        });
         bankCodeInput.addTextChangedListener(watcher); bankAccountNameInput.addTextChangedListener(watcher);
         bankAccountNumberInput.addTextChangedListener(watcher); latitudeInput.addTextChangedListener(watcher);
         longitudeInput.addTextChangedListener(watcher);
@@ -194,7 +199,7 @@ public class SellerProfileFragment extends Fragment {
                     address.append(part.trim());
                 }
             }
-            if (address.length() > 0) addressInput.setText(address.toString());
+            if (address.length() > 0) addressInput.setAddress(province, district, ward, street);
         }
         binding = false;
         dirty = true;
@@ -217,7 +222,7 @@ public class SellerProfileFragment extends Fragment {
         avatarInput.setText(seller.getShopAvatarUrl());
         avatarUploadStatus.setText(seller.getShopAvatarUrl() == null || seller.getShopAvatarUrl().trim().isEmpty()
                 ? R.string.no_shop_avatar_selected : R.string.shop_avatar_saved_status);
-        addressInput.setText(seller.getAddress());
+        addressInput.setFormattedAddress(seller.getAddress());
         bankCodeInput.setText(seller.getBankCode()); bankAccountNameInput.setText(seller.getBankAccountName());
         bankAccountNumberInput.setText(seller.getBankAccountNumber());
         latitudeInput.setText(seller.getLatitude() == 0D ? "" : String.valueOf(seller.getLatitude()));

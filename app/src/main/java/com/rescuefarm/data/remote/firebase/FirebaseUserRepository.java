@@ -245,7 +245,8 @@ public class FirebaseUserRepository implements UserRepository {
             if (!owner.exists() || !next.exists()) throw new IllegalStateException("ADDRESS_NOT_FOUND");
             String oldDefaultId = owner.getString("defaultAddressId");
             if (oldDefaultId != null && !oldDefaultId.isEmpty() && !oldDefaultId.equals(addressId)) {
-                transaction.update(userRef.collection(ADDRESSES).document(oldDefaultId), "isDefault", false);
+                transaction.update(userRef.collection(ADDRESSES).document(oldDefaultId),
+                        "isDefault", false, "updatedAt", FieldValue.serverTimestamp());
             }
             transaction.update(nextRef, "isDefault", true, "updatedAt", FieldValue.serverTimestamp());
             transaction.update(userRef, "defaultAddressId", addressId,

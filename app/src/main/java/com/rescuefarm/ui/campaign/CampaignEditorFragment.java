@@ -26,6 +26,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
+import com.rescuefarm.ui.common.VietnamAddressView;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.model.ProductBatch;
@@ -42,7 +43,8 @@ import java.util.UUID;
 public class CampaignEditorFragment extends Fragment {
     private String id = "";
     private CampaignViewModel viewModel;
-    private TextInputEditText title, description, start, end, latitude, longitude, locationName;
+    private TextInputEditText title, description, start, end, latitude, longitude;
+    private VietnamAddressView locationName;
     private Spinner reason, mode;
     private LinearLayout batchContainer;
     private TextView batchLoading;
@@ -102,7 +104,10 @@ public class CampaignEditorFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) { }
         };
         for (TextInputEditText input : new TextInputEditText[]{title, description, start, end,
-                latitude, longitude, locationName}) input.addTextChangedListener(watcher);
+                latitude, longitude}) input.addTextChangedListener(watcher);
+        locationName.setOnAddressChangedListener(() -> {
+            if (!binding) { dirty = true; latitude.setText(""); longitude.setText(""); }
+        });
         installSpinnerDirtyListener(reason);
         installSpinnerDirtyListener(mode);
         viewModel.getBatchOptions().observe(getViewLifecycleOwner(), this::renderBatchOptions);
@@ -248,10 +253,12 @@ public class CampaignEditorFragment extends Fragment {
     }
 
     private void save(boolean submit) {
+        if (submit && !locationName.validate()) return;
         preserveVisibleTargets();
         viewModel.save(id, text(title), text(description), (RescueReason) reason.getSelectedItem(),
                 (RescueMode) mode.getSelectedItem(), new LinkedHashMap<>(selectedTargets), text(start),
-            text(end), text(latitude), text(longitude), text(locationName), submit,
+            text(end), text(latitude), text(longitude), locationName.isComplete()
+                    ? locationName.formattedAddress() : locationName.street(), submit,
             new ArrayList<>(imageUrls), new ArrayList<>(imagePublicIds));
     }
 
@@ -313,7 +320,7 @@ public class CampaignEditorFragment extends Fragment {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         start.setText(format.format(value.getStartDate())); end.setText(format.format(value.getEndDate()));
         latitude.setText(String.valueOf(value.getLatitude())); longitude.setText(String.valueOf(value.getLongitude()));
-        locationName.setText(value.getLocationName());
+        locationName.setFormattedAddress(value.getLocationName());
         binding = false;
     }
 
