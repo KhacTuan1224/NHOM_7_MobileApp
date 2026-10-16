@@ -83,6 +83,12 @@ public class SellerDashboardFragment extends Fragment {
         int action;
         if (destination == SellerRoutePolicy.Destination.PRODUCTS)
             action = R.id.action_sellerDashboardFragment_to_sellerProductListFragment;
+        else if (destination == SellerRoutePolicy.Destination.BATCHES) {
+            Bundle args = new Bundle(); args.putBoolean("batchSelectionMode", true);
+            Navigation.findNavController(requireView()).navigate(
+                    R.id.action_sellerDashboardFragment_to_sellerProductListFragment, args);
+            return;
+        }
         else if (destination == SellerRoutePolicy.Destination.CAMPAIGNS)
             action = R.id.action_sellerDashboardFragment_to_sellerCampaignListFragment;
         else if (destination == SellerRoutePolicy.Destination.ORDERS) {

@@ -20,13 +20,24 @@ import java.util.List;
 
 public class SellerProductListFragment extends Fragment {
     private ProductViewModel viewModel; private LinearLayout container; private List<Product> currentProducts;
+    private boolean batchSelectionMode;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_seller_product_list, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        Bundle args = getArguments();
+        batchSelectionMode = args != null && args.getBoolean("batchSelectionMode", false);
+        TextView title = view.findViewById(R.id.sellerProductListTitle);
+        TextView notice = view.findViewById(R.id.sellerProductListNotice);
+        if (batchSelectionMode) {
+            title.setText(R.string.seller_batch_products_title);
+            notice.setText(R.string.seller_batch_products_notice);
+        }
         container = view.findViewById(R.id.sellerProductContainer);
-        view.findViewById(R.id.addProductButton).setOnClickListener(
+        View addProduct = view.findViewById(R.id.addProductButton);
+        addProduct.setVisibility(batchSelectionMode ? View.GONE : View.VISIBLE);
+        addProduct.setOnClickListener(
                 Navigation.createNavigateOnClickListener(R.id.action_sellerProductListFragment_to_productEditorFragment));
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);
@@ -60,12 +71,18 @@ public class SellerProductListFragment extends Fragment {
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14), dp(14), dp(14), dp(14));
         TextView title = new TextView(requireContext()); title.setText(product.getName() + " • " + product.getStatus().name()); title.setTextSize(17); title.setTypeface(title.getTypeface(), 1);
         LinearLayout actions = new LinearLayout(requireContext());
-        Button edit = new Button(requireContext()); edit.setText(R.string.edit_action); edit.setOnClickListener(v -> navigateEditor(product));
         Button batches = new Button(requireContext()); batches.setText(R.string.manage_batches_action); batches.setOnClickListener(v -> navigateBatches(product));
-        Button promotion = new Button(requireContext()); promotion.setText(R.string.manage_promotion_action); promotion.setOnClickListener(v -> navigatePromotion(product));
-        Button hide = new Button(requireContext()); hide.setText(R.string.hide_product_action); hide.setOnClickListener(v -> viewModel.hideProduct(product.getId()));
         actions.setOrientation(LinearLayout.VERTICAL);
-        actions.addView(edit); actions.addView(batches); actions.addView(promotion); actions.addView(hide); body.addView(title); body.addView(actions); card.addView(body); return card;
+        if (!batchSelectionMode) {
+            Button edit = new Button(requireContext()); edit.setText(R.string.edit_action); edit.setOnClickListener(v -> navigateEditor(product));
+            Button promotion = new Button(requireContext()); promotion.setText(R.string.manage_promotion_action); promotion.setOnClickListener(v -> navigatePromotion(product));
+            Button hide = new Button(requireContext()); hide.setText(R.string.hide_product_action); hide.setOnClickListener(v -> viewModel.hideProduct(product.getId()));
+            actions.addView(edit); actions.addView(batches); actions.addView(promotion); actions.addView(hide);
+        } else {
+            batches.setText(R.string.open_product_batches_action);
+            actions.addView(batches);
+        }
+        body.addView(title); body.addView(actions); card.addView(body); return card;
     }
     private void navigateEditor(Product product) {
         Bundle args = productBundle(product);
