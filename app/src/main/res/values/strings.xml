@@ -384,4 +384,14 @@
     <string name="all_critical_campaigns_title">Chiến dịch cần giải cứu gấp</string>
     <string name="all_value_products_title">Sản phẩm giá tốt</string>
     <string name="all_active_campaigns_title">Chiến dịch đang diễn ra</string>
+    <string name="phone_auth_section_title">Đăng nhập bằng số điện thoại</string>
+    <string name="phone_auth_phone_hint">Số điện thoại, ví dụ +84 912 345 678</string>
+    <string name="phone_auth_free_test_note">Gói Spark chỉ dùng được số điện thoại thử nghiệm Firebase; gửi SMS thật cần gói Blaze.</string>
+    <string name="phone_auth_send_code">Gửi mã OTP</string>
+    <string name="phone_auth_code_hint">Mã xác minh 6 chữ số</string>
+    <string name="phone_auth_verify">Xác nhận và đăng nhập</string>
+    <string name="phone_auth_code_sent">Mã xác minh đã sẵn sàng. Với số test, nhập mã đã cấu hình trong Firebase Console.</string>
+    <string name="phone_auth_invalid_number">Nhập số điện thoại theo định dạng quốc tế, ví dụ +84912345678.</string>
+    <string name="phone_auth_code_expired">Mã xác minh đã hết hạn. Hãy gửi lại mã.</string>
+    <string name="phone_auth_generic_error">Không thể xác minh số điện thoại. Kiểm tra cấu hình Firebase và thử lại.</string>
 </resources>

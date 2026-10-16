@@ -2,6 +2,7 @@ package com.rescuefarm.data.repository;
 
 import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.domain.enums.CustomerType;
+import com.google.firebase.auth.PhoneAuthCredential;
 
 public class UnavailableAuthRepository implements AuthRepository {
     private static final String SETUP_MESSAGE =
@@ -23,6 +24,11 @@ public class UnavailableAuthRepository implements AuthRepository {
 
     @Override
     public void signIn(String email, String password, AuthCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, SETUP_MESSAGE);
+    }
+
+    @Override
+    public void signInWithPhoneCredential(PhoneAuthCredential credential, AuthCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, SETUP_MESSAGE);
     }
 
