@@ -68,10 +68,11 @@ final class AdminDashboardCards {
         card.setOrientation(LinearLayout.VERTICAL); card.setGravity(Gravity.TOP);
         int padding = dp(context, 14); card.setPadding(padding, padding, padding, padding);
         GradientDrawable background = new GradientDrawable();
-        background.setColor(ContextCompat.getColor(context, R.color.rescue_primary_container));
-        background.setCornerRadius(dp(context, 16));
+        background.setColor(ContextCompat.getColor(context, R.color.rescue_surface));
+        background.setCornerRadius(dp(context, 14));
         background.setStroke(dp(context, 1), ContextCompat.getColor(context, R.color.rescue_outline));
         card.setBackground(background);
+        card.setElevation(dp(context, 2));
 
         TextView title = new TextView(context);
         title.setText(metric.title); title.setTextSize(12); title.setTypeface(null, Typeface.BOLD);

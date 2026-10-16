@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
+import androidx.drawerlayout.widget.DrawerLayout;
 import android.widget.LinearLayout;
 import com.rescuefarm.R;
 import com.rescuefarm.data.repository.AdminRepository.Section;
@@ -24,6 +25,7 @@ public final class AdminDashboardFragment extends Fragment {
     private ProgressBar progress;
     private TextView message;
     private LinearLayout stats;
+    private DrawerLayout drawer;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
@@ -34,10 +36,12 @@ public final class AdminDashboardFragment extends Fragment {
         progress = view.findViewById(R.id.adminDashboardProgress);
         message = view.findViewById(R.id.adminDashboardMessage);
         stats = view.findViewById(R.id.adminDashboardStats);
+        drawer = view.findViewById(R.id.adminDashboardDrawer);
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
         view.findViewById(R.id.adminDashboardBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
+        view.findViewById(R.id.adminDashboardMenuButton).setOnClickListener(v -> drawer.openDrawer(android.view.Gravity.START));
         view.findViewById(R.id.refreshAdminDashboardButton).setOnClickListener(v -> viewModel.refreshDashboard());
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminUsersButton, Section.USERS);
@@ -55,6 +59,7 @@ public final class AdminDashboardFragment extends Fragment {
 
     private void bind(View root, int id, Section section) {
         root.findViewById(id).setOnClickListener(view -> {
+            if (drawer != null && drawer.isDrawerOpen(android.view.Gravity.START)) drawer.closeDrawer(android.view.Gravity.START);
             Bundle args = new Bundle(); args.putString("section", section.name());
             Navigation.findNavController(view).navigate(
                     R.id.action_adminDashboardFragment_to_adminResourceFragment, args);
