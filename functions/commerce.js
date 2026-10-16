@@ -57,7 +57,7 @@ function distanceKm(aLat, aLng, bLat, bLng) {
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-function createCommerce({db, admin, authenticate, notifyNewOrder = null}) {
+function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyAdmins = null}) {
   const router = express.Router();
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
   const timestamp = millis => admin.firestore.Timestamp.fromMillis(millis);
@@ -272,6 +272,14 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null}) {
           "Bạn vừa nhận được đơn hàng mới. Mở RescueFarm để xác nhận.");
       } catch (notificationError) {
         console.error("Seller order notification could not be delivered:", notificationError.message || notificationError);
+      }
+    }
+    if (typeof notifyAdmins === 'function' && !result.replay) {
+      try {
+        await notifyAdmins(requestId, `Đơn hàng mới ${str(result.order.orderCode)}`,
+          `Có đơn hàng mới từ ${identity.ownerType === 'CUSTOMER' ? 'Customer' : 'Guest'} cần theo dõi.`);
+      } catch (notificationError) {
+        console.error("Admin order notification could not be delivered:", notificationError.message || notificationError);
       }
     }
     return serialize(result);

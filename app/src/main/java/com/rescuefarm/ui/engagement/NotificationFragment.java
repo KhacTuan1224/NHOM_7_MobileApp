@@ -76,6 +76,9 @@ public class NotificationFragment extends Fragment {
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
             if (state.getStatus() == EngagementState.Status.ERROR) {
                 Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_LONG).show();
+            } else if (state.getStatus() == EngagementState.Status.SUCCESS
+                    && state.getMessage().startsWith("Đã bật thông báo")) {
+                Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
         

@@ -149,6 +149,19 @@ public final class AdminViewModel extends ViewModel {
         });
     }
 
+    public void transition(Section section, String id, String target, String reason,
+            AdminRepository.ActionCallback callback) {
+        repository.transition(section, id, target, reason, new AdminRepository.ActionCallback() {
+            @Override public void onSuccess() {
+                if (callback != null) callback.onSuccess();
+                refreshSection(section);
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                if (callback != null) callback.onError(code, message);
+            }
+        });
+    }
+
     public void setActive(String id, boolean active, String reason) {
         state.setValue(AdminScreenState.list(AdminScreenState.Status.LOADING, currentSection,
                 currentItems(), "Đang cập nhật và ghi audit…"));

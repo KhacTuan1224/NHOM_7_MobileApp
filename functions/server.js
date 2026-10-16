@@ -80,7 +80,9 @@ async function auth(req, roles = []) {
 app.get("/health", (_, res) => res.json({ok: true}));
 const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth,
   notifyNewOrder: (sellerId, orderId, title, message) => notifyCustomer(
-    sellerId, "ORDER", title, message, orderId, `${orderId}_SELLER_PENDING`)});
+    sellerId, "ORDER", title, message, orderId, `${orderId}_SELLER_PENDING`),
+  notifyAdmins: (orderId, title, message) => notifyAdmins(
+    "ORDER", title, message, orderId, `ORDER_${orderId}`)});
 app.use(commerce.router);
 app.post("/admin/dashboard", async (req, res, next) => {
   try {
@@ -191,6 +193,51 @@ async function notifyCustomer(userId, type, title, message, referenceId, eventKe
   }
   return {duplicate: false, sent};
 }
+
+async function notifyAdmins(type, title, message, referenceId, eventKey) {
+  const users = await db.collection("users").where("role", "==", "ADMIN").get();
+  const admins = users.docs.filter(user => user.get("status") === "ACTIVE");
+  return Promise.all(admins.map(user => notifyCustomer(user.id, type, title, message,
+    referenceId, `${eventKey}_ADMIN`)));
+}
+
+app.post("/notify-admins", async (req, res, next) => {
+  try {
+    const caller = await auth(req, ["CUSTOMER", "SELLER"]), body = req.body || {};
+    const eventType = str(body.eventType), referenceId = str(body.referenceId);
+    if (!referenceId || referenceId.length > 128) throw httpError(400, "referenceId required");
+    let type, title, message, eventKey;
+    if (eventType === "REPORT") {
+      const report = await db.collection("reports").doc(referenceId).get();
+      if (!report.exists || report.get("reporterId") !== caller.uid || report.get("status") !== "PENDING")
+        throw httpError(403, "Report is not owned by caller or is no longer pending");
+      type = "MODERATION"; title = "Có báo cáo vi phạm mới";
+      message = `Có báo cáo ${str(report.get("targetType"))} đang chờ Admin xem xét.`;
+      eventKey = `REPORT_${referenceId}`;
+    } else if (eventType === "SELLER_APPLICATION") {
+      if (caller.role !== "SELLER" || referenceId !== caller.uid) throw httpError(403, "Invalid seller application");
+      const application = await db.collection("sellerApplications").doc(referenceId).get();
+      if (!application.exists || application.get("status") !== "PENDING") throw httpError(409, "Application is not pending");
+      type = "SYSTEM"; title = "Hồ sơ Seller mới";
+      message = `${str(application.get("shopName")) || "Một cửa hàng"} đã gửi hồ sơ chờ duyệt.`;
+      eventKey = `SELLER_APPLICATION_${referenceId}_${millis(application.get("submittedAt"))}`;
+    } else if (eventType === "MODERATION_SUBMISSION") {
+      if (caller.role !== "SELLER") throw httpError(403, "Seller role required");
+      const resourceType = str(body.resourceType), collections = {POST: "posts", CAMPAIGN: "campaigns"};
+      const collection = collections[resourceType];
+      if (!collection) throw httpError(400, "Unsupported moderation resource");
+      const item = await db.collection(collection).doc(referenceId).get();
+      if (!item.exists || item.get("sellerId") !== caller.uid
+          || !["PENDING_APPROVAL", "PENDING"].includes(str(item.get("status"))))
+        throw httpError(403, "Submitted resource is not owned by caller or is not pending");
+      type = "MODERATION"; title = "Nội dung mới chờ kiểm duyệt";
+      message = `${resourceType === "POST" ? "Bài viết" : "Chiến dịch"}: ${str(item.get("title")) || referenceId}`;
+      eventKey = `${resourceType}_${referenceId}_${millis(item.get("updatedAt")) || Date.now()}`;
+    } else throw httpError(400, "Unsupported admin notification event");
+    const result = await notifyAdmins(type, title, message, referenceId, eventKey);
+    res.json({ok: true, admins: result.length, sent: result.reduce((sum, item) => sum + item.sent, 0)});
+  } catch (error) { next(error); }
+});
 
 app.post("/send-notification", async (req, res, next) => {
   try {

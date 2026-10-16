@@ -147,7 +147,7 @@ public class FirebaseAuthRepository implements AuthRepository {
         }
         userRepository.getUser(firebaseUser.getUid(), new UserRepository.UserCallback() {
             @Override
-            public void onSuccess(User user) { registerCustomerDevice(user); callback.onSuccess(user); }
+            public void onSuccess(User user) { registerUserDevice(user); callback.onSuccess(user); }
 
             @Override
             public void onError(UserRepository.ProfileError error, String message) {
@@ -160,7 +160,7 @@ public class FirebaseAuthRepository implements AuthRepository {
     private void loadOrCreateGoogleProfile(FirebaseUser firebaseUser, AuthCallback callback) {
         userRepository.getUser(firebaseUser.getUid(), new UserRepository.UserCallback() {
             @Override
-            public void onSuccess(User user) { registerCustomerDevice(user); callback.onSuccess(user); }
+            public void onSuccess(User user) { registerUserDevice(user); callback.onSuccess(user); }
 
             @Override
             public void onError(UserRepository.ProfileError error, String message) {
@@ -212,7 +212,7 @@ public class FirebaseAuthRepository implements AuthRepository {
                 taxCode,
                 new UserRepository.UserCallback() {
                     @Override
-                    public void onSuccess(User user) { registerCustomerDevice(user); callback.onSuccess(user); }
+                    public void onSuccess(User user) { registerUserDevice(user); callback.onSuccess(user); }
 
                     @Override
                     public void onError(UserRepository.ProfileError error, String message) {
@@ -230,8 +230,8 @@ public class FirebaseAuthRepository implements AuthRepository {
         return ErrorCode.PROFILE_UNAVAILABLE;
     }
 
-    private void registerCustomerDevice(User user) {
-        if (user == null || user.getRole() != UserRole.CUSTOMER || !user.isActive()) return;
+    private void registerUserDevice(User user) {
+        if (user == null || !user.isActive()) return;
         FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
             if (token == null || token.trim().isEmpty()) return;
             Map<String, Object> device = new HashMap<>();
