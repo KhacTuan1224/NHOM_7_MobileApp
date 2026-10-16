@@ -9,10 +9,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
-import com.google.android.material.button.MaterialButton;
 import com.rescuefarm.R;
 import com.rescuefarm.data.repository.AuthRepository;
 import com.rescuefarm.data.repository.AuthRepositoryFactory;
@@ -104,11 +104,25 @@ public class CustomerOrderListFragment extends Fragment {
         NumberFormat money = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"));
         String[] statuses = getResources().getStringArray(R.array.customer_order_status_labels);
         for (Order order : orders) {
-            MaterialButton row = new MaterialButton(requireContext());
-            row.setAllCaps(false);
-            row.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
-            row.setText(getString(R.string.customer_order_row_format, order.getOrderCode(),
-                    statuses[order.getStatus().ordinal()], money.format(order.getTotalAmount())));
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.VERTICAL);
+            int verticalPadding = Math.round(12 * getResources().getDisplayMetrics().density);
+            row.setPadding(0, verticalPadding, 0, verticalPadding);
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setBackgroundResource(android.R.drawable.list_selector_background);
+            TextView code = new TextView(requireContext());
+            code.setText(order.getOrderCode());
+            code.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface));
+            code.setTextSize(14);
+            code.setTypeface(code.getTypeface(), android.graphics.Typeface.BOLD);
+            TextView details = new TextView(requireContext());
+            details.setText(statuses[order.getStatus().ordinal()] + " • "
+                    + money.format(order.getTotalAmount()) + "\nXem chi tiết");
+            details.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface_variant));
+            details.setTextSize(13);
+            row.addView(code);
+            row.addView(details);
             row.setOnClickListener(v -> {
                 Bundle args = new Bundle();
                 args.putString("orderId", order.getId());
@@ -117,6 +131,11 @@ public class CustomerOrderListFragment extends Fragment {
             });
             container.addView(row, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            View divider = new View(requireContext());
+            divider.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.rescue_outline));
+            container.addView(divider, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    Math.max(1, Math.round(getResources().getDisplayMetrics().density))));
         }
     }
 }

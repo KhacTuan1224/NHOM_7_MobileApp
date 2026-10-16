@@ -1,6 +1,7 @@
 package com.rescuefarm.ui.engagement;
 
 import android.os.Bundle;
+import android.animation.ValueAnimator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,8 +43,9 @@ import java.util.Set;
 public class ReviewFragment extends Fragment {
     private EngagementViewModel vm;
     private OrderViewModel orderViewModel;
-    private EditText order, item, rating, content, images;
+    private EditText order, item, content, images;
     private LinearLayout list;
+    private LinearLayout ratingStars;
     private Spinner eligibleItems;
     private TextView imagesStatus;
     private TextView reviewSummary, reviewStatus;
@@ -57,6 +59,7 @@ public class ReviewFragment extends Fragment {
     private boolean bindingTargets;
     private boolean editing;
     private boolean reviewsLoaded;
+    private int selectedRating;
 
 
     private final ActivityResultLauncher<String> imagePicker = registerForActivityResult(
@@ -76,7 +79,7 @@ public class ReviewFragment extends Fragment {
         uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
         order = view.findViewById(R.id.reviewOrderId); item = view.findViewById(R.id.reviewOrderItemId);
-        rating = view.findViewById(R.id.reviewRating); content = view.findViewById(R.id.reviewContent);
+        ratingStars = view.findViewById(R.id.reviewRatingStars); content = view.findViewById(R.id.reviewContent);
         images = view.findViewById(R.id.reviewImages); list = view.findViewById(R.id.reviewContainer);
         eligibleItems = view.findViewById(R.id.reviewEligibleOrderItem);
         imagesStatus = view.findViewById(R.id.reviewImagesStatus);
@@ -84,6 +87,7 @@ public class ReviewFragment extends Fragment {
         reviewStatus = view.findViewById(R.id.reviewListStatus);
         uploadImagesButton = view.findViewById(R.id.uploadReviewImagesButton);
         saveButton = view.findViewById(R.id.saveReviewButton);
+        bindRatingStars();
         applyActorMode(view);
         if (requireActivity() instanceof MainActivity) {
             ((MainActivity) requireActivity()).observeActorRole().observe(getViewLifecycleOwner(), role ->
@@ -211,10 +215,10 @@ public class ReviewFragment extends Fragment {
         Review review = reviewsByTarget.get(key);
         editing = review != null;
         if (review == null) {
-            rating.setText(""); content.setText(""); images.setText("");
+            selectedRating = 0; renderRatingStars(false, selectedRating); content.setText(""); images.setText("");
             ((TextView) saveButton).setText("Gửi đánh giá");
         } else {
-            rating.setText(String.valueOf(review.getRating())); content.setText(review.getContent());
+            selectedRating = review.getRating(); renderRatingStars(false, selectedRating); content.setText(review.getContent());
             images.setText(join(review.getImageUrls())); updateImageCount();
             ((TextView) saveButton).setText("Cập nhật đánh giá");
         }
@@ -224,12 +228,16 @@ public class ReviewFragment extends Fragment {
     private void save() {
         if (ActorUiPolicy.isSellerReadOnly(this)) return;
         if (targets.isEmpty()) { noEligibleOrder(); return; }
+        if (selectedRating < 1 || selectedRating > 5) {
+            Toast.makeText(requireContext(), "Vui lòng chọn số sao đánh giá.", Toast.LENGTH_LONG).show();
+            return;
+        }
         try {
             List<String> urls = new ArrayList<>();
             for (String value : images.getText().toString().split("[,\\n]+"))
                 if (!value.trim().isEmpty()) urls.add(value.trim());
             Review review = Review.create(uid, productId, text(order), text(item),
-                    Integer.parseInt(text(rating)), text(content), urls, new Date());
+                    selectedRating, text(content), urls, new Date());
             vm.saveReview(review, editing, () -> requestRatingRecalculation(review.getId(),
                     review.getOrderId(), review.getOrderItemId()));
         } catch (Exception error) {
@@ -243,6 +251,57 @@ public class ReviewFragment extends Fragment {
         View sellerNotice = root.findViewById(R.id.sellerReviewReadOnlyNotice);
         if (composer != null) composer.setVisibility(readOnly ? View.GONE : View.VISIBLE);
         if (sellerNotice != null) sellerNotice.setVisibility(readOnly ? View.VISIBLE : View.GONE);
+    }
+
+    private void bindRatingStars() {
+        ratingStars.removeAllViews();
+        for (int index = 1; index <= 5; index++) {
+            final int value = index;
+            TextView star = new TextView(requireContext());
+            star.setGravity(android.view.Gravity.CENTER);
+            star.setTextSize(34);
+            star.setMinHeight(Math.round(52 * getResources().getDisplayMetrics().density));
+            star.setFocusable(true);
+            star.setClickable(true);
+            star.setBackgroundResource(android.R.drawable.list_selector_background);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            ratingStars.addView(star, params);
+            star.setOnClickListener(v -> {
+                int previousRating = selectedRating;
+                selectedRating = value;
+                renderRatingStars(true, previousRating);
+                star.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK);
+            });
+        }
+        renderRatingStars(false, selectedRating);
+    }
+
+    private void renderRatingStars(boolean animateSelection, int previousRating) {
+        int filledColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rescue_primary);
+        int emptyColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rescue_outline);
+        for (int index = 0; index < ratingStars.getChildCount(); index++) {
+            TextView star = (TextView) ratingStars.getChildAt(index);
+            boolean filled = index < selectedRating;
+            star.setText(filled ? "★" : "☆");
+            star.setContentDescription((index + 1) + " sao" + (filled ? ", đã chọn" : ""));
+            boolean newlyFilled = animateSelection && filled && index >= previousRating;
+            star.setTextColor(filled && !newlyFilled ? filledColor : emptyColor);
+            if (newlyFilled) {
+                ValueAnimator color = ValueAnimator.ofArgb(emptyColor, filledColor);
+                color.setDuration(180);
+                color.addUpdateListener(value -> star.setTextColor((int) value.getAnimatedValue()));
+                color.start();
+                star.setScaleX(0.8f);
+                star.setScaleY(0.8f);
+                star.animate().scaleX(1.12f).scaleY(1.12f).setDuration(110)
+                        .withEndAction(() -> star.animate().scaleX(1f).scaleY(1f)
+                                .setDuration(100).start()).start();
+            } else {
+                star.setScaleX(1f);
+                star.setScaleY(1f);
+            }
+        }
     }
 
     private void appendImageUrl(String url) {
@@ -285,6 +344,14 @@ public class ReviewFragment extends Fragment {
                 com.google.android.material.button.MaterialButton delete = new com.google.android.material.button.MaterialButton(
                         requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
                 delete.setText("Xóa");
+                int textColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rescue_on_surface);
+                int borderColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rescue_primary);
+                android.content.res.ColorStateList clearBackground = android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.TRANSPARENT);
+                edit.setTextColor(textColor); edit.setStrokeColor(android.content.res.ColorStateList.valueOf(borderColor));
+                edit.setBackgroundTintList(clearBackground);
+                delete.setTextColor(textColor); delete.setStrokeColor(android.content.res.ColorStateList.valueOf(borderColor));
+                delete.setBackgroundTintList(clearBackground);
                 delete.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                         .setTitle("Xóa đánh giá?").setMessage("Đánh giá này sẽ bị gỡ khỏi sản phẩm.")
                         .setNegativeButton(android.R.string.cancel, null)
