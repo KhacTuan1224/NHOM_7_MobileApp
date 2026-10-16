@@ -39,6 +39,7 @@ jobs:
         run: |
           if [[ -n "$GOOGLE_SERVICES_JSON" ]]; then
             printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+            echo 'Using Firebase config from the GOOGLE_SERVICES_JSON Actions secret.'
           elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             cat > app/google-services.json <<'JSON'
           {
@@ -62,6 +63,7 @@ jobs:
             echo '::error::Set the GOOGLE_SERVICES_JSON Actions secret to build a usable APK.'
             exit 1
           fi
+          python3 -c 'import json; c=json.load(open("app/google-services.json", encoding="utf-8")); print("Firebase project_id:", c["project_info"]["project_id"]); print("Firebase package:", c["client"][0]["client_info"]["android_client_info"]["package_name"])'
 
       - name: Build debug APK
         env:
