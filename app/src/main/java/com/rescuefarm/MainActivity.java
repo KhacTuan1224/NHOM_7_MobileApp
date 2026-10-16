@@ -55,14 +55,25 @@ public class MainActivity extends AppCompatActivity {
         ImageView profileButton = findViewById(R.id.navProfileButton);
         centerActionButton = findViewById(R.id.centerActionButton);
         centerActionButton.setEnabled(false);
-        centerActionButton.setOnClickListener(unused -> navigateTo(navController,
-                currentRole == UserRole.SELLER ? R.id.sellerDashboardFragment : R.id.cartFragment));
+        centerActionButton.setOnClickListener(unused -> {
+            if (currentRole == UserRole.SELLER) navigateTo(navController, R.id.sellerDashboardFragment);
+            else if (currentRole == UserRole.ADMIN) navigateTo(navController, R.id.adminDashboardFragment);
+            else navigateTo(navController, R.id.cartFragment);
+        });
         homeButton.setOnClickListener(unused -> navigateTo(navController, R.id.guestHomeFragment));
         communityButton.setOnClickListener(unused -> navigateTo(navController, R.id.feedFragment));
-        ordersButton.setOnClickListener(unused -> navigateTo(navController,
-                currentRole == UserRole.SELLER ? R.id.sellerOrderListFragment
-                        : AuthRepositoryFactory.create(this).isAuthenticated() ? R.id.customerOrderListFragment
-                        : R.id.orderConfirmationFragment));
+        ordersButton.setOnClickListener(unused -> {
+            if (currentRole == UserRole.ADMIN) {
+                Bundle args = new Bundle(); args.putString("section", "ORDERS");
+                if (navController.getCurrentDestination() != null
+                        && navController.getCurrentDestination().getId() == R.id.adminResourceFragment) {
+                    navController.popBackStack(R.id.adminDashboardFragment, false);
+                }
+                navigateTo(navController, R.id.adminResourceFragment, args);
+            } else if (currentRole == UserRole.SELLER) navigateTo(navController, R.id.sellerOrderListFragment);
+            else navigateTo(navController, AuthRepositoryFactory.create(this).isAuthenticated()
+                    ? R.id.customerOrderListFragment : R.id.orderConfirmationFragment);
+        });
         profileButton.setOnClickListener(unused -> {
             if (!AuthRepositoryFactory.create(this).isAuthenticated()) {
                 navController.navigate(R.id.loginFragment);
@@ -115,10 +126,12 @@ public class MainActivity extends AppCompatActivity {
     private void updateCenterAction(boolean roleUnresolved) {
         if (centerActionButton == null) return;
         boolean seller = currentRole == UserRole.SELLER;
+        boolean admin = currentRole == UserRole.ADMIN;
         centerActionButton.setEnabled(!roleUnresolved);
-        centerActionButton.setIconResource(seller ? R.drawable.ic_nav_dashboard : R.drawable.ic_nav_cart);
+        centerActionButton.setIconResource(seller || admin ? R.drawable.ic_nav_dashboard : R.drawable.ic_nav_cart);
         centerActionButton.setContentDescription(getString(roleUnresolved
-                ? R.string.nav_action_loading : seller ? R.string.nav_seller_dashboard : R.string.nav_cart));
+                ? R.string.nav_action_loading : admin ? R.string.nav_admin_dashboard
+                : seller ? R.string.nav_seller_dashboard : R.string.nav_cart));
         if (navController != null && navController.getCurrentDestination() != null) {
             updateBottomNavigation(centerActionButton, findViewById(R.id.navHomeButton),
                     findViewById(R.id.navCommunityButton), findViewById(R.id.navOrdersButton),
@@ -136,6 +149,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void navigateTo(NavController navController, int destinationId, Bundle arguments) {
+        if (navController.getCurrentDestination() != null
+                && navController.getCurrentDestination().getId() != destinationId) {
+            navController.navigate(destinationId, arguments);
+        }
+    }
+
     private void updateBottomNavigation(MaterialButton centerActionButton,
                                         ImageView homeButton,
                                         ImageView communityButton,
@@ -145,8 +165,10 @@ public class MainActivity extends AppCompatActivity {
         int destinationId = destination.getId();
         
         boolean sellerSurface = currentRole == UserRole.SELLER && isSellerSurface(destinationId);
+        boolean adminSurface = currentRole == UserRole.ADMIN
+                && (destinationId == R.id.adminDashboardFragment || destinationId == R.id.adminResourceFragment);
         // Keep role-specific bottom navigation available throughout Seller workflows.
-        boolean show = sellerSurface || destinationId == R.id.guestHomeFragment
+        boolean show = sellerSurface || adminSurface || destinationId == R.id.guestHomeFragment
                 || destinationId == R.id.feedFragment
                 || destinationId == R.id.cartFragment
                 || destinationId == R.id.orderConfirmationFragment
@@ -236,12 +258,17 @@ public class MainActivity extends AppCompatActivity {
                 || destinationId == R.id.notificationFragment
                 || destinationId == R.id.reviewFragment
                 || destinationId == R.id.reportFragment;
+
+        boolean isCenterActive = sellerSurface && (destinationId == R.id.sellerDashboardFragment
+                    || destinationId == R.id.sellerProfileFragment)
+                || adminSurface;
         
         tintNavigationIcon(homeButton, isHomeActive, active, inactive);
         tintNavigationIcon(communityButton, isCommunityActive, active, inactive);
         tintNavigationIcon(ordersButton, isOrdersActive, active, inactive);
         tintNavigationIcon(profileButton, isProfileActive, active, inactive);
         centerActionButton.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
+        centerActionButton.setAlpha(isCenterActive ? 1f : 0.88f);
     }
 
     private boolean isSellerSurface(int destinationId) {

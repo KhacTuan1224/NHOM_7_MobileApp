@@ -33,6 +33,7 @@ import com.rescuefarm.data.repository.AdminRepository;
 import com.bumptech.glide.Glide;
 import java.util.Map;
 import java.util.List;
+import java.util.Arrays;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Calendar;
@@ -672,22 +673,32 @@ public final class AdminResourceFragment extends Fragment {
 
     private void renderAnalytics(AdminDashboardSnapshot value) {
         if (value == null) return;
-        TextView text = new TextView(requireContext());
-        text.setText(getString(R.string.admin_analytics_format,
-                value.getPendingModerationTotal(), value.total(Section.USERS),
-                value.total(Section.PRODUCTS), value.total(Section.CAMPAIGNS),
-                value.total(Section.ORDERS), NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
-                        .format(value.getDeliveredRevenue())));
-        text.append("\n\nRESCUE ANALYTICS"
-                + "\nCampaign đang hoạt động: " + value.getActiveCampaigns()
-                + "\nCampaign CRITICAL: " + value.getCriticalCampaigns()
-                + "\nĐiểm mobile đang chia sẻ vị trí mới: " + value.getLiveMobilePoints()
-                + "\nTổng lượng đã giải cứu: " + String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())
-                + "\nTỷ lệ hoàn thành: " + String.format(Locale.getDefault(), "%.1f%%", value.getCompletionRate())
-                + " (rescued / target của Campaign đã duyệt)");
-        text.append("\nDoanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
-                + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
-        container.addView(text);
+        NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        AdminDashboardCards.addSectionTitle(requireContext(), container, "TỔNG QUAN HỆ THỐNG");
+        AdminDashboardCards.addGrid(requireContext(), container, Arrays.asList(
+                new AdminDashboardCards.Metric("Tổng hàng đợi moderation",
+                        String.valueOf(value.getPendingModerationTotal()), "Đang chờ xử lý"),
+                new AdminDashboardCards.Metric("Users", String.valueOf(value.total(Section.USERS)), "Tổng tài khoản"),
+                new AdminDashboardCards.Metric("Products", String.valueOf(value.total(Section.PRODUCTS)), "Tổng sản phẩm"),
+                new AdminDashboardCards.Metric("Campaigns", String.valueOf(value.total(Section.CAMPAIGNS)), "Tổng chiến dịch"),
+                new AdminDashboardCards.Metric("Orders", String.valueOf(value.total(Section.ORDERS)), "Tổng đơn hàng"),
+                new AdminDashboardCards.Metric("Doanh thu DELIVERED", currency.format(value.getDeliveredRevenue()),
+                        "All-time, gồm phí giao hàng")));
+
+        AdminDashboardCards.addSectionTitle(requireContext(), container, "RESCUE ANALYTICS");
+        AdminDashboardCards.addGrid(requireContext(), container, Arrays.asList(
+                new AdminDashboardCards.Metric("Campaign đang hoạt động", String.valueOf(value.getActiveCampaigns()), "Status ACTIVE"),
+                new AdminDashboardCards.Metric("Campaign CRITICAL", String.valueOf(value.getCriticalCampaigns()), "Trong Campaign ACTIVE"),
+                new AdminDashboardCards.Metric("Điểm mobile đang chia sẻ vị trí mới", String.valueOf(value.getLiveMobilePoints()),
+                        "Vị trí được cập nhật trong 10 phút"),
+                new AdminDashboardCards.Metric("Tổng lượng đã giải cứu", String.format(Locale.getDefault(), "%.2f kg",
+                        value.getTotalRescuedQuantity()), "Số lượng đã rescued"),
+                new AdminDashboardCards.Metric("Tỷ lệ hoàn thành", String.format(Locale.getDefault(), "%.1f%%",
+                        value.getCompletionRate()),
+                        "rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt")));
+        AdminDashboardCards.addFootnote(requireContext(), container,
+                "Doanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
+                        + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
     }
 
     private Button button(int label) { Button button = new Button(requireContext()); button.setText(label); return button; }

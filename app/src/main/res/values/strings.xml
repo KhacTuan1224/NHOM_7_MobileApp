@@ -71,6 +71,7 @@
     <string name="nav_cart">Giỏ hàng</string>
     <string name="nav_seller_storefront">Hồ sơ người bán</string>
     <string name="nav_seller_dashboard">Dashboard người bán</string>
+    <string name="nav_admin_dashboard">Dashboard quản trị</string>
     <string name="nav_action_loading">Đang xác định loại tài khoản</string>
     <string name="nav_orders">Đơn hàng</string>
     <string name="nav_profile">Hồ sơ</string>
