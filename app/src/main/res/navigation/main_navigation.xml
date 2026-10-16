@@ -351,5 +351,18 @@
         android:name="com.rescuefarm.ui.admin.AdminResourceFragment"
         android:label="@string/admin_dashboard_title">
         <argument android:name="section" app:argType="string" android:defaultValue="SELLER_APPLICATIONS" />
+        <action android:id="@+id/action_adminResourceFragment_to_adminDetailFragment"
+            app:destination="@id/adminDetailFragment" />
+    </fragment>
+    <fragment android:id="@+id/adminDetailFragment"
+        android:name="com.rescuefarm.ui.admin.AdminDetailFragment"
+        android:label="Chi tiết quản trị">
+        <argument android:name="section" app:argType="string" />
+        <argument android:name="itemId" app:argType="string" />
+        <argument android:name="itemTitle" app:argType="string" />
+        <argument android:name="itemSubtitle" app:argType="string" />
+        <argument android:name="itemStatus" app:argType="string" />
+        <argument android:name="itemActive" app:argType="boolean" />
+        <argument android:name="itemImageUrl" app:argType="string" />
     </fragment>
 </navigation>

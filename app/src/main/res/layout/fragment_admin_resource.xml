@@ -8,11 +8,11 @@
         <TextView android:id="@+id/adminResourceTitle" android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/adminResourceBackButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminResourceBackButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_back_action"
             android:layout_marginTop="@dimen/space_sm" android:layout_marginBottom="@dimen/space_sm"
             android:insetTop="0dp" android:insetBottom="0dp" />
-        <Button android:id="@+id/adminAddCatalogResourceButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminAddCatalogResourceButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_add_catalog_resource"
             android:visibility="gone" android:layout_marginBottom="@dimen/space_sm" />
         <EditText android:id="@+id/adminModerationReason" android:layout_width="match_parent"
@@ -24,16 +24,16 @@
             android:hint="Tìm theo tên, email, mã đơn hoặc ID" android:singleLine="true" />
         <LinearLayout android:id="@+id/adminOrderDateFilters" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="horizontal" android:visibility="gone">
-            <Button android:id="@+id/adminOrderFromDate" android:layout_width="0dp"
+            <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminOrderFromDate" android:layout_width="0dp"
                 android:layout_height="wrap_content" android:layout_weight="1" android:text="Từ ngày" />
-            <Button android:id="@+id/adminOrderThroughDate" android:layout_width="0dp"
+            <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminOrderThroughDate" android:layout_width="0dp"
                 android:layout_height="wrap_content" android:layout_weight="1" android:text="Đến ngày" />
-            <Button android:id="@+id/adminOrderClearDates" android:layout_width="wrap_content"
+            <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminOrderClearDates" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:text="Xóa" />
         </LinearLayout>
         <Spinner android:id="@+id/adminStatusFilter" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/refreshAdminResourceButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/refreshAdminResourceButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_refresh_action"
             android:insetTop="0dp" android:insetBottom="0dp" />
         <ProgressBar android:id="@+id/adminResourceProgress" android:layout_width="wrap_content"
@@ -42,7 +42,7 @@
             android:layout_height="wrap_content" />
         <LinearLayout android:id="@+id/adminResourceContainer" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" />
-        <Button android:id="@+id/loadMoreAdminItemsButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/loadMoreAdminItemsButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="Tải thêm" android:visibility="gone" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

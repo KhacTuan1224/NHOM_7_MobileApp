@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Read-only view builder shared by every admin detail dialog. */
+/** Read-only view builder shared by every full-page Admin detail screen. */
 public final class AdminDetailRenderer {
     private final Context context;
     public AdminDetailRenderer(Context context) { this.context = context; }
@@ -131,18 +131,16 @@ public final class AdminDetailRenderer {
     }
 
     private LinearLayout section(LinearLayout parent, String title, boolean collapsed) {
-        LinearLayout card = column();
-        card.setPadding(dp(14), dp(12), dp(14), dp(12));
-        GradientDrawable background = new GradientDrawable(); background.setColor(color(R.color.rescue_surface));
-        background.setCornerRadius(0); background.setStroke(dp(1), color(R.color.rescue_outline)); card.setBackground(background);
-        LinearLayout.LayoutParams cardParams = params(); cardParams.bottomMargin = dp(12); parent.addView(card, cardParams);
+        LinearLayout section = column();
+        section.setPadding(0, dp(8), 0, dp(12));
+        LinearLayout.LayoutParams sectionParams = params(); sectionParams.bottomMargin = dp(4); parent.addView(section, sectionParams);
         LinearLayout content = column();
         if (collapsed) {
             MaterialButton toggle = textButton();
             toggle.setText(title + "  +"); toggle.setAllCaps(false); toggle.setTextSize(14);
             toggle.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
             toggle.setContentDescription(title + ", mở rộng"); toggle.setMinHeight(dp(48));
-            toggle.setPadding(0, 0, 0, 0); card.addView(toggle, params()); content.setVisibility(View.GONE);
+            toggle.setPadding(0, 0, 0, 0); section.addView(toggle, params()); content.setVisibility(View.GONE);
             toggle.setOnClickListener(v -> {
                 boolean expand = content.getVisibility() != View.VISIBLE;
                 content.setVisibility(expand ? View.VISIBLE : View.GONE);
@@ -151,9 +149,9 @@ public final class AdminDetailRenderer {
             });
         } else {
             TextView heading = text(title, 14, R.color.rescue_primary); heading.setTypeface(null, Typeface.BOLD);
-            heading.setAccessibilityHeading(true); heading.setPadding(0, 0, 0, dp(4)); card.addView(heading, params());
+            heading.setAccessibilityHeading(true); heading.setPadding(0, 0, 0, dp(4)); section.addView(heading, params());
         }
-        card.addView(content, params()); return content;
+        section.addView(content, params()); return content;
     }
 
     public void notice(LinearLayout parent, List<String> warnings) {
@@ -172,9 +170,8 @@ public final class AdminDetailRenderer {
     }
     private MaterialButton textButton() {
         MaterialButton button = new MaterialButton(context);
-        button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
-        button.setTextColor(color(R.color.rescue_primary)); button.setElevation(0); button.setMinHeight(dp(48));
-        button.setInsetTop(0); button.setInsetBottom(0);
+        AdminUiStyles.outlinedButton(context, button);
+        button.setMinHeight(dp(44));
         return button;
     }
     private void heading(LinearLayout parent, String title) {

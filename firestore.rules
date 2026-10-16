@@ -560,8 +560,10 @@ service cloud.firestore {
         allow delete: if canManageOwnAddresses(userId) && resource.data.isDefault == false;
       }
       match /devices/{deviceId} {
-        allow get, list: if hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER');
-        allow create, update: if (hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER'))
+        allow get, list: if hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER')
+            || hasRole(userId, 'ADMIN');
+        allow create, update: if (hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER')
+                || hasRole(userId, 'ADMIN'))
             && request.resource.data.keys().hasOnly(['userId', 'token', 'platform', 'updatedAt'])
             && request.resource.data.userId == userId
             && request.resource.data.token is string
@@ -569,7 +571,8 @@ service cloud.firestore {
             && request.resource.data.token.size() <= 4096
             && request.resource.data.platform == 'ANDROID'
             && request.resource.data.updatedAt == request.time;
-        allow delete: if hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER');
+        allow delete: if hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER')
+            || hasRole(userId, 'ADMIN');
       }
     }
 

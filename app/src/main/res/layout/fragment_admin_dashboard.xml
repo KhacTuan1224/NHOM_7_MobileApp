@@ -40,7 +40,7 @@
                     android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
                 <LinearLayout android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
-                <com.google.android.material.button.MaterialButton android:id="@+id/adminDashboardBackButton"
+                <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminDashboardBackButton"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:minHeight="48dp" android:layout_marginTop="16dp" android:text="Quay lại" />
             </LinearLayout>
