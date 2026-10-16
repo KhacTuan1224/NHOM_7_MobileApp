@@ -7,6 +7,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -171,8 +173,10 @@ public class CheckoutFragment extends Fragment {
         });
         vm.getState().observe(getViewLifecycleOwner(), result -> {
             message.setText(result.getMessage());
+            // Keep the action tappable before a quote is ready so the user receives
+            // an explanation and can explicitly request a fresh quote.
             view.findViewById(R.id.submitCheckoutButton).setEnabled(
-                    quoteReady && result.getStatus() != CheckoutState.Status.LOADING);
+                    result.getStatus() != CheckoutState.Status.LOADING);
             if (result.getStatus() == CheckoutState.Status.SUCCESS && vm.consumeCheckoutSuccessNavigation()) {
                 Bundle args = new Bundle(); args.putString("orderId", result.getOrder().getId());
                 args.putString("orderCode", result.getOrder().getOrderCode());
@@ -187,18 +191,48 @@ public class CheckoutFragment extends Fragment {
         });
         View submit = view.findViewById(R.id.submitCheckoutButton);
         submit.setOnClickListener(unused -> {
-            if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY && !address.validate()) return;
+            if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY && !address.validate()) {
+                String validationMessage = "Vui lòng hoàn thiện địa chỉ nhận hàng trước khi đặt đơn.";
+                message.setText(validationMessage);
+                message.setVisibility(View.VISIBLE);
+                Toast.makeText(requireContext(), validationMessage, Toast.LENGTH_LONG).show();
+                view.findViewById(R.id.checkoutAddress).requestFocus();
+                return;
+            }
             if (!quoteReady) {
                 message.setText("Đang chờ báo giá mới nhất từ máy chủ. Hãy kiểm tra kết nối rồi thử lại.");
+                message.setVisibility(View.VISIBLE);
                 scheduleShippingEstimate(); return;
             }
+            message.setText("Đang tạo đơn hàng và giữ tồn kho…");
+            message.setVisibility(View.VISIBLE);
             vm.submit(text(name), text(phone), address.formattedAddress(), text(lat), text(lng),
                     (FulfillmentType) fulfillment.getSelectedItem(), (PaymentMethod) payment.getSelectedItem(),
                     text(note), quoteReady ? quotedSubtotal : Double.NaN,
                     quoteReady ? quotedShippingFee : Double.NaN);
         });
-        submit.setEnabled(quoteReady);
+        submit.setEnabled(true);
         refreshPaymentMethods();
+        keepSubmitAboveBottomNavigation(view);
+    }
+
+    private void keepSubmitAboveBottomNavigation(View root) {
+        root.post(() -> {
+            if (!isAdded()) return;
+            View scrollView = root.findViewById(R.id.checkoutScrollView);
+            View submit = root.findViewById(R.id.submitCheckoutButton);
+            if (!(scrollView instanceof NestedScrollView) || submit == null) return;
+            NestedScrollView scroll = (NestedScrollView) scrollView;
+            Rect buttonBounds = new Rect(0, 0, submit.getWidth(), submit.getHeight());
+            scroll.offsetDescendantRectToMyCoords(submit, buttonBounds);
+            int overlap = buttonBounds.bottom - (scroll.getHeight()
+                    - getResources().getDimensionPixelSize(R.dimen.space_md));
+            // Only correct a button that is already visible but covered. Do not
+            // jump a newly opened checkout to the bottom when the button is off-screen.
+            if (buttonBounds.top < scroll.getHeight() && overlap > 0) {
+                scroll.smoothScrollBy(0, overlap + getResources().getDimensionPixelSize(R.dimen.space_sm));
+            }
+        });
     }
 
     private void renderAddresses(List<Address> values) {
@@ -265,8 +299,6 @@ public class CheckoutFragment extends Fragment {
     private void scheduleShippingEstimate() {
         quoteReady = false;
         quoteVersion++;
-        View submit = getView() == null ? null : getView().findViewById(R.id.submitCheckoutButton);
-        if (submit != null) submit.setEnabled(false);
         quoteHandler.removeCallbacks(quoteRunnable); quoteHandler.postDelayed(quoteRunnable, 400L);
     }
 
@@ -322,12 +354,19 @@ public class CheckoutFragment extends Fragment {
                     summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"))
                             .append(" · ").append(quote.optDouble("campaignLatitude"))
                             .append(", ").append(quote.optDouble("campaignLongitude"));
-                estimate.setText(summary.toString()); quoteReady = Double.isFinite(quotedSubtotal)
+                estimate.setText(summary.toString());
+                message.setText("");
+                quoteReady = Double.isFinite(quotedSubtotal)
                         && Double.isFinite(quotedShippingFee); enableCheckoutSubmit();
             }
             @Override public void onError(String error) {
                 if (version != quoteVersion || !isAdded()) return;
-                quoteReady = false; estimate.setText("Không lấy được báo giá: " + explainQuoteError(error));
+                quoteReady = false;
+                String explanation = "Không lấy được báo giá: " + explainQuoteError(error);
+                estimate.setText(explanation);
+                message.setText(explanation);
+                message.setVisibility(View.VISIBLE);
+                enableCheckoutSubmit();
             }
         };
         if (vm.isGuest()) RenderBackendClient.postGuest("/quoteGuestCheckout", request, quoteCallback);
