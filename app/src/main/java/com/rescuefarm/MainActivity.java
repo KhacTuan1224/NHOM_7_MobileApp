@@ -2,8 +2,10 @@ package com.rescuefarm;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +13,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.widget.NestedScrollView;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDestination;
 import androidx.navigation.fragment.NavHostFragment;
@@ -39,11 +44,26 @@ public class MainActivity extends AppCompatActivity {
         OfflineSyncScheduler.schedule(getApplicationContext());
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        getWindow().setNavigationBarColor(ContextCompat.getColor(this, R.color.rescue_nav_surface));
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
+                .setAppearanceLightNavigationBars(true);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+            getWindow().setNavigationBarContrastEnforced(false);
+        View navigationBackground = findViewById(R.id.systemNavigationBackground);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainRoot), (view, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            int bottomInset = Math.max(systemBars.bottom, ime.bottom);
             view.setPadding(systemBars.left, systemBars.top, systemBars.right,
-                    Math.max(systemBars.bottom, ime.bottom));
+                    bottomInset);
+            FrameLayout.LayoutParams backgroundParams =
+                    (FrameLayout.LayoutParams) navigationBackground.getLayoutParams();
+            if (backgroundParams.height != bottomInset) {
+                backgroundParams.height = bottomInset;
+                navigationBackground.setLayoutParams(backgroundParams);
+            }
+            navigationBackground.setTranslationY(bottomInset);
+            navigationBackground.setVisibility(bottomInset > 0 ? View.VISIBLE : View.GONE);
             return insets;
         });
 
@@ -204,12 +224,15 @@ public class MainActivity extends AppCompatActivity {
 
         View navHost = findViewById(R.id.main);
         FrameLayout.LayoutParams navHostParams = (FrameLayout.LayoutParams) navHost.getLayoutParams();
-        int reservedNavigationHeight = show
+        // Draw the page beneath the floating navigation surface so its translucency shows content.
+        // Scroll pages receive matching bottom clearance so the final action remains reachable.
+        int navigationOverlayHeight = show
                 ? getResources().getDimensionPixelSize(R.dimen.customer_bottom_navigation_height) : 0;
-        if (navHostParams.bottomMargin != reservedNavigationHeight) {
-            navHostParams.bottomMargin = reservedNavigationHeight;
+        if (navHostParams.bottomMargin != 0) {
+            navHostParams.bottomMargin = 0;
             navHost.setLayoutParams(navHostParams);
         }
+        if (show) applyNavigationScrollClearance(navigationOverlayHeight);
                 
         findViewById(R.id.customerBottomNavigationContainer).setVisibility(
                 show ? android.view.View.VISIBLE : android.view.View.GONE
@@ -269,6 +292,36 @@ public class MainActivity extends AppCompatActivity {
         tintNavigationIcon(profileButton, isProfileActive, active, inactive);
         centerActionButton.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
         centerActionButton.setAlpha(isCenterActive ? 1f : 0.88f);
+    }
+
+    private void applyNavigationScrollClearance(int navigationHeight) {
+        NavHostFragment host = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main);
+        if (host == null) return;
+        Fragment current = host.getChildFragmentManager().getPrimaryNavigationFragment();
+        View root = current == null ? null : current.getView();
+        View scroll = findVerticalScroll(root);
+        if (scroll == null || !(scroll instanceof ViewGroup)) return;
+        ViewGroup scrollGroup = (ViewGroup) scroll;
+        int contentPaddingBottom = scrollGroup.getChildCount() == 0 ? 0
+                : scrollGroup.getChildAt(0).getPaddingBottom();
+        int currentPaddingBottom = scroll.getPaddingBottom();
+        int extra = Math.max(0, navigationHeight - contentPaddingBottom - currentPaddingBottom);
+        if (extra > 0) scroll.setPadding(scroll.getPaddingLeft(), scroll.getPaddingTop(),
+                scroll.getPaddingRight(), currentPaddingBottom + extra);
+        scrollGroup.setClipToPadding(false);
+    }
+
+    private View findVerticalScroll(View view) {
+        if (view == null) return null;
+        if (view instanceof NestedScrollView || view instanceof ScrollView) return view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                View match = findVerticalScroll(group.getChildAt(index));
+                if (match != null) return match;
+            }
+        }
+        return null;
     }
 
     private boolean isSellerSurface(int destinationId) {
