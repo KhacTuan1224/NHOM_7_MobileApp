@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -114,7 +115,7 @@ public class LoginFragment extends Fragment {
     }
 
     private void sendPhoneVerification(View anchor, String rawPhone, View sendButton,
-            View codeLayout, View verifyButton) {
+                                       View codeLayout, View verifyButton) {
         String phoneNumber = normalizePhoneNumber(rawPhone);
         if (phoneNumber == null) {
             Snackbar.make(anchor, R.string.phone_auth_invalid_number, Snackbar.LENGTH_LONG).show();
@@ -151,7 +152,8 @@ public class LoginFragment extends Fragment {
                     @Override
                     public void onVerificationFailed(@NonNull FirebaseException error) {
                         if (!isAdded() || getView() == null) return;
-                        Log.e(TAG, "Phone verification failed: " + firebasePhoneErrorCode(error), error);
+                        Log.e(TAG, "Phone verification failed: " + firebasePhoneErrorCode(error)
+                                + ", firebaseProject=" + firebaseProjectId(), error);
                         sendButton.setEnabled(true);
                         ((com.google.android.material.button.MaterialButton) sendButton)
                                 .setText(R.string.phone_auth_send_code);
@@ -160,7 +162,7 @@ public class LoginFragment extends Fragment {
 
                     @Override
                     public void onCodeSent(@NonNull String id,
-                            @NonNull PhoneAuthProvider.ForceResendingToken token) {
+                                           @NonNull PhoneAuthProvider.ForceResendingToken token) {
                         if (!isAdded() || getView() == null) return;
                         phoneVerificationId = id;
                         resendToken = token;
@@ -195,6 +197,12 @@ public class LoginFragment extends Fragment {
             return ((FirebaseAuthException) error).getErrorCode();
         }
         return error.getClass().getSimpleName();
+    }
+
+    private static String firebaseProjectId() {
+        FirebaseApp app = FirebaseApp.getInstance();
+        String projectId = app.getOptions().getProjectId();
+        return projectId == null ? "unknown" : projectId;
     }
 
     private static String firebasePhoneErrorMessage(FirebaseException error) {
