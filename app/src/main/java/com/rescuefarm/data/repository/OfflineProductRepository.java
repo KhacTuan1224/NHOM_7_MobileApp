@@ -52,6 +52,24 @@ public class OfflineProductRepository implements ProductRepository {
             callback.onSuccess(values);
         });
     }
+    @Override public void getCampaignProducts(List<String> batchIds, ProductListCallback callback) {
+        executor.execute(() -> {
+            java.util.LinkedHashSet<String> productIds = new java.util.LinkedHashSet<>();
+            if (batchIds != null) for (String id : batchIds) {
+                if (id == null || id.trim().isEmpty()) continue;
+                com.rescuefarm.data.local.entity.ProductBatchCacheEntity cached = dao.findBatch(id.trim());
+                if (cached != null && cached.productId != null && !cached.productId.trim().isEmpty()) {
+                    productIds.add(cached.productId.trim());
+                }
+            }
+            java.util.ArrayList<Product> products = new java.util.ArrayList<>();
+            for (String pid : productIds) {
+                com.rescuefarm.data.local.entity.ProductCacheEntity cached = dao.findProduct(pid);
+                if (cached != null) products.add(CatalogCacheMapper.toDomain(cached));
+            }
+            callback.onSuccess(products);
+        });
+    }
     @Override public void saveProduct(Product product, ProductCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
     }

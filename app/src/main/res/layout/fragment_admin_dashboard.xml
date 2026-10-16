@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background" android:fillViewport="true">
+    android:background="@color/rescue_background" android:fillViewport="true"
+    android:clipToPadding="false" android:paddingBottom="@dimen/admin_scroll_bottom_clearance">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="@dimen/space_lg">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -14,9 +15,8 @@
             android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
         <TextView android:id="@+id/adminDashboardMessage" android:layout_width="match_parent"
             android:layout_height="wrap_content" />
-        <TextView android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:padding="@dimen/space_md"
-            android:background="@color/rescue_primary_container" />
+        <LinearLayout android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
         <Button android:id="@+id/refreshAdminDashboardButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:text="@string/admin_refresh_action" />
         <Button android:id="@+id/adminSellersButton" android:layout_width="match_parent"
