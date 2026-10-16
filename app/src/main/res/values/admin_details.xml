@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ThemeOverlay.RescueFarm.AdminDetail" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/rescue_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/rescue_surface</item>
+        <item name="colorOnSurface">@color/rescue_on_surface</item>
+        <item name="colorPrimary">@color/rescue_primary</item>
+        <item name="alertDialogStyle">@style/Widget.RescueFarm.AdminDetailDialog</item>
+    </style>
+    <style name="Widget.RescueFarm.AdminDetailDialog" parent="MaterialAlertDialog.Material3">
+        <item name="shapeAppearance">@style/ShapeAppearance.RescueFarm.AdminDetailSquare</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.RescueFarm.AdminDetailSquare</item>
+    </style>
+    <style name="ShapeAppearance.RescueFarm.AdminDetailSquare" parent="">
+        <item name="cornerFamily">cut</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+</resources>
