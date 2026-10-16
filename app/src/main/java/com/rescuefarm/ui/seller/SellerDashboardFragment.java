@@ -12,6 +12,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -21,14 +22,16 @@ import com.rescuefarm.service.seller.SellerDashboardSnapshot;
 import com.rescuefarm.service.seller.SellerRoutePolicy;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Locale;
 
 public class SellerDashboardFragment extends Fragment {
     private SellerViewModel viewModel;
     private Spinner periodSpinner;
-    private TextView message, stats, analytics;
+    private TextView message;
     private ProgressBar progress;
-    private LinearLayout recent;
+    private LinearLayout stats, analytics, recent;
+    private DrawerLayout drawer;
     private final SellerRoutePolicy routes = new SellerRoutePolicy();
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -42,6 +45,7 @@ public class SellerDashboardFragment extends Fragment {
         analytics = view.findViewById(R.id.sellerDashboardAnalytics);
         progress = view.findViewById(R.id.sellerDashboardProgress);
         recent = view.findViewById(R.id.sellerRecentOrders);
+        drawer = view.findViewById(R.id.sellerDashboardDrawer);
         viewModel = new ViewModelProvider(requireActivity(), new SellerViewModelFactory(requireContext()))
                 .get(SellerViewModel.class);
         periodSpinner = view.findViewById(R.id.sellerStatsPeriodSpinner);
@@ -57,22 +61,31 @@ public class SellerDashboardFragment extends Fragment {
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
+        view.findViewById(R.id.sellerDashboardMenuButton).setOnClickListener(unused ->
+                drawer.openDrawer(android.view.Gravity.START));
         view.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(unused -> viewModel.refresh());
         bind(view, R.id.dashboardProductsButton, "products");
         bind(view, R.id.dashboardBatchesButton, "batches");
         bind(view, R.id.dashboardPromotionsButton, "promotions");
         bind(view, R.id.dashboardCampaignsButton, "campaigns");
         bind(view, R.id.dashboardMobileButton, "mobile");
-        bind(view, R.id.dashboardPostsButton, "posts");
         bind(view, R.id.dashboardOrdersButton, "orders");
         bind(view, R.id.dashboardShipmentsButton, "shipments");
-        view.findViewById(R.id.dashboardStatisticsButton).setOnClickListener(unused ->
-                navigate(routes.destinationFor("statistics"), "statistics"));
+        bind(view, R.id.dashboardStatisticsButton, "statistics");
+        bind(view, R.id.dashboardProfileButton, "profile");
         viewModel.refresh();
     }
 
     private void bind(View root, int id, String key) {
-        root.findViewById(id).setOnClickListener(unused -> navigate(routes.destinationFor(key), key));
+        root.findViewById(id).setOnClickListener(unused -> {
+            closeDrawer();
+            navigate(routes.destinationFor(key), key);
+        });
+    }
+
+    private void closeDrawer() {
+        if (drawer != null && drawer.isDrawerOpen(android.view.Gravity.START))
+            drawer.closeDrawer(android.view.Gravity.START);
     }
 
     private void navigate(SellerRoutePolicy.Destination destination, String key) {
@@ -84,10 +97,14 @@ public class SellerDashboardFragment extends Fragment {
         int action;
         if (destination == SellerRoutePolicy.Destination.PRODUCTS)
             action = R.id.action_sellerDashboardFragment_to_sellerProductListFragment;
+        else if (destination == SellerRoutePolicy.Destination.BATCHES) {
+            Bundle args = new Bundle(); args.putBoolean("batchSelectionMode", true);
+            Navigation.findNavController(requireView()).navigate(
+                    R.id.action_sellerDashboardFragment_to_sellerProductListFragment, args);
+            return;
+        }
         else if (destination == SellerRoutePolicy.Destination.CAMPAIGNS)
             action = R.id.action_sellerDashboardFragment_to_sellerCampaignListFragment;
-        else if (destination == SellerRoutePolicy.Destination.POSTS)
-            action = R.id.action_sellerDashboardFragment_to_sellerPostListFragment;
         else if (destination == SellerRoutePolicy.Destination.ORDERS) {
             Bundle args = new Bundle(); args.putBoolean("deliveryOnly", "shipments".equals(key));
             Navigation.findNavController(requireView()).navigate(
@@ -104,25 +121,53 @@ public class SellerDashboardFragment extends Fragment {
                 || value.getStatus() == SellerDashboardState.Status.EMPTY;
         for (int id : new int[]{R.id.dashboardProductsButton, R.id.dashboardBatchesButton,
                 R.id.dashboardPromotionsButton, R.id.dashboardCampaignsButton, R.id.dashboardMobileButton,
-                R.id.dashboardPostsButton, R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
-                R.id.dashboardStatisticsButton}) requireView().findViewById(id).setEnabled(enabled);
-        if (value.getSnapshot() == null) { stats.setText(""); analytics.setText(""); recent.removeAllViews(); return; }
+                R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
+                R.id.dashboardStatisticsButton, R.id.dashboardProfileButton})
+            requireView().findViewById(id).setEnabled(enabled);
+        if (value.getSnapshot() == null) {
+            stats.removeAllViews(); analytics.removeAllViews(); recent.removeAllViews(); return;
+        }
         SellerDashboardSnapshot snapshot = value.getSnapshot();
         NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-        stats.setText(getString(R.string.seller_dashboard_stats_format, snapshot.getProducts(),
-                snapshot.getActiveProducts(), snapshot.getCampaigns(), snapshot.getActiveCampaigns(),
-                snapshot.getMobileCampaigns(), snapshot.getPosts(), snapshot.getPendingPosts(),
-                snapshot.getOrders(), snapshot.getPendingOrders(), snapshot.getDeliveryOrders(),
-                snapshot.getPromotions(), currency.format(snapshot.getRevenue()), snapshot.getRescuedQuantity()));
+        stats.removeAllViews();
+        SellerDashboardCards.addSectionTitle(requireContext(), stats, "TỔNG QUAN");
+        SellerDashboardCards.addGrid(requireContext(), stats, Arrays.asList(
+                metric("Sản phẩm", String.valueOf(snapshot.getProducts()),
+                        snapshot.getActiveProducts() + " đang hoạt động"),
+                metric("Chiến dịch", String.valueOf(snapshot.getCampaigns()),
+                        snapshot.getActiveCampaigns() + " đang hoạt động · "
+                                + snapshot.getMobileCampaigns() + " điểm di động"),
+                metric("Đơn hàng", String.valueOf(snapshot.getOrders()),
+                        snapshot.getPendingOrders() + " đang xử lý · "
+                                + snapshot.getDeliveryOrders() + " giao hàng"),
+                metric("Khuyến mãi", String.valueOf(snapshot.getPromotions()), "Tổng khuyến mãi cửa hàng"),
+                metric("Doanh thu DELIVERED", currency.format(snapshot.getRevenue()),
+                        "Trong kỳ đã chọn · không gồm phí giao hàng"),
+                metric("Khối lượng giải cứu", String.format(Locale.getDefault(), "%.2f kg",
+                        snapshot.getRescuedQuantity()), "Tổng trên toàn bộ campaign")));
+
         String[] periods = getResources().getStringArray(R.array.seller_stats_periods);
         String period = periods[Math.min(periodSpinner.getSelectedItemPosition(), periods.length - 1)];
-        StringBuilder details = new StringBuilder(getString(R.string.seller_stats_period_label, period));
-        details.append("\n\n").append(getString(R.string.seller_analytics_summary_format,
-                snapshot.getRescuedQuantity(), snapshot.getCompletedCampaigns(), snapshot.getRescueRate(),
-                currency.format(snapshot.getRevenue()), snapshot.getOrders()));
-        appendMetrics(details, getString(R.string.seller_top_products_title), snapshot.getTopProducts());
-        appendMetrics(details, getString(R.string.seller_top_rescue_reasons_title), snapshot.getTopReasons());
-        analytics.setText(details.toString());
+        analytics.removeAllViews();
+        SellerDashboardCards.addSectionTitle(requireContext(), analytics, "THỐNG KÊ GIẢI CỨU");
+        SellerDashboardCards.addGrid(requireContext(), analytics, Arrays.asList(
+                metric("Khối lượng đã giải cứu", String.format(Locale.getDefault(), "%.2f kg",
+                        snapshot.getRescuedQuantity()), "Toàn bộ campaign"),
+                metric("Campaign hoàn thành", String.valueOf(snapshot.getCompletedCampaigns()),
+                        "Theo trạng thái COMPLETED"),
+                metric("Rescue rate", String.format(Locale.getDefault(), "%.1f%%",
+                        snapshot.getRescueRate()), "Đã giải cứu / mục tiêu campaign đã kích hoạt"),
+                metric("Doanh thu DELIVERED", currency.format(snapshot.getRevenue()),
+                        "Trong kỳ · không gồm phí giao hàng"),
+                metric("Số đơn trong kỳ", String.valueOf(snapshot.getOrders()),
+                        "Tối đa 50 đơn mới nhất đã tải")));
+        SellerDashboardCards.addFootnote(requireContext(), analytics,
+                getString(R.string.seller_stats_period_label, period)
+                        + "\nDoanh thu không bao gồm phí giao hàng và không đồng nghĩa với tiền đã đối soát.");
+        addRankedCards(analytics, getString(R.string.seller_top_products_title),
+                snapshot.getTopProducts(), "Số lượng đã giao");
+        addRankedCards(analytics, getString(R.string.seller_top_rescue_reasons_title),
+                snapshot.getTopReasons(), "Khối lượng đã giải cứu");
         recent.removeAllViews();
         for (Order order : snapshot.getRecentOrders()) {
             Button row = new Button(requireContext()); row.setAllCaps(false);
@@ -141,12 +186,22 @@ public class SellerDashboardFragment extends Fragment {
         }
     }
 
-    private void appendMetrics(StringBuilder output, String title,
-            List<SellerDashboardSnapshot.RankedMetric> values) {
-        output.append("\n\n").append(title);
-        if (values.isEmpty()) { output.append("\n—"); return; }
-        for (SellerDashboardSnapshot.RankedMetric metric : values)
-            output.append("\n• ").append(metric.getLabel()).append(": ")
-                    .append(String.format(Locale.getDefault(), "%.2f", metric.getQuantity()));
+    private SellerDashboardCards.Metric metric(String title, String value, String detail) {
+        return new SellerDashboardCards.Metric(title, value, detail);
+    }
+
+    private void addRankedCards(LinearLayout parent, String title,
+            List<SellerDashboardSnapshot.RankedMetric> values, String detail) {
+        SellerDashboardCards.addSectionTitle(requireContext(), parent, title);
+        if (values.isEmpty()) {
+            SellerDashboardCards.addFootnote(requireContext(), parent, "Chưa có dữ liệu trong kỳ.");
+            return;
+        }
+        java.util.ArrayList<SellerDashboardCards.Metric> cards = new java.util.ArrayList<>();
+        for (SellerDashboardSnapshot.RankedMetric value : values) {
+            cards.add(metric(value.getLabel(), String.format(Locale.getDefault(), "%.2f",
+                    value.getQuantity()), detail));
+        }
+        SellerDashboardCards.addGrid(requireContext(), parent, cards);
     }
 }

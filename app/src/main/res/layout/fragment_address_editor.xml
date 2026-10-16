@@ -18,30 +18,7 @@
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/receiverPhoneInput"
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="phone" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
-            android:hint="@string/province_label">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/provinceInput"
-                android:layout_width="match_parent" android:layout_height="wrap_content" />
-        </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
-            android:hint="@string/district_label">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/districtInput"
-                android:layout_width="match_parent" android:layout_height="wrap_content" />
-        </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
-            android:hint="@string/ward_label">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/wardInput"
-                android:layout_width="match_parent" android:layout_height="wrap_content" />
-        </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
-            android:hint="@string/street_label">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/streetInput"
-                android:layout_width="match_parent" android:layout_height="wrap_content" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <com.rescuefarm.ui.common.VietnamAddressView android:id="@+id/addressForm" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <RadioGroup android:id="@+id/addressTypeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" android:orientation="horizontal">
             <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/addressTypeHome"

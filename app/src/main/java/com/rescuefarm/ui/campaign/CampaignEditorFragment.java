@@ -12,15 +12,21 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.ImageView;
 import android.widget.Toast;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
+import com.rescuefarm.service.media.CloudinaryUploadUi;
+import com.rescuefarm.ui.common.VietnamAddressView;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.model.ProductBatch;
@@ -32,14 +38,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 public class CampaignEditorFragment extends Fragment {
     private String id = "";
     private CampaignViewModel viewModel;
-    private TextInputEditText title, description, start, end, latitude, longitude, locationName;
+    private TextInputEditText title, description, start, end, latitude, longitude;
+    private VietnamAddressView locationName;
     private Spinner reason, mode;
     private LinearLayout batchContainer;
     private TextView batchLoading;
+    private TextView imageStatus;
+    private LinearLayout imageGallery;
+    private final List<String> imageUrls = new ArrayList<>();
+    private final List<String> imagePublicIds = new ArrayList<>();
+    private final ActivityResultLauncher<String> imagePicker = registerForActivityResult(
+            new ActivityResultContracts.GetContent(), this::uploadCampaignImage);
+    private int nextImageSlot;
     private final Map<String, Double> selectedTargets = new LinkedHashMap<>();
     private final Map<String, CheckBox> batchChecks = new LinkedHashMap<>();
     private final Map<String, EditText> quantityInputs = new LinkedHashMap<>();
@@ -51,8 +66,12 @@ public class CampaignEditorFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        imageStatus = view.findViewById(R.id.campaignImageUploadStatus);
+        imageGallery = view.findViewById(R.id.campaignImageGallery);
         title = view.findViewById(R.id.campaignTitleInput);
         description = view.findViewById(R.id.campaignDescriptionInput);
+        title.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(120)});
+        description.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(3000)});
         start = view.findViewById(R.id.campaignStartInput);
         end = view.findViewById(R.id.campaignEndInput);
         latitude = view.findViewById(R.id.campaignLatitudeInput);
@@ -67,6 +86,14 @@ public class CampaignEditorFragment extends Fragment {
         mode.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
                 RescueMode.values()));
         id = getArguments() == null ? "" : getArguments().getString("campaignId", "");
+        if (id.trim().isEmpty()) id = UUID.randomUUID().toString();
+        view.findViewById(R.id.uploadCampaignImageButton).setOnClickListener(v -> {
+            if (imageUrls.size() >= 6) {
+                Toast.makeText(requireContext(), "Mỗi chiến dịch tối đa 6 ảnh.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            imagePicker.launch("image/*");
+        });
         viewModel = new ViewModelProvider(this, new CampaignViewModelFactory(requireContext()))
                 .get(CampaignViewModel.class);
         TextWatcher watcher = new TextWatcher() {
@@ -77,7 +104,10 @@ public class CampaignEditorFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) { }
         };
         for (TextInputEditText input : new TextInputEditText[]{title, description, start, end,
-                latitude, longitude, locationName}) input.addTextChangedListener(watcher);
+                latitude, longitude}) input.addTextChangedListener(watcher);
+        locationName.setOnAddressChangedListener(() -> {
+            if (!binding) { dirty = true; latitude.setText(""); longitude.setText(""); }
+        });
         installSpinnerDirtyListener(reason);
         installSpinnerDirtyListener(mode);
         viewModel.getBatchOptions().observe(getViewLifecycleOwner(), this::renderBatchOptions);
@@ -223,10 +253,43 @@ public class CampaignEditorFragment extends Fragment {
     }
 
     private void save(boolean submit) {
+        if (submit && !locationName.validate()) return;
         preserveVisibleTargets();
         viewModel.save(id, text(title), text(description), (RescueReason) reason.getSelectedItem(),
                 (RescueMode) mode.getSelectedItem(), new LinkedHashMap<>(selectedTargets), text(start),
-                text(end), text(latitude), text(longitude), text(locationName), submit);
+            text(end), text(latitude), text(longitude), locationName.isComplete()
+                    ? locationName.formattedAddress() : locationName.street(), submit,
+            new ArrayList<>(imageUrls), new ArrayList<>(imagePublicIds));
+    }
+
+    private void uploadCampaignImage(Uri uri) {
+        if (uri == null || !isAdded()) return;
+        if (imageUrls.size() >= 6) { Toast.makeText(requireContext(), "Mỗi chiến dịch tối đa 6 ảnh.", Toast.LENGTH_SHORT).show(); return; }
+        String uid = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        if (uid == null || uid.trim().isEmpty()) { Toast.makeText(requireContext(), "Vui lòng đăng nhập Seller.", Toast.LENGTH_SHORT).show(); return; }
+        int slot = nextImageSlot++;
+        CloudinaryUploadUi.upload(this, uri, "campaign", id, slot,
+                requireView().findViewById(R.id.uploadCampaignImageButton), imageStatus, null, url -> {
+                    imageUrls.add(url);
+                    imagePublicIds.add(com.rescuefarm.service.media.CloudinaryAssetIds.fromSecureUrl(url));
+                    dirty = true; renderCampaignImages();
+                });
+    }
+
+    private void renderCampaignImages() {
+        if (!isAdded() || imageGallery == null) return;
+        imageGallery.removeAllViews();
+        for (int i = 0; i < imageUrls.size(); i++) {
+            final int index = i;
+            LinearLayout item = new LinearLayout(requireContext()); item.setOrientation(LinearLayout.VERTICAL);
+            ImageView image = new ImageView(requireContext()); image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            int size = (int) (112 * getResources().getDisplayMetrics().density);
+            com.bumptech.glide.Glide.with(this).load(imageUrls.get(i)).centerCrop().into(image);
+            item.addView(image, new LinearLayout.LayoutParams(size, size));
+            TextView remove = new TextView(requireContext()); remove.setText("Gỡ ảnh");
+            remove.setOnClickListener(v -> { imageUrls.remove(index); imagePublicIds.remove(index); dirty = true; renderCampaignImages(); });
+            item.addView(remove); imageGallery.addView(item);
+        }
     }
 
     private void installSpinnerDirtyListener(Spinner spinner) {
@@ -244,13 +307,20 @@ public class CampaignEditorFragment extends Fragment {
     private void populate(RescueCampaign value) {
         binding = true;
         title.setText(value.getTitle()); description.setText(value.getDescription());
+        imageUrls.clear(); imageUrls.addAll(value.getImageUrls());
+        nextImageSlot = imageUrls.size();
+        imagePublicIds.clear(); imagePublicIds.addAll(value.getImagePublicIds());
+        while (imagePublicIds.size() < imageUrls.size())
+            imagePublicIds.add(com.rescuefarm.service.media.CloudinaryAssetIds.fromSecureUrl(
+                    imageUrls.get(imagePublicIds.size())));
+        renderCampaignImages();
         reason.setSelection(value.getRescueReason().ordinal()); mode.setSelection(value.getRescueMode().ordinal());
         selectedTargets.clear(); selectedTargets.putAll(value.getBatchTargets());
         if (optionsLoaded) renderBatchOptions(viewModel.getBatchOptions().getValue());
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         start.setText(format.format(value.getStartDate())); end.setText(format.format(value.getEndDate()));
         latitude.setText(String.valueOf(value.getLatitude())); longitude.setText(String.valueOf(value.getLongitude()));
-        locationName.setText(value.getLocationName());
+        locationName.setFormattedAddress(value.getLocationName());
         binding = false;
     }
 

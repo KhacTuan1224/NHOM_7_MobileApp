@@ -56,11 +56,6 @@
             android:layout_height="42dp" android:layout_marginStart="4dp"
             android:layout_marginTop="@dimen/space_sm" android:layout_marginEnd="4dp"
             android:text="@string/notifications_title" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/adminReportsButton"
-            style="@style/Widget.RescueFarm.ProfileOutlinedButton" android:layout_width="match_parent"
-            android:layout_height="42dp" android:layout_marginStart="4dp"
-            android:layout_marginTop="@dimen/space_sm" android:layout_marginEnd="4dp"
-            android:text="@string/admin_dashboard_title" />
         <com.google.android.material.button.MaterialButton android:id="@+id/logoutButton"
             style="@style/Widget.RescueFarm.ProfileLogoutButton" android:layout_width="match_parent"
             android:layout_height="42dp" android:layout_marginStart="4dp"

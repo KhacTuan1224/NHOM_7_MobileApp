@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="storefrontAddressForm" type="id" />
+    <string name="address_catalog_loading">Đang tải danh sách địa chỉ…</string>
+    <string name="address_catalog_error">Không tải được danh sách địa chỉ. Vui lòng mở lại màn hình.</string>
+    <string name="address_catalog_hint">Chọn tỉnh/thành phố, quận/huyện, xã/phường rồi nhập số nhà, tên đường.</string>
+    <string name="address_reselect_hint">Địa chỉ cũ chưa khớp danh sách. Hãy chọn lại các đơn vị hành chính; số nhà và tên đường vẫn được giữ.</string>
+    <string name="address_search_hint">Tìm theo tên (có thể nhập không dấu)</string>
+    <string name="checkout_other_address">Nhập địa chỉ nhận hàng khác</string>
+    <string name="checkout_saved_address_label">Địa chỉ nhận hàng đã lưu hoặc địa chỉ khác</string>
+    <string name="checkout_location_action">Lấy vị trí hiện tại cho địa chỉ này</string>
+    <string name="checkout_location_hint">GPS dùng để tính phí giao hàng. Chỉ lấy vị trí hiện tại nếu bạn đang ở địa chỉ nhận hàng; có thể nhập tọa độ bên dưới.</string>
+</resources>

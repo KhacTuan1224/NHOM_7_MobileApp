@@ -2,8 +2,10 @@ package com.rescuefarm;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +13,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.widget.NestedScrollView;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDestination;
 import androidx.navigation.fragment.NavHostFragment;
@@ -39,11 +44,26 @@ public class MainActivity extends AppCompatActivity {
         OfflineSyncScheduler.schedule(getApplicationContext());
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        getWindow().setNavigationBarColor(ContextCompat.getColor(this, R.color.rescue_nav_surface));
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
+                .setAppearanceLightNavigationBars(true);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+            getWindow().setNavigationBarContrastEnforced(false);
+        View navigationBackground = findViewById(R.id.systemNavigationBackground);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainRoot), (view, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            int bottomInset = Math.max(systemBars.bottom, ime.bottom);
             view.setPadding(systemBars.left, systemBars.top, systemBars.right,
-                    Math.max(systemBars.bottom, ime.bottom));
+                    bottomInset);
+            FrameLayout.LayoutParams backgroundParams =
+                    (FrameLayout.LayoutParams) navigationBackground.getLayoutParams();
+            if (backgroundParams.height != bottomInset) {
+                backgroundParams.height = bottomInset;
+                navigationBackground.setLayoutParams(backgroundParams);
+            }
+            navigationBackground.setTranslationY(bottomInset);
+            navigationBackground.setVisibility(bottomInset > 0 ? View.VISIBLE : View.GONE);
             return insets;
         });
 
@@ -55,14 +75,25 @@ public class MainActivity extends AppCompatActivity {
         ImageView profileButton = findViewById(R.id.navProfileButton);
         centerActionButton = findViewById(R.id.centerActionButton);
         centerActionButton.setEnabled(false);
-        centerActionButton.setOnClickListener(unused -> navigateTo(navController,
-                currentRole == UserRole.SELLER ? R.id.sellerDashboardFragment : R.id.cartFragment));
+        centerActionButton.setOnClickListener(unused -> {
+            if (currentRole == UserRole.SELLER) navigateTo(navController, R.id.sellerDashboardFragment);
+            else if (currentRole == UserRole.ADMIN) navigateTo(navController, R.id.adminDashboardFragment);
+            else navigateTo(navController, R.id.cartFragment);
+        });
         homeButton.setOnClickListener(unused -> navigateTo(navController, R.id.guestHomeFragment));
         communityButton.setOnClickListener(unused -> navigateTo(navController, R.id.feedFragment));
-        ordersButton.setOnClickListener(unused -> navigateTo(navController,
-                currentRole == UserRole.SELLER ? R.id.sellerOrderListFragment
-                        : AuthRepositoryFactory.create(this).isAuthenticated() ? R.id.customerOrderListFragment
-                        : R.id.orderConfirmationFragment));
+        ordersButton.setOnClickListener(unused -> {
+            if (currentRole == UserRole.ADMIN) {
+                Bundle args = new Bundle(); args.putString("section", "ORDERS");
+                if (navController.getCurrentDestination() != null
+                        && navController.getCurrentDestination().getId() == R.id.adminResourceFragment) {
+                    navController.popBackStack(R.id.adminDashboardFragment, false);
+                }
+                navigateTo(navController, R.id.adminResourceFragment, args);
+            } else if (currentRole == UserRole.SELLER) navigateTo(navController, R.id.sellerOrderListFragment);
+            else navigateTo(navController, AuthRepositoryFactory.create(this).isAuthenticated()
+                    ? R.id.customerOrderListFragment : R.id.orderConfirmationFragment);
+        });
         profileButton.setOnClickListener(unused -> {
             if (!AuthRepositoryFactory.create(this).isAuthenticated()) {
                 navController.navigate(R.id.loginFragment);
@@ -115,10 +146,12 @@ public class MainActivity extends AppCompatActivity {
     private void updateCenterAction(boolean roleUnresolved) {
         if (centerActionButton == null) return;
         boolean seller = currentRole == UserRole.SELLER;
+        boolean admin = currentRole == UserRole.ADMIN;
         centerActionButton.setEnabled(!roleUnresolved);
-        centerActionButton.setIconResource(seller ? R.drawable.ic_nav_dashboard : R.drawable.ic_nav_cart);
+        centerActionButton.setIconResource(seller || admin ? R.drawable.ic_nav_dashboard : R.drawable.ic_nav_cart);
         centerActionButton.setContentDescription(getString(roleUnresolved
-                ? R.string.nav_action_loading : seller ? R.string.nav_seller_dashboard : R.string.nav_cart));
+                ? R.string.nav_action_loading : admin ? R.string.nav_admin_dashboard
+                : seller ? R.string.nav_seller_dashboard : R.string.nav_cart));
         if (navController != null && navController.getCurrentDestination() != null) {
             updateBottomNavigation(centerActionButton, findViewById(R.id.navHomeButton),
                     findViewById(R.id.navCommunityButton), findViewById(R.id.navOrdersButton),
@@ -136,6 +169,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void navigateTo(NavController navController, int destinationId, Bundle arguments) {
+        if (navController.getCurrentDestination() != null
+                && navController.getCurrentDestination().getId() != destinationId) {
+            navController.navigate(destinationId, arguments);
+        }
+    }
+
     private void updateBottomNavigation(MaterialButton centerActionButton,
                                         ImageView homeButton,
                                         ImageView communityButton,
@@ -145,8 +185,10 @@ public class MainActivity extends AppCompatActivity {
         int destinationId = destination.getId();
         
         boolean sellerSurface = currentRole == UserRole.SELLER && isSellerSurface(destinationId);
+        boolean adminSurface = currentRole == UserRole.ADMIN
+                && (destinationId == R.id.adminDashboardFragment || destinationId == R.id.adminResourceFragment);
         // Keep role-specific bottom navigation available throughout Seller workflows.
-        boolean show = sellerSurface || destinationId == R.id.guestHomeFragment
+        boolean show = sellerSurface || adminSurface || destinationId == R.id.guestHomeFragment
                 || destinationId == R.id.feedFragment
                 || destinationId == R.id.cartFragment
                 || destinationId == R.id.orderConfirmationFragment
@@ -182,12 +224,17 @@ public class MainActivity extends AppCompatActivity {
 
         View navHost = findViewById(R.id.main);
         FrameLayout.LayoutParams navHostParams = (FrameLayout.LayoutParams) navHost.getLayoutParams();
-        int reservedNavigationHeight = show
+        // Most screens draw under the floating navigation surface. Checkout reserves
+        // its height so the primary order action can never sit behind a tappable nav item.
+        int navigationOverlayHeight = show
                 ? getResources().getDimensionPixelSize(R.dimen.customer_bottom_navigation_height) : 0;
-        if (navHostParams.bottomMargin != reservedNavigationHeight) {
-            navHostParams.bottomMargin = reservedNavigationHeight;
+        int desiredBottomMargin = show && destinationId == R.id.checkoutFragment
+                ? navigationOverlayHeight : 0;
+        if (navHostParams.bottomMargin != desiredBottomMargin) {
+            navHostParams.bottomMargin = desiredBottomMargin;
             navHost.setLayoutParams(navHostParams);
         }
+        if (show) applyNavigationScrollClearance(navigationOverlayHeight);
                 
         findViewById(R.id.customerBottomNavigationContainer).setVisibility(
                 show ? android.view.View.VISIBLE : android.view.View.GONE
@@ -236,12 +283,47 @@ public class MainActivity extends AppCompatActivity {
                 || destinationId == R.id.notificationFragment
                 || destinationId == R.id.reviewFragment
                 || destinationId == R.id.reportFragment;
+
+        boolean isCenterActive = sellerSurface && (destinationId == R.id.sellerDashboardFragment
+                    || destinationId == R.id.sellerProfileFragment)
+                || adminSurface;
         
         tintNavigationIcon(homeButton, isHomeActive, active, inactive);
         tintNavigationIcon(communityButton, isCommunityActive, active, inactive);
         tintNavigationIcon(ordersButton, isOrdersActive, active, inactive);
         tintNavigationIcon(profileButton, isProfileActive, active, inactive);
         centerActionButton.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
+        centerActionButton.setAlpha(isCenterActive ? 1f : 0.88f);
+    }
+
+    private void applyNavigationScrollClearance(int navigationHeight) {
+        NavHostFragment host = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main);
+        if (host == null) return;
+        Fragment current = host.getChildFragmentManager().getPrimaryNavigationFragment();
+        View root = current == null ? null : current.getView();
+        View scroll = findVerticalScroll(root);
+        if (scroll == null || !(scroll instanceof ViewGroup)) return;
+        ViewGroup scrollGroup = (ViewGroup) scroll;
+        int contentPaddingBottom = scrollGroup.getChildCount() == 0 ? 0
+                : scrollGroup.getChildAt(0).getPaddingBottom();
+        int currentPaddingBottom = scroll.getPaddingBottom();
+        int extra = Math.max(0, navigationHeight - contentPaddingBottom - currentPaddingBottom);
+        if (extra > 0) scroll.setPadding(scroll.getPaddingLeft(), scroll.getPaddingTop(),
+                scroll.getPaddingRight(), currentPaddingBottom + extra);
+        scrollGroup.setClipToPadding(false);
+    }
+
+    private View findVerticalScroll(View view) {
+        if (view == null) return null;
+        if (view instanceof NestedScrollView || view instanceof ScrollView) return view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                View match = findVerticalScroll(group.getChildAt(index));
+                if (match != null) return match;
+            }
+        }
+        return null;
     }
 
     private boolean isSellerSurface(int destinationId) {

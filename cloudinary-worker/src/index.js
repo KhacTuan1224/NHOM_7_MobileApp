@@ -116,7 +116,7 @@ async function resolveAsset(body, uid, profile) {
     const publicId = String(body.publicId || "");
     const userPrefixes = [
       `rescuefarm/users/${uid}/`, `rescuefarm/sellers/${uid}/`,
-      `rescuefarm/products/${uid}/`, `rescuefarm/posts/${uid}/`, `rescuefarm/reviews/${uid}/`,
+      `rescuefarm/products/${uid}/`, `rescuefarm/posts/${uid}/`, `rescuefarm/campaigns/${uid}/`, `rescuefarm/reviews/${uid}/`,
     ];
     if (userPrefixes.some((prefix) => publicId.startsWith(prefix)) && /^[A-Za-z0-9_/-]+$/.test(publicId))
       return { publicId };
@@ -141,6 +141,8 @@ async function resolveAsset(body, uid, profile) {
     return { publicId: `rescuefarm/products/${uid}/${resourceId}/image-${slot}`, assetFolder: `rescuefarm_assets/products/${uid}/${resourceId}` };
   if (type === "post" && profile.role === "SELLER" && profile.sellerStatus === "APPROVED")
     return { publicId: `rescuefarm/posts/${uid}/${resourceId}/image-${slot}`, assetFolder: `rescuefarm_assets/posts/${uid}/${resourceId}` };
+  if (type === "campaign" && profile.role === "SELLER" && profile.sellerStatus === "APPROVED")
+    return { publicId: `rescuefarm/campaigns/${uid}/${resourceId}/image-${slot}`, assetFolder: `rescuefarm_assets/campaigns/${uid}/${resourceId}` };
   if (type === "review" && profile.role === "CUSTOMER")
     return { publicId: `rescuefarm/reviews/${uid}/${resourceId}/image-${slot}`, assetFolder: `rescuefarm_assets/reviews/${uid}/${resourceId}` };
 

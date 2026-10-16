@@ -16,6 +16,12 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/users/$(userId)).data.status == 'ACTIVE';
     }
 
+    function canManageOwnAddresses(userId) {
+      return isOwner(userId)
+          && get(/databases/$(database)/documents/users/$(userId)).data.status == 'ACTIVE'
+          && get(/databases/$(database)/documents/users/$(userId)).data.role in ['CUSTOMER', 'SELLER', 'ADMIN'];
+    }
+
     function isApprovedSeller(userId) {
       return hasRole(userId, 'SELLER')
           && get(/databases/$(database)/documents/users/$(userId)).data.sellerStatus == 'APPROVED';
@@ -314,13 +320,17 @@ service cloud.firestore {
             'locationSharingEnabled', 'locationName', 'status', 'createdAt',
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason',
             'lastReservationOrderId', 'lastReservationQuantity',
-            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity'
+            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity',
+            'imageUrls', 'imagePublicIds', 'viewCount'
           ])
           && data.id is string
           && data.sellerId is string
           && data.title is string
           && data.title.size() >= 3 && data.title.size() <= 120
           && data.description is string && data.description.size() <= 3000
+          && data.get('imageUrls', []) is list && data.get('imageUrls', []).size() <= 6
+          && data.get('imagePublicIds', []) is list && data.get('imagePublicIds', []).size() <= 6
+          && data.get('viewCount', 0) is int && data.get('viewCount', 0) >= 0
           && data.rescueReason in [
             'OVER_SUPPLY', 'NEAR_EXPIRY', 'SEASONAL_HARVEST', 'WEATHER_IMPACT',
             'ORDER_CANCELLED', 'LOGISTICS_DISRUPTION', 'DEMAND_DROP', 'COSMETIC_GRADE'
@@ -402,6 +412,24 @@ service cloud.firestore {
           && data.updatedAt is timestamp;
     }
 
+    function activeCampaign(campaignId) {
+      return get(/databases/$(database)/documents/campaigns/$(campaignId)).data.status == 'ACTIVE';
+    }
+
+    function validCampaignComment(data, campaignId) {
+      return data.keys().hasOnly([
+            'id', 'campaignId', 'userId', 'status', 'content', 'createdAt', 'updatedAt',
+            'moderatedBy', 'moderatedAt', 'moderationReason'
+          ])
+          && data.id is string && data.campaignId == campaignId
+          && data.userId is string
+          && data.status in ['ACTIVE', 'EDITED', 'DELETED', 'HIDDEN']
+          && data.content is string
+          && ((data.status == 'DELETED' && data.content == '')
+            || (data.status != 'DELETED' && data.content.size() >= 1 && data.content.size() <= 500))
+          && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+
     function hasNoCredentialFields(data) {
       return !data.keys().hasAny(['password', 'passwordHash', 'rawPassword']);
     }
@@ -466,7 +494,10 @@ service cloud.firestore {
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && request.resource.data.updatedAt == request.time
-          && !request.resource.data.keys().hasAny(['moderatedBy', 'moderatedAt', 'moderationReason'])
+          // Owners may keep an existing review, but cannot add, edit or remove its audit fields.
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'moderatedBy', 'moderatedAt', 'moderationReason'
+          ])
           && validUserProfile(request.resource.data, userId)
           && (resource.data.role != 'SELLER'
               || request.resource.data.sellerStatus == resource.data.sellerStatus)
@@ -504,8 +535,8 @@ service cloud.firestore {
       allow delete: if false;
 
       match /addresses/{addressId} {
-        allow get, list: if hasRole(userId, 'CUSTOMER');
-        allow create: if hasRole(userId, 'CUSTOMER')
+        allow get, list: if canManageOwnAddresses(userId);
+        allow create: if canManageOwnAddresses(userId)
             && request.resource.data.keys().hasOnly([
               'id', 'customerId', 'receiverName', 'receiverPhone', 'province',
               'district', 'ward', 'street', 'latitude', 'longitude', 'type',
@@ -515,7 +546,7 @@ service cloud.firestore {
             && validAddress(request.resource.data, userId)
             && request.resource.data.updatedAt == request.time
             && hasNoCredentialFields(request.resource.data);
-        allow update: if hasRole(userId, 'CUSTOMER')
+        allow update: if canManageOwnAddresses(userId)
             && request.resource.data.keys().hasOnly([
               'id', 'customerId', 'receiverName', 'receiverPhone', 'province',
               'district', 'ward', 'street', 'latitude', 'longitude', 'type',
@@ -526,7 +557,7 @@ service cloud.firestore {
             && validAddress(request.resource.data, userId)
             && request.resource.data.updatedAt == request.time
             && hasNoCredentialFields(request.resource.data);
-        allow delete: if hasRole(userId, 'CUSTOMER') && resource.data.isDefault == false;
+        allow delete: if canManageOwnAddresses(userId) && resource.data.isDefault == false;
       }
       match /devices/{deviceId} {
         allow get, list: if hasRole(userId, 'CUSTOMER') || hasRole(userId, 'SELLER');
@@ -574,7 +605,8 @@ service cloud.firestore {
       allow get: if request.auth != null
           && (request.auth.uid == sellerId && hasRole(sellerId, 'SELLER') || isAdmin());
       allow list: if isAdmin();
-      allow create, update: if isApprovedSeller(request.auth.uid)
+      // Active sellers can prepare their own profile before approval; selling still requires approval.
+      allow create, update: if hasRole(sellerId, 'SELLER')
           && request.auth.uid == sellerId
           && request.resource.data.keys().hasOnly([
             'sellerId', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'qrUrl', 'updatedAt'
@@ -934,6 +966,7 @@ service cloud.firestore {
           && request.resource.data.status in ['DRAFT', 'PENDING_APPROVAL']
           && request.resource.data.reservedQuantity == 0
           && request.resource.data.rescuedQuantity == 0
+          && request.resource.data.get('viewCount', 0) == 0
           && validCampaign(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow update: if (
@@ -968,9 +1001,61 @@ service cloud.firestore {
           )
           && request.resource.data.id == resource.data.id
           && request.resource.data.sellerId == resource.data.sellerId
+          && request.resource.data.get('viewCount', 0) == resource.data.get('viewCount', 0)
           && validCampaign(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow delete: if false;
+
+      match /reactions/{reactionId} {
+        allow get, list: if activeCampaign(campaignId) || isAdmin();
+        allow create: if hasRole(request.auth.uid, 'CUSTOMER') && activeCampaign(campaignId)
+            && reactionId == request.auth.uid
+            && request.resource.data.keys().hasOnly(['id', 'userId', 'campaignId', 'type', 'createdAt'])
+            && request.resource.data.id == request.auth.uid
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.campaignId == campaignId
+            && request.resource.data.type in ['LIKE', 'SUPPORT', 'CARE']
+            && request.resource.data.createdAt is timestamp;
+        allow update: if hasRole(request.auth.uid, 'CUSTOMER') && isOwner(reactionId) && activeCampaign(campaignId)
+            && request.resource.data.keys().hasOnly(['id', 'userId', 'campaignId', 'type', 'createdAt'])
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.userId == resource.data.userId
+            && request.resource.data.campaignId == campaignId
+            && request.resource.data.type in ['LIKE', 'SUPPORT', 'CARE']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['type', 'createdAt']);
+        allow delete: if hasRole(request.auth.uid, 'CUSTOMER') && isOwner(reactionId) && activeCampaign(campaignId);
+      }
+
+      match /comments/{commentId} {
+        allow get, list: if activeCampaign(campaignId) || isAdmin();
+        allow create: if hasRole(request.auth.uid, 'CUSTOMER') && activeCampaign(campaignId)
+            && request.resource.data.id == commentId
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.status == 'ACTIVE'
+            && validCampaignComment(request.resource.data, campaignId);
+        allow update: if hasRole(request.auth.uid, 'CUSTOMER') && resource.data.userId == request.auth.uid
+            && activeCampaign(campaignId)
+            && resource.data.status in ['ACTIVE', 'EDITED']
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.userId == resource.data.userId
+            && request.resource.data.campaignId == resource.data.campaignId
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'status', 'updatedAt'])
+            && request.resource.data.status in ['EDITED', 'DELETED']
+            && validCampaignComment(request.resource.data, campaignId)
+          || (isAdmin()
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.campaignId == resource.data.campaignId
+            && request.resource.data.userId == resource.data.userId
+            && request.resource.data.status == 'HIDDEN'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
+            ])
+            && hasAdminModerationFields(request.resource.data)
+            && validCampaignComment(request.resource.data, campaignId));
+        allow delete: if false;
+      }
     }
 
     function validAdminBanner(data, bannerId) {
@@ -1015,26 +1100,19 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      allow get, list: if resource.data.status == 'PUBLISHED'
+      allow get: if (isApprovedSeller(request.auth.uid)
+              && !exists(/databases/$(database)/documents/posts/$(postId)))
+          || resource.data.status == 'PUBLISHED'
           || (isSignedIn() && resource.data.sellerId == request.auth.uid)
           || isAdmin();
-      allow create: if isApprovedSeller(request.auth.uid)
-          && request.resource.data.id == postId
-          && request.resource.data.sellerId == request.auth.uid
-          && request.resource.data.status in ['DRAFT', 'PENDING_APPROVAL']
-          && request.resource.data.viewCount == 0
-          && validPost(request.resource.data)
-          && hasNoCredentialFields(request.resource.data);
+      allow list: if resource.data.status == 'PUBLISHED'
+          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
+          || isAdmin();
+      // New authored content lives on Campaign documents. This collection is
+      // retained only for historical Post records and report resolution.
+      allow create: if false;
       allow update: if (
-            (isApprovedSeller(request.auth.uid)
-              && resource.data.sellerId == request.auth.uid
-              && resource.data.status in ['DRAFT', 'REJECTED']
-              && request.resource.data.status in ['DRAFT', 'PENDING_APPROVAL']
-              && request.resource.data.id == resource.data.id
-              && request.resource.data.sellerId == resource.data.sellerId
-              && request.resource.data.createdAt == resource.data.createdAt
-              && request.resource.data.viewCount == resource.data.viewCount)
-            || (isAdmin()
+            (isAdmin()
               && ((resource.data.status == 'PENDING_APPROVAL'
                     && request.resource.data.status in ['PUBLISHED', 'REJECTED'])
                 || (resource.data.status == 'PUBLISHED'
@@ -1054,53 +1132,12 @@ service cloud.firestore {
 
       match /reactions/{reactionId} {
         allow get, list: if publishedPost(postId);
-        allow create: if isActiveAccount() && publishedPost(postId)
-            && request.resource.data.keys().hasOnly(['id', 'userId', 'postId', 'type', 'createdAt'])
-            && reactionId == request.auth.uid
-            && request.resource.data.id == request.auth.uid
-            && request.resource.data.userId == request.auth.uid
-            && request.resource.data.postId == postId
-            && request.resource.data.type in ['LIKE', 'SUPPORT', 'CARE']
-            && request.resource.data.createdAt is timestamp;
-        allow update: if isActiveAccount() && isOwner(reactionId) && publishedPost(postId)
-            && request.resource.data.keys().hasOnly(['id', 'userId', 'postId', 'type', 'createdAt'])
-            && request.resource.data.id == resource.data.id
-            && request.resource.data.userId == resource.data.userId
-            && request.resource.data.postId == resource.data.postId
-            && request.resource.data.type in ['LIKE', 'SUPPORT', 'CARE']
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['type', 'createdAt']);
-        allow delete: if isActiveAccount() && isOwner(reactionId);
+        allow create, update, delete: if false;
       }
 
       match /comments/{commentId} {
         allow get, list: if publishedPost(postId) || isAdmin();
-        allow create: if isActiveAccount() && publishedPost(postId)
-            && request.resource.data.id == commentId
-            && request.resource.data.userId == request.auth.uid
-            && request.resource.data.status == 'ACTIVE'
-            && validComment(request.resource.data, postId);
-        allow update: if (isActiveAccount() && resource.data.userId == request.auth.uid
-            && publishedPost(postId)
-            && resource.data.status in ['ACTIVE', 'EDITED']
-            && request.resource.data.id == resource.data.id
-            && request.resource.data.userId == resource.data.userId
-            && request.resource.data.postId == resource.data.postId
-            && request.resource.data.createdAt == resource.data.createdAt
-            && request.resource.data.updatedAt == request.time
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'status', 'updatedAt'])
-            && request.resource.data.status in ['EDITED', 'DELETED']
-            && validComment(request.resource.data, postId))
-          || (isAdmin()
-            && request.resource.data.id == resource.data.id
-            && request.resource.data.postId == resource.data.postId
-            && request.resource.data.userId == resource.data.userId
-            && request.resource.data.status == 'HIDDEN'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
-            ])
-            && hasAdminModerationFields(request.resource.data)
-            && validComment(request.resource.data, postId));
-        allow delete: if false;
+        allow create, update, delete: if false;
       }
     }
 

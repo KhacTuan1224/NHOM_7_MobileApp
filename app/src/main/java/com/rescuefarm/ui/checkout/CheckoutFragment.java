@@ -3,8 +3,11 @@ package com.rescuefarm.ui.checkout;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +18,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -27,8 +34,11 @@ import com.rescuefarm.domain.enums.FulfillmentType;
 import com.rescuefarm.domain.enums.PaymentMethod;
 import com.rescuefarm.domain.model.Address;
 import com.rescuefarm.domain.model.Cart;
+import com.rescuefarm.ui.common.VietnamAddressView;
+import com.rescuefarm.ui.profile.ProfileViewModel;
+import com.rescuefarm.ui.profile.ProfileViewModelFactory;
+import com.rescuefarm.ui.profile.ProfileScreenState;
 import com.rescuefarm.service.backend.RenderBackendClient;
-import com.google.firebase.firestore.FirebaseFirestore;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.text.NumberFormat;
@@ -40,9 +50,20 @@ import java.util.Set;
 
 public class CheckoutFragment extends Fragment {
     private CheckoutViewModel vm;
-    private EditText name, phone, address, lat, lng, note;
-    private Spinner fulfillment, payment, savedAddressSpinner;
+    private EditText name, phone, lat, lng, note;
+    private VietnamAddressView address;
+    private ProfileViewModel locationModel;
     private TextView summary, message;
+    private String selectedAddressId;
+    private boolean addressEdited, restoringAddress, bindingAddressDetails;
+    private int locationRequestVersion = -1, destinationVersion;
+    private final ActivityResultLauncher<String[]> locationPermission = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                if (Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION))) takeLocation();
+                else if (message != null) message.setText("Bạn có thể nhập tọa độ địa chỉ bên dưới.");
+            });
+    private Spinner fulfillment, payment, savedAddressSpinner;
     private final List<Address> savedAddresses = new ArrayList<>();
     private boolean bindingAddresses;
     private boolean bindingPaymentMethods;
@@ -73,6 +94,29 @@ public class CheckoutFragment extends Fragment {
         fulfillment = view.findViewById(R.id.checkoutFulfillment); payment = view.findViewById(R.id.checkoutPayment);
         savedAddressSpinner = view.findViewById(R.id.checkoutSavedAddressSpinner);
         summary = view.findViewById(R.id.checkoutSummary); message = view.findViewById(R.id.checkoutMessage);
+        if (state != null) selectedAddressId = state.getString("selectedAddressId", "");
+        restoringAddress = state != null || addressEdited;
+        addressEdited = addressEdited || state != null;
+        locationModel = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext()))
+                .get(ProfileViewModel.class);
+        view.findViewById(R.id.checkoutUseLocation).setOnClickListener(v -> requestLocation());
+        locationModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (value.getStatus() == ProfileScreenState.Status.LOCATION) {
+                if (locationRequestVersion != destinationVersion) { locationModel.clearTransientState(); return; }
+                lat.setText(String.valueOf(value.getLatitude())); lng.setText(String.valueOf(value.getLongitude()));
+                message.setText("Đã lấy GPS hiện tại. Hãy kiểm tra GPS có đúng địa chỉ nhận hàng.");
+                locationModel.clearTransientState();
+            } else if (value.getStatus() == ProfileScreenState.Status.ERROR) {
+                message.setText(value.getMessage()); locationModel.clearTransientState();
+            }
+        });
+        address.setOnAddressChangedListener(() -> {
+            if (bindingAddressDetails) return;
+            destinationVersion++;
+            addressEdited = true; selectedAddressId = "";
+            bindingAddresses = true; savedAddressSpinner.setSelection(0); bindingAddresses = false;
+            lat.setText(""); lng.setText(""); scheduleShippingEstimate();
+        });
         fulfillment.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
                 FulfillmentType.values()));
         updateFulfillmentFields();
@@ -82,13 +126,19 @@ public class CheckoutFragment extends Fragment {
         ((TextView) view.findViewById(R.id.checkoutOwnerText)).setText(
                 vm.isGuest() ? R.string.guest_checkout_notice : R.string.customer_checkout_notice);
         if (!vm.isGuest()) {
-            savedAddressSpinner.setVisibility(View.VISIBLE);
             vm.observeAddresses().observe(getViewLifecycleOwner(), this::renderAddresses);
         }
+        updateFulfillmentFields();
         savedAddressSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(android.widget.AdapterView<?> parent, View row, int position, long id) {
-                if (!bindingAddresses && position >= 0 && position < savedAddresses.size())
-                    applyAddress(savedAddresses.get(position));
+                if (bindingAddresses || position < 0 || position > savedAddresses.size()) return;
+                String next = position == 0 ? "" : savedAddresses.get(position - 1).getId();
+                if (next.equals(selectedAddressId)) return;
+                selectedAddressId = next; addressEdited = true; restoringAddress = false;
+                if (position == 0) {
+                    destinationVersion++;
+                    address.clear(); lat.setText(""); lng.setText(""); scheduleShippingEstimate();
+                } else applyAddress(savedAddresses.get(position - 1));
             }
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
@@ -110,13 +160,23 @@ public class CheckoutFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) { }
         };
         lat.addTextChangedListener(locationWatcher); lng.addTextChangedListener(locationWatcher);
+        TextWatcher recipientWatcher = new TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!bindingAddressDetails) addressEdited = true;
+            }
+            public void afterTextChanged(Editable s) { }
+        };
+        name.addTextChangedListener(recipientWatcher); phone.addTextChangedListener(recipientWatcher);
         vm.getCart().observe(getViewLifecycleOwner(), cart -> {
             renderCart(cart); refreshPaymentMethods();
         });
         vm.getState().observe(getViewLifecycleOwner(), result -> {
             message.setText(result.getMessage());
+            // Keep the action tappable before a quote is ready so the user receives
+            // an explanation and can explicitly request a fresh quote.
             view.findViewById(R.id.submitCheckoutButton).setEnabled(
-                    quoteReady && result.getStatus() != CheckoutState.Status.LOADING);
+                    result.getStatus() != CheckoutState.Status.LOADING);
             if (result.getStatus() == CheckoutState.Status.SUCCESS && vm.consumeCheckoutSuccessNavigation()) {
                 Bundle args = new Bundle(); args.putString("orderId", result.getOrder().getId());
                 args.putString("orderCode", result.getOrder().getOrderCode());
@@ -131,40 +191,97 @@ public class CheckoutFragment extends Fragment {
         });
         View submit = view.findViewById(R.id.submitCheckoutButton);
         submit.setOnClickListener(unused -> {
+            if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY && !address.validate()) {
+                String validationMessage = "Vui lòng hoàn thiện địa chỉ nhận hàng trước khi đặt đơn.";
+                message.setText(validationMessage);
+                message.setVisibility(View.VISIBLE);
+                Toast.makeText(requireContext(), validationMessage, Toast.LENGTH_LONG).show();
+                view.findViewById(R.id.checkoutAddress).requestFocus();
+                return;
+            }
             if (!quoteReady) {
                 message.setText("Đang chờ báo giá mới nhất từ máy chủ. Hãy kiểm tra kết nối rồi thử lại.");
+                message.setVisibility(View.VISIBLE);
                 scheduleShippingEstimate(); return;
             }
-            vm.submit(text(name), text(phone), text(address), text(lat), text(lng),
+            message.setText("Đang tạo đơn hàng và giữ tồn kho…");
+            message.setVisibility(View.VISIBLE);
+            vm.submit(text(name), text(phone), address.formattedAddress(), text(lat), text(lng),
                     (FulfillmentType) fulfillment.getSelectedItem(), (PaymentMethod) payment.getSelectedItem(),
                     text(note), quoteReady ? quotedSubtotal : Double.NaN,
                     quoteReady ? quotedShippingFee : Double.NaN);
         });
-        submit.setEnabled(quoteReady);
+        submit.setEnabled(true);
         refreshPaymentMethods();
+        keepSubmitAboveBottomNavigation(view);
+    }
+
+    private void keepSubmitAboveBottomNavigation(View root) {
+        root.post(() -> {
+            if (!isAdded()) return;
+            View scrollView = root.findViewById(R.id.checkoutScrollView);
+            View submit = root.findViewById(R.id.submitCheckoutButton);
+            if (!(scrollView instanceof NestedScrollView) || submit == null) return;
+            NestedScrollView scroll = (NestedScrollView) scrollView;
+            Rect buttonBounds = new Rect(0, 0, submit.getWidth(), submit.getHeight());
+            scroll.offsetDescendantRectToMyCoords(submit, buttonBounds);
+            int overlap = buttonBounds.bottom - (scroll.getHeight()
+                    - getResources().getDimensionPixelSize(R.dimen.space_md));
+            // Only correct a button that is already visible but covered. Do not
+            // jump a newly opened checkout to the bottom when the button is off-screen.
+            if (buttonBounds.top < scroll.getHeight() && overlap > 0) {
+                scroll.smoothScrollBy(0, overlap + getResources().getDimensionPixelSize(R.dimen.space_sm));
+            }
+        });
     }
 
     private void renderAddresses(List<Address> values) {
         savedAddresses.clear(); if (values != null) savedAddresses.addAll(values);
         List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.checkout_other_address));
         for (Address saved : savedAddresses) labels.add((saved.isDefault() ? "Mặc định · " : "")
                 + saved.getReceiverName() + " · " + saved.getFormattedAddress());
         bindingAddresses = true;
         savedAddressSpinner.setAdapter(new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_dropdown_item, labels));
-        if (!savedAddresses.isEmpty()) {
-            int selected = 0;
-            for (int i = 0; i < savedAddresses.size(); i++) if (savedAddresses.get(i).isDefault()) { selected = i; break; }
-            savedAddressSpinner.setSelection(selected); applyAddress(savedAddresses.get(selected));
+        int selected = 0;
+        boolean initial = selectedAddressId == null && !addressEdited && !restoringAddress;
+        if (initial && !savedAddresses.isEmpty()) {
+            selected = 1;
+            for (int i = 0; i < savedAddresses.size(); i++) if (savedAddresses.get(i).isDefault()) { selected = i + 1; break; }
+            selectedAddressId = savedAddresses.get(selected - 1).getId();
+        } else {
+            for (int i = 0; i < savedAddresses.size(); i++)
+                if (savedAddresses.get(i).getId().equals(selectedAddressId)) { selected = i + 1; break; }
         }
+        if (selected == 0) selectedAddressId = "";
+        savedAddressSpinner.setSelection(selected);
+        if (initial && selected > 0) applyAddress(savedAddresses.get(selected - 1));
         bindingAddresses = false;
     }
 
     private void applyAddress(Address saved) {
+        destinationVersion++;
+        bindingAddressDetails = true;
         name.setText(saved.getReceiverName()); phone.setText(saved.getReceiverPhone());
-        address.setText(saved.getFormattedAddress()); lat.setText(String.valueOf(saved.getLatitude()));
-        lng.setText(String.valueOf(saved.getLongitude()));
+        address.setAddress(saved.getProvince(), saved.getDistrict(), saved.getWard(), saved.getStreet());
+        boolean hasLocation = (saved.getLatitude() != 0D || saved.getLongitude() != 0D)
+                && Double.isFinite(saved.getLatitude()) && Double.isFinite(saved.getLongitude());
+        lat.setText(hasLocation ? String.valueOf(saved.getLatitude()) : "");
+        lng.setText(hasLocation ? String.valueOf(saved.getLongitude()) : "");
+        bindingAddressDetails = false;
         scheduleShippingEstimate();
+    }
+
+    private void requestLocation() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) takeLocation();
+        else locationPermission.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION});
+    }
+    private void takeLocation() {
+        locationRequestVersion = destinationVersion;
+        locationModel.requestCurrentLocation(false);
     }
 
     private void renderCart(Cart cart) {
@@ -182,8 +299,6 @@ public class CheckoutFragment extends Fragment {
     private void scheduleShippingEstimate() {
         quoteReady = false;
         quoteVersion++;
-        View submit = getView() == null ? null : getView().findViewById(R.id.submitCheckoutButton);
-        if (submit != null) submit.setEnabled(false);
         quoteHandler.removeCallbacks(quoteRunnable); quoteHandler.postDelayed(quoteRunnable, 400L);
     }
 
@@ -239,12 +354,19 @@ public class CheckoutFragment extends Fragment {
                     summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"))
                             .append(" · ").append(quote.optDouble("campaignLatitude"))
                             .append(", ").append(quote.optDouble("campaignLongitude"));
-                estimate.setText(summary.toString()); quoteReady = Double.isFinite(quotedSubtotal)
+                estimate.setText(summary.toString());
+                message.setText("");
+                quoteReady = Double.isFinite(quotedSubtotal)
                         && Double.isFinite(quotedShippingFee); enableCheckoutSubmit();
             }
             @Override public void onError(String error) {
                 if (version != quoteVersion || !isAdded()) return;
-                quoteReady = false; estimate.setText("Không lấy được báo giá: " + explainQuoteError(error));
+                quoteReady = false;
+                String explanation = "Không lấy được báo giá: " + explainQuoteError(error);
+                estimate.setText(explanation);
+                message.setText(explanation);
+                message.setVisibility(View.VISIBLE);
+                enableCheckoutSubmit();
             }
         };
         if (vm.isGuest()) RenderBackendClient.postGuest("/quoteGuestCheckout", request, quoteCallback);
@@ -274,8 +396,13 @@ public class CheckoutFragment extends Fragment {
         if (fulfillment == null) return;
         boolean delivery = fulfillment.getSelectedItem() == FulfillmentType.DELIVERY;
         if (address != null) address.setVisibility(delivery ? View.VISIBLE : View.GONE);
-        if (lat != null && lat.getParent() instanceof View)
-            ((View) lat.getParent()).setVisibility(delivery ? View.VISIBLE : View.GONE);
+        View view = getView();
+        if (view != null) {
+            view.findViewById(R.id.checkoutCoordinates).setVisibility(delivery ? View.VISIBLE : View.GONE);
+            view.findViewById(R.id.checkoutUseLocation).setVisibility(delivery ? View.VISIBLE : View.GONE);
+            view.findViewById(R.id.checkoutLocationHint).setVisibility(delivery ? View.VISIBLE : View.GONE);
+            savedAddressSpinner.setVisibility(delivery && vm != null && !vm.isGuest() ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void bindPaymentMethods() {
@@ -320,8 +447,12 @@ public class CheckoutFragment extends Fragment {
         bindingPaymentMethods = false;
     }
 
-    private boolean blank(String value) { return value == null || value.trim().isEmpty(); }
-
     private String text(EditText field) { return field.getText().toString().trim(); }
-    @Override public void onDestroyView() { quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; super.onDestroyView(); }
+    @Override public void onSaveInstanceState(@NonNull Bundle state) {
+        super.onSaveInstanceState(state); state.putString("selectedAddressId", selectedAddressId);
+    }
+    @Override public void onDestroyView() {
+        quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; bankLoadVersion++; locationRequestVersion = -1;
+        super.onDestroyView();
+    }
 }

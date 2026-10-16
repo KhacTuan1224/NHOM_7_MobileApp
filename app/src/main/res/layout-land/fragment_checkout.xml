@@ -10,11 +10,16 @@
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="@string/checkout_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
             <TextView android:id="@+id/checkoutOwnerText" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <Spinner android:id="@+id/checkoutSavedAddressSpinner" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" android:visibility="gone" android:contentDescription="@string/checkout_saved_address_label" />
             <EditText android:id="@+id/checkoutName" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/receiver_name_hint" />
             <EditText android:id="@+id/checkoutPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/receiver_phone_hint" android:inputType="phone" />
-            <EditText android:id="@+id/checkoutAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/receiver_address_hint" />
+            <com.rescuefarm.ui.common.VietnamAddressView android:id="@+id/checkoutAddress" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <TextView android:id="@+id/checkoutLocationHint" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_location_hint" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/checkoutUseLocation" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_location_action" />
+            <LinearLayout android:id="@+id/checkoutCoordinates" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
             <EditText android:id="@+id/checkoutLatitude" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/latitude_hint" android:inputType="numberDecimal|numberSigned" />
             <EditText android:id="@+id/checkoutLongitude" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/longitude_hint" android:inputType="numberDecimal|numberSigned" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:orientation="vertical" android:paddingStart="@dimen/space_sm">
@@ -24,6 +29,7 @@
             <Spinner android:id="@+id/checkoutPayment" android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min" />
             <EditText android:id="@+id/checkoutNote" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/order_note_hint" android:minLines="2" />
             <TextView android:id="@+id/checkoutSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="@dimen/space_md" android:background="@color/rescue_primary_container" />
+            <TextView android:id="@+id/checkoutShippingEstimate" android:layout_width="match_parent" android:layout_height="wrap_content" />
             <TextView android:id="@+id/checkoutMessage" android:layout_width="match_parent" android:layout_height="wrap_content" />
             <com.google.android.material.button.MaterialButton android:id="@+id/submitCheckoutButton"
                 android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"

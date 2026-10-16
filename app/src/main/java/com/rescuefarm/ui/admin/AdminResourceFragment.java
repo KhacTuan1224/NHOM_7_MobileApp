@@ -16,7 +16,11 @@ import android.widget.ScrollView;
 import android.widget.CheckBox;
 import android.widget.Toast;
 import android.app.DatePickerDialog;
+import android.content.res.ColorStateList;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -33,6 +37,7 @@ import com.rescuefarm.data.repository.AdminRepository;
 import com.bumptech.glide.Glide;
 import java.util.Map;
 import java.util.List;
+import java.util.Arrays;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Calendar;
@@ -147,7 +152,13 @@ public final class AdminResourceFragment extends Fragment {
             searchInput.setVisibility(View.GONE); statusFilter.setVisibility(View.GONE);
             loadMoreButton.setVisibility(View.GONE);
         }
-        view.findViewById(R.id.adminResourceBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
+        View backButton = view.findViewById(R.id.adminResourceBackButton);
+        View refreshButton = view.findViewById(R.id.refreshAdminResourceButton);
+        if (section == Section.ANALYTICS) {
+            styleAnalyticsAction((MaterialButton) backButton);
+            styleAnalyticsAction((MaterialButton) refreshButton);
+        }
+        backButton.setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
         if (section != Section.ANALYTICS) viewModel.observeSection(section).observe(
                 getViewLifecycleOwner(), this::renderItems);
         view.findViewById(R.id.refreshAdminResourceButton).setOnClickListener(v -> refresh());
@@ -158,6 +169,17 @@ public final class AdminResourceFragment extends Fragment {
         if (section == Section.ANALYTICS) viewModel.refreshDashboard();
         else if (section == Section.SHIPPING_SETTINGS) loadShippingConfig();
         else viewModel.refreshSection(section);
+    }
+
+    private void styleAnalyticsAction(MaterialButton button) {
+        int primary = ContextCompat.getColor(requireContext(), R.color.rescue_primary);
+        int text = ContextCompat.getColor(requireContext(), R.color.rescue_on_surface);
+        button.setBackgroundTintList(ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
+        button.setStrokeColor(ColorStateList.valueOf(primary));
+        button.setStrokeWidth(Math.round(getResources().getDisplayMetrics().density));
+        button.setTextColor(text);
+        button.setCornerRadius(Math.round(14 * getResources().getDisplayMetrics().density));
+        button.setElevation(0);
     }
 
     private void render(AdminScreenState state) {
@@ -454,18 +476,27 @@ public final class AdminResourceFragment extends Fragment {
 
     private void showDetailDialog(AdminListItem item, Map<String, Object> detail) {
         ScrollView scroll = new ScrollView(requireContext());
+        scroll.setBackgroundColor(requireContext().getColor(R.color.rescue_background));
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL);
         int padding = (int) (20 * getResources().getDisplayMetrics().density);
         body.setPadding(padding, padding, padding, padding); scroll.addView(body);
-        addDetailText(body, item.getTitle() + "\n" + item.getStatus() + " · ID " + item.getId());
-        addDetailMap(body, detail, "");
+        new AdminDetailRenderer(requireContext()).render(body, item, detail);
         if (section == Section.ORDERS) addOrderWarnings(body, detail);
         EditText actionReason = new EditText(requireContext());
         actionReason.setHint(R.string.admin_reason_hint); actionReason.setMinLines(2);
         actionReason.setMaxLines(4); actionReason.setVisibility(section == Section.ORDERS
                 || section == Section.CATEGORIES || section == Section.BANNERS ? View.GONE : View.VISIBLE);
-        body.addView(actionReason);
-        AlertDialog dialog = new AlertDialog.Builder(requireContext()).setTitle(item.getTitle())
+        if (actionReason.getVisibility() == View.VISIBLE) {
+            TextView heading = new TextView(requireContext()); heading.setText("Thao tác quản trị");
+            heading.setTextSize(16); heading.setTypeface(null, android.graphics.Typeface.BOLD);
+            heading.setTextColor(requireContext().getColor(R.color.rescue_primary));
+            heading.setPadding(0, padding / 2, 0, padding / 2); body.addView(heading);
+            com.google.android.material.textfield.TextInputLayout reasonBox = new com.google.android.material.textfield.TextInputLayout(
+                    requireContext(), null, com.google.android.material.R.attr.textInputOutlinedStyle);
+            reasonBox.setHint(getString(R.string.admin_reason_hint)); actionReason.setHint(null);
+            reasonBox.addView(actionReason); body.addView(reasonBox);
+        } else body.addView(actionReason);
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_RescueFarm_AdminDetail).setTitle(item.getTitle())
                 .setView(scroll).setNegativeButton("Đóng", null).create();
         if (section == Section.REPORTS) {
             Button openTarget = buttonText("Mở nội dung bị báo cáo");
@@ -499,6 +530,11 @@ public final class AdminResourceFragment extends Fragment {
             }
         }
         dialog.show();
+        if (dialog.getWindow() != null) {
+            int availableWidth = getResources().getDisplayMetrics().widthPixels - padding * 2;
+            int maxWidth = (int) (720 * getResources().getDisplayMetrics().density);
+            dialog.getWindow().setLayout(Math.min(availableWidth, maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
     }
 
     private void addOrderWarnings(LinearLayout body, Map<String, Object> detail) {
@@ -512,22 +548,21 @@ public final class AdminResourceFragment extends Fragment {
                 && !"PAID".equals(String.valueOf(detail.get("paymentStatus")))
                 && ageMs >= 60L * 60L * 1000L)
             warnings.add("Chuyển khoản chưa được xác nhận sau hơn 1 giờ.");
-        if (!(detail.get("payment") instanceof Map<?, ?>)) warnings.add("Đơn hàng thiếu Payment record.");
+        if (!(detail.get("payment") instanceof Map<?, ?>)) warnings.add("Đơn hàng thiếu thông tin thanh toán.");
         if ("DELIVERY".equals(String.valueOf(detail.get("fulfillmentType")))) {
             Object raw = detail.get("shipment");
-            if (!(raw instanceof Map<?, ?>)) warnings.add("Đơn giao hàng thiếu Shipment record.");
+            if (!(raw instanceof Map<?, ?>)) warnings.add("Đơn hàng thiếu thông tin vận chuyển.");
             else {
                 Map<?, ?> shipment = (Map<?, ?>) raw;
                 String shipmentStatus = String.valueOf(shipment.get("status"));
                 if ("SHIPPING".equals(status) && !"SHIPPING".equals(shipmentStatus))
-                    warnings.add("Trạng thái Shipment không khớp trạng thái Order.");
+                    warnings.add("Trạng thái vận chuyển không khớp trạng thái đơn hàng.");
                 if ("DELIVERED".equals(status) && !"DELIVERED".equals(shipmentStatus))
-                    warnings.add("Order đã hoàn tất nhưng Shipment chưa ở trạng thái DELIVERED.");
+                    warnings.add("Đơn hàng đã hoàn tất nhưng vận chuyển chưa xác nhận đã giao.");
             }
         }
         if (!warnings.isEmpty()) {
-            addDetailText(body, "\nCẢNH BÁO KIỂM TRA");
-            for (String warning : warnings) addDetailText(body, "• " + warning);
+            new AdminDetailRenderer(requireContext()).notice(body, warnings);
         }
     }
 
@@ -586,54 +621,19 @@ public final class AdminResourceFragment extends Fragment {
         return target.containsKey("sellerId") || target.containsKey("customerId") || target.containsKey("userId");
     }
 
-    private void addDetailMap(LinearLayout body, Map<?, ?> data, String prefix) {
-        for (Map.Entry<?, ?> entry : data.entrySet()) {
-            String key = String.valueOf(entry.getKey()); Object value = entry.getValue();
-            if ("password".equalsIgnoreCase(key) || "passwordHash".equalsIgnoreCase(key)) continue;
-            if (value instanceof Map<?, ?>) {
-                addDetailText(body, "\n" + humanize(key)); addDetailMap(body, (Map<?, ?>) value, prefix + key + ".");
-            } else if (value instanceof List<?>) {
-                addDetailText(body, humanize(key) + ":");
-                for (Object row : (List<?>) value) if (row instanceof Map<?, ?>)
-                    addDetailMap(body, (Map<?, ?>) row, prefix + key + ".");
-                else if (row instanceof String && ((String) row).startsWith("https://res.cloudinary.com/")) {
-                    ImageView image = new ImageView(requireContext()); image.setAdjustViewBounds(true);
-                    image.setMaxHeight((int) (240 * getResources().getDisplayMetrics().density));
-                    body.addView(image); Glide.with(this).load(row)
-                            .error(android.R.drawable.ic_menu_report_image).centerCrop().into(image);
-                } else addDetailText(body, String.valueOf(row));
-            } else if (value instanceof String && ((String) value).startsWith("https://res.cloudinary.com/")) {
-                ImageView image = new ImageView(requireContext()); image.setAdjustViewBounds(true);
-                image.setMaxHeight((int) (240 * getResources().getDisplayMetrics().density));
-                body.addView(image); Glide.with(this).load(value)
-                        .error(android.R.drawable.ic_menu_report_image).centerCrop().into(image);
-            } else if (value instanceof Date || value instanceof com.google.firebase.Timestamp) {
-                Date date = asDate(value);
-                if (date != null) addDetailText(body, humanize(prefix + key) + ": "
-                        + new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date));
-            } else if (value != null && !key.toLowerCase(Locale.ROOT).contains("publicid")) {
-                addDetailText(body, humanize(prefix + key) + ": " + value);
-            }
-        }
-    }
-
     private void addDetailText(LinearLayout body, String value) {
         TextView line = new TextView(requireContext()); line.setText(value);
         line.setPadding(0, 8, 0, 8); body.addView(line);
     }
 
-    private String humanize(String value) {
-        return value.replace('.', ' ').replace('_', ' ').replaceAll("([a-z])([A-Z])", "$1 $2");
-    }
-
     private String adminActionLabel(String status, AdminListItem item, Map<String, Object> detail) {
         if (section == Section.PRODUCTS && "HIDDEN".equals(item.getStatus())
                 && java.util.Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(status))
-            return "Khôi phục Product về " + status;
+            return "Khôi phục sản phẩm về " + AdminDetailFormatter.status(status);
         switch (status) {
             case "APPROVED": case "ACTIVE": case "PUBLISHED": return "Phê duyệt / khôi phục";
             case "REJECTED": return "Từ chối"; case "HIDDEN": return "Ẩn";
-            case "STOPPED": return "Dừng Campaign"; case "BLOCKED": return "Khóa tài khoản";
+            case "STOPPED": return "Dừng chiến dịch"; case "BLOCKED": return "Khóa tài khoản";
             default: return status;
         }
     }
@@ -672,22 +672,42 @@ public final class AdminResourceFragment extends Fragment {
 
     private void renderAnalytics(AdminDashboardSnapshot value) {
         if (value == null) return;
-        TextView text = new TextView(requireContext());
-        text.setText(getString(R.string.admin_analytics_format,
-                value.getPendingModerationTotal(), value.total(Section.USERS),
-                value.total(Section.PRODUCTS), value.total(Section.CAMPAIGNS),
-                value.total(Section.ORDERS), NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
-                        .format(value.getDeliveredRevenue())));
-        text.append("\n\nRESCUE ANALYTICS"
-                + "\nCampaign đang hoạt động: " + value.getActiveCampaigns()
-                + "\nCampaign CRITICAL: " + value.getCriticalCampaigns()
-                + "\nĐiểm mobile đang chia sẻ vị trí mới: " + value.getLiveMobilePoints()
-                + "\nTổng lượng đã giải cứu: " + String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())
-                + "\nTỷ lệ hoàn thành: " + String.format(Locale.getDefault(), "%.1f%%", value.getCompletionRate())
-                + " (rescued / target của Campaign đã duyệt)");
-        text.append("\nDoanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
-                + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
-        container.addView(text);
+        NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        AdminDashboardCards.addSectionTitle(requireContext(), container, "TỔNG QUAN HỆ THỐNG");
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Tổng quan số lượng", "Moderation là số đang chờ; các mục còn lại là tổng hiện có",
+                new String[]{"Moderation", "Users", "Products", "Campaigns", "Orders"},
+                new double[]{value.getPendingModerationTotal(), value.total(Section.USERS),
+                        value.total(Section.PRODUCTS), value.total(Section.CAMPAIGNS), value.total(Section.ORDERS)},
+                new String[]{String.valueOf(value.getPendingModerationTotal()),
+                        String.valueOf(value.total(Section.USERS)), String.valueOf(value.total(Section.PRODUCTS)),
+                        String.valueOf(value.total(Section.CAMPAIGNS)), String.valueOf(value.total(Section.ORDERS))}, 0);
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Doanh thu đơn đã giao", "All-time, gồm phí giao hàng",
+                new String[]{"DELIVERED"}, new double[]{value.getDeliveredRevenue()},
+                new String[]{currency.format(value.getDeliveredRevenue())}, 1);
+
+        AdminDashboardCards.addSectionTitle(requireContext(), container, "RESCUE ANALYTICS");
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Campaign đang hoạt động và cần ưu tiên", "Critical là tập con của Campaign ACTIVE",
+                new String[]{"Active", "Critical"},
+                new double[]{value.getActiveCampaigns(), value.getCriticalCampaigns()},
+                new String[]{String.valueOf(value.getActiveCampaigns()), String.valueOf(value.getCriticalCampaigns())}, 0);
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Điểm giải cứu di động", "Vị trí được cập nhật trong 10 phút",
+                new String[]{"Mobile point"}, new double[]{value.getLiveMobilePoints()},
+                new String[]{String.valueOf(value.getLiveMobilePoints())}, 3);
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Tổng lượng đã giải cứu", "Số lượng đã rescued",
+                new String[]{"Đã giải cứu"}, new double[]{value.getTotalRescuedQuantity()},
+                new String[]{String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())}, 2);
+        AdminDashboardCards.addCompletionChart(requireContext(), container,
+                "Tỷ lệ hoàn thành",
+                "Rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt",
+                value.getCompletionRate());
+        AdminDashboardCards.addFootnote(requireContext(), container,
+                "Doanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
+                        + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
     }
 
     private Button button(int label) { Button button = new Button(requireContext()); button.setText(label); return button; }

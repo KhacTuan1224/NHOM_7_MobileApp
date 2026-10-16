@@ -4,8 +4,9 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="@dimen/space_lg">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/seller_products_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:id="@+id/sellerProductListTitle" android:text="@string/seller_products_title"
+            android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+        <TextView android:id="@+id/sellerProductListNotice" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_sm" android:text="@string/seller_approval_catalog_notice"
             android:textColor="@color/rescue_on_surface_variant" />
         <com.google.android.material.button.MaterialButton android:id="@+id/addProductButton"

@@ -12,6 +12,9 @@ public class CampaignCacheEntity {
     public String sellerId;
     public String title;
     public String description;
+    public String imageUrlsSerialized;
+    public String imagePublicIdsSerialized;
+    public long viewCount;
     public String rescueReason;
     public String urgencyLevel;
     public String rescueMode;

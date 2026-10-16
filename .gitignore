@@ -2,6 +2,8 @@
 *.aar
 *.ap_
 *.aab
+Packages/*.apk
+Packages/*.sha256
 
 *.dex
 

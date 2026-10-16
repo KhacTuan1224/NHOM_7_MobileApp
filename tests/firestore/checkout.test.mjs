@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, collection, query, where, setDoc,
-  runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
+  deleteDoc, deleteField, runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 
 let env;
 const now = Date.now();
@@ -54,6 +54,78 @@ async function seed(values) {
       setDoc(doc(context.firestore(), path), value)));
   });
 }
+
+function addressData(owner, id = 'home', isDefault = false) {
+  return { id, customerId: owner, receiverName: 'Người nhận', receiverPhone: '0912345678',
+    province: 'Thành phố Hà Nội', district: 'Quận Ba Đình', ward: 'Phường Phúc Xá',
+    street: '12 Đường Test', latitude: 21.04, longitude: 105.84, type: 'HOME',
+    isDefault, updatedAt: serverTimestamp() };
+}
+
+test('all three active roles can manage only their own private addresses', async () => {
+  for (const owner of ['customer-a', 'seller', 'admin']) {
+    const db = env.authenticatedContext(owner).firestore();
+    const ref = doc(db, `users/${owner}/addresses/home`);
+    await assertSucceeds(setDoc(ref, addressData(owner)));
+    await assertSucceeds(getDoc(ref));
+    assert.equal((await assertSucceeds(getDocs(collection(db, `users/${owner}/addresses`)))).size, 1);
+    await assertSucceeds(updateDoc(ref, { street: '34 Đường Mới', updatedAt: serverTimestamp() }));
+    for (const other of ['customer-a', 'seller', 'admin'].filter(id => id !== owner)) {
+      const foreign = env.authenticatedContext(other).firestore();
+      const foreignRef = doc(foreign, `users/${owner}/addresses/home`);
+      await assertFails(getDoc(foreignRef));
+      await assertFails(getDocs(collection(foreign, `users/${owner}/addresses`)));
+      await assertFails(updateDoc(foreignRef, { street: 'Unauthorized', updatedAt: serverTimestamp() }));
+      await assertFails(setDoc(doc(foreign, `users/${owner}/addresses/other`), addressData(owner, 'other')));
+      await assertFails(deleteDoc(foreignRef));
+    }
+    await assertFails(updateDoc(ref, { customerId: 'customer-b', updatedAt: serverTimestamp() }));
+    await assertSucceeds(deleteDoc(ref));
+  }
+});
+
+test('address permissions reject guests, inactive users and forged roles', async () => {
+  for (const role of ['CUSTOMER', 'SELLER', 'ADMIN', 'UNKNOWN']) {
+    const owner = `disabled-${role}`;
+    await seed({ [`users/${owner}`]: { role, status: role === 'UNKNOWN' ? 'ACTIVE' : 'BLOCKED' } });
+    const db = env.authenticatedContext(owner).firestore();
+    await assertFails(setDoc(doc(db, `users/${owner}/addresses/home`), addressData(owner)));
+    await assertFails(getDocs(collection(db, `users/${owner}/addresses`)));
+  }
+  const guest = env.unauthenticatedContext().firestore();
+  await assertFails(setDoc(doc(guest, 'users/customer-a/addresses/home'), addressData('customer-a')));
+  await assertFails(getDocs(collection(guest, 'users/customer-a/addresses')));
+});
+
+test('default addresses can be switched atomically by every role and cannot be deleted', async () => {
+  for (const [owner, role] of [['customer-a', 'CUSTOMER'], ['seller', 'SELLER'], ['admin', 'ADMIN']]) {
+    await seed({ [`users/${owner}`]: {
+      id: owner, email: `${owner}@example.com`, fullName: 'Test Owner', phone: '', avatarUrl: '',
+      role, status: 'ACTIVE', ...(role === 'SELLER' ? { sellerStatus: 'APPROVED' } : {}),
+      latitude: 0, longitude: 0, createdAt: past, updatedAt: past
+    } });
+    const db = env.authenticatedContext(owner).firestore();
+    const user = doc(db, `users/${owner}`);
+    const home = doc(db, `users/${owner}/addresses/home`);
+    const work = doc(db, `users/${owner}/addresses/work`);
+    const first = writeBatch(db);
+    first.set(home, addressData(owner, 'home', true));
+    first.update(user, { defaultAddressId: 'home', updatedAt: serverTimestamp() });
+    await assertSucceeds(first.commit());
+    await assertSucceeds(setDoc(work, addressData(owner, 'work')));
+    await assertFails(deleteDoc(home));
+    await assertSucceeds(runTransaction(db, async tx => {
+      await tx.get(user); await tx.get(work);
+      tx.update(home, { isDefault: false, updatedAt: serverTimestamp() });
+      tx.update(work, { isDefault: true, updatedAt: serverTimestamp() });
+      tx.update(user, { defaultAddressId: 'work', updatedAt: serverTimestamp() });
+    }));
+    assert.equal((await getDoc(home)).data().isDefault, false);
+    assert.equal((await getDoc(work)).data().isDefault, true);
+    await assertSucceeds(deleteDoc(home));
+    await assertFails(deleteDoc(work));
+  }
+});
 
 test('active customer can check a missing order; guest and blocked customer cannot', async () => {
   const db = env.authenticatedContext('customer-a').firestore();
@@ -239,6 +311,120 @@ test('seller config supports fixed shipping and QR, stays private for writes, an
   assert.equal(profile.shippingFee, 20000); assert.equal(profile.bankAccountNumber, undefined);
   await assertFails(getDoc(doc(customer, 'sellerPaymentProfiles/seller')));
   assert.equal((await getDoc(doc(seller, 'sellerPaymentProfiles/seller'))).data().qrUrl, 'https://example.com/qr.png');
+});
+
+// Mirrors FirebaseUserRepository.updateSellerProfile: all three writes must succeed together.
+async function saveSellerProfile(db, sellerId = 'seller', overrides = {}) {
+  const profile = {
+    representativeName: 'Test representative', shopName: 'Updated shop', shopDescription: 'Fresh produce',
+    shopAvatarUrl: '', address: '273 Pham Phu Thu', bankCode: 'MB',
+    bankAccountName: 'TEST SELLER', bankAccountNumber: '0123456789',
+    latitude: 10.7894883, longitude: 106.6472817, updatedAt: serverTimestamp(), ...overrides
+  };
+  const batch = writeBatch(db);
+  batch.update(doc(db, `users/${sellerId}`), profile);
+  batch.set(doc(db, `sellerPublicProfiles/${sellerId}`), {
+    sellerId, shopName: profile.shopName, shopDescription: profile.shopDescription,
+    shopAvatarUrl: profile.shopAvatarUrl, address: profile.address,
+    latitude: profile.latitude, longitude: profile.longitude,
+    bankCode: deleteField(), bankAccountName: deleteField(), bankAccountNumber: deleteField(),
+    qrUrl: deleteField(), updatedAt: serverTimestamp()
+  }, { merge: true });
+  batch.set(doc(db, `sellerPaymentProfiles/${sellerId}`), {
+    sellerId, bankCode: profile.bankCode, bankAccountName: profile.bankAccountName,
+    bankAccountNumber: profile.bankAccountNumber, updatedAt: serverTimestamp()
+  }, { merge: true });
+  return batch.commit();
+}
+
+for (const sellerStatus of ['PENDING_APPROVAL', 'APPROVED', 'REJECTED']) {
+  for (const moderated of [false, true]) {
+    test(`seller profile saves atomically for ${sellerStatus}, moderation metadata: ${moderated}`, async () => {
+      await env.withSecurityRulesDisabled(async context => {
+        await updateDoc(doc(context.firestore(), 'users/seller'), {
+          sellerStatus,
+          ...(moderated ? { moderatedBy: 'admin', moderatedAt: past, moderationReason: 'Reviewed' } : {})
+        });
+      });
+      const seller = env.authenticatedContext('seller').firestore();
+      // First save creates the private payment profile.
+      await assertSucceeds(saveSellerProfile(seller));
+      const saved = (await getDoc(doc(seller, 'users/seller'))).data();
+      assert.equal(saved.sellerStatus, sellerStatus);
+      assert.equal(saved.bankAccountNumber, '0123456789');
+      assert.equal(saved.latitude, 10.7894883);
+      assert.equal(saved.moderatedBy, moderated ? 'admin' : undefined);
+      assert.equal(saved.moderationReason, moderated ? 'Reviewed' : undefined);
+      if (moderated) assert.ok(saved.moderatedAt.isEqual(past));
+
+      // Later saves preserve the configured QR and shipping fee.
+      await assertSucceeds(updateDoc(doc(seller, 'sellerPaymentProfiles/seller'), {
+        qrUrl: 'https://example.com/qr.png', updatedAt: serverTimestamp()
+      }));
+      await assertSucceeds(saveSellerProfile(seller, 'seller', { shopName: 'Saved again' }));
+      const payment = (await getDoc(doc(seller, 'sellerPaymentProfiles/seller'))).data();
+      assert.equal(payment.bankAccountNumber, '0123456789');
+      assert.equal(payment.qrUrl, 'https://example.com/qr.png');
+      const publicData = (await getDoc(doc(env.unauthenticatedContext().firestore(),
+        'sellerPublicProfiles/seller'))).data();
+      assert.equal(publicData.shopName, 'Saved again');
+      assert.equal(publicData.shippingFee, 15000);
+      for (const key of ['bankCode', 'bankAccountName', 'bankAccountNumber', 'qrUrl']) {
+        assert.equal(publicData[key], undefined);
+      }
+      await assertFails(getDoc(doc(env.authenticatedContext('customer-a').firestore(),
+        'sellerPaymentProfiles/seller')));
+    });
+  }
+}
+
+test('seller profile keeps moderation fields and approval protected', async () => {
+  await env.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(), 'users/seller'), {
+      sellerStatus: 'PENDING_APPROVAL', moderatedBy: 'admin', moderatedAt: past, moderationReason: 'Reviewed'
+    });
+  });
+  const seller = env.authenticatedContext('seller').firestore();
+  for (const override of [
+    { sellerStatus: 'APPROVED' }, { role: 'ADMIN' }, { status: 'BLOCKED' },
+    { moderatedBy: 'seller' }, { moderatedAt: serverTimestamp() }, { moderationReason: 'Changed' },
+    { moderatedBy: deleteField() }, { moderatedAt: deleteField() }, { moderationReason: deleteField() }
+  ]) {
+    await assertFails(saveSellerProfile(seller, 'seller', override));
+  }
+  assert.equal((await getDoc(doc(seller, 'users/seller'))).data().shopName, undefined);
+  assert.equal((await getDoc(doc(seller, 'sellerPublicProfiles/seller'))).data().shopName, 'Test');
+  assert.equal((await getDoc(doc(seller, 'sellerPaymentProfiles/seller'))).exists(), false);
+});
+
+test('seller profile cannot forge moderation metadata or be saved by another account', async () => {
+  const seller = env.authenticatedContext('seller').firestore();
+  for (const override of [{ moderatedBy: 'admin' }, { moderatedAt: serverTimestamp() },
+    { moderationReason: 'Approved' }]) {
+    await assertFails(saveSellerProfile(seller, 'seller', override));
+  }
+  for (const actor of ['customer-a', 'other-seller']) {
+    if (actor === 'other-seller') await seed({ 'users/other-seller': {
+      role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'
+    } });
+    const other = env.authenticatedContext(actor).firestore();
+    await assertFails(saveSellerProfile(other));
+    await assertFails(setDoc(doc(other, 'sellerPaymentProfiles/seller'), {
+      sellerId: 'seller', bankCode: 'MB', bankAccountName: 'OTHER', bankAccountNumber: '999',
+      updatedAt: serverTimestamp()
+    }));
+  }
+  await assertFails(saveSellerProfile(env.unauthenticatedContext().firestore()));
+  for (const status of ['BLOCKED', 'INACTIVE']) {
+    await env.withSecurityRulesDisabled(async context => {
+      await updateDoc(doc(context.firestore(), 'users/seller'), { status });
+    });
+    await assertFails(saveSellerProfile(seller));
+    await assertFails(setDoc(doc(seller, 'sellerPaymentProfiles/seller'), {
+      sellerId: 'seller', bankCode: 'MB', bankAccountName: 'TEST', bankAccountNumber: '123',
+      updatedAt: serverTimestamp()
+    }));
+  }
 });
 
 test('wrong fixed shipping fee rolls back order, cart and inventory together', async () => {

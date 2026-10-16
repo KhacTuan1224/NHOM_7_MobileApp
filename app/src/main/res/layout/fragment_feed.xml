@@ -48,20 +48,12 @@
             android:visibility="gone"
             android:layout_marginBottom="16dp" />
         
-        <!-- Posts container -->
+        <!-- Campaigns container -->
         <LinearLayout 
             android:id="@+id/feedContainer" 
             android:layout_width="match_parent"
             android:layout_height="wrap_content" 
             android:orientation="vertical" />
         
-        <!-- Load more button -->
-        <com.google.android.material.button.MaterialButton 
-            android:id="@+id/loadMorePostsButton"
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content"
-            android:text="@string/load_more_action"
-            android:layout_marginTop="16dp"
-            style="@style/Widget.Material3.Button.TonalButton" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

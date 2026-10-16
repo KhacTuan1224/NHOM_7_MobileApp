@@ -7,6 +7,8 @@ import com.rescuefarm.domain.enums.UrgencyLevel;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -18,6 +20,9 @@ public class RescueCampaign {
     private String sellerId;
     private String title;
     private String description;
+    private List<String> imageUrls;
+    private List<String> imagePublicIds;
+    private long viewCount;
     private RescueReason rescueReason;
     private UrgencyLevel urgencyLevel;
     private RescueMode rescueMode;
@@ -38,6 +43,7 @@ public class RescueCampaign {
 
     public RescueCampaign() {
         batchTargets = new HashMap<>();
+        imageUrls = new ArrayList<>(); imagePublicIds = new ArrayList<>();
         status = CampaignStatus.DRAFT;
         urgencyLevel = UrgencyLevel.NORMAL;
     }
@@ -82,6 +88,13 @@ public class RescueCampaign {
         campaign.status = status == null ? CampaignStatus.DRAFT : status;
         return campaign;
     }
+
+    public void setStoryMedia(List<String> urls, List<String> publicIds) {
+        imageUrls = sanitized(urls, 6); imagePublicIds = sanitized(publicIds, 6);
+    }
+
+    public void setViewCount(long value) { viewCount = Math.max(0L, value); }
+    public void increaseViewCount() { viewCount++; }
 
     public void defineCampaign(
             String title,
@@ -233,6 +246,16 @@ public class RescueCampaign {
         if (!Double.isFinite(quantity) || quantity <= 0.0) { throw new IllegalArgumentException(fieldName + " must be positive"); }
     }
 
+    private static List<String> sanitized(List<String> values, int maximum) {
+        List<String> result = new ArrayList<>();
+        if (values != null) for (String value : values) {
+            String clean = clean(value);
+            if (!clean.isEmpty() && !result.contains(clean)) result.add(clean);
+            if (result.size() == maximum) break;
+        }
+        return result;
+    }
+
     private static long daysBetween(Date start, Date end) {
         if (start == null || end == null) { return Long.MAX_VALUE; }
         return TimeUnit.MILLISECONDS.toDays(end.getTime() - start.getTime());
@@ -248,6 +271,9 @@ public class RescueCampaign {
     public String getSellerId() { return sellerId; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
+    public List<String> getImageUrls() { return new ArrayList<>(imageUrls); }
+    public List<String> getImagePublicIds() { return new ArrayList<>(imagePublicIds); }
+    public long getViewCount() { return viewCount; }
     public RescueReason getRescueReason() { return rescueReason; }
     public UrgencyLevel getUrgencyLevel() { return urgencyLevel; }
     public RescueMode getRescueMode() { return rescueMode; }

@@ -6,7 +6,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/rescue_surface"
+    android:clipToPadding="false"
     tools:context=".MainActivity">
+
+    <View
+        android:id="@+id/systemNavigationBackground"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_gravity="bottom"
+        android:background="@color/rescue_nav_surface" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main"

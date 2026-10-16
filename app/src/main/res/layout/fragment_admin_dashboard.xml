@@ -1,47 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background" android:fillViewport="true">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/admin_dashboard_title"
-            android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
-        <Button android:id="@+id/adminDashboardBackButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_back_action"
-            android:layout_marginTop="@dimen/space_sm" android:layout_marginBottom="@dimen/space_sm" />
-        <ProgressBar android:id="@+id/adminDashboardProgress" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
-        <TextView android:id="@+id/adminDashboardMessage" android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-        <TextView android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:padding="@dimen/space_md"
-            android:background="@color/rescue_primary_container" />
-        <Button android:id="@+id/refreshAdminDashboardButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_refresh_action" />
-        <Button android:id="@+id/adminSellersButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_sellers_title" />
-        <Button android:id="@+id/adminUsersButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_users_title" />
-        <Button android:id="@+id/adminPostsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_posts_title" />
-        <Button android:id="@+id/adminProductsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_products_title" />
-        <Button android:id="@+id/adminCampaignsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_campaigns_title" />
-        <Button android:id="@+id/adminCategoriesButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_categories_title" />
-        <Button android:id="@+id/adminBannersButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_banners_title" />
-        <Button android:id="@+id/adminReviewsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_reviews_title" />
-        <Button android:id="@+id/adminReportsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_reports_title" />
-        <Button android:id="@+id/adminOrdersButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_orders_title" />
-        <Button android:id="@+id/adminAnalyticsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/admin_analytics_title" />
-        <Button android:id="@+id/adminShippingSettingsButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="Cấu hình phí giao hàng" />
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/adminDashboardDrawer" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@color/rescue_background">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
+            android:gravity="center_vertical" android:orientation="horizontal"
+            android:paddingStart="16dp" android:paddingEnd="16dp" android:background="@color/rescue_surface">
+            <com.google.android.material.button.MaterialButton android:id="@+id/adminDashboardMenuButton"
+                style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="48dp"
+                android:layout_height="48dp" android:minWidth="0dp" android:padding="0dp"
+                android:text="☰" android:textSize="24sp" android:textColor="@color/rescue_on_surface"
+                android:contentDescription="Mở menu quản trị" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="RescueFarm  •  Admin" android:textStyle="bold" android:textSize="16sp"
+                android:textColor="@color/rescue_on_surface" android:paddingStart="8dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/refreshAdminDashboardButton"
+                style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="48dp"
+                android:layout_height="48dp" android:minWidth="0dp" android:padding="0dp"
+                android:text="↻" android:textSize="24sp" android:textColor="@color/rescue_primary"
+                android:contentDescription="Làm mới dashboard" />
+        </LinearLayout>
+        <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+            android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true"
+            android:clipToPadding="false" android:paddingBottom="@dimen/admin_scroll_bottom_clearance">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="20dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="TỔNG QUAN" android:textAllCaps="true" android:textSize="12sp"
+                    android:textStyle="bold" android:textColor="@color/rescue_primary" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Dashboard" android:textAppearance="@style/TextAppearance.RescueFarm.Display"
+                    android:paddingTop="4dp" />
+                <TextView android:id="@+id/adminDashboardMessage" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:paddingTop="8dp" android:textColor="@color/rescue_on_surface_variant" />
+                <ProgressBar android:id="@+id/adminDashboardProgress" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
+                <LinearLayout android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/adminDashboardBackButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:minHeight="48dp" android:layout_marginTop="16dp" android:text="Quay lại" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+
+    <LinearLayout android:layout_width="304dp" android:layout_height="match_parent"
+        android:layout_gravity="start" android:orientation="vertical" android:background="@color/rescue_surface"
+        android:elevation="16dp" android:padding="16dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="RESCUEFARM" android:textSize="12sp" android:textStyle="bold"
+            android:textColor="@color/rescue_primary" android:padding="12dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Quản trị hệ thống" android:textSize="20sp" android:textStyle="bold"
+            android:textColor="@color/rescue_on_surface" android:paddingStart="12dp" android:paddingBottom="16dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="QUẢN LÝ" android:textSize="11sp" android:textStyle="bold"
+            android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminSellersButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Người bán chờ duyệt" app:icon="@drawable/ic_role_seller" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminUsersButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Người dùng" app:icon="@drawable/ic_role_customer" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminProductsButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Sản phẩm" app:icon="@drawable/ic_store" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminCampaignsButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Chiến dịch cứu trợ" app:icon="@drawable/ic_nav_community" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminCategoriesButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Danh mục" app:icon="@drawable/ic_admin_categories" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminBannersButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Banner" app:icon="@drawable/ic_admin_banner" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminReviewsButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Đánh giá" app:icon="@drawable/ic_admin_review" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminReportsButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Báo cáo vi phạm" app:icon="@drawable/ic_admin_report" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminOrdersButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Đơn hàng" app:icon="@drawable/ic_nav_orders" app:iconGravity="textStart" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="HỆ THỐNG" android:textSize="11sp" android:textStyle="bold"
+            android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminAnalyticsButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Phân tích" app:icon="@drawable/ic_nav_dashboard" app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminShippingSettingsButton" android:layout_width="220dp" android:layout_height="40dp" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Cấu hình phí giao hàng" app:icon="@drawable/ic_admin_shipping" app:iconGravity="textStart" />
+    </LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

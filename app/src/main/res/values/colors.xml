@@ -16,4 +16,10 @@
     <color name="rescue_splash_green">#45D566</color>
     <color name="rescue_splash_text">#006B3C</color>
     <color name="rescue_nav_surface">#E7ECE8</color>
+    <color name="rescue_chart_blue">#3778B8</color>
+    <color name="rescue_chart_orange">#E58A2B</color>
+    <color name="rescue_chart_teal">#259A91</color>
+    <color name="rescue_chart_purple">#8064B2</color>
+    <color name="rescue_chart_red">#D45B55</color>
+    <color name="rescue_chart_yellow">#C99A21</color>
 </resources>

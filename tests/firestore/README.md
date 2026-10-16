@@ -29,7 +29,11 @@ concurrent buyers, idempotent replay, rounded fractional quantities, all Guest
 fulfillment/payment paths, lookup/access-token isolation and rate limits,
 Seller completion/cancellation of Guest orders, archival of historical batches,
 owned comment edits/soft deletion, deduplicated public post views, reviews and
-private notifications. Tests run sequentially because they share one isolated
+private notifications. Seller profile regression checks cover atomic profile/payment
+saves before and after approval, preservation of moderation metadata, shipping fees
+and QR configuration, private bank details, and denied edits by other or disabled
+accounts. Owners cannot forge approval or add, change, or remove moderation fields.
+Tests run sequentially because they share one isolated
 emulator project. These checks
 validate emulator behavior, not deployment status or live Android UI behavior.
 
