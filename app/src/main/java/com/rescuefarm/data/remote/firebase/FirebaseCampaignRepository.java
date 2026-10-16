@@ -274,6 +274,9 @@ public class FirebaseCampaignRepository implements CampaignRepository {
             return saved;
         }).addOnSuccessListener(saved -> {
             com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages, saved.getImageUrls());
+            if (submit && saved.getStatus() == CampaignStatus.PENDING_APPROVAL)
+                com.rescuefarm.service.notification.AdminNotificationClient.notifyAdmins(
+                        "MODERATION_SUBMISSION", saved.getId(), "CAMPAIGN");
             cache(saved); callback.onSuccess(saved);
         })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));

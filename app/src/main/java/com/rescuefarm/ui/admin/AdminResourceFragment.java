@@ -12,15 +12,11 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ImageView;
-import android.widget.ScrollView;
 import android.widget.CheckBox;
 import android.widget.Toast;
 import android.app.DatePickerDialog;
-import android.content.res.ColorStateList;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.ContextCompat;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -31,13 +27,11 @@ import com.rescuefarm.R;
 import com.rescuefarm.data.repository.AdminRepository.Section;
 import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
-import com.rescuefarm.service.admin.AdminTransitionPolicy;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 import com.rescuefarm.data.repository.AdminRepository;
 import com.bumptech.glide.Glide;
 import java.util.Map;
 import java.util.List;
-import java.util.Arrays;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Calendar;
@@ -46,7 +40,6 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
 public final class AdminResourceFragment extends Fragment {
-    private final AdminTransitionPolicy policy = new AdminTransitionPolicy();
     private AdminViewModel viewModel;
     private Section section;
     private TextView title, message;
@@ -62,6 +55,7 @@ public final class AdminResourceFragment extends Fragment {
     private TextView shippingPreview;
     private String searchTerm = "";
     private boolean bindingStatusFilter;
+    private boolean resumedOnce;
     private final Runnable pendingSearch = () -> {
         if (viewModel != null) viewModel.setSearchTerm(searchTerm);
     };
@@ -153,11 +147,6 @@ public final class AdminResourceFragment extends Fragment {
             loadMoreButton.setVisibility(View.GONE);
         }
         View backButton = view.findViewById(R.id.adminResourceBackButton);
-        View refreshButton = view.findViewById(R.id.refreshAdminResourceButton);
-        if (section == Section.ANALYTICS) {
-            styleAnalyticsAction((MaterialButton) backButton);
-            styleAnalyticsAction((MaterialButton) refreshButton);
-        }
         backButton.setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
         if (section != Section.ANALYTICS) viewModel.observeSection(section).observe(
                 getViewLifecycleOwner(), this::renderItems);
@@ -169,17 +158,6 @@ public final class AdminResourceFragment extends Fragment {
         if (section == Section.ANALYTICS) viewModel.refreshDashboard();
         else if (section == Section.SHIPPING_SETTINGS) loadShippingConfig();
         else viewModel.refreshSection(section);
-    }
-
-    private void styleAnalyticsAction(MaterialButton button) {
-        int primary = ContextCompat.getColor(requireContext(), R.color.rescue_primary);
-        int text = ContextCompat.getColor(requireContext(), R.color.rescue_on_surface);
-        button.setBackgroundTintList(ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
-        button.setStrokeColor(ColorStateList.valueOf(primary));
-        button.setStrokeWidth(Math.round(getResources().getDisplayMetrics().density));
-        button.setTextColor(text);
-        button.setCornerRadius(Math.round(14 * getResources().getDisplayMetrics().density));
-        button.setElevation(0);
     }
 
     private void render(AdminScreenState state) {
@@ -462,212 +440,21 @@ public final class AdminResourceFragment extends Fragment {
     }
 
     private void openDetail(AdminListItem item) {
-        message.setText("Đang tải chi tiết…");
-        viewModel.loadDetail(section, item.getId(), new AdminRepository.DetailCallback() {
-            @Override public void onSuccess(Map<String, Object> detail) {
-                if (!isAdded()) return;
-                message.setText(""); showDetailDialog(item, detail);
-            }
-            @Override public void onError(AdminRepository.ErrorCode code, String error) {
-                if (isAdded()) Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void showDetailDialog(AdminListItem item, Map<String, Object> detail) {
-        ScrollView scroll = new ScrollView(requireContext());
-        scroll.setBackgroundColor(requireContext().getColor(R.color.rescue_background));
-        LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL);
-        int padding = (int) (20 * getResources().getDisplayMetrics().density);
-        body.setPadding(padding, padding, padding, padding); scroll.addView(body);
-        new AdminDetailRenderer(requireContext()).render(body, item, detail);
-        if (section == Section.ORDERS) addOrderWarnings(body, detail);
-        EditText actionReason = new EditText(requireContext());
-        actionReason.setHint(R.string.admin_reason_hint); actionReason.setMinLines(2);
-        actionReason.setMaxLines(4); actionReason.setVisibility(section == Section.ORDERS
-                || section == Section.CATEGORIES || section == Section.BANNERS ? View.GONE : View.VISIBLE);
-        if (actionReason.getVisibility() == View.VISIBLE) {
-            TextView heading = new TextView(requireContext()); heading.setText("Thao tác quản trị");
-            heading.setTextSize(16); heading.setTypeface(null, android.graphics.Typeface.BOLD);
-            heading.setTextColor(requireContext().getColor(R.color.rescue_primary));
-            heading.setPadding(0, padding / 2, 0, padding / 2); body.addView(heading);
-            com.google.android.material.textfield.TextInputLayout reasonBox = new com.google.android.material.textfield.TextInputLayout(
-                    requireContext(), null, com.google.android.material.R.attr.textInputOutlinedStyle);
-            reasonBox.setHint(getString(R.string.admin_reason_hint)); actionReason.setHint(null);
-            reasonBox.addView(actionReason); body.addView(reasonBox);
-        } else body.addView(actionReason);
-        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_RescueFarm_AdminDetail).setTitle(item.getTitle())
-                .setView(scroll).setNegativeButton("Đóng", null).create();
-        if (section == Section.REPORTS) {
-            Button openTarget = buttonText("Mở nội dung bị báo cáo");
-            openTarget.setOnClickListener(v -> { dialog.dismiss(); openReportedTarget(detail); }); body.addView(openTarget);
-            addReportActions(body, dialog, item, detail, actionReason);
-        }
-        else if (section != Section.ORDERS && section != Section.CATEGORIES && section != Section.BANNERS) {
-            for (String target : allowedTargets(item, detail)) {
-                Button action = buttonText(adminActionLabel(target, item, detail)); body.addView(action);
-                action.setOnClickListener(v -> {
-                    String note = actionReason.getText().toString().trim();
-                    try { policy.validate(section, item.getStatus(), target, note); }
-                    catch (IllegalArgumentException | IllegalStateException error) {
-                        Toast.makeText(requireContext(), "Cần lý do hợp lệ hoặc trạng thái đã thay đổi.", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    new AlertDialog.Builder(requireContext()).setTitle("Xác nhận thao tác")
-                            .setMessage("Bạn có chắc muốn " + adminActionLabel(target, item, detail) + "?")
-                            .setNegativeButton("Quay lại", null)
-                            .setPositiveButton("Xác nhận", (confirm, which) -> viewModel.transition(item.getId(), target,
-                                    note, new AdminRepository.ActionCallback() {
-                                        @Override public void onSuccess() {
-                                            if (isAdded()) Toast.makeText(requireContext(), "Đã cập nhật và ghi audit.", Toast.LENGTH_SHORT).show();
-                                            dialog.dismiss();
-                                        }
-                                        @Override public void onError(AdminRepository.ErrorCode code, String message) {
-                                            if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
-                                        }
-                                    })).show();
-                });
-            }
-        }
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            int availableWidth = getResources().getDisplayMetrics().widthPixels - padding * 2;
-            int maxWidth = (int) (720 * getResources().getDisplayMetrics().density);
-            dialog.getWindow().setLayout(Math.min(availableWidth, maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT);
-        }
-    }
-
-    private void addOrderWarnings(LinearLayout body, Map<String, Object> detail) {
-        List<String> warnings = new java.util.ArrayList<>();
-        Date created = asDate(detail.get("createdAt"));
-        long ageMs = created == null ? 0L : Math.max(0L, System.currentTimeMillis() - created.getTime());
-        String status = String.valueOf(detail.get("status"));
-        if ("PENDING".equals(status) && ageMs >= 24L * 60L * 60L * 1000L)
-            warnings.add("Đơn đang chờ xác nhận hơn 24 giờ.");
-        if ("BANK_TRANSFER".equals(String.valueOf(detail.get("paymentMethod")))
-                && !"PAID".equals(String.valueOf(detail.get("paymentStatus")))
-                && ageMs >= 60L * 60L * 1000L)
-            warnings.add("Chuyển khoản chưa được xác nhận sau hơn 1 giờ.");
-        if (!(detail.get("payment") instanceof Map<?, ?>)) warnings.add("Đơn hàng thiếu thông tin thanh toán.");
-        if ("DELIVERY".equals(String.valueOf(detail.get("fulfillmentType")))) {
-            Object raw = detail.get("shipment");
-            if (!(raw instanceof Map<?, ?>)) warnings.add("Đơn hàng thiếu thông tin vận chuyển.");
-            else {
-                Map<?, ?> shipment = (Map<?, ?>) raw;
-                String shipmentStatus = String.valueOf(shipment.get("status"));
-                if ("SHIPPING".equals(status) && !"SHIPPING".equals(shipmentStatus))
-                    warnings.add("Trạng thái vận chuyển không khớp trạng thái đơn hàng.");
-                if ("DELIVERED".equals(status) && !"DELIVERED".equals(shipmentStatus))
-                    warnings.add("Đơn hàng đã hoàn tất nhưng vận chuyển chưa xác nhận đã giao.");
-            }
-        }
-        if (!warnings.isEmpty()) {
-            new AdminDetailRenderer(requireContext()).notice(body, warnings);
-        }
-    }
-
-    private void addReportActions(LinearLayout body, AlertDialog dialog, AdminListItem item,
-            Map<String, Object> detail, EditText reasonInput) {
-        String status = String.valueOf(detail.get("status"));
-        String type = String.valueOf(detail.get("targetType"));
-        if ("PENDING".equals(status)) addReportButton(body, dialog, item, reasonInput,
-                AdminRepository.ReportAction.MARK_IN_REVIEW, "Bắt đầu xử lý");
-        if (supportsHide(type, detail)) addReportButton(body, dialog, item, reasonInput,
-                AdminRepository.ReportAction.HIDE_TARGET, "Ẩn nội dung và giải quyết");
-        if (hasTargetOwner(type, detail)) addReportButton(body, dialog, item, reasonInput,
-                AdminRepository.ReportAction.BLOCK_USER, "Khóa người tạo và giải quyết");
-        addReportButton(body, dialog, item, reasonInput,
-                AdminRepository.ReportAction.DISMISS, "Bác report");
-    }
-
-    private void addReportButton(LinearLayout body, AlertDialog dialog, AdminListItem item,
-            EditText reasonInput, AdminRepository.ReportAction action, String label) {
-        Button button = buttonText(label); body.addView(button);
-        button.setOnClickListener(v -> {
-            String note = reasonInput.getText().toString().trim();
-            if (action != AdminRepository.ReportAction.MARK_IN_REVIEW && note.length() < 3) {
-                reasonInput.setError("Nhập lý do xử lý tối thiểu 3 ký tự."); return;
-            }
-            new AlertDialog.Builder(requireContext()).setTitle("Xác nhận xử lý report")
-                    .setMessage(label + "? Thao tác sẽ được ghi audit.")
-                    .setNegativeButton("Quay lại", null)
-                    .setPositiveButton("Xác nhận", (confirm, which) -> viewModel.resolveReport(item.getId(), action,
-                            note, new AdminRepository.ActionCallback() {
-                    @Override public void onSuccess() {
-                        if (isAdded()) Toast.makeText(requireContext(), "Đã cập nhật report và ghi audit.", Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
-                    }
-                    @Override public void onError(AdminRepository.ErrorCode code, String message) {
-                        if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
-                    }
-                })).show();
-        });
-    }
-
-    private boolean supportsHide(String type, Map<String, Object> detail) {
-        Object raw = detail.get("target"); if (!(raw instanceof Map<?, ?>)) return false;
-        Object status = ((Map<?, ?>) raw).get("status"); String current = status == null ? "" : String.valueOf(status);
-        return ("PRODUCT".equals(type) && java.util.Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(current))
-                || ("POST".equals(type) && "PUBLISHED".equals(current))
-                || ("CAMPAIGN".equals(type) && "ACTIVE".equals(current))
-                || ("REVIEW".equals(type) && "PUBLISHED".equals(current))
-                || ("COMMENT".equals(type) && java.util.Arrays.asList("ACTIVE", "EDITED").contains(current));
-    }
-
-    private boolean hasTargetOwner(String type, Map<String, Object> detail) {
-        if ("USER".equals(type)) return true;
-        Object raw = detail.get("target"); if (!(raw instanceof Map<?, ?>)) return false;
-        Map<?, ?> target = (Map<?, ?>) raw;
-        return target.containsKey("sellerId") || target.containsKey("customerId") || target.containsKey("userId");
+        Bundle args = new Bundle();
+        args.putString("section", section.name());
+        args.putString("itemId", item.getId());
+        args.putString("itemTitle", item.getTitle());
+        args.putString("itemSubtitle", item.getSubtitle());
+        args.putString("itemStatus", item.getStatus());
+        args.putBoolean("itemActive", item.isActive());
+        args.putString("itemImageUrl", item.getImageUrl());
+        androidx.navigation.Navigation.findNavController(requireView())
+                .navigate(R.id.action_adminResourceFragment_to_adminDetailFragment, args);
     }
 
     private void addDetailText(LinearLayout body, String value) {
         TextView line = new TextView(requireContext()); line.setText(value);
         line.setPadding(0, 8, 0, 8); body.addView(line);
-    }
-
-    private String adminActionLabel(String status, AdminListItem item, Map<String, Object> detail) {
-        if (section == Section.PRODUCTS && "HIDDEN".equals(item.getStatus())
-                && java.util.Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(status))
-            return "Khôi phục sản phẩm về " + AdminDetailFormatter.status(status);
-        switch (status) {
-            case "APPROVED": case "ACTIVE": case "PUBLISHED": return "Phê duyệt / khôi phục";
-            case "REJECTED": return "Từ chối"; case "HIDDEN": return "Ẩn";
-            case "STOPPED": return "Dừng chiến dịch"; case "BLOCKED": return "Khóa tài khoản";
-            default: return status;
-        }
-    }
-
-    private List<String> allowedTargets(AdminListItem item, Map<String, Object> detail) {
-        if (section == Section.PRODUCTS && "HIDDEN".equals(item.getStatus())) {
-            String previous = detail.get("moderationPreviousStatus") == null ? "INACTIVE"
-                    : String.valueOf(detail.get("moderationPreviousStatus"));
-            if (!java.util.Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(previous)) previous = "INACTIVE";
-            return java.util.Collections.singletonList(previous);
-        }
-        return policy.allowedTargets(section, item.getStatus());
-    }
-
-    private void openReportedTarget(Map<String, Object> detail) {
-        String type = String.valueOf(detail.get("targetType"));
-        String targetId = String.valueOf(detail.get("targetId"));
-        Object raw = detail.get("target");
-        Map<?, ?> target = raw instanceof Map<?, ?> ? (Map<?, ?>) raw : java.util.Collections.emptyMap();
-        Bundle args = new Bundle();
-        int destination = 0;
-        if ("PRODUCT".equals(type)) { destination = R.id.productDetailFragment; args.putString("productId", targetId); }
-        else if ("CAMPAIGN".equals(type)) { destination = R.id.campaignDetailFragment; args.putString("campaignId", targetId); }
-        else if ("POST".equals(type)) { destination = R.id.postDetailFragment; args.putString("postId", targetId); }
-        else if ("COMMENT".equals(type)) {
-            destination = R.id.postDetailFragment; args.putString("postId", String.valueOf(target.get("postId")));
-        } else if ("REVIEW".equals(type)) {
-            destination = R.id.reviewFragment; args.putString("productId", String.valueOf(target.get("productId")));
-        }
-        if (destination == 0) {
-            Toast.makeText(requireContext(), "Loại đối tượng này chỉ xem được trong chi tiết report.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        androidx.navigation.Navigation.findNavController(requireView()).navigate(destination, args);
     }
 
     private void renderAnalytics(AdminDashboardSnapshot value) {
@@ -710,7 +497,25 @@ public final class AdminResourceFragment extends Fragment {
                         + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
     }
 
-    private Button button(int label) { Button button = new Button(requireContext()); button.setText(label); return button; }
-    private Button buttonText(String label) { Button button = new Button(requireContext()); button.setText(label); return button; }
+    private Button button(int label) {
+        MaterialButton button = new MaterialButton(requireContext());
+        AdminUiStyles.outlinedButton(requireContext(), button);
+        button.setText(label);
+        return button;
+    }
+    private Button buttonText(String label) {
+        MaterialButton button = new MaterialButton(requireContext());
+        AdminUiStyles.outlinedButton(requireContext(), button);
+        button.setText(label);
+        return button;
+    }
     private String label(Section value) { return value.name().replace('_', ' '); }
+
+    @Override public void onResume() {
+        super.onResume();
+        if (resumedOnce && section != Section.ANALYTICS && section != Section.SHIPPING_SETTINGS) {
+            viewModel.refreshSection(section);
+        }
+        resumedOnce = true;
+    }
 }
