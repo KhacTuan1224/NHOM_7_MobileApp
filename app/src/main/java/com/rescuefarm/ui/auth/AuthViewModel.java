@@ -9,7 +9,6 @@ import com.rescuefarm.data.repository.GuestSessionRepository;
 import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.domain.enums.CustomerType;
 import com.rescuefarm.domain.model.User;
-import com.google.firebase.auth.PhoneAuthCredential;
 
 public class AuthViewModel extends ViewModel {
     private final AuthRepository authRepository;
@@ -82,15 +81,6 @@ public class AuthViewModel extends ViewModel {
         }
         screenState.setValue(AuthScreenState.loading());
         authRepository.signIn(email.trim(), password, createAuthCallback());
-    }
-
-    public void signInWithPhoneCredential(PhoneAuthCredential credential) {
-        if (credential == null) {
-            screenState.setValue(AuthScreenState.error("Mã OTP không hợp lệ hoặc đã hết hạn."));
-            return;
-        }
-        screenState.setValue(AuthScreenState.loading());
-        authRepository.signInWithPhoneCredential(credential, createAuthCallback());
     }
 
     public void register(
