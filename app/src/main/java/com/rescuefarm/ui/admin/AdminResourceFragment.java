@@ -16,7 +16,10 @@ import android.widget.ScrollView;
 import android.widget.CheckBox;
 import android.widget.Toast;
 import android.app.DatePickerDialog;
+import android.content.res.ColorStateList;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -149,7 +152,13 @@ public final class AdminResourceFragment extends Fragment {
             searchInput.setVisibility(View.GONE); statusFilter.setVisibility(View.GONE);
             loadMoreButton.setVisibility(View.GONE);
         }
-        view.findViewById(R.id.adminResourceBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
+        View backButton = view.findViewById(R.id.adminResourceBackButton);
+        View refreshButton = view.findViewById(R.id.refreshAdminResourceButton);
+        if (section == Section.ANALYTICS) {
+            styleAnalyticsAction((MaterialButton) backButton);
+            styleAnalyticsAction((MaterialButton) refreshButton);
+        }
+        backButton.setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
         if (section != Section.ANALYTICS) viewModel.observeSection(section).observe(
                 getViewLifecycleOwner(), this::renderItems);
         view.findViewById(R.id.refreshAdminResourceButton).setOnClickListener(v -> refresh());
@@ -160,6 +169,17 @@ public final class AdminResourceFragment extends Fragment {
         if (section == Section.ANALYTICS) viewModel.refreshDashboard();
         else if (section == Section.SHIPPING_SETTINGS) loadShippingConfig();
         else viewModel.refreshSection(section);
+    }
+
+    private void styleAnalyticsAction(MaterialButton button) {
+        int primary = ContextCompat.getColor(requireContext(), R.color.rescue_primary);
+        int text = ContextCompat.getColor(requireContext(), R.color.rescue_on_surface);
+        button.setBackgroundTintList(ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
+        button.setStrokeColor(ColorStateList.valueOf(primary));
+        button.setStrokeWidth(Math.round(getResources().getDisplayMetrics().density));
+        button.setTextColor(text);
+        button.setCornerRadius(Math.round(14 * getResources().getDisplayMetrics().density));
+        button.setElevation(0);
     }
 
     private void render(AdminScreenState state) {
@@ -654,27 +674,37 @@ public final class AdminResourceFragment extends Fragment {
         if (value == null) return;
         NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         AdminDashboardCards.addSectionTitle(requireContext(), container, "TỔNG QUAN HỆ THỐNG");
-        AdminDashboardCards.addGrid(requireContext(), container, Arrays.asList(
-                new AdminDashboardCards.Metric("Tổng hàng đợi moderation",
-                        String.valueOf(value.getPendingModerationTotal()), "Đang chờ xử lý"),
-                new AdminDashboardCards.Metric("Users", String.valueOf(value.total(Section.USERS)), "Tổng tài khoản"),
-                new AdminDashboardCards.Metric("Products", String.valueOf(value.total(Section.PRODUCTS)), "Tổng sản phẩm"),
-                new AdminDashboardCards.Metric("Campaigns", String.valueOf(value.total(Section.CAMPAIGNS)), "Tổng chiến dịch"),
-                new AdminDashboardCards.Metric("Orders", String.valueOf(value.total(Section.ORDERS)), "Tổng đơn hàng"),
-                new AdminDashboardCards.Metric("Doanh thu DELIVERED", currency.format(value.getDeliveredRevenue()),
-                        "All-time, gồm phí giao hàng")));
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Tổng quan số lượng", "Moderation là số đang chờ; các mục còn lại là tổng hiện có",
+                new String[]{"Moderation", "Users", "Products", "Campaigns", "Orders"},
+                new double[]{value.getPendingModerationTotal(), value.total(Section.USERS),
+                        value.total(Section.PRODUCTS), value.total(Section.CAMPAIGNS), value.total(Section.ORDERS)},
+                new String[]{String.valueOf(value.getPendingModerationTotal()),
+                        String.valueOf(value.total(Section.USERS)), String.valueOf(value.total(Section.PRODUCTS)),
+                        String.valueOf(value.total(Section.CAMPAIGNS)), String.valueOf(value.total(Section.ORDERS))}, 0);
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Doanh thu đơn đã giao", "All-time, gồm phí giao hàng",
+                new String[]{"DELIVERED"}, new double[]{value.getDeliveredRevenue()},
+                new String[]{currency.format(value.getDeliveredRevenue())}, 1);
 
         AdminDashboardCards.addSectionTitle(requireContext(), container, "RESCUE ANALYTICS");
-        AdminDashboardCards.addGrid(requireContext(), container, Arrays.asList(
-                new AdminDashboardCards.Metric("Campaign đang hoạt động", String.valueOf(value.getActiveCampaigns()), "Status ACTIVE"),
-                new AdminDashboardCards.Metric("Campaign CRITICAL", String.valueOf(value.getCriticalCampaigns()), "Trong Campaign ACTIVE"),
-                new AdminDashboardCards.Metric("Điểm mobile đang chia sẻ vị trí mới", String.valueOf(value.getLiveMobilePoints()),
-                        "Vị trí được cập nhật trong 10 phút"),
-                new AdminDashboardCards.Metric("Tổng lượng đã giải cứu", String.format(Locale.getDefault(), "%.2f kg",
-                        value.getTotalRescuedQuantity()), "Số lượng đã rescued"),
-                new AdminDashboardCards.Metric("Tỷ lệ hoàn thành", String.format(Locale.getDefault(), "%.1f%%",
-                        value.getCompletionRate()),
-                        "rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt")));
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Campaign đang hoạt động và cần ưu tiên", "Critical là tập con của Campaign ACTIVE",
+                new String[]{"Active", "Critical"},
+                new double[]{value.getActiveCampaigns(), value.getCriticalCampaigns()},
+                new String[]{String.valueOf(value.getActiveCampaigns()), String.valueOf(value.getCriticalCampaigns())}, 0);
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Điểm giải cứu di động", "Vị trí được cập nhật trong 10 phút",
+                new String[]{"Mobile point"}, new double[]{value.getLiveMobilePoints()},
+                new String[]{String.valueOf(value.getLiveMobilePoints())}, 3);
+        AdminDashboardCards.addColumnChart(requireContext(), container,
+                "Tổng lượng đã giải cứu", "Số lượng đã rescued",
+                new String[]{"Đã giải cứu"}, new double[]{value.getTotalRescuedQuantity()},
+                new String[]{String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())}, 2);
+        AdminDashboardCards.addCompletionChart(requireContext(), container,
+                "Tỷ lệ hoàn thành",
+                "Rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt",
+                value.getCompletionRate());
         AdminDashboardCards.addFootnote(requireContext(), container,
                 "Doanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
                         + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
