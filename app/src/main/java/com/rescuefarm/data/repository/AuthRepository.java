@@ -3,6 +3,7 @@ package com.rescuefarm.data.repository;
 import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.domain.enums.CustomerType;
 import com.rescuefarm.domain.model.User;
+import com.google.firebase.auth.PhoneAuthCredential;
 
 public interface AuthRepository {
     enum ErrorCode {
@@ -31,6 +32,7 @@ public interface AuthRepository {
     String getCurrentUserId();
     void restoreSession(AuthCallback callback);
     void signIn(String email, String password, AuthCallback callback);
+    void signInWithPhoneCredential(PhoneAuthCredential credential, AuthCallback callback);
     void register(
             String email,
             String password,

@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -57,6 +58,38 @@ public class FirebaseAuthRepository implements AuthRepository {
     public void signIn(String email, String password, AuthCallback callback) {
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> loadRequiredProfile(result.getUser(), callback))
+                .addOnFailureListener(exception -> notifyFailure(exception, callback));
+    }
+
+    @Override
+    public void signInWithPhoneCredential(PhoneAuthCredential credential, AuthCallback callback) {
+        firebaseAuth.signInWithCredential(credential)
+                .addOnSuccessListener(result -> {
+                    FirebaseUser firebaseUser = result.getUser();
+                    if (firebaseUser == null) {
+                        callback.onError(ErrorCode.UNKNOWN, "Firebase không trả về tài khoản điện thoại.");
+                        return;
+                    }
+                    userRepository.getUser(firebaseUser.getUid(), new UserRepository.UserCallback() {
+                        @Override public void onSuccess(User user) {
+                            registerUserDevice(user);
+                            callback.onSuccess(user);
+                        }
+
+                        @Override public void onError(UserRepository.ProfileError error, String message) {
+                            if (error == UserRepository.ProfileError.NOT_FOUND) {
+                                // Phone-first accounts receive the least-privileged app role.
+                                // Seller/admin privileges must still use their reviewed flows.
+                                createProfile(firebaseUser, "Khách hàng RescueFarm",
+                                        firebaseUser.getPhoneNumber(), UserRole.CUSTOMER,
+                                        CustomerType.INDIVIDUAL, "", "", callback);
+                            } else {
+                                if (error == UserRepository.ProfileError.DISABLED) signOut();
+                                callback.onError(mapProfileError(error), message);
+                            }
+                        }
+                    });
+                })
                 .addOnFailureListener(exception -> notifyFailure(exception, callback));
     }
 
