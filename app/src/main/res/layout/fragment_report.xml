@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -39,4 +39,4 @@
             android:layout_height="@dimen/touch_target_min"
             android:text="@string/submit_report_action" />
     </LinearLayout>
-</ScrollView>
+</com.rescuefarm.ui.common.NavigationAwareScrollView>

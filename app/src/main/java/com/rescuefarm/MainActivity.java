@@ -2,10 +2,8 @@ package com.rescuefarm;
 
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.ScrollView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,8 +12,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowCompat;
-import androidx.core.widget.NestedScrollView;
-import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDestination;
 import androidx.navigation.fragment.NavHostFragment;
@@ -224,21 +220,17 @@ public class MainActivity extends AppCompatActivity {
 
         View navHost = findViewById(R.id.main);
         FrameLayout.LayoutParams navHostParams = (FrameLayout.LayoutParams) navHost.getLayoutParams();
-        // Most screens draw under the floating navigation surface. Checkout reserves
-        // its height so the primary order action can never sit behind a tappable nav item.
-        int navigationOverlayHeight = show
-                ? getResources().getDimensionPixelSize(R.dimen.customer_bottom_navigation_height) : 0;
-        int desiredBottomMargin = show && destinationId == R.id.checkoutFragment
-                ? navigationOverlayHeight : 0;
+        // Keep the content viewport beneath the floating navigation surface. Each scroll
+        // container reserves its own scroll range for the visible navigation bar.
+        int desiredBottomMargin = 0;
         if (navHostParams.bottomMargin != desiredBottomMargin) {
             navHostParams.bottomMargin = desiredBottomMargin;
             navHost.setLayoutParams(navHostParams);
         }
-        if (show) applyNavigationScrollClearance(navigationOverlayHeight);
-                
         findViewById(R.id.customerBottomNavigationContainer).setVisibility(
                 show ? android.view.View.VISIBLE : android.view.View.GONE
         );
+        ViewCompat.requestApplyInsets(findViewById(R.id.mainRoot));
         
         int inactive = ContextCompat.getColor(this, R.color.rescue_on_surface_variant);
         int active = ContextCompat.getColor(this, R.color.rescue_splash_green);
@@ -294,36 +286,6 @@ public class MainActivity extends AppCompatActivity {
         tintNavigationIcon(profileButton, isProfileActive, active, inactive);
         centerActionButton.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
         centerActionButton.setAlpha(isCenterActive ? 1f : 0.88f);
-    }
-
-    private void applyNavigationScrollClearance(int navigationHeight) {
-        NavHostFragment host = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main);
-        if (host == null) return;
-        Fragment current = host.getChildFragmentManager().getPrimaryNavigationFragment();
-        View root = current == null ? null : current.getView();
-        View scroll = findVerticalScroll(root);
-        if (scroll == null || !(scroll instanceof ViewGroup)) return;
-        ViewGroup scrollGroup = (ViewGroup) scroll;
-        int contentPaddingBottom = scrollGroup.getChildCount() == 0 ? 0
-                : scrollGroup.getChildAt(0).getPaddingBottom();
-        int currentPaddingBottom = scroll.getPaddingBottom();
-        int extra = Math.max(0, navigationHeight - contentPaddingBottom - currentPaddingBottom);
-        if (extra > 0) scroll.setPadding(scroll.getPaddingLeft(), scroll.getPaddingTop(),
-                scroll.getPaddingRight(), currentPaddingBottom + extra);
-        scrollGroup.setClipToPadding(false);
-    }
-
-    private View findVerticalScroll(View view) {
-        if (view == null) return null;
-        if (view instanceof NestedScrollView || view instanceof ScrollView) return view;
-        if (view instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup) view;
-            for (int index = 0; index < group.getChildCount(); index++) {
-                View match = findVerticalScroll(group.getChildAt(index));
-                if (match != null) return match;
-            }
-        }
-        return null;
     }
 
     private boolean isSellerSurface(int destinationId) {

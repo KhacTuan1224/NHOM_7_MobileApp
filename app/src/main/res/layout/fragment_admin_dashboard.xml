@@ -23,9 +23,9 @@
                 android:text="↻" android:textSize="24sp" android:textColor="@color/rescue_primary"
                 android:contentDescription="Làm mới dashboard" />
         </LinearLayout>
-        <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+        <com.rescuefarm.ui.common.NavigationAwareNestedScrollView android:layout_width="match_parent"
             android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true"
-            android:clipToPadding="false" android:paddingBottom="@dimen/admin_scroll_bottom_clearance">
+            android:clipToPadding="false">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:padding="20dp">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -44,7 +44,7 @@
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:minHeight="48dp" android:layout_marginTop="16dp" android:text="Quay lại" />
             </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+        </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
     </LinearLayout>
 
     <LinearLayout android:layout_width="304dp" android:layout_height="match_parent"

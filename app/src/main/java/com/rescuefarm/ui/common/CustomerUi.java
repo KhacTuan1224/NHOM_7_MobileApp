@@ -4,7 +4,6 @@ import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
-import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.button.MaterialButton;
 import com.rescuefarm.R;
@@ -16,9 +15,9 @@ public final class CustomerUi {
         LinearLayout column = new LinearLayout(c); column.setOrientation(LinearLayout.VERTICAL); return column;
     }
     public static View screen(Fragment fragment, LinearLayout content) {
-        Context c = fragment.requireContext(); NestedScrollView scroll = new NestedScrollView(c);
+        Context c = fragment.requireContext(); NavigationAwareNestedScrollView scroll = new NavigationAwareNestedScrollView(c);
         scroll.setBackgroundColor(c.getColor(R.color.rescue_background)); scroll.setFillViewport(true);
-        content.setPadding(dp(c,16), dp(c,16), dp(c,16), dp(c,124));
+        content.setPadding(dp(c,16), dp(c,16), dp(c,16), dp(c,16));
         scroll.addView(content, new ViewGroup.LayoutParams(-1,-2)); return scroll;
     }
     public static TextView text(LinearLayout parent, String value) {
