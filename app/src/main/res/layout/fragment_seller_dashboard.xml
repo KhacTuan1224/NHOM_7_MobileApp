@@ -23,9 +23,9 @@
                 android:contentDescription="@string/refresh_seller_dashboard" />
         </LinearLayout>
 
-        <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+        <com.rescuefarm.ui.common.NavigationAwareNestedScrollView android:layout_width="match_parent"
             android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true"
-            android:clipToPadding="false" android:paddingBottom="@dimen/admin_scroll_bottom_clearance">
+            android:clipToPadding="false">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:padding="20dp">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -58,10 +58,10 @@
                 <LinearLayout android:id="@+id/sellerRecentOrders" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
             </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+        </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
     </LinearLayout>
 
-    <ScrollView android:layout_width="304dp" android:layout_height="match_parent"
+    <com.rescuefarm.ui.common.NavigationAwareScrollView android:layout_width="304dp" android:layout_height="match_parent"
         android:layout_gravity="start" android:background="@color/rescue_surface"
         android:elevation="16dp">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -110,5 +110,5 @@
                 android:layout_height="48dp" android:gravity="start|center_vertical"
                 android:text="@string/nav_seller_storefront" />
         </LinearLayout>
-    </ScrollView>
+    </com.rescuefarm.ui.common.NavigationAwareScrollView>
 </androidx.drawerlayout.widget.DrawerLayout>
