@@ -38,8 +38,6 @@ public class FeedFragment extends Fragment {
         renderer = new CampaignFeedCardRenderer(this);
         container = view.findViewById(R.id.feedContainer);
         progress = view.findViewById(R.id.feedProgress);
-        View loadMore = view.findViewById(R.id.loadMorePostsButton);
-        if (loadMore != null) loadMore.setVisibility(View.GONE);
         viewModel = new ViewModelProvider(this, new CampaignViewModelFactory(requireContext()))
                 .get(CampaignViewModel.class);
         viewModel.getActiveCampaigns().observe(getViewLifecycleOwner(), values -> {

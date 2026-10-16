@@ -67,7 +67,7 @@
     <string name="reset_success_icon_description">Biểu tượng xác nhận thành công</string>
     <string name="back_to_login_action">Quay lại đăng nhập</string>
     <string name="nav_home">Trang chủ</string>
-    <string name="nav_community">Cộng đồng</string>
+    <string name="nav_community">Chiến dịch</string>
     <string name="nav_cart">Giỏ hàng</string>
     <string name="nav_seller_storefront">Hồ sơ người bán</string>
     <string name="nav_seller_dashboard">Dashboard người bán</string>
@@ -246,10 +246,10 @@
     <string name="discovery_title">Khám phá nông sản giải cứu</string>
     <string name="discovery_keyword">Tên, nguồn gốc, chiến dịch…</string>
     <string name="apply_filter_action">Áp dụng</string>
-    <string name="feed_title">Feed giải cứu</string>
-    <string name="feed_subtitle">Những câu chuyện và chiến dịch đã được kiểm duyệt từ cộng đồng RescueFarm.</string>
+    <string name="feed_title">Chiến dịch giải cứu</string>
+    <string name="feed_subtitle">Các chiến dịch giải cứu đang hoạt động đã được kiểm duyệt.</string>
     <string name="load_more_action">Tải thêm</string>
-    <string name="open_feed_action">Xem toàn bộ feed</string>
+    <string name="open_feed_action">Xem tất cả chiến dịch</string>
     <string name="post_image_description">Ảnh bài viết giải cứu</string>
     <string name="comment_hint">Viết bình luận (tối đa 500 ký tự)</string>
     <string name="send_comment_action">Gửi bình luận</string>

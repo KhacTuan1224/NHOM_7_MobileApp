@@ -255,12 +255,5 @@
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
 
-        <TextView android:id="@+id/feedTitle" style="@style/TextAppearance.Material3.TitleMedium"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="14dp" android:text="Bài viết mới"
-            android:textColor="@color/rescue_on_surface" />
-        <LinearLayout android:id="@+id/feedSection" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:orientation="vertical" />
-
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
