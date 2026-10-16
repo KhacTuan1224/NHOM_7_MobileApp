@@ -224,12 +224,14 @@ public class MainActivity extends AppCompatActivity {
 
         View navHost = findViewById(R.id.main);
         FrameLayout.LayoutParams navHostParams = (FrameLayout.LayoutParams) navHost.getLayoutParams();
-        // Draw the page beneath the floating navigation surface so its translucency shows content.
-        // Scroll pages receive matching bottom clearance so the final action remains reachable.
+        // Most screens draw under the floating navigation surface. Checkout reserves
+        // its height so the primary order action can never sit behind a tappable nav item.
         int navigationOverlayHeight = show
                 ? getResources().getDimensionPixelSize(R.dimen.customer_bottom_navigation_height) : 0;
-        if (navHostParams.bottomMargin != 0) {
-            navHostParams.bottomMargin = 0;
+        int desiredBottomMargin = show && destinationId == R.id.checkoutFragment
+                ? navigationOverlayHeight : 0;
+        if (navHostParams.bottomMargin != desiredBottomMargin) {
+            navHostParams.bottomMargin = desiredBottomMargin;
             navHost.setLayoutParams(navHostParams);
         }
         if (show) applyNavigationScrollClearance(navigationOverlayHeight);

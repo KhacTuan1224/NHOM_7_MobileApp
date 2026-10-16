@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/checkoutScrollView"
     android:layout_width="match_parent" 
     android:layout_height="match_parent" 
     android:background="@color/rescue_background"
@@ -10,7 +11,8 @@
         android:layout_width="match_parent" 
         android:layout_height="wrap_content" 
         android:orientation="vertical" 
-        android:padding="16dp">
+        android:padding="16dp"
+        android:paddingBottom="120dp">
         
         <!-- Title -->
         <TextView 
@@ -186,6 +188,7 @@
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
             android:textColor="@color/rescue_on_surface_variant"
+            android:accessibilityLiveRegion="polite"
             android:layout_marginBottom="16dp" />
         
         <!-- Submit button -->
@@ -193,6 +196,7 @@
             android:id="@+id/submitCheckoutButton" 
             android:layout_width="match_parent" 
             android:layout_height="@dimen/touch_target_min" 
-            android:text="@string/place_order_action" />
+            android:text="@string/place_order_action"
+            android:layout_marginBottom="16dp" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
