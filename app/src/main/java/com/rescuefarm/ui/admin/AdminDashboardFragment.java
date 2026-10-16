@@ -41,7 +41,6 @@ public final class AdminDashboardFragment extends Fragment {
         view.findViewById(R.id.refreshAdminDashboardButton).setOnClickListener(v -> viewModel.refreshDashboard());
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminUsersButton, Section.USERS);
-        bind(view, R.id.adminPostsButton, Section.POSTS);
         bind(view, R.id.adminProductsButton, Section.PRODUCTS);
         bind(view, R.id.adminCampaignsButton, Section.CAMPAIGNS);
         bind(view, R.id.adminCategoriesButton, Section.CATEGORIES);
@@ -77,8 +76,6 @@ public final class AdminDashboardFragment extends Fragment {
                 metric("Products", String.valueOf(value.total(Section.PRODUCTS)), "Tổng sản phẩm"),
                 metric("Campaigns", String.valueOf(value.total(Section.CAMPAIGNS)),
                         value.getPendingCampaigns() + " chờ duyệt"),
-                metric("Posts", String.valueOf(value.total(Section.POSTS)),
-                        value.getPendingPosts() + " chờ duyệt"),
                 metric("Orders", String.valueOf(value.total(Section.ORDERS)), "Tổng đơn hàng"),
                 metric("Reports đang mở", String.valueOf(value.getOpenReports()), "Pending + In-review"),
                 metric("Doanh thu DELIVERED", currency.format(value.getDeliveredRevenue()),

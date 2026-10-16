@@ -81,6 +81,18 @@ public class CampaignViewModel extends ViewModel {
     public void save(String id, String title, String description, RescueReason reason,
             RescueMode mode, Map<String, Double> targets, String startDate, String endDate,
             String latitude, String longitude, String locationName, boolean submit) {
+        save(id, title, description, reason, mode, targets, startDate, endDate, latitude,
+                longitude, locationName, submit, new ArrayList<>(), new ArrayList<>());
+    }
+    public void save(String id, String title, String description, RescueReason reason,
+            RescueMode mode, Map<String, Double> targets, String startDate, String endDate,
+            String latitude, String longitude, String locationName, boolean submit,
+            List<String> imageUrls, List<String> imagePublicIds) {
+        if (submit && (description == null || description.trim().length() < 10
+                || description.trim().length() > 3000)) {
+            state.setValue(CampaignScreenState.error("Nội dung câu chuyện cần từ 10 đến 3000 ký tự."));
+            return;
+        }
         String validation = CampaignValidator.validate(title, targets, startDate, endDate,
                 latitude, longitude);
         if (validation != null) { state.setValue(CampaignScreenState.error(validation)); return; }
@@ -89,6 +101,7 @@ public class CampaignViewModel extends ViewModel {
         try {
             RescueCampaign campaign = new RescueCampaign(id, sellerId, target);
             campaign.defineCampaign(title, description, reason, mode, targets);
+            campaign.setStoryMedia(imageUrls, imagePublicIds);
             campaign.schedule(CampaignValidator.parseDate(startDate), CampaignValidator.parseDate(endDate));
             campaign.updateFixedLocation(CampaignValidator.parseNumber(latitude),
                     CampaignValidator.parseNumber(longitude), locationName);

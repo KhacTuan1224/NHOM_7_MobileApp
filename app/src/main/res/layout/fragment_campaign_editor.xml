@@ -17,6 +17,16 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:minLines="2" />
         </com.google.android.material.textfield.TextInputLayout>
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm" android:text="Nội dung bài viết của chiến dịch"
+            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/uploadCampaignImageButton"
+            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="Thêm ảnh chiến dịch (tối đa 6)" />
+        <TextView android:id="@+id/campaignImageUploadStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="Ảnh sẽ được lưu cùng chiến dịch khi bấm Lưu." />
+        <LinearLayout android:id="@+id/campaignImageGallery" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="horizontal" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md" android:text="@string/rescue_reason_label" />
         <Spinner android:id="@+id/campaignReasonSpinner" android:layout_width="match_parent" android:layout_height="48dp" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"

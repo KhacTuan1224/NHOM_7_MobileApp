@@ -13,36 +13,62 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.rescuefarm.R;
-import com.rescuefarm.domain.model.Post;
+import com.rescuefarm.domain.model.RescueCampaign;
+import com.rescuefarm.ui.campaign.CampaignScreenState;
+import com.rescuefarm.ui.campaign.CampaignViewModel;
+import com.rescuefarm.ui.campaign.CampaignViewModelFactory;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+/** Public rescue feed: every entry is a campaign; legacy Posts are not shown here. */
 public class FeedFragment extends Fragment {
-    private PostViewModel viewModel; private PostCardRenderer renderer;
-    private LinearLayout container; private ProgressBar progress; private View loadMore;
+    private CampaignViewModel viewModel;
+    private CampaignFeedCardRenderer renderer;
+    private LinearLayout container;
+    private ProgressBar progress;
+    private List<RescueCampaign> campaigns = new ArrayList<>();
+
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_feed, parent, false);
     }
+
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
-        renderer = new PostCardRenderer(this); container = view.findViewById(R.id.feedContainer);
-        progress = view.findViewById(R.id.feedProgress); loadMore = view.findViewById(R.id.loadMorePostsButton);
-        viewModel = new ViewModelProvider(this, new PostViewModelFactory(requireContext())).get(PostViewModel.class);
-        viewModel.getFeed().observe(getViewLifecycleOwner(), this::render);
-        viewModel.getHasMore().observe(getViewLifecycleOwner(), more -> loadMore.setVisibility(Boolean.TRUE.equals(more) ? View.VISIBLE : View.GONE));
-        viewModel.getState().observe(getViewLifecycleOwner(), value -> {
-            progress.setVisibility(value.getStatus() == PostScreenState.Status.LOADING ? View.VISIBLE : View.GONE);
-            if (value.getStatus() == PostScreenState.Status.ERROR) Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
+        renderer = new CampaignFeedCardRenderer(this);
+        container = view.findViewById(R.id.feedContainer);
+        progress = view.findViewById(R.id.feedProgress);
+        View loadMore = view.findViewById(R.id.loadMorePostsButton);
+        if (loadMore != null) loadMore.setVisibility(View.GONE);
+        viewModel = new ViewModelProvider(this, new CampaignViewModelFactory(requireContext()))
+                .get(CampaignViewModel.class);
+        viewModel.getActiveCampaigns().observe(getViewLifecycleOwner(), values -> {
+            campaigns = values == null ? new ArrayList<>() : new ArrayList<>(values);
+            render();
         });
-        view.findViewById(R.id.refreshFeedButton).setOnClickListener(v -> viewModel.refreshFeed());
-        loadMore.setOnClickListener(v -> viewModel.loadNextPage()); viewModel.refreshFeed();
+        viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (progress != null) progress.setVisibility(value.getStatus() == CampaignScreenState.Status.LOADING
+                    ? View.VISIBLE : View.GONE);
+            if (value.getStatus() == CampaignScreenState.Status.ERROR)
+                Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
+        });
+        view.findViewById(R.id.refreshFeedButton).setOnClickListener(v -> viewModel.refreshActive());
+        viewModel.refreshActive();
     }
-    private void render(List<Post> values) {
+
+    private void render() {
+        if (!isAdded() || container == null) return;
         container.removeAllViews();
-        if (values == null || values.isEmpty()) { container.addView(renderer.message(getString(R.string.feed_empty_message))); return; }
-        for (Post post : values) container.addView(renderer.card(post, false, v -> open(post.getId())));
-    }
-    private void open(String id) {
-        Bundle args = new Bundle(); args.putString("postId", id);
-        Navigation.findNavController(requireView()).navigate(R.id.action_feedFragment_to_postDetailFragment, args);
+        if (campaigns.isEmpty()) {
+            container.addView(renderer.message("Chưa có chiến dịch giải cứu đang hoạt động."));
+            return;
+        }
+        for (RescueCampaign campaign : campaigns) {
+            container.addView(renderer.card(campaign, Collections.emptyList(), v -> {
+                Bundle args = new Bundle(); args.putString("campaignId", campaign.getId());
+                Navigation.findNavController(v).navigate(
+                        R.id.action_feedFragment_to_campaignDetailFragment, args);
+            }));
+        }
     }
 }

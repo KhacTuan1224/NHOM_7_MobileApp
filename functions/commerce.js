@@ -336,6 +336,22 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null}) {
       tx.update(postRef, {viewCount}); return {counted: true, viewCount};
     });
   });
+  route('/recordCampaignView', async req => {
+    await limit(req, 'campaignViews', 120);
+    const data = req.body || {};
+    if (!identifier(data.campaignId) || !/^guest_[a-f0-9-]{36}$/i.test(text(data.viewerId)))
+      throw error(400, "Thông tin lượt xem chiến dịch không hợp lệ.");
+    const campaignRef = db.collection('campaigns').doc(data.campaignId);
+    const viewRef = db.collection('campaignViewReceipts').doc(hash(`${data.campaignId}|${data.viewerId}|${Math.floor(Date.now() / 86400000)}`));
+    return db.runTransaction(async tx => {
+      const campaign = await tx.get(campaignRef), receipt = await tx.get(viewRef);
+      if (!campaign.exists || campaign.get('status') !== 'ACTIVE') throw error(404, "Chiến dịch không còn công khai.");
+      if (receipt.exists) return {counted: false, viewCount: number(campaign.get('viewCount'), 0)};
+      const viewCount = number(campaign.get('viewCount'), 0) + 1;
+      tx.create(viewRef, {campaignId: data.campaignId, createdAt: stamp(), expiresAt: timestamp(Date.now() + 172800000)});
+      tx.update(campaignRef, {viewCount}); return {counted: true, viewCount};
+    });
+  });
   return {router, quote, checkout, details};
 }
 
