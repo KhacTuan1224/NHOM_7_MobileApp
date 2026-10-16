@@ -4,12 +4,12 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -58,19 +58,41 @@ public class SellerOrderListFragment extends Fragment {
         empty.setText(deliveryOnly ? R.string.seller_shipments_empty : R.string.seller_orders_empty);
         empty.setVisibility(visible.isEmpty() ? View.VISIBLE : View.GONE);
         for (Order order : visible) {
-            Button row = new Button(requireContext()); row.setAllCaps(false);
-            row.setText(getString(deliveryOnly ? R.string.seller_shipment_row_format
-                    : R.string.seller_order_row_format, order.getOrderCode(), order.getStatus().name(),
-                    order.getPaymentStatus().name()));
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.VERTICAL);
+            int verticalPadding = Math.round(12 * getResources().getDisplayMetrics().density);
+            row.setPadding(0, verticalPadding, 0, verticalPadding);
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setBackgroundResource(android.R.drawable.list_selector_background);
+            TextView code = new TextView(requireContext());
+            code.setText(order.getOrderCode());
+            code.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface));
+            code.setTextSize(14);
+            code.setTypeface(code.getTypeface(), android.graphics.Typeface.BOLD);
+            TextView details = new TextView(requireContext());
+            details.setText(deliveryOnly
+                    ? "Shipment " + order.getStatus().name() + " · Thanh toán " + order.getPaymentStatus().name()
+                    : order.getStatus().name() + " · Thanh toán " + order.getPaymentStatus().name());
+            details.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface_variant));
+            details.setTextSize(13);
+            row.addView(code);
+            row.addView(details);
             row.setOnClickListener(unused -> {
                 Bundle args = new Bundle(); args.putString("orderId", order.getId());
                 Navigation.findNavController(requireView()).navigate(
                         R.id.action_sellerOrderListFragment_to_orderDetailFragment, args);
             });
-            container.addView(row);
+            container.addView(row, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            View divider = new View(requireContext());
+            divider.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.rescue_outline));
+            container.addView(divider, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    Math.max(1, Math.round(getResources().getDisplayMetrics().density))));
         }
         if (viewModel.hasMoreSellerOrders(sellerId)) {
-            Button more = new Button(requireContext()); more.setAllCaps(false);
+            com.google.android.material.button.MaterialButton more = new com.google.android.material.button.MaterialButton(requireContext());
             more.setText(deliveryOnly ? "Tải thêm đơn giao hàng" : "Tải đơn cũ hơn");
             more.setOnClickListener(unused -> viewModel.loadMoreSellerOrders(sellerId));
             container.addView(more);

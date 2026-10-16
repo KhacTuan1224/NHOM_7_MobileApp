@@ -38,14 +38,15 @@ import org.json.JSONObject;
 
 public class OrderDetailFragment extends Fragment {
     private OrderViewModel vm;
-    private TextView detail, instructions, message, bankInfo;
+    private TextView orderCodeView, orderStatusView, instructions, message, bankInfo;
     private ImageView qrImage;
-    private LinearLayout items;
+    private LinearLayout items, orderInfo;
     private LinearLayout timeline;
     private Spinner target;
     private EditText reference;
     private EditText shipmentCarrier, shipmentTracking;
     private View shipmentTitle, saveShipment;
+    private View statusActionTitle, bankTransferActionTitle;
     private View transitionButton, confirmButton;
     private String orderId = "";
     private String lastObservedEvent = "";
@@ -58,7 +59,10 @@ public class OrderDetailFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
-        detail = view.findViewById(R.id.orderDetailText); instructions = view.findViewById(R.id.paymentInstructionsText);
+        orderCodeView = view.findViewById(R.id.orderDetailCode);
+        orderStatusView = view.findViewById(R.id.orderDetailStatus);
+        orderInfo = view.findViewById(R.id.orderDetailInfoContainer);
+        instructions = view.findViewById(R.id.paymentInstructionsText);
         message = view.findViewById(R.id.orderLifecycleMessage); bankInfo = view.findViewById(R.id.orderBankInfo);
         qrImage = view.findViewById(R.id.orderBankQr); items = view.findViewById(R.id.orderItemsContainer);
         target = view.findViewById(R.id.orderStatusTarget); reference = view.findViewById(R.id.bankReferenceInput);
@@ -69,6 +73,8 @@ public class OrderDetailFragment extends Fragment {
         shipmentCarrier = view.findViewById(R.id.shipmentCarrierInput);
         shipmentTracking = view.findViewById(R.id.shipmentTrackingInput);
         saveShipment = view.findViewById(R.id.saveShipmentDetailsButton);
+        statusActionTitle = view.findViewById(R.id.orderStatusActionTitle);
+        bankTransferActionTitle = view.findViewById(R.id.bankTransferActionTitle);
         Bundle args = getArguments(); orderId = args == null ? "" : args.getString("orderId", "");
         vm = new ViewModelProvider(this, new OrderViewModelFactory(requireContext())).get(OrderViewModel.class);
         vm.getState().observe(getViewLifecycleOwner(), this::render);
@@ -103,8 +109,103 @@ public class OrderDetailFragment extends Fragment {
         super.onStop();
     }
 
+    private void renderOrderInfo(Order order, Payment payment, Shipment shipment) {
+        orderInfo.removeAllViews();
+        NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        addInfoRow("Trạng thái đơn", statusLabel(order.getStatus(), order.getFulfillmentType()), false);
+        addInfoRow("Hình thức nhận", fulfillmentLabel(order.getFulfillmentType()), false);
+        if (!blank(order.getReceiverName())) addInfoRow("Người nhận", order.getReceiverName(), false);
+        if (!blank(order.getReceiverPhone())) addInfoRow("Số điện thoại", order.getReceiverPhone(), false);
+        if (!blank(order.getReceiverAddress())) addInfoRow("Địa chỉ", order.getReceiverAddress(), false);
+        addInfoRow("Thanh toán", paymentMethodLabel(payment.getMethod()), false);
+        addInfoRow("Tình trạng thanh toán", paymentStatusLabel(payment.getStatus()), false);
+        if (order.getFulfillmentType() == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY) {
+            addInfoRow("Vận chuyển", shipment == null ? "Chưa có thông tin" : shipmentStatusLabel(shipment.getStatus()), false);
+            addInfoRow("Phí giao hàng", money.format(order.getShippingFee()), false);
+            if (shipment != null && shipment.getDistanceKm() > 0D)
+                addInfoRow("Khoảng cách", String.format(Locale.getDefault(), "%.1f km", shipment.getDistanceKm()), false);
+        }
+        addInfoRow("Tổng thanh toán", money.format(order.getTotalAmount()), true);
+    }
+
+    private void addInfoRow(String label, String value, boolean emphasized) {
+        LinearLayout row = new LinearLayout(requireContext());
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        int vertical = Math.round(8 * getResources().getDisplayMetrics().density);
+        row.setPadding(0, vertical, 0, vertical);
+        TextView labelView = new TextView(requireContext());
+        labelView.setText(label);
+        labelView.setTextSize(13);
+        labelView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
+                R.color.rescue_on_surface_variant));
+        TextView valueView = new TextView(requireContext());
+        valueView.setText(value);
+        valueView.setTextSize(emphasized ? 15 : 14);
+        valueView.setGravity(android.view.Gravity.END);
+        valueView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
+                emphasized ? R.color.rescue_primary : R.color.rescue_on_surface));
+        if (emphasized) valueView.setTypeface(null, android.graphics.Typeface.BOLD);
+        row.addView(labelView, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(valueView, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        orderInfo.addView(row);
+        if (!emphasized) {
+            View divider = new View(requireContext());
+            divider.setBackgroundColor(androidx.core.content.ContextCompat.getColor(requireContext(),
+                    R.color.rescue_outline));
+            orderInfo.addView(divider, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1,
+                    Math.round(getResources().getDisplayMetrics().density))));
+        }
+    }
+
+    private String fulfillmentLabel(com.rescuefarm.domain.enums.FulfillmentType value) {
+        switch (value) {
+            case DELIVERY: return "Giao hàng đến địa chỉ";
+            case PICKUP: return "Nhận tại cửa hàng";
+            case ON_SITE_RESCUE: return "Nhận tại điểm giải cứu";
+            default: return value.name();
+        }
+    }
+
+    private String paymentMethodLabel(PaymentMethod value) {
+        switch (value) {
+            case COD: return "Thanh toán khi nhận hàng (COD)";
+            case BANK_TRANSFER: return "Chuyển khoản ngân hàng";
+            case CASH_ON_SITE: return "Tiền mặt tại điểm nhận";
+            default: return value.name();
+        }
+    }
+
+    private String paymentStatusLabel(PaymentStatus value) {
+        switch (value) {
+            case UNPAID: return "Chưa thanh toán";
+            case PENDING: return "Đang chờ xác nhận";
+            case PAID: return "Đã thanh toán";
+            case FAILED: return "Thanh toán thất bại";
+            default: return value.name();
+        }
+    }
+
+    private String shipmentStatusLabel(com.rescuefarm.domain.enums.ShipmentStatus value) {
+        switch (value) {
+            case PENDING: return "Chờ xử lý";
+            case READY: return "Sẵn sàng giao";
+            case SHIPPING: return "Đang vận chuyển";
+            case DELIVERED: return "Đã giao";
+            case FAILED: return "Giao thất bại";
+            case CANCELLED: return "Đã hủy";
+            default: return value.name();
+        }
+    }
+
     private void render(OrderLifecycleState state) {
-        message.setText(state.getMessage()); boolean loading = state.getStatus() == OrderLifecycleState.Status.LOADING;
+        message.setText(state.getMessage());
+        message.setVisibility(state.getMessage() == null || state.getMessage().trim().isEmpty()
+                ? View.GONE : View.VISIBLE);
+        boolean loading = state.getStatus() == OrderLifecycleState.Status.LOADING;
         transitionButton.setEnabled(!loading); confirmButton.setEnabled(!loading);
         if (state.getStatus() == OrderLifecycleState.Status.ERROR) {
             Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_LONG).show(); return;
@@ -115,16 +216,9 @@ public class OrderDetailFragment extends Fragment {
         if (order.getOwnerType() == com.rescuefarm.domain.enums.OrderOwnerType.CUSTOMER
                 && !lastObservedEvent.isEmpty() && !lastObservedEvent.equals(eventKey)) notifyOrderEvent();
         lastObservedEvent = eventKey;
-        String shipmentStatus = order.getFulfillmentType() != com.rescuefarm.domain.enums.FulfillmentType.DELIVERY
-                ? getString(R.string.shipment_not_required)
-                : shipment == null ? "Đang chờ thông tin vận chuyển" : shipment.getStatus().name();
-        detail.setText(getString(R.string.order_detail_format, order.getOrderCode(), order.getStatus().name(),
-                order.getFulfillmentType().name(), payment.getMethod().name(), payment.getStatus().name(), shipmentStatus,
-                NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(order.getTotalAmount())));
-        String distanceLabel = shipment == null ? "" : String.format(Locale.getDefault(),
-                " · %.1f km đường chim bay", shipment.getDistanceKm());
-        detail.append("\nPhí giao hàng: " + NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
-                .format(order.getShippingFee()) + distanceLabel + ".");
+        orderCodeView.setText("Mã đơn " + order.getOrderCode());
+        orderStatusView.setText(statusLabel(order.getStatus(), order.getFulfillmentType()));
+        renderOrderInfo(order, payment, shipment);
         renderTimeline(order);
         instructions.setText(paymentInstructions(payment));
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
@@ -141,10 +235,12 @@ public class OrderDetailFragment extends Fragment {
         boolean canTransition = seller && !nextStatuses.isEmpty();
         transitionButton.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
+        statusActionTitle.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         boolean bank = payment.getMethod() == PaymentMethod.BANK_TRANSFER;
         boolean pendingSellerBankConfirmation = seller && bank && payment.getStatus() == PaymentStatus.PENDING;
         reference.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
         confirmButton.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
+        bankTransferActionTitle.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
         boolean delivery = order.getFulfillmentType() == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY;
         boolean shipmentEditable = seller && delivery && shipment != null
                 && (order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PREPARING
@@ -229,15 +325,33 @@ public class OrderDetailFragment extends Fragment {
     private void renderItems(Order order, boolean canReview) {
         items.removeAllViews();
         for (OrderItem item : order.getItems()) {
-            TextView row = new TextView(requireContext());
-            row.setText(item.getProductNameSnapshot() + " · " + item.getQuantity() + " "
-                    + item.getUnitSnapshot() + " · " + NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
-                    .format(item.getSubtotal()));
-            row.setPadding(0, 12, 0, 12); items.addView(row);
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.VERTICAL);
+            int vertical = Math.round(12 * getResources().getDisplayMetrics().density);
+            row.setPadding(0, vertical, 0, vertical);
+            TextView productName = new TextView(requireContext());
+            productName.setText(item.getProductNameSnapshot());
+            productName.setTextSize(15);
+            productName.setTypeface(null, android.graphics.Typeface.BOLD);
+            productName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
+                    R.color.rescue_on_surface));
+            TextView productDetails = new TextView(requireContext());
+            productDetails.setText(item.getQuantity() + " " + item.getUnitSnapshot() + "  ·  "
+                    + NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(item.getSubtotal()));
+            productDetails.setTextSize(13);
+            productDetails.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
+                    R.color.rescue_on_surface_variant));
+            row.addView(productName);
+            row.addView(productDetails);
+            items.addView(row);
             if (canReview) {
                 com.google.android.material.button.MaterialButton button = new com.google.android.material.button.MaterialButton(
                         requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
                 button.setText("Đánh giá sản phẩm");
+                button.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rescue_on_surface));
+                button.setStrokeColor(android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rescue_primary)));
+                button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
                 button.setOnClickListener(view -> {
                     Bundle args = new Bundle(); args.putString("productId", item.getProductId());
                     args.putString("orderId", order.getId()); args.putString("orderItemId", item.getId());
@@ -246,6 +360,10 @@ public class OrderDetailFragment extends Fragment {
                 });
                 items.addView(button);
             }
+            View divider = new View(requireContext());
+            divider.setBackgroundColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rescue_outline));
+            items.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    Math.max(1, Math.round(getResources().getDisplayMetrics().density))));
         }
         if (order.getItems().isEmpty()) {
             TextView empty = new TextView(requireContext()); empty.setText("Không tải được danh sách mặt hàng của đơn.");
