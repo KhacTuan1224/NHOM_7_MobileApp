@@ -488,7 +488,10 @@ service cloud.firestore {
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && request.resource.data.updatedAt == request.time
-          && !request.resource.data.keys().hasAny(['moderatedBy', 'moderatedAt', 'moderationReason'])
+          // Owners may keep an existing review, but cannot add, edit or remove its audit fields.
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'moderatedBy', 'moderatedAt', 'moderationReason'
+          ])
           && validUserProfile(request.resource.data, userId)
           && (resource.data.role != 'SELLER'
               || request.resource.data.sellerStatus == resource.data.sellerStatus)
@@ -596,7 +599,8 @@ service cloud.firestore {
       allow get: if request.auth != null
           && (request.auth.uid == sellerId && hasRole(sellerId, 'SELLER') || isAdmin());
       allow list: if isAdmin();
-      allow create, update: if isApprovedSeller(request.auth.uid)
+      // Active sellers can prepare their own profile before approval; selling still requires approval.
+      allow create, update: if hasRole(sellerId, 'SELLER')
           && request.auth.uid == sellerId
           && request.resource.data.keys().hasOnly([
             'sellerId', 'bankCode', 'bankAccountName', 'bankAccountNumber', 'qrUrl', 'updatedAt'
