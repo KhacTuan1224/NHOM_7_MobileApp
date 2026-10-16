@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" 
     android:layout_height="match_parent"
     android:background="@color/rescue_background"
@@ -51,23 +50,14 @@
             android:layout_height="wrap_content" android:layout_marginBottom="12dp"
             android:textColor="@color/rescue_on_surface_variant" />
         
-        <!-- 1. Progress Card (ProgressBar + 3 Metrics) -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- Progress and metrics, directly on the page background -->
+        <LinearLayout
             android:id="@+id/campaignProgressCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="2dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="@color/rescue_outline"
-            app:cardBackgroundColor="@color/rescue_surface">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+            android:orientation="vertical"
+            android:padding="16dp">
                 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -205,26 +195,16 @@
                     android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
                     android:textColor="@color/rescue_on_surface_variant"
                     android:visibility="gone" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
-        <!-- 2. Location & Rescue Mode Card -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- Location and rescue mode, directly on the page background -->
+        <LinearLayout
             android:id="@+id/campaignLocationCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="2dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="@color/rescue_outline"
-            app:cardBackgroundColor="@color/rescue_surface">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+            android:orientation="vertical"
+            android:padding="16dp">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -276,26 +256,16 @@
                     android:layout_height="@dimen/touch_target_min"
                     android:text="Mở chỉ đường trên bản đồ"
                     style="@style/Widget.Material3.Button.OutlinedButton" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
-        <!-- 3. Rescue Product & Action Card (Thêm vào giỏ / Cứu trợ ngay) -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- Product and purchase actions, directly on the page background -->
+        <LinearLayout
             android:id="@+id/campaignProductActionCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="2dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="@color/rescue_outline"
-            app:cardBackgroundColor="@color/rescue_surface">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+            android:orientation="vertical"
+            android:padding="16dp">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -314,23 +284,13 @@
                     android:gravity="center_vertical"
                     android:layout_marginBottom="12dp">
 
-                    <com.google.android.material.card.MaterialCardView
+                    <ImageView
+                        android:id="@+id/campaignProductImage"
                         android:layout_width="84dp"
                         android:layout_height="84dp"
-                        app:cardCornerRadius="10dp"
-                        app:cardElevation="0dp"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="@color/rescue_outline"
-                        app:cardBackgroundColor="@color/rescue_surface">
-
-                        <ImageView
-                            android:id="@+id/campaignProductImage"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:contentDescription="Hình ảnh sản phẩm"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/ic_placeholder_food" />
-                    </com.google.android.material.card.MaterialCardView>
+                        android:contentDescription="Hình ảnh sản phẩm"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_placeholder_food" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -470,8 +430,7 @@
                         android:text="@string/campaign_rescue_now_action" />
                 </LinearLayout>
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
         
         <!-- Schedule -->
         <TextView
@@ -508,12 +467,8 @@
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="16dp" />
 
-        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginBottom="16dp"
-            app:cardCornerRadius="14dp" app:cardElevation="0dp" app:strokeWidth="1dp"
-            app:strokeColor="@color/rescue_outline" app:cardBackgroundColor="@color/rescue_surface">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:padding="14dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp" android:orientation="vertical" android:padding="14dp">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="Cộng đồng đồng hành" android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
                 <TextView android:id="@+id/campaignEngagementSummary" android:layout_width="match_parent"
@@ -538,8 +493,7 @@
                     android:text="Gửi bình luận" />
                 <LinearLayout android:id="@+id/campaignCommentContainer" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
         
         <!-- Secondary Buttons -->
         <com.google.android.material.button.MaterialButton 
@@ -566,4 +520,4 @@
             style="@style/Widget.Material3.Button.TextButton" />
         
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

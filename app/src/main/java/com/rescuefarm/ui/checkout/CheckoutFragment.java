@@ -7,7 +7,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +20,6 @@ import androidx.annotation.Nullable;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
-import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -213,26 +211,6 @@ public class CheckoutFragment extends Fragment {
         });
         submit.setEnabled(true);
         refreshPaymentMethods();
-        keepSubmitAboveBottomNavigation(view);
-    }
-
-    private void keepSubmitAboveBottomNavigation(View root) {
-        root.post(() -> {
-            if (!isAdded()) return;
-            View scrollView = root.findViewById(R.id.checkoutScrollView);
-            View submit = root.findViewById(R.id.submitCheckoutButton);
-            if (!(scrollView instanceof NestedScrollView) || submit == null) return;
-            NestedScrollView scroll = (NestedScrollView) scrollView;
-            Rect buttonBounds = new Rect(0, 0, submit.getWidth(), submit.getHeight());
-            scroll.offsetDescendantRectToMyCoords(submit, buttonBounds);
-            int overlap = buttonBounds.bottom - (scroll.getHeight()
-                    - getResources().getDimensionPixelSize(R.dimen.space_md));
-            // Only correct a button that is already visible but covered. Do not
-            // jump a newly opened checkout to the bottom when the button is off-screen.
-            if (buttonBounds.top < scroll.getHeight() && overlap > 0) {
-                scroll.smoothScrollBy(0, overlap + getResources().getDimensionPixelSize(R.dimen.space_sm));
-            }
-        });
     }
 
     private void renderAddresses(List<Address> values) {
