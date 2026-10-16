@@ -27,7 +27,6 @@ import com.rescuefarm.domain.model.Banner;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.RescueCampaign;
-import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,10 +38,9 @@ public class GuestHomeFragment extends Fragment {
     private TextView message;
     private TextView greeting, locationLabel;
     private ProgressBar progress;
-    private TextView feedTitle;
     private ViewPager2 bannerPager;
     private LinearLayout bannerDots, criticalSection, nearbyMobileSection, nearbyFixedSection,
-            endingSoonSection, nearExpirySection, valueSection, campaignSection, categorySection, feedSection;
+            endingSoonSection, nearExpirySection, valueSection, campaignSection, categorySection;
     private BannerPagerAdapter bannerAdapter;
     private ViewPager2.OnPageChangeCallback bannerPageCallback;
     private final Handler bannerHandler = new Handler(Looper.getMainLooper());
@@ -91,8 +89,6 @@ public class GuestHomeFragment extends Fragment {
         valueSection = view.findViewById(R.id.valueSection);
         campaignSection = view.findViewById(R.id.campaignSection);
         categorySection = view.findViewById(R.id.categorySection);
-        feedTitle = view.findViewById(R.id.feedTitle);
-        feedSection = view.findViewById(R.id.feedSection);
         viewModel = new ViewModelProvider(this, new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
         viewModel.getHomeState().observe(getViewLifecycleOwner(), this::render);
@@ -166,28 +162,6 @@ public class GuestHomeFragment extends Fragment {
         }
         renderCampaigns(campaignSection, otherCampaigns, state, "Chưa có chiến dịch khác đang diễn ra.");
         renderCategories(state.getCategories());
-        renderCampaignStories(state.getActiveCampaigns());
-    }
-    private void renderCampaignStories(List<RescueCampaign> values) {
-        feedSection.removeAllViews();
-        List<RescueCampaign> safe = values == null ? new ArrayList<>() : values;
-        feedTitle.setVisibility(safe.isEmpty() ? View.GONE : View.VISIBLE);
-        feedSection.setVisibility(safe.isEmpty() ? View.GONE : View.VISIBLE);
-        feedTitle.setText("Câu chuyện trong chiến dịch");
-        int count = Math.min(4, safe.size());
-        addGrid(feedSection, safe.subList(0, count), campaign -> renderer.campaign(campaign, Double.NaN,
-                v -> openCampaign(campaign.getId())));
-        if (!safe.isEmpty()) {
-            MaterialButton all = new MaterialButton(requireContext());
-            all.setText(R.string.open_feed_action);
-            all.setTextColor(requireContext().getColor(R.color.rescue_primary));
-            all.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                    requireContext().getColor(R.color.rescue_primary_container)));
-            all.setElevation(0);
-            all.setOnClickListener(v -> Navigation.findNavController(requireView()).navigate(
-                    R.id.action_guestHomeFragment_to_feedFragment));
-            feedSection.addView(all, new LinearLayout.LayoutParams(-1, dp(40)));
-        }
     }
     private void renderBanners(List<Banner> values) {
         bannerAdapter.submit(values);
