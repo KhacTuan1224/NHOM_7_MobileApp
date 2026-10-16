@@ -3032,3 +3032,18 @@ là những thứ tôi muốn **đóng băng ngay trước commit code đầu ti
 Về dịch vụ, lựa chọn `Firebase Auth + Firestore + FCM + Room + Cloudinary` cũng hợp lý với mục tiêu chi phí thấp: Firestore vẫn có free quota đáng kể, FCM thuộc nhóm no-cost, trong khi Firebase Storage hiện yêu cầu Blaze; Cloudinary hiện vẫn có Free plan. [Firebase](https://firebase.google.com/pricing?utm_source=chatgpt.com)
 
 **Từ bản này, team có thể chuyển sang bước triển khai mà không cần thiết kế lại domain lần nữa.**
+
+---
+
+# 37. Quyết định UI mới: Campaign là nội dung công khai duy nhất
+
+Quyết định này được chốt sau bản thiết kế ở trên và được ưu tiên hơn các mục cũ mô tả Post/Feed như một thực thể nội dung riêng:
+
+- Customer, Guest và Seller ở chế độ xem chỉ khám phá **Campaign**. Feed là cách trình bày danh sách Campaign, không phải một loại nội dung hoặc luồng Post riêng.
+- Mỗi Campaign chứa tiêu đề, nội dung câu chuyện, tối đa 6 ảnh, RescueReason, urgency, RescueMode, thời gian, vị trí và ProductBatch mục tiêu.
+- Campaign Detail là nơi duy nhất mở toàn bộ nội dung: tiến độ giải cứu, batch/sản phẩm, reaction LIKE/SUPPORT/CARE, bình luận thêm/sửa/xóa, lượt xem, chia sẻ và report.
+- Seller tạo, sửa và gửi duyệt nội dung câu chuyện cùng Campaign. Admin duyệt Campaign và xử lý report ngay trên Campaign. Customer/Guest giữ luồng mua hiện có; Seller ở chế độ xem không được mua hoặc tương tác.
+- Reaction và Comment được lưu dưới `campaigns/{campaignId}`; quyền ghi chỉ mở khi Campaign ACTIVE và tài khoản hợp lệ. Lượt xem được ghi qua backend tin cậy, giới hạn một lượt mỗi thiết bị mỗi ngày.
+- Dữ liệu `posts` cũ và mã đọc/moderation tương thích được giữ để không làm mất lịch sử/report. Không tạo Post mới từ UI và không hiển thị Post cũ như một feed công khai mới.
+
+Các phần mô hình và use case cũ còn liệt kê `Post`, `POSTS`, U4/U29/U35 hoặc liên kết Campaign–Post được hiểu là **tương thích dữ liệu cũ**. Chúng không còn định nghĩa luồng nội dung công khai hiện hành. RescueCampaign có thêm `imageUrls`, `imagePublicIds`, `viewCount`; Reaction/Comment gắn với Campaign theo document cha.

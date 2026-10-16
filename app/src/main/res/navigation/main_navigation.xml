@@ -108,8 +108,6 @@
             app:destination="@id/feedFragment" />
         <action android:id="@+id/action_guestHomeFragment_to_notificationFragment"
             app:destination="@id/notificationFragment" />
-        <action android:id="@+id/action_guestHomeFragment_to_postDetailFragment"
-            app:destination="@id/postDetailFragment" />
         <action android:id="@+id/action_guestHomeFragment_to_cartFragment"
             app:destination="@id/cartFragment" />
         <action android:id="@+id/action_guestHomeFragment_to_allCategoriesFragment"
@@ -322,8 +320,8 @@
         android:name="com.rescuefarm.ui.campaign.MobileRescueFragment" android:label="@string/mobile_rescue_title" />
     <fragment android:id="@+id/feedFragment"
         android:name="com.rescuefarm.ui.feed.FeedFragment" android:label="@string/feed_title">
-        <action android:id="@+id/action_feedFragment_to_postDetailFragment"
-            app:destination="@id/postDetailFragment" />
+        <action android:id="@+id/action_feedFragment_to_campaignDetailFragment"
+            app:destination="@id/campaignDetailFragment" />
     </fragment>
     <fragment android:id="@+id/postDetailFragment"
         android:name="com.rescuefarm.ui.feed.PostDetailFragment" android:label="@string/feed_title"><deepLink app:uri="rescuefarm://posts/{postId}" /><action android:id="@+id/action_postDetailFragment_to_reportFragment" app:destination="@id/reportFragment" /></fragment>

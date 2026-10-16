@@ -12,7 +12,8 @@ public final class CampaignValidator {
 
     public static String validate(String title, String targets, String startDate, String endDate,
             String latitude, String longitude) {
-        if (clean(title).length() < 3) return "Tên chiến dịch phải có ít nhất 3 ký tự.";
+        if (clean(title).length() < 3 || clean(title).length() > 120)
+            return "Tên chiến dịch cần từ 3 đến 120 ký tự.";
         Map<String, Double> parsed = parseTargets(targets);
         if (parsed.isEmpty()) return "Cần ít nhất một batch target theo dạng batchId=số lượng.";
         if (parsed.size() > 8) return "Mỗi chiến dịch hỗ trợ tối đa 8 batch.";
@@ -28,7 +29,8 @@ public final class CampaignValidator {
 
     public static String validate(String title, Map<String, Double> targets, String startDate,
             String endDate, String latitude, String longitude) {
-        if (clean(title).length() < 3) return "Tên chiến dịch phải có ít nhất 3 ký tự.";
+        if (clean(title).length() < 3 || clean(title).length() > 120)
+            return "Tên chiến dịch cần từ 3 đến 120 ký tự.";
         if (targets == null || targets.isEmpty()) return "Hãy chọn ít nhất một lô hàng cho Campaign.";
         if (targets.size() > 8) return "Mỗi chiến dịch hỗ trợ tối đa 8 batch.";
         for (Map.Entry<String, Double> entry : targets.entrySet()) {

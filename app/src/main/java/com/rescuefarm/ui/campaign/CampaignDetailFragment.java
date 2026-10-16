@@ -16,6 +16,7 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.LinearLayout;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -29,7 +30,12 @@ import com.rescuefarm.MainActivity;
 import com.rescuefarm.R;
 import com.rescuefarm.data.repository.ProductRepository;
 import com.rescuefarm.data.repository.ProductRepositoryFactory;
+import com.rescuefarm.data.repository.CampaignEngagementRepository;
+import com.rescuefarm.data.repository.CampaignEngagementRepositoryFactory;
 import com.rescuefarm.domain.enums.RescueMode;
+import com.rescuefarm.domain.enums.ReactionType;
+import com.rescuefarm.domain.model.Comment;
+import com.rescuefarm.domain.model.CampaignEngagementSnapshot;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.ProductBatch;
 import com.rescuefarm.domain.model.RescueCampaign;
@@ -60,6 +66,13 @@ public class CampaignDetailFragment extends Fragment {
     private List<Product> loadedProducts = new ArrayList<>();
     private ProductBatch selectedBatch;
     private Product selectedProduct;
+    private CampaignEngagementRepository engagementRepository;
+    private boolean engagementLoaded;
+    private boolean viewRecorded;
+    private boolean commentSubmitted;
+    private TextView engagementSummary;
+    private LinearLayout commentContainer;
+    private com.google.android.material.textfield.TextInputEditText commentInput;
     
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("vi-VN"));
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -101,6 +114,10 @@ public class CampaignDetailFragment extends Fragment {
         productPriceText = view.findViewById(R.id.campaignProductPrice);
         quantityUnitText = view.findViewById(R.id.campaignQuantityUnit);
         productImageView = view.findViewById(R.id.campaignProductImage);
+        engagementSummary = view.findViewById(R.id.campaignEngagementSummary);
+        commentContainer = view.findViewById(R.id.campaignCommentContainer);
+        commentInput = view.findViewById(R.id.campaignCommentInput);
+        engagementRepository = CampaignEngagementRepositoryFactory.create(requireContext());
 
         CampaignViewModel viewModel = new ViewModelProvider(this,
                 new CampaignViewModelFactory(requireContext())).get(CampaignViewModel.class);
@@ -132,6 +149,21 @@ public class CampaignDetailFragment extends Fragment {
             if (value.getStatus() == CampaignScreenState.Status.CAMPAIGN) {
                 render(view, value.getCampaign());
                 refreshUrgency(value.getCampaign());
+                if (value.getCampaign().getStatus() == com.rescuefarm.domain.enums.CampaignStatus.ACTIVE
+                        && !engagementLoaded) { engagementLoaded = true; loadEngagement(); }
+                if (value.getCampaign().getStatus() == com.rescuefarm.domain.enums.CampaignStatus.ACTIVE
+                        && !viewRecorded) {
+                    viewRecorded = true;
+                    engagementRepository.recordView(campaignId, new CampaignEngagementRepository.ViewCallback() {
+                        @Override public void onSuccess(long count) {
+                            if (!isAdded() || campaign == null) return;
+                            campaign.setViewCount(count);
+                            View root = getView();
+                            if (root != null) set(root, R.id.campaignViewCount, count + " lượt xem");
+                        }
+                        @Override public void onError(String message) { }
+                    });
+                }
             } else if (value.getStatus() == CampaignScreenState.Status.ERROR) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
             }
@@ -203,6 +235,14 @@ public class CampaignDetailFragment extends Fragment {
             Navigation.findNavController(v).navigate(
                 R.id.action_campaignDetailFragment_to_reportFragment, bundle);
         });
+        view.findViewById(R.id.campaignLikeButton).setOnClickListener(v -> toggleReaction(ReactionType.LIKE));
+        view.findViewById(R.id.campaignSupportButton).setOnClickListener(v -> toggleReaction(ReactionType.SUPPORT));
+        view.findViewById(R.id.campaignCareButton).setOnClickListener(v -> toggleReaction(ReactionType.CARE));
+        view.findViewById(R.id.campaignSendCommentButton).setOnClickListener(v -> {
+            String content = commentInput.getText() == null ? "" : commentInput.getText().toString();
+            commentSubmitted = !content.trim().isEmpty();
+            engagementRepository.addComment(campaignId, currentUserId(), content, actionRefresh());
+        });
 
         applyActorActions(view);
         if (requireActivity() instanceof MainActivity) {
@@ -215,8 +255,14 @@ public class CampaignDetailFragment extends Fragment {
 
     private void applyActorActions(View root) {
         boolean isReadOnly = ActorUiPolicy.isSellerReadOnly(this);
+        boolean socialEnabled = canUseCampaignSocialActions();
         root.findViewById(R.id.reportCampaignButton).setVisibility(
-                isReadOnly ? View.GONE : View.VISIBLE);
+                socialEnabled ? View.VISIBLE : View.GONE);
+        root.findViewById(R.id.campaignLikeButton).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
+        root.findViewById(R.id.campaignSupportButton).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
+        root.findViewById(R.id.campaignCareButton).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
+        root.findViewById(R.id.campaignCommentInput).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
+        root.findViewById(R.id.campaignSendCommentButton).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
         View actionCard = root.findViewById(R.id.campaignProductActionCard);
         if (actionCard != null) {
             actionCard.setVisibility(isReadOnly ? View.GONE : View.VISIBLE);
@@ -228,8 +274,10 @@ public class CampaignDetailFragment extends Fragment {
         set(view, R.id.campaignDetailTitle, value.getTitle());
         set(view, R.id.campaignDetailBadge, value.getHighlightLabel());
         set(view, R.id.campaignDetailDescription, value.getDescription());
+        renderStoryImages(view, value);
         set(view, R.id.campaignDetailReason, getString(R.string.campaign_reason_format,
                 value.getRescueReason().name(), value.getUrgencyLevel().name()));
+        set(view, R.id.campaignViewCount, value.getViewCount() + " lượt xem");
         
         // Progress Bar & 3 Metrics
         int progress = (int) Math.round(value.calculateProgress());
@@ -267,6 +315,106 @@ public class CampaignDetailFragment extends Fragment {
         
         updateLocationInfo(value);
         loadCampaignBatchesAndProducts(value);
+    }
+
+    private void renderStoryImages(View root, RescueCampaign value) {
+        LinearLayout gallery = root.findViewById(R.id.campaignStoryGallery);
+        if (gallery == null) return;
+        gallery.removeAllViews();
+        for (String url : value.getImageUrls()) {
+            ImageView image = new ImageView(requireContext());
+            int width = Math.round(280 * getResources().getDisplayMetrics().density);
+            int height = Math.round(180 * getResources().getDisplayMetrics().density);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
+            params.rightMargin = Math.round(8 * getResources().getDisplayMetrics().density);
+            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            image.setContentDescription("Ảnh nội dung chiến dịch");
+            Glide.with(this).load(url).centerCrop().into(image); gallery.addView(image, params);
+        }
+        gallery.setVisibility(value.getImageUrls().isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void loadEngagement() {
+        if (engagementRepository == null || campaignId.isEmpty()) return;
+        engagementRepository.load(campaignId, currentUserId(), new CampaignEngagementRepository.Callback() {
+            @Override public void onSuccess(CampaignEngagementSnapshot value) {
+                if (!isAdded()) return; renderEngagement(value);
+                if (commentSubmitted) { commentSubmitted = false; commentInput.setText(""); }
+            }
+            @Override public void onError(String message) {
+                if (isAdded()) engagementSummary.setText(message);
+            }
+        });
+    }
+
+    private void toggleReaction(ReactionType type) {
+        engagementRepository.toggleReaction(campaignId, currentUserId(), type, actionRefresh());
+    }
+
+    private CampaignEngagementRepository.Action actionRefresh() {
+        return new CampaignEngagementRepository.Action() {
+            @Override public void onSuccess() { if (isAdded()) loadEngagement(); }
+            @Override public void onError(String message) {
+                if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+            }
+        };
+    }
+
+    private String currentUserId() {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        return user == null ? "" : user.getUid();
+    }
+
+    private boolean canUseCampaignSocialActions() {
+        return requireActivity() instanceof MainActivity
+                && ((MainActivity) requireActivity()).getResolvedActorRole()
+                == com.rescuefarm.domain.enums.UserRole.CUSTOMER;
+    }
+
+    private void renderEngagement(CampaignEngagementSnapshot value) {
+        java.util.Map<ReactionType, Integer> counts = value.getReactionCounts();
+        engagementSummary.setText("Thích " + counts.getOrDefault(ReactionType.LIKE, 0)
+                + " · Ủng hộ " + counts.getOrDefault(ReactionType.SUPPORT, 0)
+                + " · Quan tâm " + counts.getOrDefault(ReactionType.CARE, 0)
+                + (value.getCurrentUserReaction() == null ? "" : " · Bạn đã " + value.getCurrentUserReaction().name()));
+        commentContainer.removeAllViews();
+        if (value.getComments().isEmpty()) { commentContainer.addView(commentText("Chưa có bình luận.")); return; }
+        for (Comment comment : value.getComments()) {
+            LinearLayout row = new LinearLayout(requireContext()); row.setOrientation(LinearLayout.VERTICAL);
+            row.addView(commentText(comment.getContent()
+                    + (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED ? " · đã chỉnh sửa" : "")));
+            if (comment.getUserId().equals(currentUserId()) && canUseCampaignSocialActions()) {
+                LinearLayout actions = new LinearLayout(requireContext());
+                com.google.android.material.button.MaterialButton edit = new com.google.android.material.button.MaterialButton(requireContext());
+                edit.setText("Sửa"); edit.setOnClickListener(v -> editCampaignComment(comment));
+                com.google.android.material.button.MaterialButton delete = new com.google.android.material.button.MaterialButton(requireContext());
+                delete.setText("Xóa"); delete.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                        .setTitle("Xóa bình luận?").setMessage("Bình luận sẽ được ẩn khỏi chiến dịch.")
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .setPositiveButton("Xóa", (dialog, which) -> engagementRepository.deleteComment(
+                                campaignId, comment.getId(), currentUserId(), actionRefresh())).show());
+                actions.addView(edit); actions.addView(delete); row.addView(actions);
+            }
+            commentContainer.addView(row);
+        }
+    }
+
+    private void editCampaignComment(Comment comment) {
+        EditText input = new EditText(requireContext()); input.setText(comment.getContent());
+        input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(500)});
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext()).setTitle("Sửa bình luận")
+                .setView(input).setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Lưu", (dialog, which) -> engagementRepository.editComment(
+                        campaignId, comment.getId(), currentUserId(), input.getText().toString(), actionRefresh())).show();
+    }
+
+    private TextView commentText(String value) {
+        TextView text = new TextView(requireContext()); text.setText(value); text.setPadding(8, 10, 8, 10); return text;
+    }
+
+    @Override public void onDestroy() {
+        if (engagementRepository != null) engagementRepository.close();
+        super.onDestroy();
     }
 
     private void updateLocationInfo(RescueCampaign value) {

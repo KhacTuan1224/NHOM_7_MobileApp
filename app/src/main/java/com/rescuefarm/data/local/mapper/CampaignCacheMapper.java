@@ -20,6 +20,9 @@ public final class CampaignCacheMapper {
         CampaignCacheEntity entity = new CampaignCacheEntity(value.getId());
         entity.sellerId = value.getSellerId(); entity.title = value.getTitle();
         entity.description = value.getDescription();
+        entity.imageUrlsSerialized = serializeStrings(value.getImageUrls());
+        entity.imagePublicIdsSerialized = serializeStrings(value.getImagePublicIds());
+        entity.viewCount = value.getViewCount();
         entity.rescueReason = value.getRescueReason().name();
         entity.urgencyLevel = value.getUrgencyLevel().name();
         entity.rescueMode = value.getRescueMode().name();
@@ -39,7 +42,7 @@ public final class CampaignCacheMapper {
     }
 
     public static RescueCampaign toDomain(CampaignCacheEntity value) {
-        return RescueCampaign.restore(value.id, value.sellerId, value.title, value.description,
+        RescueCampaign campaign = RescueCampaign.restore(value.id, value.sellerId, value.title, value.description,
                 enumValue(RescueReason.class, value.rescueReason, RescueReason.OVER_SUPPLY),
                 enumValue(UrgencyLevel.class, value.urgencyLevel, UrgencyLevel.NORMAL),
                 enumValue(RescueMode.class, value.rescueMode, RescueMode.FIXED_POINT),
@@ -50,6 +53,9 @@ public final class CampaignCacheMapper {
                 date(value.locationUpdatedAtEpochMillis), value.locationSharingEnabled,
                 value.locationName,
                 enumValue(CampaignStatus.class, value.status, CampaignStatus.DRAFT));
+        campaign.setStoryMedia(parseStrings(value.imageUrlsSerialized), parseStrings(value.imagePublicIdsSerialized));
+        campaign.setViewCount(value.viewCount);
+        return campaign;
     }
 
     public static List<RescueCampaign> campaigns(List<CampaignCacheEntity> values) {
@@ -80,6 +86,22 @@ public final class CampaignCacheMapper {
                     Double.parseDouble(item.substring(separator + 1))); }
             catch (NumberFormatException ignored) { }
         }
+        return result;
+    }
+
+    private static String serializeStrings(List<String> values) {
+        StringBuilder result = new StringBuilder();
+        if (values != null) for (String value : values) {
+            if (value == null || value.trim().isEmpty()) continue;
+            if (result.length() > 0) result.append('\n');
+            result.append(value.replace("\n", ""));
+        }
+        return result.toString();
+    }
+    private static List<String> parseStrings(String value) {
+        List<String> result = new ArrayList<>();
+        if (value != null) for (String item : value.split("\\n"))
+            if (!item.trim().isEmpty()) result.add(item.trim());
         return result;
     }
 

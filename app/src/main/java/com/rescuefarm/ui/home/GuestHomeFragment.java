@@ -27,10 +27,6 @@ import com.rescuefarm.domain.model.Banner;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.RescueCampaign;
-import com.rescuefarm.domain.model.Post;
-import com.rescuefarm.ui.feed.PostCardRenderer;
-import com.rescuefarm.ui.feed.PostViewModel;
-import com.rescuefarm.ui.feed.PostViewModelFactory;
 import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,9 +35,7 @@ import java.util.function.Function;
 
 public class GuestHomeFragment extends Fragment {
     private HomeViewModel viewModel;
-    private PostViewModel postViewModel;
     private HomeCardRenderer renderer;
-    private PostCardRenderer postRenderer;
     private TextView message;
     private TextView greeting, locationLabel;
     private ProgressBar progress;
@@ -76,7 +70,6 @@ public class GuestHomeFragment extends Fragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state); renderer = new HomeCardRenderer(this);
-        postRenderer = new PostCardRenderer(this);
         message = view.findViewById(R.id.homeMessage); progress = view.findViewById(R.id.homeProgress);
         greeting = view.findViewById(R.id.homeGreeting);
         locationLabel = view.findViewById(R.id.homeLocationLabel);
@@ -102,10 +95,7 @@ public class GuestHomeFragment extends Fragment {
         feedSection = view.findViewById(R.id.feedSection);
         viewModel = new ViewModelProvider(this, new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
-        postViewModel = new ViewModelProvider(this, new PostViewModelFactory(requireContext()))
-                .get(PostViewModel.class);
         viewModel.getHomeState().observe(getViewLifecycleOwner(), this::render);
-        postViewModel.getFeed().observe(getViewLifecycleOwner(), this::renderFeed);
         viewModel.getGreetingName().observe(getViewLifecycleOwner(), name ->
                 greeting.setText(getString(R.string.home_greeting_format,
                         name == null || name.trim().isEmpty() ? "bạn" : name.trim())));
@@ -131,7 +121,7 @@ public class GuestHomeFragment extends Fragment {
         view.findViewById(R.id.seeMoreCampaignsButton).setOnClickListener(v -> 
                 Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allActiveCampaignsFragment));
         
-        viewModel.refresh(); postViewModel.refreshFeed();
+        viewModel.refresh();
     }
 
     private void requestLocation() {
@@ -176,15 +166,17 @@ public class GuestHomeFragment extends Fragment {
         }
         renderCampaigns(campaignSection, otherCampaigns, state, "Chưa có chiến dịch khác đang diễn ra.");
         renderCategories(state.getCategories());
+        renderCampaignStories(state.getActiveCampaigns());
     }
-    private void renderFeed(List<Post> values) {
+    private void renderCampaignStories(List<RescueCampaign> values) {
         feedSection.removeAllViews();
-        List<Post> safe = values == null ? new ArrayList<>() : values;
+        List<RescueCampaign> safe = values == null ? new ArrayList<>() : values;
         feedTitle.setVisibility(safe.isEmpty() ? View.GONE : View.VISIBLE);
         feedSection.setVisibility(safe.isEmpty() ? View.GONE : View.VISIBLE);
+        feedTitle.setText("Câu chuyện trong chiến dịch");
         int count = Math.min(4, safe.size());
-        addGrid(feedSection, safe.subList(0, count), post -> postRenderer.homeCard(post,
-                v -> openPost(post.getId())));
+        addGrid(feedSection, safe.subList(0, count), campaign -> renderer.campaign(campaign, Double.NaN,
+                v -> openCampaign(campaign.getId())));
         if (!safe.isEmpty()) {
             MaterialButton all = new MaterialButton(requireContext());
             all.setText(R.string.open_feed_action);
@@ -325,11 +317,6 @@ public class GuestHomeFragment extends Fragment {
         Bundle args = new Bundle(); args.putString("productId", id);
         Navigation.findNavController(requireView()).navigate(
                 R.id.action_guestHomeFragment_to_productDetailFragment, args);
-    }
-    private void openPost(String id) {
-        Bundle args = new Bundle(); args.putString("postId", id);
-        Navigation.findNavController(requireView()).navigate(
-                R.id.action_guestHomeFragment_to_postDetailFragment, args);
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
