@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
+import com.rescuefarm.ui.common.ProvinceFilterPicker;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.enums.UrgencyLevel;
@@ -46,6 +47,7 @@ public class DiscoveryFragment extends Fragment {
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         renderer = new HomeCardRenderer(this);
         searchInput = view.findViewById(R.id.searchInput); provinceInput = view.findViewById(R.id.provinceInput);
+        ProvinceFilterPicker.bind(provinceInput);
         minPriceInput = view.findViewById(R.id.minPriceInput); maxPriceInput = view.findViewById(R.id.maxPriceInput);
         radiusInput = view.findViewById(R.id.radiusInput); expiryDaysInput = view.findViewById(R.id.expiryDaysInput);
         minStockInput = view.findViewById(R.id.minStockInput);

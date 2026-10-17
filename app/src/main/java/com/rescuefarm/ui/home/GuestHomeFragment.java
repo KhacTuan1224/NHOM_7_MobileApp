@@ -10,10 +10,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.EditText;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.Space;
 import android.widget.TextView;
@@ -43,6 +49,15 @@ public class GuestHomeFragment extends Fragment {
     private HomeCardRenderer renderer;
     private TextView message;
     private TextView greeting, locationLabel;
+    private EditText searchInput;
+    private View searchPanel;
+    private View searchAnchor;
+    private PopupWindow searchPopup;
+    private boolean searchOpen;
+    private int searchResultCount;
+    private android.view.ViewTreeObserver.OnGlobalLayoutListener searchLayoutListener;
+    private LinearLayout searchSuggestions;
+    private TextView searchCount;
     private ProgressBar progress;
     private ViewPager2 bannerPager;
     private LinearLayout bannerDots, criticalSection, nearbyMobileSection, nearbyFixedSection,
@@ -110,10 +125,7 @@ public class GuestHomeFragment extends Fragment {
                 greeting.setText(getString(R.string.home_greeting_format,
                         name == null || name.trim().isEmpty() ? "bạn" : name.trim())));
 
-        view.findViewById(R.id.searchButton).setOnClickListener(v -> {
-            DiscoveryBottomSheet bottomSheet = new DiscoveryBottomSheet();
-            bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
-        });
+        setupSearch(view, state);
         view.findViewById(R.id.notificationButton).setOnClickListener(unused ->
                 Navigation.findNavController(view).navigate(viewModel.isAuthenticated()
                         ? R.id.action_guestHomeFragment_to_notificationFragment
@@ -136,6 +148,137 @@ public class GuestHomeFragment extends Fragment {
                 Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allActiveCampaignsFragment));
         
         viewModel.refresh();
+    }
+
+    private void setupSearch(View view, Bundle state) {
+        searchInput = view.findViewById(R.id.homeSearchInput);
+        searchAnchor = view.findViewById(R.id.searchButton);
+        searchPanel = getLayoutInflater().inflate(R.layout.popup_home_search, null, false);
+        searchSuggestions = searchPanel.findViewById(R.id.homeSearchSuggestions);
+        searchCount = searchPanel.findViewById(R.id.homeSearchCount);
+        searchPopup = new PopupWindow(searchPanel, ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, false);
+        searchPopup.setBackgroundDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.bg_search_dropdown));
+        searchPopup.setElevation(dp(8));
+        searchPopup.setOutsideTouchable(true);
+        searchPopup.setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
+        searchPopup.setOnDismissListener(() -> searchOpen = false);
+        searchLayoutListener = this::fitSearchPopup;
+        searchAnchor.getViewTreeObserver().addOnGlobalLayoutListener(searchLayoutListener);
+        searchInput.setText(viewModel.getQuery().getText());
+        if (state != null && state.getBoolean("home.searchOpen")) showSearchSuggestions();
+        searchInput.setOnFocusChangeListener((v, focused) -> {
+            if (focused) showSearchSuggestions();
+        });
+        searchInput.setOnClickListener(v -> showSearchSuggestions());
+        view.findViewById(R.id.searchButton).setOnClickListener(v -> {
+            searchInput.requestFocus();
+            showSearchSuggestions();
+            InputMethodManager keyboard = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (keyboard != null) keyboard.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT);
+        });
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                viewModel.setQuery(viewModel.getQuery().withText(s.toString()));
+                showSearchSuggestions();
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+        searchInput.setOnEditorActionListener((v, action, event) -> {
+            if (action != EditorInfo.IME_ACTION_SEARCH) return false;
+            hideSearchKeyboard();
+            showSearchSuggestions();
+            return true;
+        });
+        searchPanel.findViewById(R.id.homeSearchClose).setOnClickListener(v -> {
+            hideSearchKeyboard();
+            searchInput.clearFocus();
+            searchPopup.dismiss();
+        });
+        view.findViewById(R.id.homeFilterButton).setOnClickListener(v -> {
+            hideSearchKeyboard();
+            searchPopup.dismiss();
+            if (getChildFragmentManager().findFragmentByTag("HomeFilters") != null) return;
+            DiscoveryBottomSheet sheet = new DiscoveryBottomSheet();
+            Bundle args = new Bundle(); args.putBoolean("filterOnly", true); sheet.setArguments(args);
+            sheet.show(getChildFragmentManager(), "HomeFilters");
+        });
+        getChildFragmentManager().setFragmentResultListener("home.filtersApplied", getViewLifecycleOwner(),
+                (key, result) -> showSearchSuggestions());
+        viewModel.getSearchResults().observe(getViewLifecycleOwner(), this::renderSearchSuggestions);
+    }
+
+    private void showSearchSuggestions() {
+        searchOpen = true;
+        searchAnchor.post(() -> {
+            if (!searchOpen || searchPopup == null || searchAnchor == null || !searchAnchor.isAttachedToWindow()) return;
+            fitSearchPopup();
+            searchPopup.setWidth(searchAnchor.getWidth());
+            if (!searchPopup.isShowing()) searchPopup.showAsDropDown(searchAnchor, 0, dp(6));
+            else searchPopup.update(searchAnchor, 0, dp(6), searchAnchor.getWidth(), -1);
+        });
+    }
+
+    private void fitSearchPopup() {
+        if (searchAnchor == null || searchPanel == null || !searchAnchor.isAttachedToWindow()) return;
+        android.graphics.Rect visible = new android.graphics.Rect();
+        searchAnchor.getWindowVisibleDisplayFrame(visible);
+        int[] position = new int[2];
+        searchAnchor.getLocationOnScreen(position);
+        int available = visible.bottom - position[1] - searchAnchor.getHeight() - dp(6);
+        int desired = dp(searchResultCount == 0 ? 88 : Math.min(3, searchResultCount) * 76);
+        int height = Math.max(dp(48), Math.min(desired, available - dp(60)));
+        View scroll = searchPanel.findViewById(R.id.homeSearchScroll);
+        ViewGroup.LayoutParams params = scroll.getLayoutParams();
+        if (params.height != height) {
+            params.height = height;
+            scroll.setLayoutParams(params);
+            if (searchPopup != null && searchPopup.isShowing())
+                searchPopup.update(searchAnchor.getWidth(), ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    private void hideSearchKeyboard() {
+        InputMethodManager keyboard = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (keyboard != null) keyboard.hideSoftInputFromWindow(searchInput.getWindowToken(), 0);
+    }
+
+    private void renderSearchSuggestions(List<DiscoveryResult> values) {
+        searchSuggestions.removeAllViews();
+        searchResultCount = values.size();
+        searchCount.setText(getString(R.string.home_search_count, values.size()));
+        fitSearchPopup();
+        if (values.isEmpty()) {
+            getLayoutInflater().inflate(R.layout.view_search_empty, searchSuggestions, true);
+            return;
+        }
+        for (DiscoveryResult value : values) {
+            boolean product = value.getType() == DiscoveryResult.Type.PRODUCT;
+            String title = product ? value.getProduct().getName() : value.getCampaign().getTitle();
+            View row = getLayoutInflater().inflate(R.layout.item_search_suggestion, searchSuggestions, false);
+            ((TextView) row.findViewById(R.id.suggestionTitle)).setText(title);
+            String location = product ? value.getProduct().getProvince() : value.getCampaign().getLocationName();
+            String type = getString(product ? R.string.home_search_product_type : R.string.home_search_campaign_type);
+            ((TextView) row.findViewById(R.id.suggestionSubtitle)).setText(
+                    location == null || location.trim().isEmpty() ? type : type + " · " + location);
+            row.setOnClickListener(v -> {
+                hideSearchKeyboard();
+                searchPopup.dismiss();
+                if (!product) { openCampaign(value.getCampaign().getId()); return; }
+                Bundle args = new Bundle(); args.putString("productId", value.getProduct().getId());
+                args.putString("batchId", value.getBatchId()); args.putString("campaignId", value.getCampaignId());
+                Navigation.findNavController(requireView()).navigate(
+                        R.id.action_guestHomeFragment_to_productDetailFragment, args);
+            });
+            searchSuggestions.addView(row);
+        }
+        if (searchPopup.isShowing()) searchPopup.update(searchAnchor.getWidth(), ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("home.searchOpen", searchOpen);
     }
 
     private void showLocationPicker() {
@@ -427,6 +570,7 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override public void onPause() {
+        if (searchPopup != null) searchPopup.dismiss();
         bannerHandler.removeCallbacks(freshnessTick);
         bannerHandler.removeCallbacks(promotionTransitionTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
@@ -441,6 +585,17 @@ public class GuestHomeFragment extends Fragment {
             bannerPager.unregisterOnPageChangeCallback(bannerPageCallback);
         }
         bannerPager = null;
+        searchOpen = false;
+        if (searchAnchor != null && searchLayoutListener != null)
+            searchAnchor.getViewTreeObserver().removeOnGlobalLayoutListener(searchLayoutListener);
+        searchLayoutListener = null;
+        if (searchPopup != null) searchPopup.dismiss();
+        searchPopup = null;
+        searchAnchor = null;
+        searchInput = null;
+        searchPanel = null;
+        searchSuggestions = null;
+        searchCount = null;
         super.onDestroyView();
     }
 }

@@ -62,8 +62,8 @@ public final class DiscoveryEngine {
 
             RescueCampaign matchedCampaign = candidate == null ? null
                     : campaignById.get(candidate.getActiveCampaignId());
-            if (!q.getProvince().isEmpty() && !contains(product.getProvince(), q.getProvince())
-                    && (matchedCampaign == null || !contains(matchedCampaign.getLocationName(), q.getProvince()))) continue;
+            if (!q.getProvince().isEmpty() && !matchesProvince(product.getProvince(), q.getProvince())
+                    && (matchedCampaign == null || !matchesProvince(matchedCampaign.getLocationName(), q.getProvince()))) continue;
             double distance = matchedCampaign == null
                     ? productDistance(product, sellerCoordinates, latitude, longitude)
                     : distance(matchedCampaign, latitude, longitude, at);
@@ -117,8 +117,8 @@ public final class DiscoveryEngine {
             String campaignId = clean(batch.getActiveCampaignId());
             RescueCampaign campaign = campaignId.isEmpty() ? null : campaigns.get(campaignId);
             if (hasCampaignFilter(q) && (campaign == null || !matchesCampaign(campaign, q, now))) continue;
-            if (!q.getProvince().isEmpty() && !contains(product.getProvince(), q.getProvince())
-                    && (campaign == null || !contains(campaign.getLocationName(), q.getProvince()))) continue;
+            if (!q.getProvince().isEmpty() && !matchesProvince(product.getProvince(), q.getProvince())
+                    && (campaign == null || !matchesProvince(campaign.getLocationName(), q.getProvince()))) continue;
             candidates.add(batch);
         }
         candidates.sort(Comparator
@@ -183,7 +183,7 @@ public final class DiscoveryEngine {
             if (product == null || !product.isAvailable()
                     || (!campaignText && !contains(product.getName(), q.getText()) && !contains(product.getDescription(), q.getText())
                     && !contains(product.getOrigin(), q.getText()) && !contains(product.getProvince(), q.getText()))
-                    || (!q.getProvince().isEmpty() && !contains(campaign.getLocationName(), q.getProvince()) && !contains(product.getProvince(), q.getProvince()))
+                    || (!q.getProvince().isEmpty() && !matchesProvince(campaign.getLocationName(), q.getProvince()) && !matchesProvince(product.getProvince(), q.getProvince()))
                     || !com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(product.getUnit())
                     .equals(com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(campaign.getQuantityUnit()))
                     || (!q.getCategoryId().isEmpty() && !q.getCategoryId().equals(product.getCategoryId()))
@@ -299,6 +299,15 @@ public final class DiscoveryEngine {
         return value.getProduct() == null ? value.getCampaign().getTitle() : value.getProduct().getName();
     }
     private static String clean(String value) { return value == null ? "" : value.trim(); }
+    private static boolean matchesProvince(String source, String expected) {
+        String province = provinceName(expected);
+        return !province.isEmpty() && provinceName(source).contains(province);
+    }
+    private static String provinceName(String value) {
+        return com.rescuefarm.service.address.VietnamAddressCatalog.normalize(value)
+                .replaceAll("\\b(?:tp[.]?\\s*)?hcm\\b", "ho chi minh")
+                .replaceAll("\\b(?:thanh pho|tinh|tp[.]?)\\s+", "");
+    }
     private static boolean contains(String source, String expected) { return normalize(source).contains(normalize(expected)); }
     private static String normalize(String value) {
         String clean = value == null ? "" : value.toLowerCase(Locale.ROOT).trim();
