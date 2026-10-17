@@ -38,7 +38,7 @@ import com.rescuefarm.data.local.entity.OrderCacheEntity;
                 CacheMetadataEntity.class,
                 OrderCacheEntity.class
         },
-        version = 7,
+        version = 8,
         exportSchema = true
 )
 public abstract class RescueFarmDatabase extends RoomDatabase {
@@ -90,6 +90,13 @@ public abstract class RescueFarmDatabase extends RoomDatabase {
             database.execSQL("ALTER TABLE campaign_cache ADD COLUMN viewCount INTEGER NOT NULL DEFAULT 0");
         }
     };
+    private static final Migration MIGRATION_7_8 = new Migration(7, 8) {
+        @Override public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE campaign_cache ADD COLUMN reservedByBatchSerialized TEXT");
+            database.execSQL("ALTER TABLE campaign_cache ADD COLUMN rescuedByBatchSerialized TEXT");
+            database.execSQL("ALTER TABLE campaign_cache ADD COLUMN allocationVersion INTEGER NOT NULL DEFAULT 0");
+        }
+    };
 
     public static RescueFarmDatabase getInstance(Context context) {
         if (instance == null) {
@@ -100,7 +107,7 @@ public abstract class RescueFarmDatabase extends RoomDatabase {
                             RescueFarmDatabase.class,
                             DATABASE_NAME
                     ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
-                            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build();
+                            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).build();
                 }
             }
         }

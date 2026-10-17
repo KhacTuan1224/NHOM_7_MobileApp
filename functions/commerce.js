@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("node:crypto");
+const {createCampaignLifecycle, readAllocations} = require('./campaign-lifecycle');
 
 const text = value => typeof value === "string" ? value.trim() : "";
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
@@ -57,8 +58,9 @@ function distanceKm(aLat, aLng, bLat, bLng) {
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyAdmins = null}) {
+function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyAdmins = null, campaignLifecycle = null}) {
   const router = express.Router();
+  const lifecycle = campaignLifecycle || createCampaignLifecycle({db, admin, authenticate});
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
   const timestamp = millis => admin.firestore.Timestamp.fromMillis(millis);
 
@@ -98,15 +100,18 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
     if (campaignIds.length > 1 || (data.fulfillmentType === 'ON_SITE_RESCUE' && !campaignIds.length)) {
       throw error(409, "Nhận tại điểm giải cứu cần các lô thuộc cùng một chiến dịch đang hoạt động.");
     }
-    let campaign = null, campaignRef = null, campaignQuantity = 0;
+    let campaign = null, campaignRef = null, campaignQuantity = 0, allocation = null;
     if (campaignIds.length) {
       campaignRef = db.collection('campaigns').doc(campaignIds[0]);
       const c = await read(campaignRef);
       if (!c.exists || c.get('sellerId') !== sellerId || c.get('status') !== 'ACTIVE'
           || time(c.get('endDate')) <= now || time(c.get('startDate')) > now) throw error(409, "Chiến dịch chưa bắt đầu hoặc đã kết thúc.");
       campaign = {id: c.id, ...c.data()};
+      allocation = await readAllocations(read, db, c.id, campaign);
       for (const row of rows) if (text(row.batch.activeCampaignId)) {
-        if (number((campaign.batchTargets || {})[row.item.batchId], 0) < row.item.quantity) throw error(409, "Số lượng vượt phần phân bổ của chiến dịch.");
+        const remaining = number((campaign.batchTargets || {})[row.item.batchId], 0)
+          - (allocation.reserved[row.item.batchId] || 0) - (allocation.rescued[row.item.batchId] || 0);
+        if (remaining + 0.000001 < row.item.quantity) throw error(409, "Số lượng vượt phần phân bổ còn lại của lô trong chiến dịch.");
         campaignQuantity += row.item.quantity;
       }
       if (number(campaign.targetQuantity, 0) - number(campaign.reservedQuantity, 0)
@@ -148,7 +153,7 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
       unit: text(product.unit), subtotal: value.subtotal, finalUnitPrice: value.unit, originalSubtotal: value.originalSubtotal}));
     const subtotal = lines.reduce((sum, line) => sum + line.subtotal, 0);
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
-    return {rows, campaign, campaignRef, campaignQuantity, profile, paymentProfile, sellerId,
+    return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
       public: {lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
         distanceKm: distance, total: subtotal + shippingFee, campaignId: campaign ? campaign.id : '',
         campaignTitle: campaign ? text(campaign.title) : '', campaignLocationName: campaign ? text(campaign.locationName) : '',
@@ -178,6 +183,7 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
     if (normalized.latitude < -90 || normalized.latitude > 90 || normalized.longitude < -180 || normalized.longitude > 180) throw error(400, "Tọa độ nhận hàng chưa hợp lệ.");
     const fingerprint = hash(JSON.stringify(normalized)), orderRef = db.collection('orders').doc(requestId);
     const receiptRef = db.collection('checkoutReceipts').doc(requestId);
+    await lifecycle.reconcileItems(items);
     const result = await db.runTransaction(async tx => {
       const existing = await tx.get(orderRef), receipt = await tx.get(receiptRef);
       if (existing.exists) {
@@ -208,6 +214,8 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
         ...normalized, subtotal: q.public.subtotal, quantityDiscount: 0, shippingFee: q.public.shippingFee,
         totalAmount: q.public.total, paymentStatus, status: 'PENDING', campaignReservedQuantity: q.campaignQuantity,
         batchReservations: Object.fromEntries(items.map(item => [item.batchId, item.quantity])),
+        campaignBatchReservations: Object.fromEntries(q.rows.filter(row => text(row.batch.activeCampaignId))
+          .map(row => [row.item.batchId, row.item.quantity])),
         inventoryFinalized: false, finalizedStatus: '', createdAt: stamp(), updatedAt: stamp()};
       delete order.items; order.receiverLatitude = normalized.latitude; order.receiverLongitude = normalized.longitude;
       delete order.latitude; delete order.longitude;
@@ -233,8 +241,13 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
           inventoryVersion: number(batch.inventoryVersion, 0) + 1, lastReservationOrderId: requestId,
           lastReservationQuantity: item.quantity, everOrdered: true, updatedAt: stamp()});
       }
-      if (q.campaign) tx.update(q.campaignRef, {reservedQuantity: q.campaign.reservedQuantity + q.campaignQuantity,
-        lastReservationOrderId: requestId, lastReservationQuantity: q.campaignQuantity, updatedAt: stamp()});
+      if (q.campaign) {
+        const reserved = {...q.allocation.reserved};
+        for (const [id, quantity] of Object.entries(order.campaignBatchReservations)) reserved[id] = (reserved[id] || 0) + quantity;
+        tx.update(q.campaignRef, {reservedQuantity: (q.campaign.reservedQuantity || 0) + q.campaignQuantity,
+          reservedByBatch: reserved, rescuedByBatch: q.allocation.rescued, allocationVersion: 1,
+          lastReservationOrderId: requestId, lastReservationQuantity: q.campaignQuantity, updatedAt: stamp()});
+      }
       const bank = q.paymentProfile || {};
       tx.create(db.collection('payments').doc(requestId), {id: requestId, orderId: requestId,
         method: normalized.paymentMethod, status: paymentStatus, amount: order.totalAmount, referenceCode: '',
@@ -267,8 +280,8 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
     if (identity.ownerType === 'GUEST') result.accessToken = data.guestToken;
     if (typeof notifyNewOrder === 'function' && !result.replay) {
       try {
-        await notifyNewOrder(q.sellerId, requestId,
-          `Có đơn hàng mới ${str(result.order.orderCode)}`,
+        await notifyNewOrder(result.order.sellerId, requestId,
+          `Có đơn hàng mới ${text(result.order.orderCode)}`,
           "Bạn vừa nhận được đơn hàng mới. Mở RescueFarm để xác nhận.");
       } catch (notificationError) {
         console.error("Seller order notification could not be delivered:", notificationError.message || notificationError);
@@ -276,7 +289,7 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
     }
     if (typeof notifyAdmins === 'function' && !result.replay) {
       try {
-        await notifyAdmins(requestId, `Đơn hàng mới ${str(result.order.orderCode)}`,
+        await notifyAdmins(requestId, `Đơn hàng mới ${text(result.order.orderCode)}`,
           `Có đơn hàng mới từ ${identity.ownerType === 'CUSTOMER' ? 'Customer' : 'Guest'} cần theo dõi.`);
       } catch (notificationError) {
         console.error("Admin order notification could not be delivered:", notificationError.message || notificationError);
@@ -297,8 +310,12 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
   const route = (path, handler) => router.post(path, async (req, res, next) => {
     try { res.json(await handler(req)); } catch (failure) { next(failure); }
   });
-  route('/quoteCustomerCheckout', async req => { await authenticate(req, ['CUSTOMER']); return (await quote(ref => ref.get(), req.body || {})).public; });
-  route('/quoteGuestCheckout', async req => { await limit(req, 'guestQuote', 60); return (await quote(ref => ref.get(), req.body || {})).public; });
+  async function reconciledQuote(data) {
+    await lifecycle.reconcileItems(validateSelection(data));
+    return (await quote(ref => ref.get(), data)).public;
+  }
+  route('/quoteCustomerCheckout', async req => { await authenticate(req, ['CUSTOMER']); return reconciledQuote(req.body || {}); });
+  route('/quoteGuestCheckout', async req => { await limit(req, 'guestQuote', 60); return reconciledQuote(req.body || {}); });
   route('/checkoutCustomer', async req => {
     const caller = await authenticate(req, ['CUSTOMER']);
     return checkout(req.body || {}, {ownerType: 'CUSTOMER', ownerId: caller.uid});

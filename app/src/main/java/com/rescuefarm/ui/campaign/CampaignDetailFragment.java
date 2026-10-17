@@ -663,7 +663,7 @@ public class CampaignDetailFragment extends Fragment {
                     ? dateFormat.format(selectedBatch.getExpiryDate()) : "N/A";
             batchHint.setText(String.format(Locale.getDefault(),
                     "Khả dụng: %.1f %s · HSD: %s",
-                    selectedBatch.getAvailableQuantity(), selectedProduct.getUnit(), expiry));
+                    Math.min(selectedBatch.getAvailableQuantity(), campaign.calculateRemainingForBatch(selectedBatch.getId())), selectedProduct.getUnit(), expiry));
         }
     }
 
@@ -683,13 +683,17 @@ public class CampaignDetailFragment extends Fragment {
             Toast.makeText(requireContext(), R.string.invalid_pricing_quantity, Toast.LENGTH_SHORT).show();
             return;
         }
-        if (qty <= 0) {
+        if (!Double.isFinite(qty) || qty <= 0) {
             Toast.makeText(requireContext(), R.string.invalid_pricing_quantity, Toast.LENGTH_SHORT).show();
             return;
         }
         if (!selectedBatch.hasAvailableStock(qty)) {
             Toast.makeText(requireContext(), "Số lượng vượt quá tồn kho khả dụng (" +
                     selectedBatch.getAvailableQuantity() + " " + selectedProduct.getUnit() + ")", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (campaign == null || qty > campaign.calculateRemainingForBatch(selectedBatch.getId()) + 0.000001) {
+            Toast.makeText(requireContext(), "Số lượng vượt phân bổ còn lại của lô trong chiến dịch. Hãy tải lại dữ liệu.", Toast.LENGTH_LONG).show();
             return;
         }
         pendingDirectCheckout = isDirectCheckout;

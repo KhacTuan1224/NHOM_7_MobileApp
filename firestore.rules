@@ -321,7 +321,8 @@ service cloud.firestore {
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason',
             'lastReservationOrderId', 'lastReservationQuantity',
             'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity',
-            'imageUrls', 'imagePublicIds', 'viewCount'
+            'imageUrls', 'imagePublicIds', 'viewCount',
+            'reservedByBatch', 'rescuedByBatch', 'allocationVersion', 'completedAt', 'expiredAt'
           ])
           && data.id is string
           && data.sellerId is string
@@ -337,6 +338,9 @@ service cloud.firestore {
           ]
           && data.urgencyLevel in ['NORMAL', 'HIGH', 'CRITICAL']
           && data.rescueMode in ['FIXED_POINT', 'MOBILE_POINT']
+          && data.get('reservedByBatch', {}) is map
+          && data.get('rescuedByBatch', {}) is map
+          && data.get('allocationVersion', 0) in [0, 1]
           && data.batchTargets is map
           && data.batchTargets.size() > 0
           && data.batchTargets.size() <= 8
@@ -791,6 +795,7 @@ service cloud.firestore {
           && ownsProduct(request.resource.data.productId)
           && request.resource.data.id == batchId
           && request.resource.data.inventoryVersion == 1
+          && request.resource.data.get('activeCampaignId', '') in ['', null]
           && validBatch(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow update: if (isApprovedSeller(request.auth.uid)
@@ -813,8 +818,6 @@ service cloud.firestore {
               'status', 'inventoryVersion', 'updatedAt'
             ])
             && hasNoCredentialFields(request.resource.data))
-          || (lifecycleBatchMutation(resource.data, request.resource.data, batchId)
-            && validBatch(request.resource.data))
           || (isAdmin()
             && resource.data.activeCampaignId is string
             && resource.data.activeCampaignId.size() > 0
@@ -881,8 +884,8 @@ service cloud.firestore {
       allow list: if orderReadable(resource.data);
       // Trusted HTTP checkout creates the order, items, payment and reservations atomically.
       allow create: if false;
-      allow update: if lifecycleOrderUpdate(resource.data, request.resource.data)
-          || bankConfirmationOrderUpdate(resource.data, request.resource.data);
+      // Order status and inventory allocations are changed only by the trusted lifecycle API.
+      allow update: if bankConfirmationOrderUpdate(resource.data, request.resource.data);
       allow delete: if false;
       match /items/{itemId} {
         allow get, list: if orderReadable(
@@ -969,6 +972,9 @@ service cloud.firestore {
           && request.resource.data.status in ['DRAFT', 'PENDING_APPROVAL']
           && request.resource.data.reservedQuantity == 0
           && request.resource.data.rescuedQuantity == 0
+          && request.resource.data.get('reservedByBatch', {}).size() == 0
+          && request.resource.data.get('rescuedByBatch', {}).size() == 0
+          && request.resource.data.get('allocationVersion', 0) == 0
           && request.resource.data.get('viewCount', 0) == 0
           && validCampaign(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
@@ -978,7 +984,10 @@ service cloud.firestore {
               && resource.data.status in ['DRAFT', 'REJECTED']
               && request.resource.data.status in ['DRAFT', 'PENDING_APPROVAL']
               && request.resource.data.reservedQuantity == resource.data.reservedQuantity
-              && request.resource.data.rescuedQuantity == resource.data.rescuedQuantity)
+              && request.resource.data.rescuedQuantity == resource.data.rescuedQuantity
+              && request.resource.data.get('reservedByBatch', {}) == resource.data.get('reservedByBatch', {})
+              && request.resource.data.get('rescuedByBatch', {}) == resource.data.get('rescuedByBatch', {})
+              && request.resource.data.get('allocationVersion', 0) == resource.data.get('allocationVersion', 0))
             || (isApprovedSeller(request.auth.uid)
               && resource.data.sellerId == request.auth.uid
               && resource.data.status == 'ACTIVE'
@@ -989,12 +998,9 @@ service cloud.firestore {
               ])
               && (request.resource.data.locationSharingEnabled == false
                 || request.resource.data.locationUpdatedAt == request.time))
-            || (lifecycleCampaignMutation(resource.data, request.resource.data))
             || (isAdmin()
-              && ((resource.data.status == 'PENDING_APPROVAL'
-                    && request.resource.data.status in ['ACTIVE', 'REJECTED'])
-                || (resource.data.status == 'ACTIVE'
-                    && request.resource.data.status == 'STOPPED'))
+              && resource.data.status == 'ACTIVE'
+              && request.resource.data.status == 'STOPPED'
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                 'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
               ])

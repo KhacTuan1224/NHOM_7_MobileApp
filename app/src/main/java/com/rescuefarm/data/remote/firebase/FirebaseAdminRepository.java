@@ -257,6 +257,20 @@ public final class FirebaseAdminRepository implements AdminRepository {
             callback.onError(ErrorCode.VALIDATION, "Thiếu dữ liệu chuyển trạng thái."); return;
         }
         ensureAdmin(() -> {
+            if (section == Section.CAMPAIGNS) {
+                try {
+                    JSONObject request = new JSONObject().put("campaignId", id)
+                            .put("targetStatus", target).put("reason", note);
+                    RenderBackendClient.post("/campaigns/moderate", request, new RenderBackendClient.Callback() {
+                        @Override public void onSuccess(JSONObject response) {
+                            callback.onSuccess();
+                            if ("ACTIVE".equals(target) && !response.optBoolean("replay")) notifyCampaignCustomers(id);
+                        }
+                        @Override public void onError(String message) { callback.onError(ErrorCode.CONFLICT, message); }
+                    });
+                } catch (org.json.JSONException error) { callback.onError(ErrorCode.VALIDATION, "Yêu cầu duyệt không hợp lệ."); }
+                return;
+            }
             if (section == Section.SELLER_APPLICATIONS) {
                 db.collection(section.getCollection()).document(id).get()
                         .addOnSuccessListener(application -> {

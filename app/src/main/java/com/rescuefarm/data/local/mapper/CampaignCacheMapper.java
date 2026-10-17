@@ -27,6 +27,9 @@ public final class CampaignCacheMapper {
         entity.urgencyLevel = value.getUrgencyLevel().name();
         entity.rescueMode = value.getRescueMode().name();
         entity.batchTargetsSerialized = serializeTargets(value.getBatchTargets());
+        entity.reservedByBatchSerialized = serializeTargets(value.getReservedByBatch());
+        entity.rescuedByBatchSerialized = serializeTargets(value.getRescuedByBatch());
+        entity.allocationVersion = value.getAllocationVersion();
         entity.targetQuantity = value.getTargetQuantity();
         entity.reservedQuantity = value.getReservedQuantity();
         entity.rescuedQuantity = value.getRescuedQuantity();
@@ -55,6 +58,8 @@ public final class CampaignCacheMapper {
                 enumValue(CampaignStatus.class, value.status, CampaignStatus.DRAFT));
         campaign.setStoryMedia(parseStrings(value.imageUrlsSerialized), parseStrings(value.imagePublicIdsSerialized));
         campaign.setViewCount(value.viewCount);
+        campaign.setAllocationProgress(parseTargets(value.reservedByBatchSerialized),
+                parseTargets(value.rescuedByBatchSerialized), value.allocationVersion);
         return campaign;
     }
 

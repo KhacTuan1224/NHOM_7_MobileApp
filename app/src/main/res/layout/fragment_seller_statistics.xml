@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/rescue_background" android:fillViewport="true" android:clipToPadding="false">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Thống kê cửa hàng" android:textSize="28sp" android:textStyle="bold"
+            android:textColor="@color/rescue_on_surface" android:accessibilityHeading="true" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/sellerStatisticsBack"
+                style="@style/Widget.RescueFarm.AdminOutlinedButton" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginEnd="8dp" android:text="Quay lại" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/sellerStatisticsRefresh"
+                style="@style/Widget.RescueFarm.AdminOutlinedButton" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:minHeight="48dp" android:text="Làm mới" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
+            android:text="Kỳ thống kê" android:textStyle="bold" android:textColor="@color/rescue_on_surface" />
+        <Spinner android:id="@+id/sellerStatisticsPeriod" android:layout_width="match_parent" android:layout_height="48dp" android:contentDescription="Chọn kỳ thống kê" />
+        <ProgressBar android:id="@+id/sellerStatisticsProgress" android:layout_width="32dp" android:layout_height="32dp" android:visibility="gone" />
+        <TextView android:id="@+id/sellerStatisticsMessage" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textColor="@color/rescue_on_surface_variant" android:layout_marginTop="8dp" android:accessibilityLiveRegion="polite" />
+        <LinearLayout android:id="@+id/sellerStatisticsContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+    </LinearLayout>
+</com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
