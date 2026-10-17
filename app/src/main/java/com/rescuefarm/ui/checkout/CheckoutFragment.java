@@ -1,6 +1,8 @@
 package com.rescuefarm.ui.checkout;
 import com.rescuefarm.ui.common.EnumLabelAdapter;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,8 +16,11 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -48,6 +53,19 @@ public class CheckoutFragment extends Fragment {
     private EditText name, phone, note;
     private double receiverLatitude, receiverLongitude;
     private TextView gpsStatus, sellerAddress, paymentStatus;
+    private View useCurrentLocationButton;
+    private boolean hasPromptedLocationPermission;
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
+                boolean coarse = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                if (fine || coarse) {
+                    fetchCurrentLocation(true);
+                } else {
+                    gpsStatus.setText("Cần cấp quyền định vị để tự động lấy vị trí hiện tại.");
+                    Toast.makeText(requireContext(), R.string.location_permission_required, Toast.LENGTH_SHORT).show();
+                }
+            });
     private VietnamAddressView address;
     private static final String PROFILE_ADDRESS = "__customer_profile__";
     private LocationProvider locationProvider;
@@ -92,10 +110,15 @@ public class CheckoutFragment extends Fragment {
         locationProvider = LocationProviderFactory.create(requireContext());
         sellerAddress = view.findViewById(R.id.checkoutSellerAddress);
         paymentStatus = view.findViewById(R.id.checkoutPaymentStatus);
+        useCurrentLocationButton = view.findViewById(R.id.checkoutUseCurrentLocationButton);
+        if (useCurrentLocationButton != null) {
+            useCurrentLocationButton.setOnClickListener(v -> requestLocationPermissionAndFetch(true));
+        }
         if (state != null) {
             receiverLatitude = state.getDouble("receiverLatitude");
             receiverLongitude = state.getDouble("receiverLongitude");
             receiverAddressText = state.getString("receiverAddressText", "");
+            hasPromptedLocationPermission = state.getBoolean("hasPromptedLocationPermission", false);
         }
         showReceiverGps();
         fulfillment = view.findViewById(R.id.checkoutFulfillment); payment = view.findViewById(R.id.checkoutPayment);
@@ -131,6 +154,13 @@ public class CheckoutFragment extends Fragment {
                     applyCustomerLocation();
                 }
             });
+        } else if (state == null && !addressEdited && !restoringAddress) {
+            if (hasLocationPermission()) {
+                fetchCurrentLocation(false);
+            } else if (!hasPromptedLocationPermission) {
+                hasPromptedLocationPermission = true;
+                requestLocationPermissionAndFetch(false);
+            }
         }
         updateFulfillmentFields();
         savedAddressSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
@@ -482,6 +512,7 @@ public class CheckoutFragment extends Fragment {
         if (view != null) {
             gpsStatus.setVisibility(delivery ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.checkoutReceiverAddressTitle).setVisibility(delivery ? View.VISIBLE : View.GONE);
+            if (useCurrentLocationButton != null) useCurrentLocationButton.setVisibility(delivery ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.checkoutLocationHint).setVisibility(delivery ? View.VISIBLE : View.GONE);
             savedAddressSpinner.setVisibility(delivery && vm != null && !vm.isGuest() ? View.VISIBLE : View.GONE);
         }
@@ -575,8 +606,100 @@ public class CheckoutFragment extends Fragment {
         return com.rescuefarm.service.location.GpsCoordinates.isValid(receiverLatitude, receiverLongitude);
     }
     private void showReceiverGps() {
-        gpsStatus.setText(hasReceiverGps() ? "Đã xác định vị trí nhận hàng."
-                : destinationError.isEmpty() ? getString(R.string.delivery_gps_required) : destinationError);
+        if (hasReceiverGps()) {
+            gpsStatus.setText(String.format(Locale.getDefault(),
+                    "Đã xác định vị trí nhận hàng (%.4f, %.4f).", receiverLatitude, receiverLongitude));
+        } else {
+            gpsStatus.setText(destinationError.isEmpty() ? getString(R.string.delivery_gps_required) : destinationError);
+        }
+    }
+
+    private boolean hasLocationPermission() {
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestLocationPermissionAndFetch(boolean userTriggered) {
+        if (hasLocationPermission()) {
+            fetchCurrentLocation(userTriggered);
+        } else {
+            locationPermissionLauncher.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
+    }
+
+    private void fetchCurrentLocation(boolean userTriggered) {
+        final int version = ++destinationVersion;
+        resolvingAddress = null;
+        failedAddress = null;
+        destinationError = "";
+        gpsStatus.setText(R.string.checkout_gps_fetching);
+        if (useCurrentLocationButton != null) useCurrentLocationButton.setEnabled(false);
+
+        locationProvider.getCurrentLocation(new LocationProvider.LocationCallback() {
+            @Override public void onLocationAvailable(double latitude, double longitude) {
+                quoteHandler.post(() -> {
+                    if (getView() == null || version != destinationVersion) return;
+                    if (useCurrentLocationButton != null) useCurrentLocationButton.setEnabled(true);
+                    receiverLatitude = latitude;
+                    receiverLongitude = longitude;
+                    showReceiverGps();
+
+                    gpsStatus.setText("Đang xác định địa chỉ từ toạ độ GPS…");
+                    locationProvider.reverseGeocode(latitude, longitude, new LocationProvider.GeocodeCallback() {
+                        @Override public void onAddressAvailable(LocationProvider.GeocodedAddress geocoded) {
+                            quoteHandler.post(() -> {
+                                if (getView() == null || version != destinationVersion) return;
+                                bindingAddressDetails = true;
+                                boolean applied = address.applyGeocodedAddress(geocoded);
+                                bindingAddressDetails = false;
+                                if (applied) {
+                                    receiverAddressText = address.formattedAddress();
+                                    selectedAddressText.setText(receiverAddressText);
+                                    gpsStatus.setText(R.string.checkout_gps_success);
+                                } else {
+                                    if (geocoded.getFullAddress() != null && !geocoded.getFullAddress().trim().isEmpty()) {
+                                        receiverAddressText = geocoded.getFullAddress().trim();
+                                        selectedAddressText.setText(receiverAddressText);
+                                    }
+                                    if (address.isComplete()) {
+                                        gpsStatus.setText(R.string.checkout_gps_success);
+                                    } else {
+                                        gpsStatus.setText("Đã nhận toạ độ GPS. Vui lòng kiểm tra/bổ sung số nhà, tên đường.");
+                                    }
+                                }
+                                showReceiverGps();
+                                scheduleShippingEstimate();
+                            });
+                        }
+
+                        @Override public void onGeocodeUnavailable(String message) {
+                            quoteHandler.post(() -> {
+                                if (getView() == null || version != destinationVersion) return;
+                                showReceiverGps();
+                                scheduleShippingEstimate();
+                            });
+                        }
+                    });
+                });
+            }
+
+            @Override public void onLocationUnavailable(String message) {
+                quoteHandler.post(() -> {
+                    if (getView() == null || version != destinationVersion) return;
+                    if (useCurrentLocationButton != null) useCurrentLocationButton.setEnabled(true);
+                    destinationError = message;
+                    gpsStatus.setText(message);
+                    if (userTriggered && isAdded()) {
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
     }
 
     private String text(EditText field) { return field.getText().toString().trim(); }
@@ -591,6 +714,7 @@ public class CheckoutFragment extends Fragment {
         super.onSaveInstanceState(state); state.putString("selectedAddressId", selectedAddressId);
         state.putString("receiverAddressText", receiverAddressText);
         state.putDouble("receiverLatitude", receiverLatitude); state.putDouble("receiverLongitude", receiverLongitude);
+        state.putBoolean("hasPromptedLocationPermission", hasPromptedLocationPermission);
     }
     @Override public void onDestroyView() {
         quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; bankLoadVersion++; destinationVersion++;

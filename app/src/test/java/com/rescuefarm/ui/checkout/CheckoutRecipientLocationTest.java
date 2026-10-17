@@ -84,4 +84,23 @@ public class CheckoutRecipientLocationTest {
                 FulfillmentType.PICKUP, PaymentMethod.CASH_ON_SITE, "");
         assertNotNull(submitted);
     }
+
+    @Test public void guestDeliveryWithGpsCoordinatesSubmitsSuccessfully() {
+        model(CartOwnerType.GUEST).submit("Khach vang lai", "0384436680", "111/8/2 Dang Thuy Tram, HCM",
+                "10.829848", "106.701710", FulfillmentType.DELIVERY, PaymentMethod.COD, "", 50000, 15000);
+        assertNotNull(submitted);
+        assertEquals(10.829848, submitted.latitude, 0.000001);
+        assertEquals(106.701710, submitted.longitude, 0.000001);
+        assertEquals("111/8/2 Dang Thuy Tram, HCM", submitted.receiverAddress);
+        assertEquals("0384436680", submitted.receiverPhone);
+    }
+
+    @Test public void guestDeliveryWithoutGpsCoordinatesFailsValidation() {
+        CheckoutViewModel vm = model(CartOwnerType.GUEST);
+        vm.submit("Khach vang lai", "0384436680", "111/8/2 Dang Thuy Tram, HCM", "0", "0",
+                FulfillmentType.DELIVERY, PaymentMethod.COD, "");
+        assertNull(submitted);
+        assertEquals(CheckoutState.Status.ERROR, vm.getState().getValue().getStatus());
+        assertTrue(vm.getState().getValue().getMessage().contains("Chưa xác định được vị trí nhận hàng"));
+    }
 }
