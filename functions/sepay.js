@@ -37,11 +37,12 @@ function merchants(env = process.env) {
 
 function paymentDetails(sellerId, bank, env = process.env) {
   const merchant = merchants(env)[sellerId];
-  if (!merchant) return {verificationProvider: 'MANUAL', transferContent: ''};
-  if (!bank || bankBin(bank.bankCode) !== merchant.bankBin || text(bank.bankAccountNumber) !== merchant.accountNumber)
+  if (merchant && (!bank || bankBin(bank.bankCode) !== merchant.bankBin || text(bank.bankAccountNumber) !== merchant.accountNumber))
     throw fail(409, 'Tài khoản ngân hàng của seller không khớp kết nối SePay. Hãy cập nhật cấu hình nhận tiền.');
   // 25 characters, starts with SEVQR as required for VietinBank personal API connections.
-  return {verificationProvider: 'SEPAY', transferContent: 'SEVQR' + crypto.randomBytes(10).toString('hex').toUpperCase()};
+  // QR content must not depend on whether webhook verification has been enabled yet.
+  return {verificationProvider: merchant ? 'SEPAY' : 'MANUAL',
+    transferContent: 'SEVQR' + crypto.randomBytes(10).toString('hex').toUpperCase()};
 }
 
 function timingEqual(a, b) {

@@ -56,7 +56,7 @@ Số tài khoản phải là chuỗi để giữ số 0 đầu. Không lưu JSON
 
 Deploy code backend mới và Restart service sau khi lưu Environment. Endpoint `/health` vẫn dùng để kiểm tra service hoạt động. Có thể kiểm tra cú pháp và cấu hình trước khi deploy bằng `npm run check` và `npm run check:sepay` với env tương ứng; lệnh check:sepay không in secret hoặc số tài khoản đầy đủ.
 
-Không có entry enabled cho seller → đơn mới giữ luồng MANUAL hiện có. Entry đã bật nhưng sai ngân hàng/số tài khoản → từ chối tạo đơn chuyển khoản thay vì sinh QR nhận tiền sai. Đơn tạo trước khi cấu hình vẫn giữ phương thức xác nhận cũ, để không đổi mã khi khách đang thanh toán. Muốn kiểm tra SePay, tạo đơn mới sau khi cấu hình xong.
+Mọi đơn BANK_TRANSFER mới đều có transferContent bắt đầu SEVQR và mapping bankTransferReferences, kể cả khi chưa bật webhook. Không có entry enabled cho seller → verificationProvider vẫn MANUAL; có tiền tố không đồng nghĩa đã bật tự xác minh. Entry đã bật nhưng sai ngân hàng/số tài khoản → từ chối tạo đơn chuyển khoản thay vì sinh QR nhận tiền sai. Đơn tạo trước khi cấu hình vẫn giữ phương thức xác nhận cũ, để không đổi mã khi khách đang thanh toán. Muốn kiểm tra SePay, tạo đơn mới sau khi cấu hình xong.
 
 ## 4. Kiểm tra trước khi dùng thật
 
@@ -74,8 +74,9 @@ Không có entry enabled cho seller → đơn mới giữ luồng MANUAL hiện 
 Kiểm tra document `payments/{orderId}` của chính đơn đang xem:
 
 - `verificationProvider = SEPAY` và `transferContent = SEVQR` + 20 ký tự hex: đây là đơn tự động; Android phải dùng nguyên mã đó. Nếu app vẫn hiện RF, cập nhật APK và mở lại đơn.
-- `verificationProvider = MANUAL` hoặc chưa có trường này: đơn cũ hoặc backend đang chạy chưa bật cấu hình cho đúng UID seller. Kiểm tra deploy Render, `SEPAY_MERCHANTS_JSON`, enabled và UID; sau khi cấu hình đúng, tạo đơn mới. Không tự thêm SEVQR vào mã RF của đơn cũ vì backend chưa có mapping tương ứng.
-- Đơn SEPAY thiếu/sai transferContent: app chặn QR; kiểm tra dữ liệu backend, không dùng mã RF thay thế.
+- `verificationProvider = MANUAL` và có mã SEVQR hợp lệ: QR đã đúng tiền tố nhưng seller chưa bật xác minh tự động khi tạo đơn. Kiểm tra deploy Render, `SEPAY_MERCHANTS_JSON`, enabled và UID.
+- Thiếu transferContent hoặc còn RF: đơn cũ hoặc backend chưa deploy bản sửa sinh mã SEVQR cho cả luồng MANUAL. Không tự thêm SEVQR vào mã RF của đơn cũ vì backend chưa có mapping tương ứng.
+- Mọi đơn chuyển khoản thiếu/sai transferContent: app chặn QR; kiểm tra dữ liệu backend, không dùng mã RF thay thế. Không đổi mã của đơn đã chuyển tiền; đối soát giao dịch cũ trước.
 
 VietinBank cá nhân yêu cầu nội dung bắt đầu bằng SEVQR để ngân hàng gửi thông báo tới SePay. Xóa bộ lọc webhook không bảo đảm lấy lại giao dịch cũ thiếu tiền tố. Chỉ gửi lại webhook khi giao dịch thực sự đã xuất hiện trong SePay; kiểm tra `sepayWebhookEvents` sau khi gửi, vì HTTP 200 cũng có thể là giao dịch được lưu REVIEW và chưa xác nhận thanh toán. Đối với tiền đã chuyển bằng mã RF, đối soát giao dịch thật với ngân hàng/SePay, không chuyển thêm lần nữa để trả cùng một đơn và không tự đánh dấu PAID chỉ từ ảnh chụp.
 

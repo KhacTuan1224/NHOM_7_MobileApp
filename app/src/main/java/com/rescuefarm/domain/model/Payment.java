@@ -14,7 +14,7 @@ public class Payment {
     public boolean usesAutomaticVerification() { return "SEPAY".equals(verificationProvider); }
     public String getTransferContent() { return transferContent; }
     public String resolveQrTransferContent(String legacyOrderCode) {
-        if (usesAutomaticVerification())
+        if (method == PaymentMethod.BANK_TRANSFER)
             return transferContent.matches("SEVQR[A-F0-9]{20}") ? transferContent : "";
         return transferContent.isEmpty() ? (legacyOrderCode == null ? "" : legacyOrderCode.trim()) : transferContent;
     }
