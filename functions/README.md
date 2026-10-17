@@ -13,6 +13,7 @@ This folder replaces Firebase Cloud Functions with an Express API. The Firebase 
 
 ## Routes
 
+- `POST /sellers/names`: public for Customer and Guest carts. Accepts up to 50 `sellerIds` and returns only the `fullName` of active, approved Sellers in `sellerNames`. Deploy this route before distributing the Android cart name update; no Firestore rule changes or data migration are required.
 - `POST /quoteCustomerCheckout`: Firebase ID token required; Customer only. Re-reads product, batch, promotion, campaign, seller and shipping configuration. This is an estimate, not an inventory reservation.
 - `POST /checkoutCustomer`: Firebase ID token required; Customer only. The server transaction revalidates prices, stock, the approved Seller, campaign and shipping, then writes Order/items/Payment/optional Shipment, reserves batch/campaign stock and removes bought cart quantities. Client Firestore order/items/payment/shipment creation and checkout reservation writes are denied.
 - `POST /quoteGuestCheckout`: public, rate limited. Uses the same quote implementation.
