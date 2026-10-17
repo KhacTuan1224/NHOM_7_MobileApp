@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.order;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -72,8 +73,8 @@ public class SellerOrderListFragment extends Fragment {
             code.setTypeface(code.getTypeface(), android.graphics.Typeface.BOLD);
             TextView details = new TextView(requireContext());
             details.setText(deliveryOnly
-                    ? "Shipment " + order.getStatus().name() + " · Thanh toán " + order.getPaymentStatus().name()
-                    : order.getStatus().name() + " · Thanh toán " + order.getPaymentStatus().name());
+                    ? "Giao hàng: " + EnumLabels.label(order.getStatus()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus())
+                    : EnumLabels.label(order.getStatus()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus()));
             details.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface_variant));
             details.setTextSize(13);
             row.addView(code);

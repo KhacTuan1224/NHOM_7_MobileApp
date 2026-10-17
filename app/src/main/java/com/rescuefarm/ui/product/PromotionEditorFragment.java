@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.product;
+import com.rescuefarm.ui.common.EnumLabelAdapter;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -53,8 +54,7 @@ public class PromotionEditorFragment extends Fragment {
         DatePickerInput.bind(start);
         DatePickerInput.bind(end);
         active = view.findViewById(R.id.promotionActiveSwitch);
-        type.setAdapter(new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_dropdown_item, PromotionType.values()));
+        type.setAdapter(new EnumLabelAdapter<>(requireContext(), PromotionType.values()));
 
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);

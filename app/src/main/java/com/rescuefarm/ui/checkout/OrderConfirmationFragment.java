@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.checkout;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.text.Editable;
@@ -37,7 +38,7 @@ public class OrderConfirmationFragment extends Fragment {
         if (args != null) {
             orderId = args.getString("orderId", ""); code.setText(args.getString("orderCode", ""));
             phone.setText(args.getString("phone", ""));
-            output.setText(getString(R.string.order_created_format, args.getString("orderCode", ""), args.getString("status", "PENDING")));
+            output.setText(getString(R.string.order_created_format, args.getString("orderCode", ""), EnumLabels.label(args.getString("status", "PENDING"))));
         }
         ((TextView) view.findViewById(R.id.orderConfirmationTitle)).setText(orderId.isEmpty()
                 ? "Tra cứu đơn Guest" : getString(R.string.order_confirmation_title));
@@ -73,7 +74,7 @@ public class OrderConfirmationFragment extends Fragment {
     private void render(Order order) {
         binding = true; code.setText(order.getOrderCode()); phone.setText(order.getReceiverPhone()); binding = false;
         orderId = order.getId();
-        output.setText(getString(R.string.order_tracking_format, order.getOrderCode(), order.getStatus().name(),
-                order.getPaymentStatus().name(), order.getTotalAmount()));
+        output.setText(getString(R.string.order_tracking_format, order.getOrderCode(), EnumLabels.label(order.getStatus()),
+                EnumLabels.label(order.getPaymentStatus()), order.getTotalAmount()));
     }
 }

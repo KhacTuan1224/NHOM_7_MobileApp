@@ -3,6 +3,9 @@ package com.rescuefarm.service.location;
 public interface LocationProvider {
     void getCurrentLocation(LocationCallback callback);
     void reverseGeocode(double latitude, double longitude, GeocodeCallback callback);
+    default void geocodeAddress(String address, LocationCallback callback) {
+        callback.onLocationUnavailable("Không thể xác định vị trí của địa chỉ nhận hàng.");
+    }
     default void close() { }
 
     interface LocationCallback {

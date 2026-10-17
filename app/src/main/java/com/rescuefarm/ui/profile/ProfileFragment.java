@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.profile;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -120,7 +121,7 @@ public class ProfileFragment extends Fragment {
             com.rescuefarm.domain.model.Customer customer = (com.rescuefarm.domain.model.Customer)user;
             businessInfo.setVisibility(View.VISIBLE); businessInfo.setText("Khách hàng doanh nghiệp\n" + customer.getCompanyName() + "\nMã số thuế: " + customer.getTaxCode());
         }
-        roleView.setText(user.getRole().name());
+        roleView.setText(EnumLabels.label(user.getRole()));
         addressButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         sellerButton.setVisibility(user.getRole() == UserRole.SELLER ? View.VISIBLE : View.GONE);
         favoritesButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);

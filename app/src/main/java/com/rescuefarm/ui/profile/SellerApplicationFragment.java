@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.profile;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -85,7 +86,7 @@ public class SellerApplicationFragment extends Fragment {
             }
         }
         else {
-            status.setText(getString(R.string.application_status_format, application.getStatus().name()));
+            status.setText(getString(R.string.application_status_format, EnumLabels.label(application.getStatus())));
             if (editable && !dirty) {
                 binding = true;
                 representative.setText(application.getRepresentativeName()); shop.setText(application.getShopName());

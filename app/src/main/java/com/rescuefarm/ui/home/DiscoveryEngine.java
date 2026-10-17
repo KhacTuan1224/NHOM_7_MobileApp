@@ -177,7 +177,7 @@ public final class DiscoveryEngine {
         boolean found = false;
         boolean campaignText = q.getText().isEmpty() || contains(campaign.getTitle(), q.getText())
                 || contains(campaign.getDescription(), q.getText()) || contains(campaign.getLocationName(), q.getText())
-                || contains(campaign.getRescueReason().name(), q.getText());
+                || contains(com.rescuefarm.ui.common.EnumLabels.label(campaign.getRescueReason()), q.getText());
         long expiryLimit = now.getTime() + q.getExpiryWithinDays() * 86400000L;
         for (Product product : products) {
             if (product == null || !product.isAvailable()

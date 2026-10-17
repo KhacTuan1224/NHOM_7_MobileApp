@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.feed;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.graphics.Typeface;
 import android.view.View;
@@ -28,11 +29,11 @@ public final class PostCardRenderer {
             image.setContentDescription("Ảnh bài viết giải cứu"); body.addView(image, new LinearLayout.LayoutParams(-1, dp(170)));
             Glide.with(fragment).load(post.getImageUrls().get(0)).centerCrop().into(image);
         }
-        body.addView(text(post.getUrgencyLevel().name(), 12, true));
+        body.addView(text(EnumLabels.label(post.getUrgencyLevel()), 12, true));
         body.addView(text(post.getTitle(), 19, true));
         String excerpt = post.getContent().length() > 180 ? post.getContent().substring(0, 180) + "…" : post.getContent();
         body.addView(text(excerpt, 14, false));
-        if (showModerationStatus) body.addView(text("Trạng thái: " + post.getStatus().name(), 13, true));
+        if (showModerationStatus) body.addView(text("Trạng thái: " + EnumLabels.label(post.getStatus()), 13, true));
         if (post.getCreatedAt() != null) body.addView(text(DateFormat.getDateTimeInstance(
                 DateFormat.SHORT, DateFormat.SHORT, Locale.forLanguageTag("vi-VN")).format(post.getCreatedAt()), 12, false));
         card.addView(body, new FrameLayout.LayoutParams(-1, -2)); card.setOnClickListener(listener); return card;

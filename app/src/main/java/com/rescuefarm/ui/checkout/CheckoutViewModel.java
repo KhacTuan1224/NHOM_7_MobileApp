@@ -8,6 +8,9 @@ public void loadStorefront(String id, com.rescuefarm.data.repository.StorefrontR
     if(userRepo == null) callback.error("Chưa kết nối dữ liệu cửa hàng.");
     else userRepo.getPublicStorefront(id, callback);
 }
+public LiveData<User> observeCustomer() {
+    return userRepo == null || isGuest() ? new MutableLiveData<>() : userRepo.observeUser(cartRepo.getOwnerKey());
+}
 public boolean consumeCheckoutSuccessNavigation(){Boolean consumed=savedState.get("checkout.successNavigationConsumed");if(Boolean.TRUE.equals(consumed))return false;savedState.set("checkout.successNavigationConsumed",true);return true;}
 public void submit(String name,String phone,String address,String latText,String lngText,FulfillmentType fulfillment,PaymentMethod payment,String note){
     submit(name,phone,address,latText,lngText,fulfillment,payment,note,Double.NaN,Double.NaN);
@@ -21,7 +24,7 @@ public void submit(String name,String phone,String address,String latText,String
         CheckoutPolicy.requireSingleSeller(selected);
         double lat=parseCoordinate(latText),lng=parseCoordinate(lngText);
         if(fulfillment==FulfillmentType.DELIVERY&&!com.rescuefarm.service.location.GpsCoordinates.isValid(lat,lng))
-            throw new IllegalArgumentException("Hãy lấy GPS tại nơi nhận hàng hoặc chọn địa chỉ đã lưu có GPS.");
+            throw new IllegalArgumentException("Chưa xác định được vị trí nhận hàng. Vui lòng kiểm tra địa chỉ đã chọn.");
         if(clean(name).length()<2||clean(phone).length()<9)
             throw new IllegalArgumentException("Tên người nhận và số điện thoại chưa hợp lệ.");
         if(fulfillment==FulfillmentType.DELIVERY&&clean(address).isEmpty())

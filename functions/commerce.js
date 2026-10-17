@@ -1,4 +1,5 @@
 const express = require("express");
+const {availablePaymentMethods} = require('./seller-payment-options');
 const {normalizeUnit, campaignUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
 const crypto = require("node:crypto");
@@ -135,11 +136,10 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
     if (data.fulfillmentType === 'DELIVERY' && !profile) {
       throw error(409, "Người bán chưa lưu địa chỉ và GPS cửa hàng trong Hồ sơ người bán.");
     }
-    if (data.paymentMethod === 'BANK_TRANSFER') {
-      const p = await read(db.collection('sellerPaymentProfiles').doc(sellerId));
-      if (!p.exists) throw error(409, "Cửa hàng chưa khai báo thông tin nhận thanh toán.");
-      paymentProfile = p.data();
-    }
+    const paymentSnapshot = await read(db.collection('sellerPaymentProfiles').doc(sellerId));
+    if (paymentSnapshot.exists) paymentProfile = paymentSnapshot.data();
+    if (data.paymentMethod === 'BANK_TRANSFER' && !paymentProfile)
+      throw error(409, "Cửa hàng chưa khai báo thông tin nhận thanh toán.");
     if (data.fulfillmentType === 'DELIVERY') {
       const c = await read(db.collection('appConfig').doc('shipping'));
       if (!c.exists) throw error(409, "Admin chưa cấu hình biểu phí giao hàng.");
@@ -164,6 +164,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
     return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
       public: {lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
+        availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, paymentProfile),
         sellerName: text(seller.get('fullName')), sellerAddress: profile ? text(profile.address) : '',
         sellerLatitude: profile ? number(profile.latitude, 0) : 0,
         sellerLongitude: profile ? number(profile.longitude, 0) : 0,

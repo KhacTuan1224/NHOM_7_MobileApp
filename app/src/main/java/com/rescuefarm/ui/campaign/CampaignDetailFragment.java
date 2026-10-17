@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.campaign;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
@@ -306,7 +307,7 @@ public class CampaignDetailFragment extends Fragment {
         set(view, R.id.campaignDetailDescription, value.getDescription());
         renderStoryImages(view, value);
         set(view, R.id.campaignDetailReason, getString(R.string.campaign_reason_format,
-                value.getRescueReason().name(), value.getUrgencyLevel().name()));
+                EnumLabels.label(value.getRescueReason()), EnumLabels.label(value.getUrgencyLevel())));
         set(view, R.id.campaignViewCount, value.getViewCount() + " lượt xem");
         
         // Progress Bar & 3 Metrics

@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.engagement;
+import com.rescuefarm.ui.common.EnumLabelAdapter;
 import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
@@ -22,7 +23,7 @@ public class ReportFragment extends Fragment {
         parentType.setAdapter(new ArrayAdapter<>(requireContext(),android.R.layout.simple_spinner_dropdown_item,new String[]{"Bình luận trong chiến dịch","Bình luận trong bài viết cũ"}));
         EditText parentId=new EditText(requireContext()); parentId.setHint("Mã chiến dịch hoặc bài viết chứa bình luận");
         form.addView(parentType,form.indexOfChild(id)); form.addView(parentId,form.indexOfChild(id));
-        type.setAdapter(new ArrayAdapter<>(requireContext(),android.R.layout.simple_spinner_dropdown_item,ReportTargetType.values()));
+        type.setAdapter(new EnumLabelAdapter<>(requireContext(), ReportTargetType.values()));
         type.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent,View selected,int position,long rowId) {
                 boolean comment=type.getSelectedItem()==ReportTargetType.COMMENT;

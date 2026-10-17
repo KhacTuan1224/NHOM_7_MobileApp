@@ -45,3 +45,7 @@ The Android backup configuration excludes Guest access preferences from cloud ba
 ## Regression tests
 
 Install functions dependencies with npm ci. From tests/firestore, run npm ci and npm test. The suite starts an isolated demo-rescuefarm Firestore Emulator, then checks rules and the actual HTTP handlers sequentially. No production credentials are required. The commerce tests refuse to run without a localhost emulator address.
+
+### Checkout payment availability
+
+`POST /sellers/payment-options` accepts `{sellerId, fulfillmentType}` for customers and guests and returns only `{ok, availablePaymentMethods}`. It verifies the seller is active and approved, reads the private `sellerPaymentProfiles` document, and enables bank transfer when all bank fields are complete. Stored QR images are optional for payment eligibility. COD quotes also include the same capability list; checkout revalidates the saved bank configuration for bank transfers. Deploy this backend before distributing the updated Android checkout.

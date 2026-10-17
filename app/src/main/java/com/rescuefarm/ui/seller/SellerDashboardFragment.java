@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.seller;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -179,7 +180,7 @@ public class SellerDashboardFragment extends Fragment {
         for (Order order : snapshot.getRecentOrders()) {
             Button row = new Button(requireContext()); row.setAllCaps(false);
             row.setText(getString(R.string.seller_recent_order_format, order.getOrderCode(),
-                    order.getStatus().name(), order.getTotalAmount()));
+                    EnumLabels.label(order.getStatus()), order.getTotalAmount()));
             row.setOnClickListener(unused -> {
                 Bundle args = new Bundle(); args.putString("orderId", order.getId());
                 Navigation.findNavController(requireView()).navigate(

@@ -20,13 +20,13 @@
             android:orientation="horizontal">
             <com.google.android.material.button.MaterialButton android:id="@+id/likeButton"
                 style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_weight="1" android:text="LIKE" />
+                android:layout_height="wrap_content" android:layout_weight="1" android:text="Thích" />
             <com.google.android.material.button.MaterialButton android:id="@+id/supportButton"
                 style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_weight="1" android:text="SUPPORT" />
+                android:layout_height="wrap_content" android:layout_weight="1" android:text="Ủng hộ" />
             <com.google.android.material.button.MaterialButton android:id="@+id/careButton"
                 style="@style/Widget.Material3.Button.TonalButton" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_weight="1" android:text="CARE" />
+                android:layout_height="wrap_content" android:layout_weight="1" android:text="Quan tâm" />
         </LinearLayout>
         <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent"
             android:layout_height="wrap_content" android:hint="@string/comment_hint">

@@ -1081,7 +1081,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             case SELLER_APPLICATIONS:
                 title = first(document, "shopName", "representativeName", "sellerId"); subtitle = text(document, "sellerId"); break;
             case USERS:
-                title = first(document, "fullName", "email", "id"); subtitle = first(document, "email", "role"); break;
+                title = first(document, "fullName", "email", "id"); subtitle = first(document, "email", "role");
+                if (com.rescuefarm.ui.common.EnumLabels.hasLabel(subtitle)) subtitle = com.rescuefarm.ui.common.EnumLabels.label(subtitle); break;
             case POSTS: case PRODUCTS: case CAMPAIGNS:
                 title = first(document, "title", "name", "id"); subtitle = text(document, "sellerId"); break;
             case CATEGORIES:
@@ -1091,7 +1092,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
             case REVIEWS:
                 title = "★ " + (long) number(document, "rating") + " — " + text(document, "productId"); subtitle = text(document, "content"); break;
             case REPORTS:
-                title = first(document, "reason", "targetId", "id"); subtitle = text(document, "targetType") + " • " + text(document, "targetId"); break;
+                title = first(document, "reason", "targetId", "id"); subtitle = com.rescuefarm.ui.common.EnumLabels.label(text(document, "targetType")) + " • " + text(document, "targetId"); break;
             case ORDERS:
                 title = first(document, "orderCode", "id"); subtitle = text(document, "sellerId") + " • " + (long) number(document, "totalAmount") + " ₫"; break;
             default:
