@@ -325,6 +325,8 @@ public class FirebaseOrderRepository implements OrderRepository {
         if (listener != null) listener.remove();
     }
 
+    @Override public boolean canConfirmGuestReceipt(String orderId) { return hasGuestAccess(orderId); }
+
     private boolean hasGuestAccess(String orderId) {
         return !guestSession.getOrderAccessToken(clean(orderId)).isEmpty();
     }
@@ -402,6 +404,14 @@ public class FirebaseOrderRepository implements OrderRepository {
         if(clean(orderId).isEmpty()||target==null){callback.onError(ErrorCode.VALIDATION,"Đơn hoặc trạng thái không hợp lệ.");return;}
         try {
             JSONObject request = new JSONObject().put("orderId", orderId).put("targetStatus", target.name());
+            if (target == OrderStatus.DELIVERED && hasGuestAccess(orderId)) {
+                request.put("accessToken", guestSession.getOrderAccessToken(orderId));
+                RenderBackendClient.postGuest("/orders/confirm-guest-receipt", request, new RenderBackendClient.Callback() {
+                    public void onSuccess(JSONObject response) { getGuestOrder(orderId, callback); }
+                    public void onError(String message) { callback.onError(ErrorCode.CONFLICT, message); }
+                });
+                return;
+            }
             RenderBackendClient.post("/orders/transition", request, new RenderBackendClient.Callback() {
                 @Override public void onSuccess(JSONObject response) {
                     fetchLifecycle(orderId, response.optBoolean("replay"), callback);
@@ -419,19 +429,13 @@ public class FirebaseOrderRepository implements OrderRepository {
         if(!network.isOnline()){callback.onError(ErrorCode.NETWORK,"Xác nhận chuyển khoản cần kết nối mạng.");return;}
         String reference=clean(referenceCode);
         if(clean(orderId).isEmpty()||reference.length()<3){callback.onError(ErrorCode.VALIDATION,"Cần mã tham chiếu chuyển khoản.");return;}
-        DocumentReference orderRef=db.collection(ORDERS).document(orderId),paymentRef=db.collection(PAYMENTS).document(orderId);
-        db.runTransaction(tx->{DocumentSnapshot order=tx.get(orderRef),payment=tx.get(paymentRef);
-            if(!order.exists())throw new IllegalStateException("ORDER_NOT_FOUND");
-            if(!payment.exists())throw new IllegalStateException("PAYMENT_NOT_FOUND");
-            if(!PaymentMethod.BANK_TRANSFER.name().equals(payment.getString("method")))throw new IllegalStateException("NOT_BANK_TRANSFER");
-            if(PaymentStatus.PAID.name().equals(payment.getString("status")))return true;
-            if(!PaymentStatus.PENDING.name().equals(payment.getString("status"))
-                    ||OrderStatus.CANCELLED.name().equals(order.getString("status")))throw new IllegalStateException("PAYMENT_NOT_CONFIRMABLE");
-            tx.update(paymentRef,"status",PaymentStatus.PAID.name(),"referenceCode",reference,
-                    "paidAt",FieldValue.serverTimestamp(),"updatedAt",FieldValue.serverTimestamp());
-            tx.update(orderRef,"paymentStatus",PaymentStatus.PAID.name(),"updatedAt",FieldValue.serverTimestamp());com.rescuefarm.service.notification.NotificationOutbox.enqueue(tx,db,"ORDER_PAYMENT","ORDER",orderId);return false;
-        }).addOnSuccessListener(replay->fetchLifecycle(orderId,replay,callback))
-                .addOnFailureListener(e->failure(e,callback));
+        try {
+            JSONObject request = new JSONObject().put("orderId", orderId).put("referenceCode", reference);
+            RenderBackendClient.post("/orders/confirm-bank-transfer", request, new RenderBackendClient.Callback() {
+                public void onSuccess(JSONObject response) { fetchLifecycle(orderId, response.optBoolean("replay"), callback); }
+                public void onError(String message) { callback.onError(ErrorCode.CONFLICT, message); }
+            });
+        } catch (org.json.JSONException error) { callback.onError(ErrorCode.VALIDATION, "Không tạo được yêu cầu xác nhận."); }
     }
 
     private void fetchLifecycle(String orderId,boolean replay,LifecycleCallback callback){

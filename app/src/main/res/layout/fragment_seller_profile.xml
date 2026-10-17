@@ -61,7 +61,28 @@
         </LinearLayout>
         <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerAvatarInput"
             android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-        <com.rescuefarm.ui.common.VietnamAddressView android:id="@+id/sellerAddressInput" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:hint="Địa chỉ cửa hàng">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerAddressInput"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textPostalAddress|textMultiLine" android:minLines="2" android:maxLength="500" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="GPS tự điền địa chỉ nếu có. Bạn có thể bổ sung số nhà, tên đường; phí giao hàng tính theo GPS, không theo nội dung ô này."
+            android:textSize="12sp" android:textColor="@color/rescue_on_surface_variant" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:text="GPS cửa hàng để tính phí giao hàng"
+            android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/useSellerLocationButton"
+            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min" android:layout_marginTop="@dimen/space_sm"
+            android:text="Lấy GPS cửa hàng" />
+        <TextView android:id="@+id/sellerLocationStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:paddingTop="@dimen/space_xs"
+            android:textColor="@color/rescue_on_surface_variant" android:textSize="12sp" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md" android:text="Tài khoản nhận chuyển khoản (VietQR)"
             android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall" />
@@ -83,17 +104,9 @@
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerBankAccountNumberInput"
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
         </com.google.android.material.textfield.TextInputLayout>
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" android:text="GPS cửa hàng để tính phí giao hàng"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall" />
-
-        <com.google.android.material.button.MaterialButton android:id="@+id/useSellerLocationButton"
-            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:layout_marginTop="@dimen/space_sm"
-            android:text="Lấy GPS cửa hàng" />
-        <TextView android:id="@+id/sellerLocationStatus" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:paddingTop="@dimen/space_xs"
-            android:textColor="@color/rescue_on_surface_variant" android:textSize="12sp" />
+        <TextView android:id="@+id/sellerSaveStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:paddingVertical="8dp" android:visibility="gone"
+            android:accessibilityLiveRegion="polite" android:textSize="14sp" />
         <com.google.android.material.button.MaterialButton android:id="@+id/saveSellerProfileButton"
             style="@style/Widget.RescueFarm.ProfilePrimaryButton"
             android:layout_width="match_parent" android:layout_height="42dp"

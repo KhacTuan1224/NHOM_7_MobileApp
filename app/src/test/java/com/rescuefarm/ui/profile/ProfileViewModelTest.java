@@ -38,6 +38,32 @@ public class ProfileViewModelTest {
         assertEquals("Geocoder unavailable", viewModel.getState().getValue().getMessage());
     }
 
+    @Test public void sellerSave_acceptsGpsTextAddressWithoutAdministrativeCatalogSelection() {
+        final String[] writtenAddress = {null};
+        UnavailableUserRepository repository = new UnavailableUserRepository() {
+            @Override public void updateSellerProfile(String id, String representative, String shop,
+                    String description, String avatar, String address, String bank, String accountName,
+                    String accountNumber, double latitude, double longitude, UserCallback callback) {
+                writtenAddress[0] = address;
+                assertEquals(10.8, latitude, 0.00001);
+                callback.onSuccess(new com.rescuefarm.domain.model.Seller(id, "seller@example.com", "Nguyễn An", shop));
+            }
+        };
+        ProfileViewModel model = new ProfileViewModel(new FakeAuthRepository(), repository, new FakeLocationProvider(true));
+        model.updateSellerProfile("Nguyễn An", "Vườn nhà", "Nông sản", "", "12 đường A, Đồng Tháp",
+                "MB", "NGUYEN AN", "123456789", 10.8, 106.7);
+        assertEquals("12 đường A, Đồng Tháp", writtenAddress[0]);
+        assertEquals(ProfileScreenState.Status.SAVED, model.getState().getValue().getStatus());
+    }
+
+    @Test public void sellerSave_reportsMissingGpsInsteadOfAttemptingWrite() {
+        ProfileViewModel model = viewModel(new FakeLocationProvider(false));
+        model.updateSellerProfile("Nguyễn An", "Vườn nhà", "", "", "12 đường A, Đồng Tháp",
+                "", "", "", 0, 0);
+        assertEquals(ProfileScreenState.Status.ERROR, model.getState().getValue().getStatus());
+        org.junit.Assert.assertTrue(model.getState().getValue().getMessage().contains("GPS"));
+    }
+
     private ProfileViewModel viewModel(LocationProvider provider) {
         return new ProfileViewModel(new FakeAuthRepository(), new UnavailableUserRepository(), provider);
     }

@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.home;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -55,9 +56,9 @@ public class DiscoveryFragment extends Fragment {
         urgencySpinner = view.findViewById(R.id.urgencySpinner); modeSpinner = view.findViewById(R.id.modeSpinner);
         sortSpinner = view.findViewById(R.id.sortSpinner); results = view.findViewById(R.id.searchResultContainer);
         count = view.findViewById(R.id.searchCount);
-        setupEnumSpinner(reasonSpinner, "Tất cả reason", RescueReason.values());
-        setupEnumSpinner(urgencySpinner, "Tất cả urgency", UrgencyLevel.values());
-        setupEnumSpinner(modeSpinner, "Tất cả mode", RescueMode.values());
+        setupEnumSpinner(reasonSpinner, "Tất cả lý do", RescueReason.values());
+        setupEnumSpinner(urgencySpinner, "Tất cả mức độ", UrgencyLevel.values());
+        setupEnumSpinner(modeSpinner, "Tất cả hình thức", RescueMode.values());
         setupEnumSpinner(sortSpinner, null, DiscoveryQuery.Sort.values());
         viewModel = new ViewModelProvider(this, new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
@@ -84,7 +85,7 @@ public class DiscoveryFragment extends Fragment {
     }
     private <T extends Enum<T>> void setupEnumSpinner(Spinner spinner, String allLabel, T[] values) {
         List<String> labels = new ArrayList<>(); if (allLabel != null) labels.add(allLabel);
-        for (T value : values) labels.add(value.name().replace('_', ' ')); spinner.setAdapter(adapter(labels));
+        for (T value : values) labels.add(EnumLabels.label(value)); spinner.setAdapter(adapter(labels));
     }
     private ArrayAdapter<String> adapter(List<String> values) {
         ArrayAdapter<String> result = new ArrayAdapter<>(requireContext(),
@@ -176,7 +177,7 @@ public class DiscoveryFragment extends Fragment {
     }
     private void selectEnum(Spinner spinner, Enum<?> selected) {
         if (selected != null) for (int i = 0; i < spinner.getCount(); i++)
-            if (spinner.getItemAtPosition(i).toString().equals(selected.name().replace('_', ' '))) {
+            if (spinner.getItemAtPosition(i).toString().equals(EnumLabels.label(selected))) {
                 spinner.setSelection(i); return;
             }
     }

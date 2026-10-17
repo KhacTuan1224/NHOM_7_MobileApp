@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.campaign;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -56,7 +57,7 @@ public class SellerCampaignListFragment extends Fragment {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1,-2); params.setMargins(0,0,0,dp(12)); card.setLayoutParams(params);
         card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(12),dp(12),dp(12),dp(12));
-        TextView title = new TextView(requireContext()); title.setText(value.getTitle() + " • " + value.getStatus().name()); title.setTextSize(17); title.setTypeface(title.getTypeface(),1);
+        TextView title = new TextView(requireContext()); title.setText(value.getTitle() + " • " + EnumLabels.label(value.getStatus())); title.setTextSize(17); title.setTypeface(title.getTypeface(),1);
         TextView progress = new TextView(requireContext()); progress.setText(getString(R.string.campaign_progress_format,
                 value.calculateProgress(), value.getRescuedQuantity(), value.getTargetQuantity()));
         LinearLayout actions = new LinearLayout(requireContext());

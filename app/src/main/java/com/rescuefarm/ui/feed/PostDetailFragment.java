@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.feed;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -52,7 +53,7 @@ public class PostDetailFragment extends Fragment {
                 boolean published = value.getPost().getStatus() == PostStatus.PUBLISHED;
                 publishedPost = published;
                 setInteractionsEnabled(view, publishedPost && !ActorUiPolicy.isSellerReadOnly(this));
-                if (!published) reactionSummary.setText("Post đang " + value.getPost().getStatus().name()
+                if (!published) reactionSummary.setText("Post đang " + EnumLabels.label(value.getPost().getStatus())
                         + "; tương tác chỉ mở sau khi được duyệt.");
                 else if (!engagementRequested) { engagementRequested = true; viewModel.loadEngagement(); }
             }
@@ -87,17 +88,17 @@ public class PostDetailFragment extends Fragment {
         ((TextView) root.findViewById(R.id.postDetailTitle)).setText(post.getTitle());
         ((TextView) root.findViewById(R.id.postDetailContent)).setText(post.getContent());
         ((TextView) root.findViewById(R.id.postViewCount)).setText(post.getViewCount() + " lượt xem");
-        ((TextView) root.findViewById(R.id.postDetailUrgency)).setText(post.getUrgencyLevel().name());
+        ((TextView) root.findViewById(R.id.postDetailUrgency)).setText(EnumLabels.label(post.getUrgencyLevel()));
         ImageView image = root.findViewById(R.id.postDetailImage);
         if (post.getImageUrls().isEmpty()) image.setVisibility(View.GONE);
         else { image.setVisibility(View.VISIBLE); Glide.with(this).load(post.getImageUrls().get(0)).centerCrop().into(image); }
     }
     private void renderEngagement(PostRepository.Engagement value) {
         Map<ReactionType, Integer> counts = value.getReactionCounts();
-        reactionSummary.setText("LIKE " + counts.getOrDefault(ReactionType.LIKE, 0)
-                + " • SUPPORT " + counts.getOrDefault(ReactionType.SUPPORT, 0)
-                + " • CARE " + counts.getOrDefault(ReactionType.CARE, 0)
-                + (value.getCurrentUserReaction() == null ? "" : " • Bạn: " + value.getCurrentUserReaction().name()));
+        reactionSummary.setText("Thích " + counts.getOrDefault(ReactionType.LIKE, 0)
+                + " • Ủng hộ " + counts.getOrDefault(ReactionType.SUPPORT, 0)
+                + " • Quan tâm " + counts.getOrDefault(ReactionType.CARE, 0)
+                + (value.getCurrentUserReaction() == null ? "" : " • Bạn: " + EnumLabels.label(value.getCurrentUserReaction())));
         comments.removeAllViews();
         if (value.getComments().isEmpty()) { comments.addView(textView("Chưa có bình luận.")); return; }
         for (Comment comment : value.getComments()) {

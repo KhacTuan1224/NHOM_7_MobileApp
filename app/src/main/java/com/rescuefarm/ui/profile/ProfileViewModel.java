@@ -98,13 +98,9 @@ public class ProfileViewModel extends ViewModel {
     public void updateSellerProfile(String representativeName, String shopName,
             String shopDescription, String shopAvatarUrl, String address, String bankCode,
             String bankAccountName, String bankAccountNumber, double latitude, double longitude) {
-        if (representativeName == null || representativeName.trim().length() < 2
-                || shopName == null || shopName.trim().length() < 2
-                || address == null || address.trim().length() < 5) {
-            state.setValue(ProfileScreenState.error(
-                    "Vui lòng nhập người đại diện, tên cửa hàng và địa chỉ kinh doanh."));
-            return;
-        }
+        String validation = ProfileValidator.validateSellerProfile(representativeName, shopName,
+                shopDescription, shopAvatarUrl, address, bankCode, bankAccountName, bankAccountNumber);
+        if (validation != null) { state.setValue(ProfileScreenState.error(validation)); return; }
         if (!Double.isFinite(latitude) || !Double.isFinite(longitude)
                 || latitude < -90D || latitude > 90D || longitude < -180D || longitude > 180D
                 || (latitude == 0D && longitude == 0D)) {

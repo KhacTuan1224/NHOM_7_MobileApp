@@ -168,16 +168,23 @@ public class FirebaseUserRepository implements UserRepository {
         paymentProfile.put("bankAccountName", clean(bankAccountName));
         paymentProfile.put("bankAccountNumber", clean(bankAccountNumber));
         paymentProfile.put("updatedAt", FieldValue.serverTimestamp());
-        user(sellerId).get().addOnSuccessListener(previous -> {
-            com.google.firebase.firestore.WriteBatch batch = firestore.batch();
-            batch.update(user(sellerId), fields);
-            batch.set(firestore.collection("sellerPublicProfiles").document(sellerId), publicProfile, com.google.firebase.firestore.SetOptions.merge());
-            batch.set(firestore.collection("sellerPaymentProfiles").document(sellerId), paymentProfile, com.google.firebase.firestore.SetOptions.merge());
-            batch.commit().addOnSuccessListener(unused -> {
-                    com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
-                            previous.getString("shopAvatarUrl"), shopAvatarUrl);
-                    getUser(sellerId, callback);
-                }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        DocumentReference paymentReference = firestore.collection("sellerPaymentProfiles").document(sellerId);
+        firestore.runTransaction(transaction -> {
+            DocumentSnapshot previous = transaction.get(user(sellerId));
+            DocumentSnapshot previousPayment = transaction.get(paymentReference);
+            Map<String,Object> nextPayment = new HashMap<>(paymentProfile);
+            if (!clean(previousPayment.getString("bankCode")).equals(clean(bankCode))
+                    || !clean(previousPayment.getString("bankAccountName")).equals(clean(bankAccountName))
+                    || !clean(previousPayment.getString("bankAccountNumber")).equals(clean(bankAccountNumber)))
+                nextPayment.put("qrUrl", FieldValue.delete());
+            transaction.update(user(sellerId), fields);
+            transaction.set(firestore.collection("sellerPublicProfiles").document(sellerId), publicProfile,
+                    com.google.firebase.firestore.SetOptions.merge());
+            transaction.set(paymentReference, nextPayment, com.google.firebase.firestore.SetOptions.merge());
+            return previous.getString("shopAvatarUrl");
+        }).addOnSuccessListener(previousAvatar -> {
+            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousAvatar, shopAvatarUrl);
+            getUser(sellerId, callback);
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 

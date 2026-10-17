@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.feed;
+import com.rescuefarm.ui.common.EnumLabelAdapter;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -51,8 +52,7 @@ public class PostEditorFragment extends Fragment {
         view.findViewById(R.id.clearPostImagesButton).setOnClickListener(v -> {
             images.setText(""); updateImageCount(); dirty = true;
         });
-        urgency.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
-                Arrays.asList(UrgencyLevel.values())));
+        urgency.setAdapter(new EnumLabelAdapter<>(requireContext(), Arrays.asList(UrgencyLevel.values())));
         viewModel = new ViewModelProvider(this, new PostViewModelFactory(requireContext())).get(PostViewModel.class);
         postId = getArguments() == null ? "" : getArguments().getString("postId", "");
         TextWatcher watcher = new TextWatcher() {

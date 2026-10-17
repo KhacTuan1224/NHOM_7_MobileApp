@@ -13,6 +13,8 @@ This folder replaces Firebase Cloud Functions with an Express API. The Firebase 
 
 ## Routes
 
+- `POST /seller/payment-qr`: active Seller only. Generates from the owner's saved bank details using VietQR API credentials on Render, uploads PNG through the Cloudinary signing Worker and saves the QR URL automatically. Configure `VIETQR_CLIENT_ID`, `VIETQR_API_KEY`, `CLOUDINARY_SIGNING_URL` and `CLOUDINARY_CLOUD_NAME`. Deploy the updated Worker first. See `docs/checkout-shipping-and-bank-setup.md` for setup and the VietQR Generate API retirement date.
+
 - `POST /sellers/names`: public for Customer and Guest carts. Accepts up to 50 `sellerIds` and returns only the `fullName` of active, approved Sellers in `sellerNames`. Deploy this route before distributing the Android cart name update; no Firestore rule changes or data migration are required.
 - `POST /quoteCustomerCheckout`: Firebase ID token required; Customer only. Re-reads product, batch, promotion, campaign, seller and shipping configuration. This is an estimate, not an inventory reservation.
 - `POST /checkoutCustomer`: Firebase ID token required; Customer only. The server transaction revalidates prices, stock, the approved Seller, campaign and shipping, then writes Order/items/Payment/optional Shipment, reserves batch/campaign stock and removes bought cart quantities. Client Firestore order/items/payment/shipment creation and checkout reservation writes are denied.
@@ -43,3 +45,11 @@ The Android backup configuration excludes Guest access preferences from cloud ba
 ## Regression tests
 
 Install functions dependencies with npm ci. From tests/firestore, run npm ci and npm test. The suite starts an isolated demo-rescuefarm Firestore Emulator, then checks rules and the actual HTTP handlers sequentially. No production credentials are required. The commerce tests refuse to run without a localhost emulator address.
+
+### Checkout payment availability
+
+`POST /sellers/payment-options` accepts `{sellerId, fulfillmentType}` for customers and guests and returns only `{ok, availablePaymentMethods}`. It verifies the seller is active and approved, reads the private `sellerPaymentProfiles` document, and enables bank transfer when all bank fields are complete. Stored QR images are optional for payment eligibility. COD quotes also include the same capability list; checkout revalidates the saved bank configuration for bank transfers. Deploy this backend before distributing the updated Android checkout.
+
+### Order confirmation and receipt
+
+Deploy this backend with the updated Firestore Rules and Android build. Bank-transfer sellers call `POST /orders/confirm-bank-transfer` with `orderId` and `referenceCode` to mark the payment paid and confirm a pending order atomically. Regular transitions cannot confirm an unpaid bank order. Only the owning customer may transition an order to DELIVERED; sellers/admins cannot confirm receipt. Guests use `POST /orders/confirm-guest-receipt` with their saved order access token. Receipt finalizes inventory, campaign allocations, shipment and cash payment in one idempotent transaction. DELIVERED remains the stored code; user-facing text describes buyer receipt and payment. New inbox/push messages contain Vietnamese labels.

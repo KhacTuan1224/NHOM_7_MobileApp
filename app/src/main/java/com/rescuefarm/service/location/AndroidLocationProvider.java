@@ -213,6 +213,38 @@ public class AndroidLocationProvider implements LocationProvider {
         geocoderExecutor.execute(() -> reverseGeocodeLegacy(latitude, longitude, callback));
     }
 
+    /** Resolve the chosen delivery address, without reading the device's current location. */
+    @Override @SuppressWarnings("deprecation")
+    public void geocodeAddress(String address, LocationCallback callback) {
+        if (!Geocoder.isPresent()) {
+            callback.onLocationUnavailable("Không thể tra vị trí địa chỉ lúc này. Vui lòng cập nhật vị trí trong sổ địa chỉ.");
+            return;
+        }
+        geocoderExecutor.execute(() -> {
+            try {
+                List<Address> results = geocoder.getFromLocationName(address + ", Việt Nam", 3);
+                Address match = null;
+                if (results != null) for (Address result : results) {
+                    // Reject province/city centroids: those cannot identify a delivery destination.
+                    if ("VN".equalsIgnoreCase(result.getCountryCode()) && result.hasLatitude()
+                            && result.hasLongitude() && result.getThoroughfare() != null
+                            && GpsCoordinates.isValid(result.getLatitude(), result.getLongitude())) {
+                        match = result; break;
+                    }
+                }
+                Address resolved = match;
+                mainHandler.post(() -> {
+                    if (resolved == null) callback.onLocationUnavailable(
+                            "Chưa xác định được vị trí địa chỉ này. Vui lòng kiểm tra số nhà, tên đường hoặc cập nhật vị trí trong sổ địa chỉ.");
+                    else callback.onLocationAvailable(resolved.getLatitude(), resolved.getLongitude());
+                });
+            } catch (IOException | IllegalArgumentException error) {
+                mainHandler.post(() -> callback.onLocationUnavailable(
+                        "Chưa tra được vị trí địa chỉ nhận hàng. Kiểm tra kết nối và thử lại."));
+            }
+        });
+    }
+
     @Override public void close() {
         if (locationCancellation != null) { locationCancellation.cancel(); }
         geocoderExecutor.shutdownNow();

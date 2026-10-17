@@ -199,6 +199,12 @@
             android:text="@string/confirm_bank_transfer_action"
             android:visibility="gone" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/confirmReceiptButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_target_min" android:layout_marginTop="16dp"
+            android:text="Đã nhận hàng" android:visibility="gone" />
+
         <TextView
             android:id="@+id/orderLifecycleMessage"
             android:layout_width="match_parent"

@@ -1,4 +1,6 @@
 package com.rescuefarm.ui.order;
+import com.rescuefarm.ui.common.EnumLabels;
+import com.rescuefarm.ui.common.EnumLabelAdapter;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -48,6 +50,7 @@ public class OrderDetailFragment extends Fragment {
     private View shipmentTitle, saveShipment;
     private View statusActionTitle, bankTransferActionTitle;
     private View transitionButton, confirmButton;
+    private com.google.android.material.button.MaterialButton receiptButton;
     private String orderId = "";
     private final OrderLifecycleService lifecycleService = new OrderLifecycleService();
     private List<OrderStatus> displayedTargets = Collections.emptyList();
@@ -68,6 +71,12 @@ public class OrderDetailFragment extends Fragment {
         timeline = view.findViewById(R.id.orderStatusTimeline);
         transitionButton = view.findViewById(R.id.transitionOrderButton);
         confirmButton = view.findViewById(R.id.confirmBankTransferButton);
+        receiptButton = view.findViewById(R.id.confirmReceiptButton);
+        receiptButton.setOnClickListener(unused -> new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Xác nhận đã nhận hàng")
+                .setMessage("Chỉ xác nhận khi bạn đã nhận đủ hàng và đã thanh toán nếu chọn trả tiền khi nhận hàng.")
+                .setNegativeButton("Để sau", null)
+                .setPositiveButton("Xác nhận", (dialog, which) -> vm.transition(orderId, OrderStatus.DELIVERED)).show());
         shipmentTitle = view.findViewById(R.id.shipmentManagementTitle);
         shipmentCarrier = view.findViewById(R.id.shipmentCarrierInput);
         shipmentTracking = view.findViewById(R.id.shipmentTrackingInput);
@@ -111,7 +120,7 @@ public class OrderDetailFragment extends Fragment {
     private void renderOrderInfo(Order order, Payment payment, Shipment shipment) {
         orderInfo.removeAllViews();
         NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-        addInfoRow("Trạng thái đơn", statusLabel(order.getStatus(), order.getFulfillmentType()), false);
+        addInfoRow("Trạng thái đơn", statusLabel(order.getStatus(), order.getPaymentMethod()), false);
         addInfoRow("Hình thức nhận", fulfillmentLabel(order.getFulfillmentType()), false);
         if (!blank(order.getReceiverName())) addInfoRow("Người nhận", order.getReceiverName(), false);
         if (!blank(order.getReceiverPhone())) addInfoRow("Số điện thoại", order.getReceiverPhone(), false);
@@ -161,43 +170,19 @@ public class OrderDetailFragment extends Fragment {
     }
 
     private String fulfillmentLabel(com.rescuefarm.domain.enums.FulfillmentType value) {
-        switch (value) {
-            case DELIVERY: return "Giao hàng đến địa chỉ";
-            case PICKUP: return "Nhận tại cửa hàng";
-            case ON_SITE_RESCUE: return "Nhận tại điểm giải cứu";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private String paymentMethodLabel(PaymentMethod value) {
-        switch (value) {
-            case COD: return "Thanh toán khi nhận hàng (COD)";
-            case BANK_TRANSFER: return "Chuyển khoản ngân hàng";
-            case CASH_ON_SITE: return "Tiền mặt tại điểm nhận";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private String paymentStatusLabel(PaymentStatus value) {
-        switch (value) {
-            case UNPAID: return "Chưa thanh toán";
-            case PENDING: return "Đang chờ xác nhận";
-            case PAID: return "Đã thanh toán";
-            case FAILED: return "Thanh toán thất bại";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private String shipmentStatusLabel(com.rescuefarm.domain.enums.ShipmentStatus value) {
-        switch (value) {
-            case PENDING: return "Chờ xử lý";
-            case READY: return "Sẵn sàng giao";
-            case SHIPPING: return "Đang vận chuyển";
-            case DELIVERED: return "Đã giao";
-            case FAILED: return "Giao thất bại";
-            case CANCELLED: return "Đã hủy";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private void render(OrderLifecycleState state) {
@@ -205,34 +190,34 @@ public class OrderDetailFragment extends Fragment {
         message.setVisibility(state.getMessage() == null || state.getMessage().trim().isEmpty()
                 ? View.GONE : View.VISIBLE);
         boolean loading = state.getStatus() == OrderLifecycleState.Status.LOADING;
-        transitionButton.setEnabled(!loading); confirmButton.setEnabled(!loading);
+        transitionButton.setEnabled(!loading); confirmButton.setEnabled(!loading); receiptButton.setEnabled(!loading);
         if (state.getStatus() == OrderLifecycleState.Status.ERROR) {
             Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_LONG).show(); return;
         }
         if (state.getStatus() != OrderLifecycleState.Status.SUCCESS) return;
         Order order = state.getOrder(); Payment payment = state.getPayment(); Shipment shipment = state.getShipment();
         orderCodeView.setText("Mã đơn " + order.getOrderCode());
-        orderStatusView.setText(statusLabel(order.getStatus(), order.getFulfillmentType()));
+        orderStatusView.setText(statusLabel(order.getStatus(), order.getPaymentMethod()));
         renderOrderInfo(order, payment, shipment);
         renderTimeline(order);
         instructions.setText(paymentInstructions(payment));
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
         boolean seller = uid.equals(order.getSellerId());
-        List<OrderStatus> nextStatuses = seller ? lifecycleService.getAllowedNextStatuses(
+        List<OrderStatus> nextStatuses = seller ? lifecycleService.getSellerNextStatuses(
                 order.getFulfillmentType(), order.getStatus(), payment.getMethod(), payment.getStatus())
                 : Collections.emptyList();
         if (!displayedTargets.equals(nextStatuses)) {
             displayedTargets = nextStatuses;
-            target.setAdapter(new ArrayAdapter<>(requireContext(),
-                    android.R.layout.simple_spinner_dropdown_item, nextStatuses));
+            target.setAdapter(new EnumLabelAdapter<>(requireContext(), nextStatuses));
         }
         boolean canTransition = seller && !nextStatuses.isEmpty();
         transitionButton.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         statusActionTitle.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         boolean bank = payment.getMethod() == PaymentMethod.BANK_TRANSFER;
-        boolean pendingSellerBankConfirmation = seller && bank && payment.getStatus() == PaymentStatus.PENDING;
+        boolean pendingSellerBankConfirmation = seller && bank && payment.getStatus() == PaymentStatus.PENDING
+                && order.getStatus() != OrderStatus.CANCELLED && order.getStatus() != OrderStatus.DELIVERED;
         reference.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
         confirmButton.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
         bankTransferActionTitle.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
@@ -248,7 +233,12 @@ public class OrderDetailFragment extends Fragment {
             if (!shipmentCarrier.hasFocus()) shipmentCarrier.setText(shipment.getCarrierName());
             if (!shipmentTracking.hasFocus()) shipmentTracking.setText(shipment.getTrackingCode());
         }
-        boolean customer = uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
+        boolean buyer = (!uid.isEmpty() && uid.equals(order.getOwnerId())) || vm.canConfirmGuestReceipt(order.getId());
+        boolean canReceive = buyer && !seller && lifecycleService.canConfirmReceipt(
+                order.getFulfillmentType(), order.getStatus(), payment.getMethod(), payment.getStatus());
+        receiptButton.setVisibility(canReceive ? View.VISIBLE : View.GONE);
+        receiptButton.setText(payment.getMethod() == PaymentMethod.COD ? "Đã thanh toán và nhận đơn" : "Đã nhận hàng");
+        boolean customer = !uid.isEmpty() && uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
         renderItems(order, customer);
         if (bank && !seller) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
@@ -277,7 +267,7 @@ public class OrderDetailFragment extends Fragment {
         for (int i = 0; i < steps.size(); i++) {
             boolean complete = current >= 0 && i < current;
             boolean active = i == current;
-            addTimelineRow(statusLabel(steps.get(i), order.getFulfillmentType()),
+            addTimelineRow(statusLabel(steps.get(i), order.getPaymentMethod()),
                     steps.get(i), complete, active, i == steps.size() - 1);
         }
     }
@@ -368,18 +358,8 @@ public class OrderDetailFragment extends Fragment {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
-    private String statusLabel(OrderStatus status, com.rescuefarm.domain.enums.FulfillmentType fulfillment) {
-        switch (status) {
-            case PENDING: return "Cửa hàng xác nhận đơn";
-            case CONFIRMED: return "Đơn đã được xác nhận";
-            case PREPARING: return "Đang chuẩn bị nông sản";
-            case SHIPPING: return "Đang giao hàng";
-            case READY_FOR_PICKUP: return "Sẵn sàng để nhận tại cửa hàng";
-            case DELIVERED: return fulfillment == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY
-                    ? "Đã giao hàng" : "Đã nhận nông sản";
-            case CANCELLED: return "Đã hủy";
-            default: return status.name();
-        }
+    private String statusLabel(OrderStatus status, PaymentMethod method) {
+        return com.rescuefarm.ui.common.OrderLabels.status(status, method);
     }
 
     private void renderItems(Order order, boolean canReview) {
@@ -403,6 +383,19 @@ public class OrderDetailFragment extends Fragment {
                     R.color.rescue_on_surface_variant));
             row.addView(productName);
             row.addView(productDetails);
+            com.google.android.material.imageview.ShapeableImageView productImage =
+                    new com.google.android.material.imageview.ShapeableImageView(requireContext());
+            productImage.setShapeAppearanceModel(productImage.getShapeAppearanceModel().toBuilder()
+                    .setAllCornerSizes(timelineDp(12)).build());
+            productImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            productImage.setContentDescription("Ảnh sản phẩm " + item.getProductNameSnapshot());
+            LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, timelineDp(168));
+            imageParams.topMargin = timelineDp(10);
+            row.addView(productImage, imageParams);
+            Glide.with(this).load(blank(item.getProductImageSnapshot()) ? null : item.getProductImageSnapshot())
+                    .placeholder(android.R.drawable.ic_menu_gallery).error(android.R.drawable.ic_menu_gallery)
+                    .centerCrop().into(productImage);
             items.addView(row);
             if (canReview) {
                 com.google.android.material.button.MaterialButton button = new com.google.android.material.button.MaterialButton(
@@ -444,7 +437,7 @@ public class OrderDetailFragment extends Fragment {
         String url = "https://img.vietqr.io/image/" + Uri.encode(code) + "-" + Uri.encode(account)
                 + "-compact.png?amount=" + Math.round(order.getTotalAmount()) + "&addInfo="
                 + Uri.encode(order.getOrderCode()) + "&accountName=" + Uri.encode(name);
-        qrImage.setVisibility(View.VISIBLE); Glide.with(this).load(payment.getQrUrl().isEmpty() ? url : payment.getQrUrl()).into(qrImage);
+        qrImage.setVisibility(View.VISIBLE); Glide.with(this).load(url).into(qrImage);
     }
 
     private String paymentInstructions(Payment payment) {

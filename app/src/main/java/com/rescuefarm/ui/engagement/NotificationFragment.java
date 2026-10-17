@@ -178,7 +178,8 @@ public class NotificationFragment extends Fragment {
         textContent.addView(title);
         
         TextView body = new TextView(requireContext());
-        body.setText(notification.getBody());
+        body.setText(notification.getType() == com.rescuefarm.domain.enums.NotificationType.ORDER
+                ? com.rescuefarm.ui.common.OrderLabels.notificationBody(notification.getBody()) : notification.getBody());
         body.setTextSize(12);
         body.setTextColor(getColor(R.color.rescue_on_surface_variant));
         body.setMaxLines(2);

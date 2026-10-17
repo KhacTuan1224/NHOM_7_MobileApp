@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.feed;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.graphics.Typeface;
 import android.view.View;
@@ -73,7 +74,7 @@ final class CampaignFeedCardRenderer {
             productsLine.append(campaign.getBatchTargets().size()).append(" lô giải cứu");
         }
         addText(content, productsLine.toString(), 13, true, R.color.rescue_on_surface);
-        String reason = campaign.getRescueReason() == null ? "" : campaign.getRescueReason().name();
+        String reason = campaign.getRescueReason() == null ? "" : EnumLabels.label(campaign.getRescueReason());
         String mode = campaign.getRescueMode() == RescueMode.MOBILE_POINT
                 ? "Điểm giải cứu di động" : "Điểm giải cứu cố định";
         addText(content, reason + " · " + mode, 12, false, R.color.rescue_on_surface_variant);

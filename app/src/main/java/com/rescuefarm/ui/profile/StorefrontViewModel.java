@@ -12,10 +12,29 @@ public final class StorefrontViewModel extends ViewModel {
     private final StorefrontRepository repository;
     public StorefrontViewModel(StorefrontRepository repository) { this.repository = repository; }
     public androidx.lifecycle.LiveData<SellerStorefront> observe(String id) { return repository.observe(id); }
-    public void load(String id) { loading.setValue(true); repository.load(id, callback(false)); }
-    public void save(SellerStorefront value) { loading.setValue(true); repository.save(value, callback(true)); }
-    public void savePaymentQr(String id, String qrUrl) {
-        loading.setValue(true); repository.savePaymentQr(id, qrUrl, callback(true));
+    public void load(String id) { if (Boolean.TRUE.equals(loading.getValue())) return; loading.setValue(true); repository.load(id, callback(false)); }
+    public void generatePaymentQr() {
+        if (Boolean.TRUE.equals(loading.getValue())) return;
+        SellerStorefront current = storefront.getValue();
+        if (current == null || !current.acceptsTransfer()) {
+            message.setValue("Hãy lưu đủ thông tin ngân hàng trong Hồ sơ người bán trước khi tạo QR."); return;
+        }
+        loading.setValue(true); message.setValue("Đang tạo mã VietQR và lưu ảnh lên Cloudinary…");
+        com.rescuefarm.service.backend.RenderBackendClient.post("/seller/payment-qr", new org.json.JSONObject(),
+                new com.rescuefarm.service.backend.RenderBackendClient.Callback() {
+            @Override public void onSuccess(org.json.JSONObject response) {
+                loading.setValue(false);
+                String url = response.optString("qrUrl", "");
+                if (!url.startsWith("https://res.cloudinary.com/")) {
+                    message.setValue("Máy chủ chưa trả về ảnh QR hợp lệ. Hãy thử lại."); return;
+                }
+                current.qrUrl = url; storefront.setValue(current);
+                message.setValue("Đã tạo mã QR và tự lưu ảnh thành công.");
+            }
+            @Override public void onError(String error) {
+                loading.setValue(false); message.setValue(error);
+            }
+        });
     }
     private StorefrontRepository.Callback callback(boolean saved) {
         return new StorefrontRepository.Callback() {

@@ -1,4 +1,6 @@
 package com.rescuefarm.ui.campaign;
+import com.rescuefarm.ui.common.EnumLabelAdapter;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.text.Editable;
@@ -96,10 +98,8 @@ public class CampaignEditorFragment extends Fragment {
         mode = view.findViewById(R.id.campaignModeSpinner);
         batchContainer = view.findViewById(R.id.campaignBatchOptions);
         batchLoading = view.findViewById(R.id.campaignBatchLoading);
-        reason.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
-                RescueReason.values()));
-        mode.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
-                RescueMode.values()));
+        reason.setAdapter(new EnumLabelAdapter<>(requireContext(), RescueReason.values()));
+        mode.setAdapter(new EnumLabelAdapter<>(requireContext(), RescueMode.values()));
         id = getArguments() == null ? "" : getArguments().getString("campaignId", "");
         if (id.trim().isEmpty()) id = UUID.randomUUID().toString();
         view.findViewById(R.id.uploadCampaignImageButton).setOnClickListener(v -> {
@@ -200,7 +200,7 @@ public class CampaignEditorFragment extends Fragment {
             addCardText(card, String.format(Locale.getDefault(),
                     "Khả dụng %.2f %s · Đang giữ %.2f · Đã bán %.2f · %s",
                     batch.getAvailableQuantity(), option.getProduct().getUnit(), batch.getReservedQuantity(),
-                    batch.getSoldQuantity(), batch.getStatus().name()));
+                    batch.getSoldQuantity(), EnumLabels.label(batch.getStatus())));
             TextView warning = new TextView(requireContext());
             warning.setText(alreadySelected && !selectable
                     ? "Batch đang được campaign khác giữ, hết hạn hoặc không còn bán được. Điều chỉnh lựa chọn trước khi gửi."

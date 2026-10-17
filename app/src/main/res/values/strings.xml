@@ -36,7 +36,7 @@
     <string name="cancel_action">Hủy</string>
     <string name="login_placeholder_body">Firebase Authentication sẽ được triển khai ở Phase 2.</string>
     <string name="back_to_home_action">Về trang chủ</string>
-    <string name="status_critical">CRITICAL</string>
+    <string name="status_critical">Rất khẩn cấp</string>
     <string name="status_mobile">MOBILE POINT</string>
     <string name="splash_tagline">Giải cứu nông sản, lan tỏa giá trị</string>
     <string name="splash_welcome_title">Chào mừng!</string>
@@ -271,7 +271,7 @@
     <string name="promotion_editor_title">Quản lý khuyến mãi</string>
     <string name="promotion_single_source_notice">Giá luôn được tính theo: giá gốc → giá giải cứu → khuyến mãi → giảm theo số lượng.</string>
     <string name="promotion_type_label">Loại khuyến mãi</string>
-    <string name="promotion_value_hint">Giá trị (% hoặc số tiền; VOLUME nhập 0)</string>
+    <string name="promotion_value_hint">Giá trị (% hoặc số tiền; giảm theo số lượng nhập 0)</string>
     <string name="promotion_tiers_hint">Mỗi dòng: số_lượng=phần_trăm (ví dụ 5=3)</string>
     <string name="promotion_active_label">Đang bật</string>
     <string name="save_promotion_action">Lưu khuyến mãi</string>
@@ -296,23 +296,26 @@
     <string name="cart_item_price_format">Đơn giá %1$s • Thành tiền %2$s</string>
     <string name="cart_no_sellable_batch">Không có batch còn hạn và đủ số lượng.</string>
     <string name="checkout_action">Checkout theo seller</string><string name="checkout_title">Checkout giải cứu</string>
+    <string name="checkout_use_gps_action">Lấy vị trí GPS hiện tại</string>
+    <string name="checkout_gps_fetching">Đang lấy vị trí GPS hiện tại…</string>
+    <string name="checkout_gps_success">Đã tự động điền địa chỉ từ vị trí hiện tại.</string>
     <string name="guest_checkout_notice">Guest checkout: giữ lại mã đơn và số điện thoại để tra cứu.</string><string name="customer_checkout_notice">Customer checkout: đơn gắn với tài khoản hiện tại.</string>
     <string name="receiver_name_hint">Tên người nhận</string><string name="receiver_phone_hint">Số điện thoại người nhận</string><string name="receiver_address_hint">Địa chỉ nhận hàng</string>
     <string name="fulfillment_label">Hình thức nhận hàng</string><string name="payment_method_label">Phương thức thanh toán</string><string name="order_note_hint">Ghi chú đơn hàng</string>
     <string name="place_order_action">Đặt hàng và giữ tồn kho</string><string name="checkout_summary_format">%1$d item • %2$d seller • Giá cart hiện tại %3$s</string>
     <string name="order_confirmation_title">Xác nhận đơn hàng</string><string name="guest_tracking_title">Tra cứu bằng mã đơn + số điện thoại</string><string name="order_code_hint">Mã đơn RF-…</string><string name="track_order_action">Tra cứu đơn</string>
-    <string name="order_created_format">Đơn %1$s đã tạo • trạng thái %2$s. PENDING chỉ giữ hàng, chưa tính rescued.</string>
+    <string name="order_created_format">Đã tạo đơn %1$s • %2$s. Hàng đã được giữ; số lượng giải cứu được ghi nhận khi hoàn tất đơn.</string>
     <string name="order_tracking_format">Đơn %1$s\nTrạng thái: %2$s\nThanh toán: %3$s\nTổng: %4$.0f ₫</string>
     <string name="open_order_detail_action">Thanh toán &amp; trạng thái giao nhận</string>
     <string name="order_detail_title">Thanh toán &amp; giao nhận</string>
     <string name="order_detail_format">Đơn %1$s\nTrạng thái đơn: %2$s\nNhận hàng: %3$s\nPhương thức: %4$s\nThanh toán: %5$s\nShipment: %6$s\nTổng: %7$s</string>
     <string name="shipment_not_required">Không tạo shipment (nhận tại điểm)</string>
     <string name="update_order_status_action">Cập nhật trạng thái hợp lệ</string>
-    <string name="bank_reference_hint">Mã tham chiếu / biên nhận chuyển khoản</string>
-    <string name="confirm_bank_transfer_action">Seller xác nhận đã nhận chuyển khoản</string>
-    <string name="bank_transfer_manual_instruction">Chuyển khoản được xác nhận thủ công bởi seller. Nội dung đối soát: %1$s. Ứng dụng không tự giả lập xác minh ngân hàng.</string>
-    <string name="cash_onsite_instruction">Thanh toán tiền mặt tại điểm giải cứu; chỉ ghi nhận PAID khi đơn hoàn tất.</string>
-    <string name="cod_instruction">Thanh toán COD khi nhận hàng; chỉ ghi nhận PAID khi DELIVERED.</string>
+    <string name="bank_reference_hint">Mã giao dịch chuyển khoản</string>
+    <string name="confirm_bank_transfer_action">Đã nhận tiền và xác nhận đơn</string>
+    <string name="bank_transfer_manual_instruction">Cửa hàng nhập mã giao dịch để xác nhận đã nhận tiền và xác nhận đơn. Sau khi nhận đủ hàng, người mua nhấn Đã nhận hàng. Mã đối soát: %1$s.</string>
+    <string name="cash_onsite_instruction">Thanh toán tiền mặt tại điểm nhận; hệ thống ghi nhận đã thanh toán khi đơn hoàn tất.</string>
+    <string name="cod_instruction">Sau khi nhận đủ hàng và thanh toán, hãy nhấn Đã thanh toán và nhận đơn để hoàn tất đơn hàng.</string>
     <string name="order_id_missing">Thiếu Order ID.</string>
     <string name="track_before_open_detail">Hãy tra cứu đơn trước khi mở chi tiết.</string>
     <string name="seller_orders_action">Đơn hàng &amp; giao nhận</string>
@@ -321,7 +324,7 @@
     <string name="seller_orders_empty">Chưa có đơn hàng.</string>
     <string name="seller_order_row_format">%1$s • %2$s • Thanh toán %3$s</string>
     <string name="favorites_title">Sản phẩm yêu thích</string><string name="favorites_empty">Chưa có sản phẩm yêu thích.</string><string name="favorite_product_format">Sản phẩm %1$s</string><string name="toggle_favorite_action">Thêm / bỏ yêu thích</string><string name="add_favorite_action">Thêm vào yêu thích</string><string name="remove_favorite_action">Bỏ khỏi yêu thích</string><string name="sign_in_to_favorite_action">Đăng nhập để theo dõi sản phẩm</string><string name="favorite_state_unavailable">Không tải được trạng thái yêu thích</string><string name="feed_empty_message">Chưa có bài viết giải cứu đã được duyệt. Hãy làm mới sau.</string>
-    <string name="reviews_title">Review đã mua hàng</string><string name="review_order_id_hint">Order ID đã DELIVERED</string><string name="review_order_item_hint">OrderItem ID</string><string name="review_rating_hint">Điểm 1–5</string><string name="review_content_hint">Nội dung review</string><string name="review_images_hint">Tối đa 5 URL ảnh</string><string name="save_review_action">Gửi review</string><string name="review_row_format">%1$d★ — %2$s</string>
+    <string name="reviews_title">Review đã mua hàng</string><string name="review_order_id_hint">Mã đơn hàng đã giao</string><string name="review_order_item_hint">Mã mặt hàng trong đơn</string><string name="review_rating_hint">Điểm 1–5</string><string name="review_content_hint">Nội dung review</string><string name="review_images_hint">Tối đa 5 URL ảnh</string><string name="save_review_action">Gửi review</string><string name="review_row_format">%1$d★ — %2$s</string>
     <string name="report_action">Báo cáo nội dung</string><string name="report_target_hint">ID đối tượng</string><string name="report_reason_hint">Lý do</string><string name="report_description_hint">Mô tả chi tiết</string><string name="submit_report_action">Gửi báo cáo</string>
     <string name="notifications_title">Thông báo</string><string name="notifications_empty">Chưa có thông báo.</string><string name="enable_notifications_action">Bật thông báo đẩy</string><string name="notification_permission_denied">Bạn chưa cấp quyền hiển thị thông báo.</string><string name="fcm_token_failed">Không lấy được FCM token. Hãy kiểm tra Firebase config/mạng.</string><string name="deep_link_unavailable">Không mở được nội dung liên kết.</string><string name="notification_channel_name">Cập nhật RescueFarm</string><string name="notification_channel_description">Đơn hàng, chiến dịch, khuyến mãi và kiểm duyệt.</string>
     <string name="admin_reports_title">Kiểm duyệt báo cáo</string><string name="report_admin_row_format">%1$s %2$s\n%3$s • %4$s</string><string name="review_report_action">Bắt đầu xử lý</string><string name="resolve_report_action">Đánh dấu đã xử lý</string><string name="reject_report_action">Từ chối báo cáo</string>
@@ -329,11 +332,11 @@
     <string name="seller_statistics_action">Xem thống kê giải cứu</string>
     <string name="seller_statistics_title">Thống kê cửa hàng</string>
     <string name="seller_statistics_period_title">Chọn khoảng thời gian</string>
-    <string name="seller_statistics_limit_notice">Số liệu đơn hàng được tính trên tối đa 50 đơn mới nhất đã tải. Doanh thu gồm đơn DELIVERED trong kỳ, không gồm phí giao hàng và không đồng nghĩa với tiền đã đối soát.</string>
+    <string name="seller_statistics_limit_notice">Số liệu đơn hàng được tính trên tối đa 50 đơn mới nhất đã tải. Doanh thu gồm đơn đã giao trong kỳ, không gồm phí giao hàng và không đồng nghĩa với tiền đã đối soát.</string>
     <string name="seller_revenue_trend_title">Xu hướng doanh thu theo 7 kỳ</string>
-    <string name="seller_statistics_detail_format">Kỳ: %1$s (tối đa 50 đơn mới nhất)\nDoanh thu đơn DELIVERED: %2$s\nSố đơn đã tải: %3$d • Đang xử lý: %4$d\nCampaign hoàn thành: %5$d\nKhối lượng giải cứu toàn bộ campaign: %6$.2f kg\nRescue rate toàn bộ campaign: %7$.1f%%</string>
+    <string name="seller_statistics_detail_format">Kỳ: %1$s (tối đa 50 đơn mới nhất)\nDoanh thu đơn đã giao: %2$s\nSố đơn đã tải: %3$d • Đang xử lý: %4$d\nCampaign hoàn thành: %5$d\nKhối lượng giải cứu toàn bộ campaign: %6$.2f kg\nRescue rate toàn bộ campaign: %7$.1f%%</string>
     <string name="seller_stats_period_label">Kỳ thống kê: %1$s (tính trên tối đa 50 đơn mới nhất)</string>
-    <string name="seller_analytics_summary_format">Thống kê Seller\nKhối lượng đã giải cứu (kg, toàn bộ campaign): %1$.2f\nCampaign hoàn thành: %2$d\nRescue rate (đã giải cứu / mục tiêu của Campaign đã kích hoạt): %3$.1f%%\nDoanh thu hàng DELIVERED trong kỳ (không gồm phí giao): %4$s\nSố đơn trong kỳ đã tải: %5$d</string>
+    <string name="seller_analytics_summary_format">Thống kê Seller\nKhối lượng đã giải cứu (kg, toàn bộ campaign): %1$.2f\nCampaign hoàn thành: %2$d\nRescue rate (đã giải cứu / mục tiêu của Campaign đã kích hoạt): %3$.1f%%\nDoanh thu hàng đã giao trong kỳ (không gồm phí giao): %4$s\nSố đơn trong kỳ đã tải: %5$d</string>
     <string name="seller_top_products_title">Top sản phẩm đã giao (số lượng)</string>
     <string name="seller_top_rescue_reasons_title">Top Rescue Reason (khối lượng đã giải cứu)</string>
     <string name="shipment_management_title">Thông tin giao hàng</string>
@@ -351,7 +354,7 @@
     <string name="batch_alert_near_expiry">SẮP HẾT HẠN · còn %1$d ngày</string>
     <string name="batch_alert_expired">ĐÃ HẾT HẠN · không được bán</string>
     <string name="batch_alert_sold_out">ĐÃ HẾT TỒN KHẢ DỤNG</string>
-    <string name="seller_dashboard_stats_format">Sản phẩm: %1$d (%2$d active)\nCampaign: %3$d (%4$d active, %5$d mobile)\nĐơn mới nhất đã tải (tối đa 50): %6$d (%7$d đang xử lý, %8$d delivery)\nPromotion: %9$d\nDoanh thu DELIVERED trong kỳ: %10$s\nKhối lượng giải cứu toàn bộ campaign: %11$.2f kg</string>
+    <string name="seller_dashboard_stats_format">Sản phẩm: %1$d (%2$d đang bán)\nCampaign: %3$d (%4$d đang hoạt động, %5$d di động)\nĐơn mới nhất đã tải (tối đa 50): %6$d (%7$d đang xử lý, %8$d giao tận nơi)\nPromotion: %9$d\nDoanh thu đơn đã giao trong kỳ: %10$s\nKhối lượng giải cứu toàn bộ campaign: %11$.2f kg</string>
     <string name="seller_recent_order_format">%1$s • %2$s • %3$.0f ₫</string>
     <string name="admin_dashboard_title">Dashboard quản trị</string>
     <string name="admin_access_message">Tài khoản quản trị — mọi thao tác moderation đều được ghi audit.</string>
@@ -380,8 +383,8 @@
     <string name="admin_add_catalog_resource">Thêm mới danh mục / banner</string>
     <string name="admin_section_title_format">Quản trị: %1$s</string>
     <string name="admin_resource_row_format">%1$s\n%2$s\nTrạng thái: %3$s\nID: %4$s</string>
-    <string name="admin_dashboard_stats_format">Users: %1$d\nSeller applications: %2$d (%3$d chờ duyệt)\nProducts: %4$d\nCampaigns: %5$d (%6$d chờ duyệt)\nPosts: %7$d (%8$d chờ duyệt)\nOrders: %9$d\nReports đang mở: %10$d\nDoanh thu DELIVERED (all-time, gồm phí giao hàng): %11$s</string>
-    <string name="admin_analytics_format">Tổng hàng đợi moderation: %1$d\nUsers: %2$d\nProducts: %3$d\nCampaigns: %4$d\nOrders: %5$d\nDoanh thu DELIVERED (all-time, gồm phí giao hàng): %6$s</string>
+    <string name="admin_dashboard_stats_format">Users: %1$d\nSeller applications: %2$d (%3$d chờ duyệt)\nProducts: %4$d\nCampaigns: %5$d (%6$d chờ duyệt)\nPosts: %7$d (%8$d chờ duyệt)\nOrders: %9$d\nReports đang mở: %10$d\nDoanh thu đơn đã giao (all-time, gồm phí giao hàng): %11$s</string>
+    <string name="admin_analytics_format">Tổng hàng đợi moderation: %1$d\nUsers: %2$d\nProducts: %3$d\nCampaigns: %4$d\nOrders: %5$d\nDoanh thu đơn đã giao (all-time, gồm phí giao hàng): %6$s</string>
     <string name="see_more_action">Xem thêm</string>
     <string name="all_categories_title">Tất cả danh mục</string>
     <string name="all_critical_campaigns_title">Chiến dịch cần giải cứu gấp</string>

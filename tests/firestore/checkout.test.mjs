@@ -62,6 +62,25 @@ function addressData(owner, id = 'home', isDefault = false) {
     isDefault, updatedAt: serverTimestamp() };
 }
 
+test('Seller profile save commits text address, public GPS and private payment together', async () => {
+  const db = env.authenticatedContext('seller').firestore();
+  const business = {representativeName: 'Nguyễn Văn An', shopName: 'Vườn nhà', shopDescription: 'Nông sản',
+    shopAvatarUrl: '', address: '12 đường Vườn, tỉnh Đồng Tháp', bankCode: 'MB', bankAccountName: 'NGUYEN VAN AN',
+    bankAccountNumber: '123456789', latitude: 10.8, longitude: 106.7, updatedAt: serverTimestamp()};
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'users/seller'), business);
+  batch.set(doc(db, 'sellerPublicProfiles/seller'), {sellerId: 'seller', shopName: business.shopName,
+    shopDescription: business.shopDescription, shopAvatarUrl: '', address: business.address,
+    latitude: 10.8, longitude: 106.7, updatedAt: serverTimestamp(),
+    bankCode: deleteField(), bankAccountName: deleteField(), bankAccountNumber: deleteField(), qrUrl: deleteField()}, {merge: true});
+  batch.set(doc(db, 'sellerPaymentProfiles/seller'), {sellerId: 'seller', bankCode: 'MB',
+    bankAccountName: 'NGUYEN VAN AN', bankAccountNumber: '123456789', updatedAt: serverTimestamp()}, {merge: true});
+  await assertSucceeds(batch.commit());
+  assert.equal((await getDoc(doc(db, 'users/seller'))).data().address, business.address);
+  assert.equal((await getDoc(doc(db, 'sellerPublicProfiles/seller'))).data().latitude, 10.8);
+  assert.equal((await getDoc(doc(db, 'sellerPaymentProfiles/seller'))).data().bankCode, 'MB');
+});
+
 test('active customers can manage only their own receiver addresses', async () => {
   for (const owner of ['customer-a', 'customer-b']) {
     const db = env.authenticatedContext(owner).firestore();
@@ -638,7 +657,7 @@ test('future Promotion can persist its scheduled notification event atomically',
   batch.set(doc(db, 'notificationOutbox/promotion'), outboxData('seller', 'PROMOTION', 'product-a', 'PROMOTION'));
   await assertSucceeds(batch.commit());
 });
-test('confirming bank payment can enqueue an event only with the actual payment change', async () => {
+test('bank payment and confirmation require trusted API instead of direct client writes', async () => {
   await seed({'orders/bank': {id: 'bank', ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller',
     status: 'PENDING', paymentMethod: 'BANK_TRANSFER', paymentStatus: 'PENDING', updatedAt: past},
     'payments/bank': {id: 'bank', orderId: 'bank', method: 'BANK_TRANSFER', amount: 1000, status: 'PENDING', referenceCode: '', updatedAt: past}});
@@ -646,7 +665,7 @@ test('confirming bank payment can enqueue an event only with the actual payment 
   batch.update(doc(db, 'orders/bank'), {paymentStatus: 'PAID', updatedAt: serverTimestamp()});
   batch.update(doc(db, 'payments/bank'), {status: 'PAID', referenceCode: 'BANK123', paidAt: serverTimestamp(), updatedAt: serverTimestamp()});
   batch.set(doc(db, 'notificationOutbox/payment'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT'));
-  await assertSucceeds(batch.commit());
+  await assertFails(batch.commit());
   await assertFails(setDoc(doc(db, 'notificationOutbox/payment-replay'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT')));
 });
 
