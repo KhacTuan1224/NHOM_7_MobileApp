@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, collection, query, where, setDoc,
-  deleteDoc, deleteField, runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
+  collectionGroup, deleteDoc, deleteField, runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 
 let env;
 const now = Date.now();
@@ -493,11 +493,11 @@ test('batch referenced by a cancelled order cannot be deleted; archiving preserv
   assert.equal((await getDoc(doc(db, 'orders/cancelled/items/batch-a'))).exists(), true);
 });
 
-test('comment owner can edit and soft-delete; others, timestamp forgery and edits after deletion are denied', async () => {
-  await seed({'posts/published': {status: 'PUBLISHED'}});
+test('Campaign comment owner can edit and soft-delete; others, timestamp forgery and edits after deletion are denied', async () => {
+  await seed({'campaigns/active': {status: 'ACTIVE'}});
   const owner = env.authenticatedContext('customer-a').firestore(), other = env.authenticatedContext('customer-b').firestore();
-  const path = 'posts/published/comments/comment-a';
-  await assertSucceeds(setDoc(doc(owner, path), {id: 'comment-a', postId: 'published', userId: 'customer-a',
+  const path = 'campaigns/active/comments/comment-a';
+  await assertSucceeds(setDoc(doc(owner, path), {id: 'comment-a', campaignId: 'active', userId: 'customer-a',
     content: 'Bình luận ban đầu', status: 'ACTIVE', createdAt: past, updatedAt: past}));
   await assertFails(updateDoc(doc(other, path), {content: 'Mạo danh', status: 'EDITED', updatedAt: serverTimestamp()}));
   await assertFails(updateDoc(doc(owner, path), {content: 'Giả ngày tạo', status: 'EDITED', createdAt: future, updatedAt: serverTimestamp()}));
@@ -507,11 +507,11 @@ test('comment owner can edit and soft-delete; others, timestamp forgery and edit
   await assertFails(updateDoc(doc(owner, path), {content: 'Khôi phục trái phép', status: 'EDITED', updatedAt: serverTimestamp()}));
 });
 
-test('Admin can moderate comments while Customer cannot bypass moderation or forge its fields', async () => {
-  const path = 'posts/published/comments/moderated';
+test('Admin can moderate Campaign comments while Customer cannot bypass moderation or forge its fields', async () => {
+  const path = 'campaigns/active/comments/moderated';
   await seed({
-    'posts/published': {status: 'PUBLISHED'},
-    [path]: {id: 'moderated', postId: 'published', userId: 'customer-a', content: 'Original',
+    'campaigns/active': {status: 'ACTIVE'},
+    [path]: {id: 'moderated', campaignId: 'active', userId: 'customer-a', content: 'Original',
       status: 'ACTIVE', createdAt: past, updatedAt: past}
   });
   const owner = env.authenticatedContext('customer-a').firestore();
@@ -521,9 +521,41 @@ test('Admin can moderate comments while Customer cannot bypass moderation or for
   await assertFails(updateDoc(doc(owner, path), moderation));
   await assertSucceeds(updateDoc(doc(admin, path), moderation));
   await assertFails(updateDoc(doc(owner, path), {status: 'EDITED', content: 'Restored', updatedAt: serverTimestamp()}));
-  await seed({'posts/published': {status: 'HIDDEN'}});
+  await seed({'campaigns/active': {status: 'STOPPED'}});
   await assertSucceeds(getDoc(doc(admin, path)));
   await assertFails(getDoc(doc(owner, path)));
+});
+
+test('legacy Post comments remain read-only, including for Admin', async () => {
+  const path = 'posts/legacy/comments/legacy-comment';
+  const value = {id: 'legacy-comment', postId: 'legacy', userId: 'customer-a', content: 'Historical',
+    status: 'ACTIVE', createdAt: past, updatedAt: past};
+  await seed({'posts/legacy': {status: 'PUBLISHED'}, [path]: value});
+  for (const uid of ['customer-a', 'admin']) {
+    const db = env.authenticatedContext(uid).firestore();
+    await assertSucceeds(getDoc(doc(db, path)));
+    await assertFails(updateDoc(doc(db, path), {content: 'Changed', status: 'EDITED', updatedAt: serverTimestamp()}));
+    await assertFails(setDoc(doc(db, 'posts/legacy/comments/new'), {...value, id: 'new'}));
+  }
+});
+
+test('only active Admin can query comments across Campaign and legacy Post parents', async () => {
+  await seed({
+    'campaigns/closed': {status: 'STOPPED'}, 'posts/hidden': {status: 'HIDDEN'},
+    'campaigns/closed/comments/campaign-comment': {id: 'reported', campaignId: 'closed', userId: 'customer-a', content: 'Campaign', status: 'HIDDEN'},
+    'posts/hidden/comments/post-comment': {id: 'reported', postId: 'hidden', userId: 'customer-a', content: 'Legacy', status: 'ACTIVE'}
+  });
+  const db = env.authenticatedContext('admin').firestore();
+  const found = await assertSucceeds(getDocs(query(collectionGroup(db, 'comments'), where('id', '==', 'reported'))));
+  assert.equal(found.size, 2);
+  for (const uid of ['customer-a', 'seller', 'blocked']) {
+    const other = env.authenticatedContext(uid).firestore();
+    await assertFails(getDocs(query(collectionGroup(other, 'comments'), where('id', '==', 'reported'))));
+  }
+  const guest = env.unauthenticatedContext().firestore();
+  await assertFails(getDocs(query(collectionGroup(guest, 'comments'), where('id', '==', 'reported'))));
+  await seed({'users/admin': {role: 'ADMIN', status: 'BLOCKED'}});
+  await assertFails(getDocs(query(collectionGroup(db, 'comments'), where('id', '==', 'reported'))));
 });
 
 test('Guest cannot read order collections or backend capabilities and clients cannot forge viewCount', async () => {

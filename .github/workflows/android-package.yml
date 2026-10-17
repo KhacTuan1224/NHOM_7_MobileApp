@@ -50,10 +50,21 @@ jobs:
           npm run test:unit
 
       - name: Check trusted API transactions and Firestore Rules
+        id: firestore-tests
         working-directory: tests/firestore
         run: |
           npm ci
-          npm test
+          npm test 2>&1 | tee firestore-test-output.log
+
+      - name: Upload Firestore test diagnostics
+        if: failure() && steps.firestore-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-test-diagnostics
+          path: |
+            tests/firestore/firestore-test-output.log
+            tests/firestore/firestore-debug.log
+          retention-days: 7
 
       - name: Prepare Firebase configuration
         env:
