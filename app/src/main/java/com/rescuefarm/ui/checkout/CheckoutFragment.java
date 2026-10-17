@@ -33,6 +33,7 @@ import com.rescuefarm.domain.enums.FulfillmentType;
 import com.rescuefarm.domain.enums.PaymentMethod;
 import com.rescuefarm.domain.model.Address;
 import com.rescuefarm.domain.model.Cart;
+import com.rescuefarm.domain.model.Order;
 import com.rescuefarm.domain.model.User;
 import com.rescuefarm.service.location.LocationProvider;
 import com.rescuefarm.service.location.LocationProviderFactory;
@@ -209,10 +210,15 @@ public class CheckoutFragment extends Fragment {
             view.findViewById(R.id.submitCheckoutButton).setEnabled(
                     result.getStatus() != CheckoutState.Status.LOADING);
             if (result.getStatus() == CheckoutState.Status.SUCCESS && vm.consumeCheckoutSuccessNavigation()) {
-                Bundle args = new Bundle(); args.putString("orderId", result.getOrder().getId());
-                args.putString("orderCode", result.getOrder().getOrderCode());
-                args.putString("phone", result.getOrder().getReceiverPhone());
-                args.putString("status", result.getOrder().getStatus().name());
+                Order order = result.getOrder();
+                new com.rescuefarm.data.local.preferences.SharedPreferencesGuestSessionRepository(requireContext())
+                        .saveRecentGuestOrder(order.getId(), order.getOrderCode(), order.getReceiverPhone());
+                Bundle args = new Bundle();
+                args.putString("orderId", order.getId());
+                args.putString("orderCode", order.getOrderCode());
+                args.putString("phone", order.getReceiverPhone());
+                args.putString("status", order.getStatus() == null ? "PENDING" : order.getStatus().name());
+                args.putString("paymentMethod", order.getPaymentMethod() == null ? "COD" : order.getPaymentMethod().name());
                 Navigation.findNavController(view).navigate(R.id.action_checkoutFragment_to_orderConfirmationFragment, args);
             } else if (result.getStatus() == CheckoutState.Status.ERROR) {
                 Toast.makeText(requireContext(), result.getMessage(), Toast.LENGTH_LONG).show();
