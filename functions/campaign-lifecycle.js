@@ -201,6 +201,8 @@ function createCampaignLifecycle({db, admin, authenticate}) {
         const days = value => (value - now) / 86400000;
         const urgencyLevel = days(earliestExpiry) <= 2 || days(millis(campaign.endDate)) <= 1 ? 'CRITICAL'
           : days(earliestExpiry) <= 5 || days(millis(campaign.endDate)) <= 3 ? 'HIGH' : 'NORMAL';
+        await require('./campaign-media-policy').assertApprovalMedia(tx, db, id, campaign);
+        require('./campaign-media-policy').freezeCampaignAssets(tx, db, campaign);
         tx.update(ref, {status: 'ACTIVE', moderatedBy: caller.uid, moderatedAt: stamp(), moderationReason: reason,
           reservedByBatch: {}, rescuedByBatch: {}, allocationVersion: 1, quantityUnit, unitStatus: 'VERIFIED', urgencyLevel, updatedAt: stamp()});
         for (const batch of batches) tx.update(batch.ref, {activeCampaignId: id,

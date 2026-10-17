@@ -267,7 +267,7 @@ public class CampaignEditorFragment extends Fragment {
         if (imageUrls.size() >= 6) { Toast.makeText(requireContext(), "Mỗi chiến dịch tối đa 6 ảnh.", Toast.LENGTH_SHORT).show(); return; }
         String uid = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
         if (uid == null || uid.trim().isEmpty()) { Toast.makeText(requireContext(), "Vui lòng đăng nhập Seller.", Toast.LENGTH_SHORT).show(); return; }
-        int slot = nextImageSlot++;
+        int slot = (nextImageSlot++) % 6;
         CloudinaryUploadUi.upload(this, uri, "campaign", id, slot,
                 requireView().findViewById(R.id.uploadCampaignImageButton), imageStatus, null, url -> {
                     imageUrls.add(url);

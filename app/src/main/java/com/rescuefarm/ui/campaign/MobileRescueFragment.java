@@ -27,6 +27,21 @@ import java.util.List;
 import java.util.Map;
 
 public class MobileRescueFragment extends Fragment {
+    private java.util.List<RescueCampaign> current = java.util.Collections.emptyList();
+    private final java.util.Map<String,TextView> stateLabels=new java.util.HashMap<>();
+    private final java.util.Map<String,Button> updateButtons=new java.util.HashMap<>();
+    private void refreshTimes() {
+        Date now=new Date(); for(RescueCampaign c:current) {
+            TextView label=stateLabels.get(c.getId()); if(label!=null) label.setText(com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(c,now)
+                +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.locationUpdated(c.getLocationUpdatedAt(),now)
+                +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.remaining(c,now));
+            Button button=updateButtons.get(c.getId()); if(button!=null) button.setEnabled(com.rescuefarm.service.campaign.CampaignTimeFormatter.canUpdateLocation(c,now));
+        }
+    }
+    private final android.os.Handler clock = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable tick = new Runnable() { @Override public void run() { if(getView()!=null) refreshTimes(); clock.postDelayed(this,1000L); } };
+    @Override public void onStart() { super.onStart(); clock.post(tick); }
+    @Override public void onStop() { clock.removeCallbacks(tick); super.onStop(); }
     private CampaignViewModel viewModel; private LinearLayout container; private String requestedCampaignId;
     private final ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissions);
@@ -48,7 +63,8 @@ public class MobileRescueFragment extends Fragment {
         viewModel.refreshSeller();
     }
     private void render(List<RescueCampaign> values) {
-        container.removeAllViews(); if (values == null) return;
+        current = values == null ? java.util.Collections.emptyList() : values;
+        container.removeAllViews(); stateLabels.clear(); updateButtons.clear(); if (values == null) return;
         for (RescueCampaign value : values) if (value.getStatus() == CampaignStatus.ACTIVE
                 && value.getRescueMode() == RescueMode.MOBILE_POINT
                 && (requestedCampaignId.isEmpty() || requestedCampaignId.equals(value.getId()))) {
@@ -61,8 +77,13 @@ public class MobileRescueFragment extends Fragment {
         TextView title = new TextView(requireContext()); title.setText(value.getTitle()); title.setTextSize(18); title.setTypeface(title.getTypeface(),1);
         TextView state = new TextView(requireContext()); state.setText(value.isLocationFresh(new Date())
                 ? R.string.mobile_location_fresh : R.string.mobile_location_stale);
+        state.setText(com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(value,new Date())
+                +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.locationUpdated(value.getLocationUpdatedAt(),new Date())
+                +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.remaining(value,new Date()));
         Button update = new Button(requireContext()); update.setText(R.string.update_mobile_location_action);
+        update.setEnabled(com.rescuefarm.service.campaign.CampaignTimeFormatter.canUpdateLocation(value,new Date()));
         update.setOnClickListener(v -> requestLocation(value.getId()));
+        stateLabels.put(value.getId(),state); updateButtons.put(value.getId(),update);
         Button stop = new Button(requireContext()); stop.setText(R.string.stop_location_sharing_action);
         stop.setEnabled(value.isLocationSharingEnabled()); stop.setOnClickListener(v -> viewModel.stopLocationSharing(value.getId()));
         body.addView(title); body.addView(state); body.addView(update); body.addView(stop); card.addView(body); return card;
@@ -83,5 +104,6 @@ public class MobileRescueFragment extends Fragment {
             viewModel.updateCurrentLocation(requestedCampaignId);
         } else Toast.makeText(requireContext(), R.string.location_permission_required, Toast.LENGTH_LONG).show();
     }
+    @Override public void onDestroyView() {clock.removeCallbacks(tick);stateLabels.clear();updateButtons.clear();container=null;super.onDestroyView();}
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 }

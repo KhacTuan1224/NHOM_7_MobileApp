@@ -30,10 +30,14 @@ public class PublicSellerProfileFragment extends Fragment {
         String sellerId = getArguments() == null ? "" : getArguments().getString("sellerId", "");
         if (sellerId.isEmpty()) { name.setText("Không tìm thấy người bán."); return; }
         StorefrontViewModel vm = new ViewModelProvider(this,new StorefrontViewModelFactory(requireContext())).get(StorefrontViewModel.class);
+        android.widget.LinearLayout reportActions = new android.widget.LinearLayout(requireContext());
+        ((android.view.ViewGroup)bank.getParent()).addView(reportActions);
         vm.observe(sellerId).observe(getViewLifecycleOwner(), profile -> {
+                    reportActions.removeAllViews();
                     if (profile == null || !profile.configured) {
                         name.setText("Người bán chưa công khai hồ sơ cửa hàng."); return;
                     }
+                    com.rescuefarm.ui.engagement.ContextReportAction.add(this, reportActions, "USER", sellerId, sellerId, "Báo cáo người bán");
                     name.setText(value(profile.shopName, "Cửa hàng RescueFarm"));
                     description.setText(value(profile.description, "Chưa có giới thiệu cửa hàng."));
                     address.setText(value(profile.address, "Chưa cập nhật địa chỉ.")

@@ -114,6 +114,25 @@ public class FirebaseUserRepository implements UserRepository {
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+    @Override public void updateBusinessProfile(String userId, String fullName, String phone, String avatarUrl,
+            double latitude, double longitude, String companyName, String taxCode, UserCallback callback) {
+        String validation = com.rescuefarm.service.profile.ProfileInputPolicy.business(companyName, taxCode);
+        if (validation == null) validation = com.rescuefarm.service.profile.ProfileInputPolicy.profile(fullName, phone);
+        if (validation != null) { callback.onError(ProfileError.VALIDATION, validation); return; }
+        firestore.runTransaction(tx -> {
+            DocumentSnapshot previous = tx.get(user(userId));
+            if (!"CUSTOMER".equals(previous.getString("role")) || !"BUSINESS".equals(previous.getString("customerType")))
+                throw new IllegalStateException("Chỉ tài khoản khách hàng doanh nghiệp được sửa thông tin này.");
+            Map<String,Object> fields = new HashMap<>();
+            fields.put("fullName", clean(fullName)); fields.put("phone", clean(phone)); fields.put("avatarUrl", clean(avatarUrl));
+            fields.put("latitude", latitude); fields.put("longitude", longitude); fields.put("companyName", clean(companyName));
+            fields.put("taxCode", clean(taxCode)); fields.put("updatedAt", FieldValue.serverTimestamp());
+            tx.update(user(userId), fields); return previous.getString("avatarUrl");
+        }).addOnSuccessListener(oldAvatar -> {
+            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(oldAvatar, avatarUrl); getUser(userId, callback);
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
     @Override public void updateSellerProfile(String sellerId, String representativeName, String shopName,
             String shopDescription, String shopAvatarUrl, String address, String bankCode,
             String bankAccountName, String bankAccountNumber, double latitude, double longitude,

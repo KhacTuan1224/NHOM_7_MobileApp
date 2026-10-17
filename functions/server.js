@@ -81,6 +81,8 @@ app.get("/health", (_, res) => res.json({ok: true}));
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
 app.use(campaignLifecycle.router);
 app.use(require('./seller-analytics').createSellerAnalytics({db, admin, authenticate: auth}).router);
+const campaignMedia = require('./campaign-media').createCampaignMedia({db, admin, authenticate: auth});
+app.use(campaignMedia.router);
 const worker = require('./notification-outbox').createNotificationWorker({db, admin});
 app.use(require('./notifications-api').createNotificationsApi({db, admin, authenticate: auth}).router);
 app.post('/internal/notifications/run', async (req, res, next) => {
@@ -91,10 +93,12 @@ app.post('/internal/notifications/run', async (req, res, next) => {
       throw httpError(403, 'Worker credentials required');
     await campaignLifecycle.reconcileExpired();
     const result = await worker.runOnce();
+    result.mediaCleanup = await campaignMedia.reconcile();
+    if (result.mediaCleanup.errors) result.attentionRequired = true;
     if (result.busy) {
       const health = await db.collection('notificationWorkerState').doc('health').get();
-      result.attentionRequired = health.exists ? health.get('attentionRequired') === true
-        || Date.now() - millis(health.get('lastSuccessAt')) > 600000 : process.uptime() > 600;
+      result.attentionRequired = result.attentionRequired === true || (health.exists ? health.get('attentionRequired') === true
+        || Date.now() - millis(health.get('lastSuccessAt')) > 600000 : process.uptime() > 600);
     }
     res.json({ok: true, ...result});
   } catch (error) { next(error); }
@@ -203,13 +207,16 @@ app.use((error, req, res, __) => {
     "code=", error.code || "", "message=", error.message || "", error.stack || "");
   res.status(status).json({error: status >= 500 ? "Internal server error" : error.message});
 });
-migrateSellerPaymentProfiles().then(() => {
+migrateSellerPaymentProfiles().then(() => campaignMedia.migrateReferences()).then(() => {
   app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));
   let reconciling = false;
   const reconcile = async () => {
     if (reconciling) return;
     reconciling = true;
-    try { await campaignLifecycle.reconcileExpired(); await worker.runOnce(); }
+    try {
+      const jobs = await Promise.allSettled([campaignLifecycle.reconcileExpired(), worker.runOnce(), campaignMedia.reconcile()]);
+      for (const result of jobs) if (result.status === 'rejected') console.error('Backend reconciliation:', result.reason.message);
+    }
     catch (error) { console.error('Campaign reconciliation failed:', error.message); }
     finally { reconciling = false; }
   };
@@ -217,6 +224,6 @@ migrateSellerPaymentProfiles().then(() => {
   reconcile();
   setInterval(reconcile, 60000).unref();
 }).catch(error => {
-  console.error("Seller payment profile migration failed; API will not start:", error);
+  console.error("Startup migration failed; API will not start:", error);
   process.exit(1);
 });

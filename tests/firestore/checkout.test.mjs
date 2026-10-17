@@ -683,3 +683,53 @@ test('Guest and other Customer can view published Review images but not hidden R
     await assertFails(getDoc(doc(db, 'reviews/hidden-images')));
   }
 });
+
+
+test('Business Customer registration and profile edits persist private company fields without role escalation', async () => {
+  const db=env.authenticatedContext('business').firestore();
+  const profile={id:'business',email:'business@example.com',fullName:'Business Customer',phone:'0912345678',avatarUrl:'',
+    role:'CUSTOMER',status:'ACTIVE',customerType:'BUSINESS',companyName:'Company Original',taxCode:'0123456789',
+    latitude:10,longitude:106,createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+  await assertSucceeds(setDoc(doc(db,'users/business'),profile));
+  await assertSucceeds(updateDoc(doc(db,'users/business'),{companyName:'Company Updated',taxCode:'0123456789-001',updatedAt:serverTimestamp()}));
+  const saved=(await getDoc(doc(db,'users/business'))).data();assert.equal(saved.companyName,'Company Updated');assert.equal(saved.customerType,'BUSINESS');assert.equal(saved.role,'CUSTOMER');
+  await assertFails(updateDoc(doc(db,'users/business'),{role:'ADMIN',updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(db,'users/business'),{status:'INACTIVE',updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(db,'users/business'),{companyName:'',updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(db,'users/business'),{customerType:'INDIVIDUAL',updatedAt:serverTimestamp()}));
+  await assertFails(getDoc(doc(env.authenticatedContext('customer-b').firestore(),'users/business')));
+});
+test('Individual Customer can edit basic profile without supplying enterprise information',async()=>{
+  await seed({'users/individual':{id:'individual',email:'i@example.com',fullName:'Individual Customer',phone:'0912345678',avatarUrl:'',role:'CUSTOMER',status:'ACTIVE',
+    customerType:'INDIVIDUAL',companyName:'',taxCode:'',latitude:0,longitude:0,createdAt:past,updatedAt:past}});
+  const db=env.authenticatedContext('individual').firestore();
+  await assertSucceeds(updateDoc(doc(db,'users/individual'),{fullName:'Individual Updated',updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(db,'users/individual'),{companyName:'Unauthorized company',updatedAt:serverTimestamp()}));
+});
+test('Review and public Seller reports carry the selected target and commit their Admin event',async()=>{
+  await seed({'reviews/context':{customerId:'customer-b',productId:'product-a',status:'PUBLISHED'}});
+  const db=env.authenticatedContext('customer-a').firestore();
+  for(const [type,targetId] of [['REVIEW','context'],['USER','seller']]) {
+    const key='context-'+type,batch=writeBatch(db);
+    batch.set(doc(db,'reports/'+key),{...newReport(key),targetType:type,targetId});
+    batch.set(doc(db,'notificationOutbox/'+key),outboxData('customer-a','REPORT',key));await assertSucceeds(batch.commit());
+    const adminDb=env.authenticatedContext('admin').firestore();const saved=(await getDoc(doc(adminDb,'reports/'+key))).data();
+    assert.equal(saved.targetType,type);assert.equal(saved.targetId,targetId);
+  }
+});
+test('Campaign image references and operational leases cannot bypass the trusted media command',async()=>{
+  const campaign={id:'media',sellerId:'seller',title:'Campaign images',description:'Story',rescueReason:'OVER_SUPPLY',urgencyLevel:'NORMAL',rescueMode:'FIXED_POINT',
+    batchTargets:{'batch-a':5},targetQuantity:5,reservedQuantity:0,rescuedQuantity:0,startDate:past,endDate:future,latitude:10,longitude:106,currentLatitude:0,currentLongitude:0,
+    locationUpdatedAt:null,locationSharingEnabled:false,locationName:'Farm',status:'DRAFT',quantityUnit:'kg',unitStatus:'DECLARED',imageUrls:[],imagePublicIds:[],createdAt:past,updatedAt:past};
+  await seed({'campaigns/media':campaign,'campaignMediaUploads/lease':{ownerUid:'seller',campaignId:'media',status:'COMMITTED'}});
+  const db=env.authenticatedContext('seller').firestore();
+  await assertFails(updateDoc(doc(db,'campaigns/media'),{imageUrls:['https://example.com/replacement.jpg'],imagePublicIds:['forged'],updatedAt:serverTimestamp()}));
+  await assertFails(setDoc(doc(db,'campaigns/bypass'),{...campaign,id:'bypass',imageUrls:['https://example.com/new.jpg'],imagePublicIds:['forged'],createdAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+  for(const uid of ['seller','customer-a','admin']) {
+    const client=env.authenticatedContext(uid).firestore();
+    await assertFails(getDoc(doc(client,'campaignMediaUploads/lease')));
+    await assertFails(setDoc(doc(client,'campaignMediaDrafts/new'),{ownerUid:uid}));
+  }
+  await seed({'campaigns/media':{...campaign,status:'ACTIVE'}});
+  await assertFails(updateDoc(doc(db,'campaigns/media'),{imageUrls:[],imagePublicIds:[],description:'Edited active story',updatedAt:serverTimestamp()}));
+});

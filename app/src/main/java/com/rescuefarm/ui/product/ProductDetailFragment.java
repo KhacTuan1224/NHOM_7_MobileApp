@@ -65,6 +65,9 @@ public class ProductDetailFragment extends Fragment {
         batchSpinner = view.findViewById(R.id.productBatchSpinner);
         batchHint = view.findViewById(R.id.productBatchHint);
         quantityInput = view.findViewById(R.id.pricingQuantityInput);
+        double advertisedQuantity=arguments==null?1D:arguments.getDouble("pricingQuantity",1D);
+        if(state==null && Double.isFinite(advertisedQuantity) && advertisedQuantity>0)
+            quantityInput.setText(java.math.BigDecimal.valueOf(advertisedQuantity).stripTrailingZeros().toPlainString());
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);
         cartViewModel = new ViewModelProvider(this, new CartViewModelFactory(requireContext()))
@@ -174,7 +177,7 @@ public class ProductDetailFragment extends Fragment {
                 getString(R.string.discount_format, product.calculateDiscountPercent()));
         if (!product.getImageUrls().isEmpty()) Glide.with(this).load(product.getImageUrls().get(0))
                 .centerCrop().into((ImageView) view.findViewById(R.id.productDetailImage));
-        viewModel.calculatePrice(product, 1D);
+        recalculate();
     }
     private void recalculate() {
         if (currentProduct == null) return;

@@ -190,91 +190,27 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         }));
     }
 
-    @Override public void saveCampaign(RescueCampaign source, boolean submit,
-            CampaignCallback callback) {
+    @Override public void saveCampaign(RescueCampaign source, boolean submit, CampaignCallback callback) {
         if (!online(callback, "Không thể lưu campaign khi offline; thay đổi không được xếp hàng.")) return;
-        String sellerId = currentUserId();
-        if (sellerId == null) { callback.onError(ErrorCode.FORBIDDEN, "Vui lòng đăng nhập seller."); return; }
-        DocumentReference reference = clean(source.getId()).isEmpty()
-                ? firestore.collection(CAMPAIGNS).document()
-                : firestore.collection(CAMPAIGNS).document(source.getId());
-        List<String> previousImages = new ArrayList<>();
-        firestore.runTransaction(transaction -> {
-            DocumentSnapshot existing = transaction.get(reference);
-            previousImages.clear();
-            if (existing.exists()) previousImages.addAll(strings(existing.get("imageUrls")));
-            if (existing.exists() && !sellerId.equals(existing.getString("sellerId"))) {
-                throw new IllegalStateException("FORBIDDEN");
-            }
-            CampaignStatus editableStatus = existing.exists()
-                    ? enumValue(CampaignStatus.class, existing.getString("status"), CampaignStatus.DRAFT)
-                    : CampaignStatus.DRAFT;
-            if (editableStatus != CampaignStatus.DRAFT && editableStatus != CampaignStatus.REJECTED) {
-                throw new IllegalStateException("CAMPAIGN_LOCKED");
-            }
-            RescueCampaign previous = existing.exists() ? mapCampaign(existing) : null;
-            if (existing.exists() && previous == null) throw new IllegalStateException("NOT_FOUND");
-            CampaignStatus savedStatus = submit ? editableStatus : CampaignStatus.DRAFT;
-            RescueCampaign saved = copyCampaign(reference.getId(), sellerId, source,
-                    savedStatus, previous);
-            if (saved.getBatchTargets().size() > MAX_BATCHES) {
-                throw new IllegalArgumentException("Mỗi Campaign hỗ trợ tối đa 200 lô để an toàn với giới hạn ghi Firestore.");
-            }
-            Set<String> ids = new HashSet<>();
-            ids.addAll(saved.getBatchTargets().keySet());
-            String quantityUnit = null;
-            Map<String, DocumentSnapshot> batchSnapshots = new LinkedHashMap<>();
-            Date earliestExpiry = null;
-            for (String batchId : ids) {
-                DocumentSnapshot batch = transaction.get(firestore.collection(BATCHES).document(batchId));
-                if (!batch.exists()) throw new IllegalStateException("BATCH_NOT_FOUND");
-                batchSnapshots.put(batchId, batch);
-                DocumentSnapshot product = transaction.get(firestore.collection("products").document(batch.getString("productId")));
-                if (!product.exists() || !sellerId.equals(product.getString("sellerId"))) throw new IllegalStateException("FORBIDDEN");
-                String unit = com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(product.getString("unit"));
-                if (unit.isEmpty() || (quantityUnit != null && !quantityUnit.equals(unit)))
-                    throw new IllegalArgumentException("Các lô trong Campaign phải có cùng đơn vị tính, không tự quy đổi bó/bao sang kg.");
-                quantityUnit = unit;
-                if (submit && saved.getBatchTargets().containsKey(batchId)) {
-                    String linked = clean(batch.getString("activeCampaignId"));
-                    if (!linked.isEmpty() && !reference.getId().equals(linked)) {
-                        DocumentSnapshot linkedCampaign = transaction.get(firestore.collection(CAMPAIGNS).document(linked));
-                        Date linkedEnd = linkedCampaign.exists() ? date(linkedCampaign, "endDate") : null;
-                        if (linkedCampaign.exists() && "ACTIVE".equals(linkedCampaign.getString("status"))
-                                && linkedEnd != null && linkedEnd.after(new Date())
-                                && number(linkedCampaign, "rescuedQuantity") + 0.000001 < number(linkedCampaign, "targetQuantity"))
-                            throw new IllegalStateException("BATCH_IN_USE");
-                    }
-                    Date expiry = date(batch, "expiryDate");
-                    if (expiry == null || !expiry.after(new Date())) throw new IllegalStateException("BATCH_EXPIRED");
-                    if (number(batch, "availableQuantity") + 0.000001
-                            < saved.getBatchTargets().get(batchId)) {
-                        throw new IllegalStateException("INSUFFICIENT_BATCH_TARGET");
-                    }
-                    if (earliestExpiry == null || expiry.before(earliestExpiry)) earliestExpiry = expiry;
-                }
-            }
-            saved.setQuantityUnit(quantityUnit, "DECLARED");
-            if (submit) {
-                if (!saved.getEndDate().after(new Date())) {
-                    throw new IllegalArgumentException("Campaign end date must be in the future");
-                }
-                saved.calculateUrgency(new Date(), earliestExpiry);
-                saved.submitForApproval();
-            }
-            Map<String, Object> data = campaignMap(saved);
-            data.put("updatedAt", FieldValue.serverTimestamp());
-            if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
-            else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
-            transaction.set(reference, data);
-            if (submit) com.rescuefarm.service.notification.NotificationOutbox.enqueue(transaction, firestore, "ADMINS", "CAMPAIGN", reference.getId());
-            return saved;
-        }).addOnSuccessListener(saved -> {
-            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages, saved.getImageUrls());
-
-            cache(saved); callback.onSuccess(saved);
-        })
-                .addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        if (currentUserId() == null) { callback.onError(ErrorCode.FORBIDDEN, "Vui lòng đăng nhập seller."); return; }
+        String id = clean(source.getId()).isEmpty() ? java.util.UUID.randomUUID().toString() : source.getId();
+        try {
+            org.json.JSONObject payload = new org.json.JSONObject(campaignMap(source));
+            payload.put("id",id); payload.put("submit",submit);
+            payload.put("startDate",source.getStartDate().getTime()); payload.put("endDate",source.getEndDate().getTime());
+            com.rescuefarm.service.backend.RenderBackendClient.post("/campaigns/save",payload,
+                    new com.rescuefarm.service.backend.RenderBackendClient.Callback() {
+                        @Override public void onSuccess(org.json.JSONObject response) {
+                            // Read the committed server document; never report success from an older cache entry.
+                            firestore.collection(CAMPAIGNS).document(id).get(com.google.firebase.firestore.Source.SERVER)
+                                    .addOnSuccessListener(document->{RescueCampaign saved=mapCampaign(document);
+                                        if(saved==null) callback.onError(ErrorCode.UNKNOWN,"Đã lưu nhưng chưa tải lại được chiến dịch. Hãy tải lại danh sách.");
+                                        else {cache(saved); callback.onSuccess(saved);}})
+                                    .addOnFailureListener(error->notifyFailure(error,callback::onError));
+                        }
+                        @Override public void onError(String message) { callback.onError(ErrorCode.VALIDATION,message); }
+                    });
+        } catch (Exception error) { callback.onError(ErrorCode.VALIDATION,"Thông tin chiến dịch không hợp lệ: "+error.getMessage()); }
     }
 
     @Override public void updateMobileLocation(String campaignId, double latitude, double longitude,

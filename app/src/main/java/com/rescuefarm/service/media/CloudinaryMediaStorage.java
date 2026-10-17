@@ -54,6 +54,7 @@ public final class CloudinaryMediaStorage implements MediaStorage {
                     if (descriptor != null && descriptor.getLength() > MAX_IMAGE_BYTES)
                         throw new IllegalArgumentException("Ảnh phải nhỏ hơn 10 MB.");
                 }
+                if ("campaign".equals(assetType)) return uploadCampaign(uri, mimeType, resourceId, slot);
                 JSONObject signed = requestWorker("/sign-upload", new JSONObject()
                         .put("assetType", assetType).put("resourceId", resourceId).put("slot", Math.max(0, slot)));
                 connection = (HttpURLConnection) new URL("https://api.cloudinary.com/v1_1/"
@@ -92,6 +93,28 @@ public final class CloudinaryMediaStorage implements MediaStorage {
         }, EXECUTOR);
     }
 
+    private String uploadCampaign(Uri uri, String mimeType, String resourceId, int slot) throws Exception {
+        if(slot<0||slot>=6) throw new IllegalArgumentException("Mỗi Campaign tối đa 6 vị trí ảnh.");
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+        try(InputStream input=resolver.openInputStream(uri)) {
+            if(input==null) throw new IllegalStateException("Không đọc được ảnh.");
+            byte[] buffer=new byte[16384]; int size;
+            while((size=input.read(buffer))!=-1) {if(bytes.size()+size>MAX_IMAGE_BYTES)throw new IllegalArgumentException("Ảnh vượt 10 MB.");bytes.write(buffer,0,size);}
+        }
+        FirebaseUser user=FirebaseAuth.getInstance().getCurrentUser(); if(user==null)throw new IllegalStateException("Cần đăng nhập người bán.");
+        String token=Tasks.await(user.getIdToken(false)).getToken();
+        HttpURLConnection connection=(HttpURLConnection)new URL(BuildConfig.CLOUDINARY_SIGNING_URL.trim()+"/upload-campaign?resourceId="
+                +Uri.encode(resourceId)+"&slot="+slot).openConnection();
+        try {
+            connection.setRequestMethod("POST");connection.setConnectTimeout(20000);connection.setReadTimeout(120000);connection.setDoOutput(true);
+            connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("Content-Type",mimeType);
+            connection.setFixedLengthStreamingMode(bytes.size());try(OutputStream output=connection.getOutputStream()){bytes.writeTo(output);}
+            int status=connection.getResponseCode();JSONObject result=new JSONObject(readAll(status>=200&&status<300?connection.getInputStream():connection.getErrorStream()));
+            if(status<200||status>=300)throw new IllegalStateException(result.optString("error","Không tải được ảnh Campaign."));
+            String url=result.getString("secure_url"),publicId=result.getString("public_id");CloudinaryAssetIds.rememberUpload(url,publicId);return url;
+        }finally{connection.disconnect();}
+    }
+
     @Override public CompletableFuture<Void> deleteImage(String remoteUrl) {
         return deleteImageFromUrl(remoteUrl);
     }
@@ -119,7 +142,7 @@ public final class CloudinaryMediaStorage implements MediaStorage {
         HttpURLConnection connection = (HttpURLConnection) new URL(
                 BuildConfig.CLOUDINARY_SIGNING_URL.trim() + path).openConnection();
         try {
-            connection.setRequestMethod("POST"); connection.setConnectTimeout(15000); connection.setReadTimeout(30000);
+            connection.setRequestMethod("POST"); connection.setConnectTimeout(15000); connection.setReadTimeout(120000);
             connection.setDoOutput(true);
             connection.setRequestProperty("Authorization", "Bearer " + token);
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");

@@ -49,6 +49,9 @@ public class EditProfileFragment extends Fragment {
     private TextInputEditText nameInput, phoneInput, avatarInput;
     private TextView locationView, sellerLocationTitle, sellerLocationDescription, mapCaption;
     private View openGoogleMapsButton;
+    private View businessSection;
+    private android.widget.EditText companyInput, taxInput;
+    private boolean businessCustomer;
     private View mapContainer;
     private WebView locationMap;
     private TextView mapStatus;
@@ -104,6 +107,22 @@ public class EditProfileFragment extends Fragment {
             showMap(latitude, longitude);
         });
         configureMap();
+        android.widget.LinearLayout business = new android.widget.LinearLayout(requireContext()); business.setOrientation(android.widget.LinearLayout.VERTICAL);
+        android.widget.TextView heading = new android.widget.TextView(requireContext()); heading.setText("Thông tin khách hàng doanh nghiệp"); business.addView(heading);
+        companyInput = new android.widget.EditText(requireContext()); companyInput.setHint("Tên doanh nghiệp");
+        companyInput.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(160)});
+        taxInput = new android.widget.EditText(requireContext()); taxInput.setHint("Mã số thuế");
+        taxInput.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(40)});
+        business.addView(companyInput); business.addView(taxInput); businessSection = business; business.setVisibility(View.GONE);
+        android.widget.LinearLayout form = (android.widget.LinearLayout)view.findViewById(R.id.saveProfileButton).getParent();
+        form.addView(business, 1);
+        if(state!=null && state.containsKey("profileDirty")) {
+            binding=true; dirty=state.getBoolean("profileDirty"); businessCustomer=state.getBoolean("businessCustomer");
+            companyInput.setText(state.getString("companyName","")); taxInput.setText(state.getString("taxCode",""));
+            nameInput.setText(state.getString("fullName","")); phoneInput.setText(state.getString("phone","")); avatarInput.setText(state.getString("avatar",""));
+            latitude=state.getDouble("latitude"); longitude=state.getDouble("longitude");
+            businessSection.setVisibility(businessCustomer?View.VISIBLE:View.GONE); binding=false; renderAvatar(avatarInput.getText().toString()); showCoordinates();
+        }
         viewModel = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext()))
                 .get(ProfileViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
@@ -116,15 +135,29 @@ public class EditProfileFragment extends Fragment {
         };
         nameInput.addTextChangedListener(watcher);
         phoneInput.addTextChangedListener(watcher);
-        avatarInput.addTextChangedListener(watcher);
+        avatarInput.addTextChangedListener(watcher); companyInput.addTextChangedListener(watcher); taxInput.addTextChangedListener(watcher);
         viewModel.observeProfile().observe(getViewLifecycleOwner(), user -> {
-            if (user != null && !dirty) populate(user);
+            if (user != null) {
+                businessCustomer=user instanceof com.rescuefarm.domain.model.Customer && ((com.rescuefarm.domain.model.Customer)user).getCustomerType()==com.rescuefarm.domain.enums.CustomerType.BUSINESS;
+                businessSection.setVisibility(businessCustomer?View.VISIBLE:View.GONE);
+                if(!dirty)populate(user);
+            }
         });
         view.findViewById(R.id.useProfileLocationButton).setOnClickListener(v -> requestLocation());
         uploadAvatarButton.setOnClickListener(v -> avatarPicker.launch("image/*"));
-        view.findViewById(R.id.saveProfileButton).setOnClickListener(v -> viewModel.updateProfile(
-                text(nameInput), text(phoneInput), text(avatarInput), latitude, longitude));
+        view.findViewById(R.id.saveProfileButton).setOnClickListener(v -> {
+            if (businessCustomer) viewModel.updateBusinessProfile(text(nameInput), text(phoneInput), text(avatarInput), latitude, longitude,
+                    companyInput.getText().toString().trim(), taxInput.getText().toString().trim());
+            else viewModel.updateProfile(text(nameInput), text(phoneInput), text(avatarInput), latitude, longitude);
+        });
         viewModel.loadProfile();
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle out) {
+        super.onSaveInstanceState(out); out.putBoolean("profileDirty",dirty); out.putBoolean("businessCustomer",businessCustomer);
+        if(companyInput!=null)out.putString("companyName",companyInput.getText().toString()); if(taxInput!=null)out.putString("taxCode",taxInput.getText().toString());
+        if(nameInput!=null)out.putString("fullName",text(nameInput)); if(phoneInput!=null)out.putString("phone",text(phoneInput)); if(avatarInput!=null)out.putString("avatar",text(avatarInput));
+        out.putDouble("latitude",latitude);out.putDouble("longitude",longitude);
     }
 
     private void render(ProfileScreenState state) {
@@ -144,6 +177,13 @@ public class EditProfileFragment extends Fragment {
         binding = true;
         nameInput.setText(user.getFullName()); phoneInput.setText(user.getPhone());
         avatarInput.setText(user.getAvatarUrl()); latitude = user.getLatitude(); longitude = user.getLongitude();
+        businessCustomer = user instanceof com.rescuefarm.domain.model.Customer
+                && ((com.rescuefarm.domain.model.Customer)user).getCustomerType() == com.rescuefarm.domain.enums.CustomerType.BUSINESS;
+        businessSection.setVisibility(businessCustomer ? View.VISIBLE : View.GONE);
+        if (businessCustomer) {
+            com.rescuefarm.domain.model.Customer customer = (com.rescuefarm.domain.model.Customer)user;
+            companyInput.setText(customer.getCompanyName()); taxInput.setText(customer.getTaxCode());
+        }
         renderAvatar(user.getAvatarUrl());
         binding = false;
         showCoordinates();

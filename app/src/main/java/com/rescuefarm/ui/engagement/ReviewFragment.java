@@ -360,6 +360,7 @@ public class ReviewFragment extends Fragment {
                                 () -> requestRatingRecalculation("", review.getOrderId(), review.getOrderItemId()))).show());
                 actions.addView(edit); actions.addView(delete); row.addView(actions);
             }
+            ContextReportAction.add(this, row, "REVIEW", review.getId(), review.getCustomerId(), "Báo cáo đánh giá");
             list.addView(row);
         }
         bindSelectedReview();
