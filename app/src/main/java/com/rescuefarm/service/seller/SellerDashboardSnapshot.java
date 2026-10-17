@@ -18,6 +18,7 @@ public final class SellerDashboardSnapshot {
     private final double revenue, rescuedQuantity, rescueRate;
     private final List<RankedMetric> topProducts, topReasons, revenueTrend;
     private final List<Order> recentOrders;
+    private int totalOrders;
 
     public SellerDashboardSnapshot(int products, int activeProducts, int campaigns, int activeCampaigns,
             int completedCampaigns, int mobileCampaigns, int posts, int pendingPosts, int orders,
@@ -28,7 +29,7 @@ public final class SellerDashboardSnapshot {
         this.products = products; this.activeProducts = activeProducts; this.campaigns = campaigns;
         this.activeCampaigns = activeCampaigns; this.completedCampaigns = completedCampaigns;
         this.mobileCampaigns = mobileCampaigns; this.posts = posts; this.pendingPosts = pendingPosts;
-        this.orders = orders; this.pendingOrders = pendingOrders; this.deliveryOrders = deliveryOrders;
+        this.totalOrders = orders; this.orders = orders; this.pendingOrders = pendingOrders; this.deliveryOrders = deliveryOrders;
         this.promotions = promotions; this.revenue = revenue; this.rescuedQuantity = rescuedQuantity;
         this.rescueRate = rescueRate; this.topProducts = immutable(topProducts);
         this.topReasons = immutable(topReasons); this.revenueTrend = immutable(revenueTrend);
@@ -58,6 +59,7 @@ public final class SellerDashboardSnapshot {
     public List<RankedMetric> getTopReasons() { return topReasons; }
     public List<RankedMetric> getRevenueTrend() { return revenueTrend; }
     public List<Order> getRecentOrders() { return recentOrders; }
-    public boolean isEmpty() { return products + campaigns + posts + orders == 0; }
-    public boolean hasMoreOrders() { return orders > recentOrders.size(); }
+    public boolean isEmpty() { return products + campaigns + posts + orders + pendingOrders == 0; }
+    public SellerDashboardSnapshot withTotalOrders(int total) { totalOrders = total; return this; }
+    public boolean hasMoreOrders() { return totalOrders > recentOrders.size(); }
 }

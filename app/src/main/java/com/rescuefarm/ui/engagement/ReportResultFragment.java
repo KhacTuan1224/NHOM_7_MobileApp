@@ -69,6 +69,8 @@ public final class ReportResultFragment extends Fragment {
                         JSONObject report = reports.optJSONObject(i); if (report == null) continue;
                         addText("Báo cáo " + report.optString("id"), 18);
                         addText("Nội dung báo cáo: " + report.optString("reason") + "\n" + report.optString("description"), 14);
+                        if (!report.optString("parentId").isEmpty()) addText("Bình luận " + report.optString("targetId") + " thuộc "
+                                + ("CAMPAIGN".equals(report.optString("parentType")) ? "chiến dịch " : "bài viết cũ ") + report.optString("parentId"), 14);
                         addText(report.optString("publicResult"), 16);
                     }
                     cursor = json.optString("nextCursor"); more.setText("Xem thêm"); more.setVisibility(cursor.isEmpty() ? View.GONE : View.VISIBLE);

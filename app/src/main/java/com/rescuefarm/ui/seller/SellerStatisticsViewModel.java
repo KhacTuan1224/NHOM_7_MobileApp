@@ -27,8 +27,9 @@ public final class SellerStatisticsViewModel extends ViewModel {
     public void load(int period, boolean force) {
         if (!force && loaded && days == period) return;
         if (period != 0 && period != 7 && period != 30 && period != 90) throw new IllegalArgumentException("Unsupported statistics period");
+        SellerStatisticsSnapshot previous = days == period && state.getValue() != null ? state.getValue().snapshot : null;
         days = period; loaded = true; int request = ++generation;
-        state.setValue(new State(Status.LOADING, null, "Đang tổng hợp dữ liệu cửa hàng…"));
+        state.setValue(new State(Status.LOADING, previous, "Đang tổng hợp dữ liệu cửa hàng…"));
         repository.load(period, new SellerStatisticsRepository.Callback() {
             @Override public void onSuccess(SellerStatisticsSnapshot snapshot) {
                 if (request == generation) state.setValue(new State(snapshot.hasData ? Status.READY : Status.EMPTY, snapshot,

@@ -104,6 +104,7 @@ app.use(commerce.router);
 app.post("/admin/dashboard", async (req, res, next) => {
   try {
     await auth(req, ["ADMIN"]);
+    await campaignLifecycle.reconcileExpired();
     const now = Date.now();
     const count = query => query.count().get().then(result => result.data().count || 0);
     const sum = async (query, field) => {
@@ -116,7 +117,14 @@ app.post("/admin/dashboard", async (req, res, next) => {
     const totalKeys = ["SELLER_APPLICATIONS", "USERS", "POSTS", "PRODUCTS", "CAMPAIGNS",
       "CATEGORIES", "BANNERS", "REVIEWS", "REPORTS", "ORDERS"];
     const totals = Object.fromEntries(totalKeys.map((key, index) => [key, totalValues[index]]));
-    const activeCampaignsQuery = db.collection("campaigns").where("status", "==", "ACTIVE");
+    const {allPages} = require('./seller-analytics');
+    const [projectionCampaigns, projectionBatches, projectionProducts] = await Promise.all([
+      allPages(db.collection('campaigns').where('status', '==', 'ACTIVE'), admin),
+      allPages(db.collection('productBatches'), admin),
+      allPages(db.collection('products').where('status', '==', 'ACTIVE'), admin)]);
+    const publicProducts = new Set(projectionProducts.map(d => d.id));
+    const batches = projectionBatches.map(d => ({...d.data(), id: d.id})).filter(b => publicProducts.has(b.productId));
+    const activeProjection = projectionCampaigns.map(d => require('./campaign-projection').projectCampaign({...d.data(), id: d.id}, batches, now)).filter(c => c.active);
     const approvedCampaigns = db.collection("campaigns").where("status", "in", ["ACTIVE", "COMPLETED", "EXPIRED", "STOPPED"]);
     const kgProgress = async () => {
       const campaigns = await require('./seller-analytics').allPages(approvedCampaigns, admin);
@@ -136,13 +144,13 @@ app.post("/admin/dashboard", async (req, res, next) => {
       count(db.collection("reports").where("status", "==", "PENDING")),
       count(db.collection("reports").where("status", "==", "IN_REVIEW")),
       sum(db.collection("orders").where("status", "==", "DELIVERED"), "totalAmount"),
-      count(activeCampaignsQuery),
-      count(activeCampaignsQuery.where("urgencyLevel", "==", "CRITICAL")),
+      Promise.resolve(activeProjection.length),
+      Promise.resolve(activeProjection.filter(c => c.urgencyLevel === 'CRITICAL').length),
       recentMobileLocations,
       kgProgress()]);
     const totalRescuedQuantity = kgTotals.rescued, approvedTargetQuantity = kgTotals.target;
     const liveMobilePoints = recentLocations.docs.filter(campaign =>
-      str(campaign.get("status")) === "ACTIVE"
+      activeProjection.some(c => c.id === campaign.id)
       && str(campaign.get("rescueMode")) === "MOBILE_POINT"
       && campaign.get("locationSharingEnabled") === true
       && Number.isFinite(campaign.get("currentLatitude"))

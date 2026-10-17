@@ -526,7 +526,7 @@ test('Admin can moderate Campaign comments while Customer cannot bypass moderati
   await assertFails(getDoc(doc(owner, path)));
 });
 
-test('legacy Post comments remain read-only, including for Admin', async () => {
+test('legacy Post comments cannot be created or edited, including by Admin', async () => {
   const path = 'posts/legacy/comments/legacy-comment';
   const value = {id: 'legacy-comment', postId: 'legacy', userId: 'customer-a', content: 'Historical',
     status: 'ACTIVE', createdAt: past, updatedAt: past};
@@ -640,4 +640,46 @@ test('confirming bank payment can enqueue an event only with the actual payment 
   batch.set(doc(db, 'notificationOutbox/payment'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT'));
   await assertSucceeds(batch.commit());
   await assertFails(setDoc(doc(db, 'notificationOutbox/payment-replay'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT')));
+});
+
+
+test('COMMENT reports bind an exact existing Campaign or legacy Post parent; forged paths are rejected', async () => {
+  const common = {id: 'same', userId: 'customer-b', content: 'Same ID in different parents', status: 'ACTIVE', createdAt: past, updatedAt: past};
+  await seed({'campaigns/c': {status: 'ACTIVE'}, 'posts/p': {status: 'PUBLISHED'},
+    'campaigns/c/comments/same': {...common, campaignId: 'c'}, 'posts/p/comments/same': {...common, postId: 'p'}});
+  const db = env.authenticatedContext('customer-a').firestore();
+  for (const [parentType, parentId, collectionName] of [['CAMPAIGN', 'c', 'campaigns'], ['POST', 'p', 'posts']]) {
+    const id = 'report-' + parentType, targetPath = `${collectionName}/${parentId}/comments/same`, batch = writeBatch(db);
+    batch.set(doc(db, 'reports/' + id), {...newReport(id), targetType: 'COMMENT', targetId: 'same', parentType, parentId, targetPath});
+    batch.set(doc(db, 'notificationOutbox/' + id), outboxData('customer-a', 'REPORT', id));
+    await assertSucceeds(batch.commit());
+  }
+  const valid = {...newReport('forged-context'), targetType: 'COMMENT', targetId: 'same', parentType: 'CAMPAIGN', parentId: 'c', targetPath: 'posts/p/comments/same'};
+  await assertFails(setDoc(doc(db, 'reports/forged-context'), valid));
+  await assertFails(setDoc(doc(db, 'reports/missing-context'), {...newReport('missing-context'), targetType: 'COMMENT', targetId: 'same'}));
+  await assertFails(setDoc(doc(db, 'reports/missing-comment'), {...valid, id: 'missing-comment', targetId: 'absent', targetPath: 'campaigns/c/comments/absent'}));
+});
+test('Admin can hide the exact legacy comment and audit its parent without changing another same-ID comment', async () => {
+  const common = {id: 'same', userId: 'customer-a', content: 'Comment', status: 'ACTIVE', createdAt: past, updatedAt: past};
+  await seed({'posts/p': {status: 'PUBLISHED'}, 'campaigns/c': {status: 'ACTIVE'},
+    'posts/p/comments/same': {...common, postId: 'p'}, 'campaigns/c/comments/same': {...common, campaignId: 'c'}});
+  const db = env.authenticatedContext('admin').firestore(), batch = writeBatch(db);
+  batch.update(doc(db, 'posts/p/comments/same'), {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+    moderationReason: 'Violation', updatedAt: serverTimestamp()});
+  batch.set(doc(db, 'adminAuditLogs/legacy-hide'), {adminId: 'admin', resourceType: 'COMMENTS', resourceId: 'same',
+    resourcePath: 'posts/p/comments/same', fromState: 'ACTIVE', toState: 'HIDDEN', reason: 'Violation', createdAt: serverTimestamp()});
+  await assertSucceeds(batch.commit());
+  assert.equal((await getDoc(doc(db, 'posts/p/comments/same'))).data().status, 'HIDDEN');
+  assert.equal((await getDoc(doc(db, 'campaigns/c/comments/same'))).data().status, 'ACTIVE');
+});
+test('Guest and other Customer can view published Review images but not hidden Review media', async () => {
+  await seed({'reviews/images': {productId: 'product-a', customerId: 'customer-a', status: 'PUBLISHED',
+    imageUrls: ['https://example.com/1', 'https://example.com/2', 'https://example.com/3']},
+    'reviews/hidden-images': {productId: 'product-a', customerId: 'customer-a', status: 'HIDDEN', imageUrls: ['https://example.com/private']}});
+  for (const context of [env.unauthenticatedContext(), env.authenticatedContext('customer-b')]) {
+    const db = context.firestore();
+    const review = await assertSucceeds(getDoc(doc(db, 'reviews/images')));
+    assert.equal(review.data().imageUrls.length, 3);
+    await assertFails(getDoc(doc(db, 'reviews/hidden-images')));
+  }
 });

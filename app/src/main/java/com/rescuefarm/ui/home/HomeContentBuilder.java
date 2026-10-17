@@ -61,11 +61,16 @@ public final class HomeContentBuilder {
         }
         banners.sort(Comparator.comparingInt(Banner::getDisplayOrder).thenComparing(Banner::getId));
 
+        Map<String, List<ProductBatch>> publicBatches = new LinkedHashMap<>();
+        if (productSource != null && batchesByProduct != null) for (Product product : productSource)
+            if (product != null && product.isAvailable()) publicBatches.put(product.getId(), batchesByProduct.get(product.getId()));
         List<RescueCampaign> active = new ArrayList<>();
         if (campaignSource != null) for (RescueCampaign value : campaignSource) {
             if (value != null && value.getStatus() == CampaignStatus.ACTIVE
-                    && value.getEndDate() != null && value.getEndDate().after(safeNow)) {
-                refreshUrgency(value, batchesByProduct, safeNow);
+                    && value.getEndDate() != null && value.getEndDate().after(safeNow)
+                    && (value.getStartDate() == null || !value.getStartDate().after(safeNow))
+                    && value.calculateRemainingQuantity() > 0D) {
+                refreshUrgency(value, publicBatches, safeNow);
                 active.add(value);
             }
         }
@@ -129,7 +134,7 @@ public final class HomeContentBuilder {
 
     private void refreshUrgency(RescueCampaign campaign,
             Map<String, List<ProductBatch>> batchesByProduct, Date now) {
-        if (batchesByProduct == null || batchesByProduct.isEmpty()) return;
+        if (batchesByProduct == null) batchesByProduct = java.util.Collections.emptyMap();
         Date earliest = null;
         for (List<ProductBatch> values : batchesByProduct.values()) if (values != null) {
             for (ProductBatch batch : values) if (batch != null
@@ -140,7 +145,7 @@ public final class HomeContentBuilder {
                 earliest = batch.getExpiryDate();
             }
         }
-        if (earliest != null && campaign.getEndDate() != null) campaign.calculateUrgency(now, earliest);
+        if (campaign.getEndDate() != null) campaign.calculateUrgency(now, earliest);
     }
 
     private static Comparator<RescueCampaign> campaignComparator() {

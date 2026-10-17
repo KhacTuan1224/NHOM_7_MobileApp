@@ -23,7 +23,7 @@ public final class AdminViewModel extends ViewModel {
     private Date orderThroughDate;
     private String cursor = "";
     private boolean hasMore;
-    private int pageRequestVersion;
+    private int pageRequestVersion, dashboardRequestVersion;
 
     public AdminViewModel(AdminRepository repository) { this.repository = repository; }
     public LiveData<AdminScreenState> getState() { return state; }
@@ -49,15 +49,18 @@ public final class AdminViewModel extends ViewModel {
     }
 
     public void refreshDashboard() {
+        final int request = ++dashboardRequestVersion;
         currentSection = Section.ANALYTICS;
-        state.setValue(AdminScreenState.dashboard(AdminScreenState.Status.LOADING, null,
-                "Đang tổng hợp dữ liệu quản trị…"));
+        state.setValue(AdminScreenState.dashboard(AdminScreenState.Status.LOADING,
+                state.getValue() == null ? null : state.getValue().getDashboard(), "Đang tổng hợp dữ liệu quản trị…"));
         repository.loadDashboard(new AdminRepository.DashboardCallback() {
             @Override public void onSuccess(AdminDashboardSnapshot snapshot) {
+                if (request != dashboardRequestVersion) return;
                 state.postValue(AdminScreenState.dashboard(AdminScreenState.Status.READY, snapshot,
                         "Dữ liệu dashboard đã cập nhật."));
             }
             @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                if (request != dashboardRequestVersion) return;
                 state.postValue(AdminScreenState.dashboard(errorStatus(code), null, message));
             }
         });

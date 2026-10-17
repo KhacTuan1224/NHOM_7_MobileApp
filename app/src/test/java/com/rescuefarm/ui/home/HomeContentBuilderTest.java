@@ -105,6 +105,23 @@ public class HomeContentBuilderTest {
         return new com.rescuefarm.domain.model.Product(id, "seller", "category", "Rau " + id, "",
                 40000, 30000, "kg", "", "", Collections.emptyList(), com.rescuefarm.domain.enums.ProductStatus.ACTIVE);
     }
+    @Test public void urgencyAndVisibilityAdvanceWithoutDocumentChanges() {
+        Date now = new Date(TimeUnit.DAYS.toMillis(100));
+        RescueCampaign c = campaign("clock", UrgencyLevel.NORMAL, RescueMode.FIXED_POINT, now, null, false);
+        java.util.Map<String, java.util.List<com.rescuefarm.domain.model.ProductBatch>> batches = Collections.singletonMap("a",
+                Collections.singletonList(batch("batch", "a", now, 4, com.rescuefarm.domain.enums.BatchStatus.RESERVED_PARTIAL)));
+        HomeContentBuilder builder = new HomeContentBuilder();
+        HomeViewState first = builder.build(Collections.emptyList(), Collections.singletonList(product("a")), Collections.singletonList(c),
+                Collections.emptyList(), batches, null, null, now, HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertEquals(UrgencyLevel.HIGH, first.getActiveCampaigns().get(0).getUrgencyLevel());
+        HomeViewState later = builder.build(Collections.emptyList(), Collections.singletonList(product("a")), Collections.singletonList(c),
+                Collections.emptyList(), batches, null, null, new Date(now.getTime() + TimeUnit.DAYS.toMillis(2)), HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertEquals(UrgencyLevel.CRITICAL, later.getActiveCampaigns().get(0).getUrgencyLevel());
+        HomeViewState expired = builder.build(Collections.emptyList(), Collections.singletonList(product("a")), Collections.singletonList(c),
+                Collections.emptyList(), batches, null, null, new Date(now.getTime() + TimeUnit.DAYS.toMillis(10)), HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertTrue(expired.getActiveCampaigns().isEmpty());
+    }
+
     private com.rescuefarm.domain.model.ProductBatch batch(String id, String product, Date now, int days,
             com.rescuefarm.domain.enums.BatchStatus status) {
         boolean sold = status == com.rescuefarm.domain.enums.BatchStatus.SOLD_OUT;
@@ -117,7 +134,7 @@ public class HomeContentBuilderTest {
         return RescueCampaign.restore(id, "seller", "Chiến dịch " + id, "Mô tả",
                 RescueReason.OVER_SUPPLY, urgency, mode, Collections.singletonMap("batch", 10D),
                 10D, 0D, 0D, new Date(now.getTime() - 1000L),
-                new Date(now.getTime() + TimeUnit.DAYS.toMillis(2)), 10D, 106D,
+                new Date(now.getTime() + TimeUnit.DAYS.toMillis(urgency == UrgencyLevel.CRITICAL ? 1 : urgency == UrgencyLevel.HIGH ? 3 : 10)), 10D, 106D,
                 10D, 106D, locationAt, sharing, "TP HCM", CampaignStatus.ACTIVE);
     }
 }
