@@ -695,16 +695,22 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validCatalogImageUrl(url) {
+      return url == '' || url.matches('https://res\\.cloudinary\\.com/.+')
+          || (request.method == 'update' && url == resource.data.get('imageUrl', '')
+            && url.matches('https://.+'));
+    }
+
     function validAdminCategory(data, categoryId) {
       return data.keys().hasOnly([
             'id', 'name', 'description', 'imageUrl', 'imagePublicId', 'active', 'displayOrder',
             'createdAt', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
-          && data.id == categoryId
+          && data.get('id', categoryId) == categoryId
           && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
           && data.get('description', '') is string && data.get('description', '').size() <= 500
           && data.imageUrl is string && data.imageUrl.size() <= 2048
-          && (data.imageUrl == '' || data.imageUrl.matches('https://res\\.cloudinary\\.com/.+'))
+          && validCatalogImageUrl(data.imageUrl)
           && data.get('imagePublicId', '') is string && data.get('imagePublicId', '').size() <= 300
           && data.active is bool
           && data.displayOrder is int && data.displayOrder >= 0 && data.displayOrder <= 10000
@@ -1075,7 +1081,7 @@ service cloud.firestore {
           && data.id == bannerId
           && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
           && data.imageUrl is string && data.imageUrl.size() <= 2048
-          && (data.imageUrl == '' || data.imageUrl.matches('https://res\\.cloudinary\\.com/.+'))
+          && validCatalogImageUrl(data.imageUrl)
           && data.get('imagePublicId', '') is string && data.get('imagePublicId', '').size() <= 300
           && data.campaignId is string && data.campaignId.size() <= 128
           && (data.campaignId == ''

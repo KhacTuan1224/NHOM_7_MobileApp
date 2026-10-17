@@ -374,10 +374,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 || name.length() < (section == Section.CATEGORIES ? 2 : 3) || name.length() > 120
                 || (section == Section.CATEGORIES && description.length() > 500)
                 || displayOrder < 0 || displayOrder > 10000
-                || (!imageUrl.isEmpty() && !imageUrl.startsWith("https://res.cloudinary.com/"))
-                || (active && imageUrl.isEmpty())
+                || (section == Section.BANNERS && active && imageUrl.isEmpty())
                 || (!active && note.length() < 3)) {
-            callback.onError(ErrorCode.VALIDATION, "Kiểm tra ID, tên, thứ tự, ảnh và lý do tắt hiển thị."); return;
+            callback.onError(ErrorCode.VALIDATION, "Kiểm tra tên, thứ tự từ 0 đến 10000 và lý do khi tắt hiển thị. Banner đang hiển thị phải có ảnh."); return;
         }
         Date startDate = input.get("startDate") instanceof Date ? (Date) input.get("startDate") : null;
         Date endDate = input.get("endDate") instanceof Date ? (Date) input.get("endDate") : null;
@@ -401,8 +400,11 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 } else if (id.isEmpty()) {
                     throw new IllegalArgumentException("Category cần ID ổn định.");
                 }
+                if (!com.rescuefarm.service.admin.CatalogImagePolicy.isAllowed(imageUrl,
+                        current.exists() ? text(current, "imageUrl") : ""))
+                    throw new IllegalArgumentException("Ảnh thay thế phải là ảnh HTTPS từ Cloudinary. Có thể giữ nguyên ảnh hiện tại.");
                 Map<String, Object> changes = new HashMap<>();
-                changes.put("id", ref.getId());
+                if (!current.exists() || current.contains("id")) changes.put("id", ref.getId());
                 changes.put(section == Section.CATEGORIES ? "name" : "title", name);
                 if (section == Section.CATEGORIES) changes.put("description", description);
                 changes.put("imageUrl", imageUrl.isEmpty() && current.exists()
@@ -1086,7 +1088,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
             case POSTS: case PRODUCTS: case CAMPAIGNS:
                 title = first(document, "title", "name", "id"); subtitle = text(document, "sellerId"); break;
             case CATEGORIES:
-                title = first(document, "name", "id"); subtitle = "Category"; imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
+                title = first(document, "name", "id"); subtitle = "Danh mục"; imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
             case BANNERS:
                 title = first(document, "title", "id"); subtitle = text(document, "campaignId"); imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
             case REVIEWS:
