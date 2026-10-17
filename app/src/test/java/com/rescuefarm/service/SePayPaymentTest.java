@@ -20,5 +20,15 @@ public class SePayPaymentTest {
         assertTrue(payment.usesAutomaticVerification());
         assertEquals(reference, payment.getTransferContent());
         assertEquals(PaymentStatus.PENDING, payment.getStatus());
+        assertEquals(reference, payment.resolveQrTransferContent("RF-OLD-CODE"));
+    }
+    @Test public void automaticPaymentNeverFallsBackToLegacyCodeOrPrefixesAnUnmappedCode() {
+        Payment payment = Payment.create("order", PaymentMethod.BANK_TRANSFER, 20000);
+        for (String code : new String[]{null, "", "RF77B4506", "SEVQRRF77B4506", "SEVQR0123456789ABCDEF0123EXTRA"}) {
+            payment.setVerificationDetails("SEPAY", code);
+            assertEquals("", payment.resolveQrTransferContent("RF77B4506"));
+        }
+        payment.setVerificationDetails("MANUAL", "");
+        assertEquals("RF77B4506", payment.resolveQrTransferContent("RF77B4506"));
     }
 }

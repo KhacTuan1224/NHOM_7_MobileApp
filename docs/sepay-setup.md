@@ -69,6 +69,18 @@ Không có entry enabled cho seller → đơn mới giữ luồng MANUAL hiện 
 
 ## 5. Kiểm tra lỗi và đối soát
 
+### QR vẫn có nội dung RF thay vì SEVQR
+
+Kiểm tra document `payments/{orderId}` của chính đơn đang xem:
+
+- `verificationProvider = SEPAY` và `transferContent = SEVQR` + 20 ký tự hex: đây là đơn tự động; Android phải dùng nguyên mã đó. Nếu app vẫn hiện RF, cập nhật APK và mở lại đơn.
+- `verificationProvider = MANUAL` hoặc chưa có trường này: đơn cũ hoặc backend đang chạy chưa bật cấu hình cho đúng UID seller. Kiểm tra deploy Render, `SEPAY_MERCHANTS_JSON`, enabled và UID; sau khi cấu hình đúng, tạo đơn mới. Không tự thêm SEVQR vào mã RF của đơn cũ vì backend chưa có mapping tương ứng.
+- Đơn SEPAY thiếu/sai transferContent: app chặn QR; kiểm tra dữ liệu backend, không dùng mã RF thay thế.
+
+VietinBank cá nhân yêu cầu nội dung bắt đầu bằng SEVQR để ngân hàng gửi thông báo tới SePay. Xóa bộ lọc webhook không bảo đảm lấy lại giao dịch cũ thiếu tiền tố. Chỉ gửi lại webhook khi giao dịch thực sự đã xuất hiện trong SePay; kiểm tra `sepayWebhookEvents` sau khi gửi, vì HTTP 200 cũng có thể là giao dịch được lưu REVIEW và chưa xác nhận thanh toán. Đối với tiền đã chuyển bằng mã RF, đối soát giao dịch thật với ngân hàng/SePay, không chuyển thêm lần nữa để trả cùng một đơn và không tự đánh dấu PAID chỉ từ ảnh chụp.
+
+Nguồn điều kiện SEVQR: https://docs.sepay.vn/ket-noi-vietinbank.html
+
 Các collection sau chỉ backend/Admin SDK truy cập; app không có quyền tự ghi:
 
 | Collection | Nội dung |

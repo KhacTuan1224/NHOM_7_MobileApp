@@ -13,6 +13,11 @@ public class Payment {
     }
     public boolean usesAutomaticVerification() { return "SEPAY".equals(verificationProvider); }
     public String getTransferContent() { return transferContent; }
+    public String resolveQrTransferContent(String legacyOrderCode) {
+        if (usesAutomaticVerification())
+            return transferContent.matches("SEVQR[A-F0-9]{20}") ? transferContent : "";
+        return transferContent.isEmpty() ? (legacyOrderCode == null ? "" : legacyOrderCode.trim()) : transferContent;
+    }
     private String qrUrl = "";
     public String getQrUrl() { return qrUrl; }
     public void setQrUrl(String value) { qrUrl = value == null ? "" : value.trim(); }

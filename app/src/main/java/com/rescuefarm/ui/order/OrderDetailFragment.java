@@ -438,7 +438,11 @@ public class OrderDetailFragment extends Fragment {
         if (blank(code) || blank(account) || blank(name)) {
             bankInfo.setText("Đơn chưa lưu thông tin tài khoản nhận chuyển khoản."); return;
         }
-        String transferContent = payment.getTransferContent().isEmpty() ? order.getOrderCode() : payment.getTransferContent();
+        String transferContent = payment.resolveQrTransferContent(order.getOrderCode());
+        if (transferContent.isEmpty()) {
+            bankInfo.setText("Chưa có mã chuyển khoản hợp lệ cho đơn này. Vui lòng tải lại đơn hoặc liên hệ hỗ trợ trước khi thanh toán.");
+            return;
+        }
         bankInfo.setText("Chuyển khoản đến " + name + " · " + code + " · " + account
                 + "\nNội dung: " + transferContent + " · Số tiền: "
                 + NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(order.getTotalAmount()));
@@ -454,6 +458,8 @@ public class OrderDetailFragment extends Fragment {
                 return "Hệ thống đã xác minh chuyển khoản thành công. Người mua xác nhận Đã nhận hàng sau khi nhận đủ hàng.";
             if (payment.getStatus() == PaymentStatus.FAILED)
                 return "Đơn đã hủy hoặc không còn chờ thanh toán. Không chuyển khoản cho đơn này.";
+            if (payment.resolveQrTransferContent("").isEmpty())
+                return "Chưa tải được mã thanh toán SePay hợp lệ. Vui lòng tải lại đơn; chưa chuyển khoản khi chưa có QR hợp lệ.";
             return "Thanh toán được SePay xác minh tự động. Quét đúng QR hoặc nhập chính xác nội dung "
                     + payment.getTransferContent() + ". Khi tiền về, trạng thái đơn sẽ tự cập nhật; không cần cửa hàng xác nhận thủ công.";
         }
