@@ -24,10 +24,11 @@ import com.rescuefarm.data.repository.AuthRepositoryFactory;
 import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.domain.model.User;
 import com.rescuefarm.service.sync.OfflineSyncScheduler;
+import com.rescuefarm.ui.common.NavigationScrollListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationScrollListener {
     private AuthStateListener authStateListener;
     private UserRole currentRole;
     private final MutableLiveData<UserRole> actorRole = new MutableLiveData<>();
@@ -36,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private String pendingNotification = "";
     private boolean openingNotification;
     private int actorRequest;
+    private boolean bottomNavigationHidden;
+    private int scrollDirectionDistance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -249,6 +252,42 @@ public class MainActivity extends AppCompatActivity {
     }
     public LiveData<UserRole> observeActorRole() { return actorRole; }
 
+    @Override public void onContentScrolled(int deltaY, boolean atTop) {
+        if (deltaY == 0) return;
+        if (atTop && deltaY < 0) {
+            scrollDirectionDistance = 0;
+            setBottomNavigationHidden(false);
+            return;
+        }
+        int direction = deltaY > 0 ? 1 : -1;
+        if (scrollDirectionDistance != 0 && Integer.signum(scrollDirectionDistance) != direction)
+            scrollDirectionDistance = 0;
+        scrollDirectionDistance += deltaY;
+        int threshold = Math.round(12 * getResources().getDisplayMetrics().density);
+        if (Math.abs(scrollDirectionDistance) >= threshold) {
+            setBottomNavigationHidden(direction > 0);
+            scrollDirectionDistance = 0;
+        }
+    }
+
+    private void setBottomNavigationHidden(boolean hidden) {
+        View navigation = findViewById(R.id.customerBottomNavigationContainer);
+        if (navigation == null || navigation.getVisibility() != View.VISIBLE
+                || bottomNavigationHidden == hidden) return;
+        bottomNavigationHidden = hidden;
+        float density = getResources().getDisplayMetrics().density;
+        float distance = (navigation.getHeight() > 0 ? navigation.getHeight()
+                : getResources().getDimensionPixelSize(R.dimen.customer_bottom_navigation_height))
+                + 12 * density;
+        navigation.animate().cancel();
+        navigation.animate()
+                .translationY(hidden ? distance : 0f)
+                .alpha(hidden ? 0f : 1f)
+                .setDuration(220)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+    }
+
     private void navigateTo(NavController navController, int destinationId) {
         if (navController.getCurrentDestination() != null
                 && navController.getCurrentDestination().getId() != destinationId) {
@@ -318,9 +357,13 @@ public class MainActivity extends AppCompatActivity {
             navHostParams.bottomMargin = desiredBottomMargin;
             navHost.setLayoutParams(navHostParams);
         }
-        findViewById(R.id.customerBottomNavigationContainer).setVisibility(
-                show ? android.view.View.VISIBLE : android.view.View.GONE
-        );
+        View bottomNavigation = findViewById(R.id.customerBottomNavigationContainer);
+        bottomNavigation.animate().cancel();
+        bottomNavigation.setVisibility(show ? View.VISIBLE : View.GONE);
+        bottomNavigation.setTranslationY(0f);
+        bottomNavigation.setAlpha(1f);
+        bottomNavigationHidden = false;
+        scrollDirectionDistance = 0;
         ViewCompat.requestApplyInsets(findViewById(R.id.mainRoot));
         
         int inactive = ContextCompat.getColor(this, R.color.rescue_on_surface_variant);

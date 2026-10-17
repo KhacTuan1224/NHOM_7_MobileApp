@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.rescuefarm.R;
 
@@ -43,7 +44,26 @@ final class NavigationScrollInsets {
             if (view instanceof ViewGroup) ((ViewGroup) view).setClipToPadding(false);
             return insets;
         });
+        if (scrollView instanceof RecyclerView) {
+            ((RecyclerView) scrollView).addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override public void onScrolled(@androidx.annotation.NonNull RecyclerView recyclerView,
+                        int dx, int dy) {
+                    dispatchScroll(recyclerView, dy);
+                }
+            });
+        } else {
+            scrollView.setOnScrollChangeListener((view, scrollX, scrollY, oldScrollX, oldScrollY) ->
+                    dispatchScroll(view, scrollY - oldScrollY));
+        }
         ViewCompat.requestApplyInsets(scrollView);
+    }
+
+    private static void dispatchScroll(View view, int deltaY) {
+        Activity activity = findActivity(view.getContext());
+        if (activity instanceof NavigationScrollListener) {
+            ((NavigationScrollListener) activity).onContentScrolled(deltaY,
+                    !view.canScrollVertically(-1));
+        }
     }
 
     private static Activity findActivity(Context context) {
