@@ -1342,6 +1342,12 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Report moderation searches both Campaign and historical Post comments.
+    // This grants only reads; writes still use the explicit parent rules above.
+    match /{parent=**}/comments/{commentId} {
+      allow get, list: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
