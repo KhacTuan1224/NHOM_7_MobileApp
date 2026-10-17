@@ -259,7 +259,9 @@ final class AdminDashboardCards {
             detailParams.topMargin = dp(context, 4); card.addView(detail, detailParams);
         }
 
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0, dp(context, 120), 1);
+        card.setMinimumHeight(dp(context, 104));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.MATCH_PARENT, 1);
         cardParams.setMarginEnd(endMargin); row.addView(card, cardParams);
     }
 

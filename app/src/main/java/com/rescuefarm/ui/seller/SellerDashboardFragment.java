@@ -73,6 +73,8 @@ public class SellerDashboardFragment extends Fragment {
         bind(view, R.id.dashboardShipmentsButton, "shipments");
         bind(view, R.id.dashboardStatisticsButton, "statistics");
         bind(view, R.id.dashboardProfileButton, "profile");
+        view.findViewById(R.id.sellerHomeOrdersButton).setOnClickListener(unused ->
+                navigate(SellerRoutePolicy.Destination.ORDERS, "orders"));
         viewModel.refresh();
     }
 
@@ -122,7 +124,7 @@ public class SellerDashboardFragment extends Fragment {
         for (int id : new int[]{R.id.dashboardProductsButton, R.id.dashboardBatchesButton,
                 R.id.dashboardPromotionsButton, R.id.dashboardCampaignsButton, R.id.dashboardMobileButton,
                 R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
-                R.id.dashboardStatisticsButton, R.id.dashboardProfileButton})
+                R.id.dashboardStatisticsButton, R.id.dashboardProfileButton, R.id.sellerHomeOrdersButton})
             requireView().findViewById(id).setEnabled(enabled);
         if (value.getSnapshot() == null) {
             stats.removeAllViews(); analytics.removeAllViews(); recent.removeAllViews(); return;
@@ -130,34 +132,28 @@ public class SellerDashboardFragment extends Fragment {
         SellerDashboardSnapshot snapshot = value.getSnapshot();
         NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         stats.removeAllViews();
-        SellerDashboardCards.addSectionTitle(requireContext(), stats, "TỔNG QUAN");
+        SellerDashboardCards.addSectionTitle(requireContext(), stats, "Công việc cửa hàng");
         SellerDashboardCards.addGrid(requireContext(), stats, Arrays.asList(
+                metric("Đơn đang xử lý", String.valueOf(snapshot.getPendingOrders()), "Trong kỳ · chưa giao hoặc hủy"),
+                metric("Đơn giao hàng", String.valueOf(snapshot.getDeliveryOrders()), "Trong kỳ · hình thức giao tận nơi"),
                 metric("Sản phẩm", String.valueOf(snapshot.getProducts()),
                         snapshot.getActiveProducts() + " đang hoạt động"),
                 metric("Chiến dịch", String.valueOf(snapshot.getCampaigns()),
                         snapshot.getActiveCampaigns() + " đang hoạt động · "
-                                + snapshot.getMobileCampaigns() + " điểm di động"),
-                metric("Đơn hàng", String.valueOf(snapshot.getOrders()),
-                        snapshot.getPendingOrders() + " đang xử lý · "
-                                + snapshot.getDeliveryOrders() + " giao hàng"),
-                metric("Khuyến mãi", String.valueOf(snapshot.getPromotions()), "Tổng khuyến mãi cửa hàng"),
-                metric("Doanh thu DELIVERED", currency.format(snapshot.getRevenue()),
-                        "Trong kỳ đã chọn · không gồm phí giao hàng"),
-                metric("Khối lượng giải cứu", String.format(Locale.getDefault(), "%.2f kg",
-                        snapshot.getRescuedQuantity()), "Tổng trên toàn bộ campaign")));
+                                + snapshot.getMobileCampaigns() + " điểm di động")));
 
         String[] periods = getResources().getStringArray(R.array.seller_stats_periods);
         String period = periods[Math.min(periodSpinner.getSelectedItemPosition(), periods.length - 1)];
         analytics.removeAllViews();
-        SellerDashboardCards.addSectionTitle(requireContext(), analytics, "THỐNG KÊ GIẢI CỨU");
+        SellerDashboardCards.addSectionTitle(requireContext(), analytics, "Kết quả kinh doanh và giải cứu");
         SellerDashboardCards.addGrid(requireContext(), analytics, Arrays.asList(
                 metric("Khối lượng đã giải cứu", String.format(Locale.getDefault(), "%.2f kg",
-                        snapshot.getRescuedQuantity()), "Toàn bộ campaign"),
-                metric("Campaign hoàn thành", String.valueOf(snapshot.getCompletedCampaigns()),
-                        "Theo trạng thái COMPLETED"),
-                metric("Rescue rate", String.format(Locale.getDefault(), "%.1f%%",
-                        snapshot.getRescueRate()), "Đã giải cứu / mục tiêu campaign đã kích hoạt"),
-                metric("Doanh thu DELIVERED", currency.format(snapshot.getRevenue()),
+                        snapshot.getRescuedQuantity()), "Toàn bộ chiến dịch"),
+                metric("Chiến dịch hoàn thành", String.valueOf(snapshot.getCompletedCampaigns()),
+                        "Đã hoàn thành mục tiêu"),
+                metric("Tỷ lệ giải cứu", String.format(Locale.getDefault(), "%.1f%%",
+                        snapshot.getRescueRate()), "Đã giải cứu / mục tiêu chiến dịch đã kích hoạt"),
+                metric("Doanh thu đơn đã giao", currency.format(snapshot.getRevenue()),
                         "Trong kỳ · không gồm phí giao hàng"),
                 metric("Số đơn trong kỳ", String.valueOf(snapshot.getOrders()),
                         "Tối đa 50 đơn mới nhất đã tải")));
@@ -169,6 +165,9 @@ public class SellerDashboardFragment extends Fragment {
         addRankedCards(analytics, getString(R.string.seller_top_rescue_reasons_title),
                 snapshot.getTopReasons(), "Khối lượng đã giải cứu");
         recent.removeAllViews();
+        if (snapshot.getRecentOrders().isEmpty()) {
+            SellerDashboardCards.addFootnote(requireContext(), recent, "Chưa có đơn hàng trong kỳ đã chọn.");
+        }
         for (Order order : snapshot.getRecentOrders()) {
             Button row = new Button(requireContext()); row.setAllCaps(false);
             row.setText(getString(R.string.seller_recent_order_format, order.getOrderCode(),

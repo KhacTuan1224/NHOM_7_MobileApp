@@ -226,24 +226,49 @@ public class GuestHomeFragment extends Fragment {
             locationLabel.setText(R.string.home_location_default);
         }
         renderBanners(state.getBanners());
-        renderCampaigns(criticalSection, state.getCritical(), state, "Chưa có chiến dịch CRITICAL.");
+        renderCampaigns(criticalSection, state.getCritical(), state, "Chưa có chiến dịch cần giải cứu gấp.");
         String locationEmpty = state.getLocationState() == HomeViewState.LocationState.AVAILABLE
                 ? "Chưa có điểm giải cứu gần vị trí của bạn."
                 : "Bật vị trí để xem các điểm giải cứu gần bạn.";
         renderCampaigns(nearbyMobileSection, state.getNearbyMobile(), state, locationEmpty);
         renderCampaigns(nearbyFixedSection, state.getNearbyFixed(), state, locationEmpty);
-        renderCampaigns(endingSoonSection, state.getEndingSoon(), state,
+        java.util.Set<String> highlightedIds = new java.util.HashSet<>();
+        for (RescueCampaign campaign : state.getCritical()) highlightedIds.add(campaign.getId());
+        List<RescueCampaign> endingSoon = new ArrayList<>();
+        for (RescueCampaign campaign : state.getEndingSoon()) {
+            if (highlightedIds.add(campaign.getId())) endingSoon.add(campaign);
+        }
+        renderCampaigns(endingSoonSection, endingSoon, state,
                 "Chưa có chiến dịch sắp kết thúc.");
         renderProducts(state.getValueProducts());
         renderNearExpiry(state.getNearExpiry());
         List<RescueCampaign> otherCampaigns = new ArrayList<>();
         for (RescueCampaign campaign : state.getActiveCampaigns()) {
-            if (campaign.getUrgencyLevel() != com.rescuefarm.domain.enums.UrgencyLevel.CRITICAL) {
+            if (!highlightedIds.contains(campaign.getId())) {
                 otherCampaigns.add(campaign);
             }
         }
         renderCampaigns(campaignSection, otherCampaigns, state, "Chưa có chiến dịch khác đang diễn ra.");
         renderCategories(state.getCategories());
+        View root = requireView();
+        setSectionVisible(root, R.id.categoryHomeGroup, !state.getCategories().isEmpty());
+        setSectionVisible(root, R.id.criticalHomeGroup, !state.getCritical().isEmpty());
+        boolean hasLocation = state.getLocationState() == HomeViewState.LocationState.AVAILABLE;
+        View locationAction = root.findViewById(R.id.homeNearbyLocationButton);
+        locationAction.setVisibility(hasLocation ? View.GONE : View.VISIBLE);
+        locationAction.setEnabled(state.getLocationState() != HomeViewState.LocationState.LOADING);
+        locationAction.setOnClickListener(v -> root.findViewById(R.id.homeLocationContainer).performClick());
+        setSectionVisible(root, R.id.nearbyMobileHomeGroup, hasLocation && !state.getNearbyMobile().isEmpty());
+        setSectionVisible(root, R.id.nearbyFixedHomeGroup, hasLocation && !state.getNearbyFixed().isEmpty());
+        setSectionVisible(root, R.id.endingSoonHomeGroup, !endingSoon.isEmpty());
+        setSectionVisible(root, R.id.nearExpiryHomeGroup, !state.getNearExpiry().isEmpty());
+        setSectionVisible(root, R.id.valueHomeGroup, !state.getValueProducts().isEmpty());
+        setSectionVisible(root, R.id.campaignHomeGroup,
+                !otherCampaigns.isEmpty() || state.getActiveCampaigns().isEmpty());
+    }
+
+    private void setSectionVisible(View root, int id, boolean visible) {
+        root.findViewById(id).setVisibility(visible ? View.VISIBLE : View.GONE);
     }
     private void renderBanners(List<Banner> values) {
         bannerAdapter.submit(values);

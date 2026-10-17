@@ -79,17 +79,12 @@
                 android:layout_width="20dp" android:layout_height="20dp" android:visibility="gone" />
         </LinearLayout>
 
-        <androidx.viewpager2.widget.ViewPager2 android:id="@+id/bannerPager"
-            android:layout_width="match_parent" android:layout_height="150dp"
-            android:layout_marginTop="4dp" android:clipToPadding="false" />
-        <LinearLayout android:id="@+id/bannerDots" android:layout_width="match_parent"
-            android:layout_height="16dp" android:gravity="center"
-            android:orientation="horizontal" />
-
+        <LinearLayout android:id="@+id/categoryHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
             
@@ -124,11 +119,14 @@
                 android:layout_height="wrap_content" android:clipChildren="false"
                 android:clipToPadding="false" android:orientation="horizontal" />
         </HorizontalScrollView>
+        </LinearLayout>
 
+        <LinearLayout android:id="@+id/criticalHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
             
@@ -137,7 +135,7 @@
                 android:layout_width="0dp" 
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="🔴 Cần giải cứu gấp"
+                android:text="Cần giải cứu gấp"
                 android:textColor="@color/rescue_on_surface" />
             
             <com.google.android.material.button.MaterialButton
@@ -160,48 +158,79 @@
             <LinearLayout android:id="@+id/criticalSection" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
+        </LinearLayout>
 
+        <androidx.viewpager2.widget.ViewPager2 android:id="@+id/bannerPager"
+            android:layout_width="match_parent" android:layout_height="150dp"
+            android:layout_marginTop="24dp" android:clipToPadding="false" />
+
+        <LinearLayout android:id="@+id/bannerDots" android:layout_width="match_parent"
+            android:layout_height="16dp" android:gravity="center"
+            android:orientation="horizontal" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/homeNearbyLocationButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="48dp" android:layout_marginTop="24dp"
+            android:text="Chọn vị trí để tìm điểm giải cứu gần bạn" android:textAllCaps="false"
+            app:icon="@drawable/ic_home_location" app:iconTint="@color/rescue_primary"
+            app:strokeColor="@color/rescue_primary" app:cornerRadius="12dp" />
+
+        <LinearLayout android:id="@+id/nearbyMobileHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <TextView android:id="@+id/nearbyMobileTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="14dp" android:text="🚚 Điểm giải cứu di động gần bạn"
+            android:layout_marginTop="0dp" android:text="Điểm giải cứu di động gần bạn"
             android:textColor="@color/rescue_on_surface" />
         <HorizontalScrollView android:id="@+id/nearbyMobileScroll" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
             <LinearLayout android:id="@+id/nearbyMobileSection" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
+        </LinearLayout>
 
+        <LinearLayout android:id="@+id/nearbyFixedHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <TextView android:id="@+id/nearbyFixedTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="14dp" android:text="📍 Điểm giải cứu cố định gần bạn"
+            android:layout_marginTop="0dp" android:text="Điểm giải cứu cố định gần bạn"
             android:textColor="@color/rescue_on_surface" />
         <HorizontalScrollView android:id="@+id/nearbyFixedScroll" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
             <LinearLayout android:id="@+id/nearbyFixedSection" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
+        </LinearLayout>
 
+        <LinearLayout android:id="@+id/endingSoonHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <TextView android:id="@+id/endingSoonTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="14dp" android:text="⏰ Sắp hết thời gian"
+            android:layout_marginTop="0dp" android:text="Sắp hết thời gian"
             android:textColor="@color/rescue_on_surface" />
         <HorizontalScrollView android:id="@+id/endingSoonScroll" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
             <LinearLayout android:id="@+id/endingSoonSection" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
+        </LinearLayout>
 
+        <LinearLayout android:id="@+id/nearExpiryHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <TextView android:id="@+id/nearExpiryTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="14dp" android:text="⏳ Nông sản gần hết hạn"
+            android:layout_marginTop="0dp" android:text="Nông sản gần hết hạn"
             android:textColor="@color/rescue_on_surface" />
         <LinearLayout android:id="@+id/nearExpirySection" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" />
+        </LinearLayout>
 
+        <LinearLayout android:id="@+id/valueHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
             
@@ -210,7 +239,7 @@
                 android:layout_width="0dp" 
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="💰 Mua nhiều giá tốt hơn"
+                android:text="Nông sản giá tốt"
                 android:textColor="@color/rescue_on_surface" />
             
             <com.google.android.material.button.MaterialButton
@@ -230,11 +259,14 @@
         </LinearLayout>
         <LinearLayout android:id="@+id/valueSection" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" />
+        </LinearLayout>
 
+        <LinearLayout android:id="@+id/campaignHomeGroup" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
             
@@ -243,7 +275,7 @@
                 android:layout_width="0dp" 
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="🌱 Chiến dịch đang diễn ra"
+                android:text="Chiến dịch đang diễn ra"
                 android:textColor="@color/rescue_on_surface" />
             
             <com.google.android.material.button.MaterialButton
@@ -266,6 +298,7 @@
             <LinearLayout android:id="@+id/campaignSection" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
+        </LinearLayout>
 
     </LinearLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
