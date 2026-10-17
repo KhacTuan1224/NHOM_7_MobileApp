@@ -10,10 +10,15 @@ public class CatalogImagePolicyTest {
         assertTrue(CatalogImagePolicy.isAllowed("https://res.cloudinary.com/demo/image/upload/category.png", seed));
         assertTrue(CatalogImagePolicy.isAllowed("", ""));
     }
-    @Test public void replacementsAndNewResourcesStillUseCloudinaryUploads() {
-        assertFalse(CatalogImagePolicy.isAllowed(seed, ""));
-        assertFalse(CatalogImagePolicy.isAllowed(seed + "&changed=true", seed));
-        assertFalse(CatalogImagePolicy.isAllowed("https://res.cloudinary.com.evil.test/image.png", seed));
+    @Test public void adminCanPasteHttpsImagesForNewResourcesAndReplacements() {
+        assertTrue(CatalogImagePolicy.isAllowed(seed, ""));
+        assertTrue(CatalogImagePolicy.isAllowed(seed + "&changed=true", seed));
+        assertTrue(CatalogImagePolicy.isAllowed("https://example.com/banner.jpg", seed));
+    }
+    @Test public void rejectsInsecureLocalMalformedAndCredentialBearingUrls() {
+        assertFalse(CatalogImagePolicy.isAllowed("https://user:password@example.com/image.png", seed));
+        assertFalse(CatalogImagePolicy.isAllowed("file:///storage/image.png", seed));
+        assertFalse(CatalogImagePolicy.isAllowed("https://example.com/image with spaces.png", seed));
         assertFalse(CatalogImagePolicy.isAllowed("http://images.unsplash.com/image.png", "http://images.unsplash.com/image.png"));
         assertFalse(CatalogImagePolicy.isAllowed("not a URL", seed));
     }

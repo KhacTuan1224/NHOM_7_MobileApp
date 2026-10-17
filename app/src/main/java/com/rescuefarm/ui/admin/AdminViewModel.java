@@ -35,6 +35,26 @@ public final class AdminViewModel extends ViewModel {
         repository.loadDetail(section, id, callback);
     }
 
+    public void loadBannerCampaigns(AdminRepository.ListCallback callback) {
+        loadBannerCampaignPage("", new java.util.ArrayList<>(), callback);
+    }
+
+    private void loadBannerCampaignPage(String cursor, List<AdminListItem> campaigns,
+            AdminRepository.ListCallback callback) {
+        repository.loadSectionPage(Section.CAMPAIGNS, 100, "ACTIVE", cursor, new AdminRepository.PageCallback() {
+            @Override public void onSuccess(List<AdminListItem> items, String nextCursor, boolean more) {
+                if (items != null) campaigns.addAll(items);
+                if (more && nextCursor != null && !nextCursor.isEmpty() && !nextCursor.equals(cursor))
+                    loadBannerCampaignPage(nextCursor, campaigns, callback);
+                else {
+                    campaigns.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
+                    callback.onSuccess(campaigns);
+                }
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String message) { callback.onError(code, message); }
+        });
+    }
+
     public void resolveReport(String id, AdminRepository.ReportAction action, String reason,
             AdminRepository.ActionCallback callback) {
         repository.resolveReport(id, action, reason, new AdminRepository.ActionCallback() {

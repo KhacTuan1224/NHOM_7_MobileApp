@@ -696,9 +696,7 @@ service cloud.firestore {
     }
 
     function validCatalogImageUrl(url) {
-      return url == '' || url.matches('https://res\\.cloudinary\\.com/.+')
-          || (request.method == 'update' && url == resource.data.get('imageUrl', '')
-            && url.matches('https://.+'));
+      return url == '' || url.matches('https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]{1,5})?([/?#][^\\s]*)?');
     }
 
     function validAdminCategory(data, categoryId) {
