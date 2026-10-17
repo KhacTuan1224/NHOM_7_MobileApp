@@ -74,7 +74,7 @@ public class MobileRescueFragment extends Fragment {
     private View card(RescueCampaign value) {
         MaterialCardView card = new MaterialCardView(requireContext()); card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14),dp(14),dp(14),dp(14));
-        TextView title = new TextView(requireContext()); title.setText(value.getTitle()); title.setTextSize(18); title.setTypeface(title.getTypeface(),1);
+        TextView title = new TextView(requireContext()); title.setText(value.getTitle()); title.setTextSize(18); title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         TextView state = new TextView(requireContext()); state.setText(value.isLocationFresh(new Date())
                 ? R.string.mobile_location_fresh : R.string.mobile_location_stale);
         state.setText(com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(value,new Date())

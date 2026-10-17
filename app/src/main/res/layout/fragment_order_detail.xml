@@ -6,11 +6,11 @@
     android:background="@color/rescue_background"
     android:fillViewport="true">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/space_lg">
+        android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
 
         <TextView
             android:layout_width="match_parent"
@@ -149,7 +149,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/saveShipmentDetailsButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginTop="@dimen/space_xs"
             android:text="@string/save_shipment_details_action"
             android:visibility="gone" />
@@ -172,7 +172,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/transitionOrderButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/update_order_status_action"
             android:visibility="gone" />
 
@@ -195,7 +195,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/confirmBankTransferButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/confirm_bank_transfer_action"
             android:visibility="gone" />
 
@@ -212,5 +212,5 @@
             android:layout_marginTop="@dimen/space_md"
             android:accessibilityLiveRegion="polite"
             android:textColor="@color/rescue_on_surface_variant" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareScrollView>

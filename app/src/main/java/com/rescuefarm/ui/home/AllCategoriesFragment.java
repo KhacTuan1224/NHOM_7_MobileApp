@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -14,12 +13,13 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.rescuefarm.R;
 import com.rescuefarm.domain.model.Category;
+import com.rescuefarm.ui.common.ResponsiveGridLayout;
 import java.util.List;
 
 public class AllCategoriesFragment extends Fragment {
     private HomeViewModel viewModel;
     private HomeCardRenderer renderer;
-    private GridLayout categoryGrid;
+    private ResponsiveGridLayout categoryGrid;
     private TextView messageView;
 
     @Nullable
@@ -66,16 +66,8 @@ public class AllCategoriesFragment extends Fragment {
                 bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
             });
             
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 0;
-            params.height = dp(86);
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-            params.setMargins(dp(4), dp(4), dp(4), dp(4));
-            categoryGrid.addView(tile, params);
+            categoryGrid.addView(tile, new LinearLayout.LayoutParams(-1, -2));
         }
     }
 
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
-    }
 }

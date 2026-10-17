@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
     private boolean openingNotification;
     private int actorRequest;
     private boolean bottomNavigationHidden;
+    private boolean bottomNavigationAvailable;
+    private boolean keyboardVisible;
     private int scrollDirectionDistance;
 
     @Override
@@ -54,8 +56,13 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
             getWindow().setNavigationBarContrastEnforced(false);
         View navigationBackground = findViewById(R.id.systemNavigationBackground);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainRoot), (view, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars()
+                    | WindowInsetsCompat.Type.displayCutout());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            keyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+            View navigation = findViewById(R.id.customerBottomNavigationContainer);
+            navigation.setVisibility(bottomNavigationAvailable && !keyboardVisible
+                    ? View.VISIBLE : View.GONE);
             int bottomInset = Math.max(systemBars.bottom, ime.bottom);
             view.setPadding(systemBars.left, systemBars.top, systemBars.right,
                     bottomInset);
@@ -359,7 +366,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         }
         View bottomNavigation = findViewById(R.id.customerBottomNavigationContainer);
         bottomNavigation.animate().cancel();
-        bottomNavigation.setVisibility(show ? View.VISIBLE : View.GONE);
+        bottomNavigationAvailable = show;
+        bottomNavigation.setVisibility(show && !keyboardVisible ? View.VISIBLE : View.GONE);
         bottomNavigation.setTranslationY(0f);
         bottomNavigation.setAlpha(1f);
         bottomNavigationHidden = false;

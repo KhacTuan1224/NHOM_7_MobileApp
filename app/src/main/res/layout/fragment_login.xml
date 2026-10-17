@@ -6,16 +6,16 @@
     android:background="@color/rescue_surface"
     android:fillViewport="true">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:paddingBottom="16dp">
+        android:paddingBottom="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/form_max_width">
 
         <ImageView
             android:layout_width="match_parent"
-            android:layout_height="170dp"
+            android:layout_height="@dimen/auth_banner_height"
             android:contentDescription="@string/login_banner_description"
             android:scaleType="centerCrop"
             android:src="@drawable/login_leaf_banner" />
@@ -34,9 +34,9 @@
             android:id="@+id/firebaseSetupNotice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="32dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:background="@color/rescue_primary_container"
             android:padding="@dimen/space_md"
             android:text="@string/firebase_setup_notice"
@@ -48,9 +48,9 @@
             style="@style/Widget.Material3.TextInputLayout.FilledBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="30dp"
-            android:layout_marginEnd="32dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:elevation="2dp"
             android:hint="@string/email_account_label"
             app:boxBackgroundColor="@color/rescue_surface"
@@ -70,9 +70,9 @@
             style="@style/Widget.Material3.TextInputLayout.FilledBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="12dp"
-            android:layout_marginEnd="32dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:elevation="2dp"
             android:hint="@string/password_label"
             app:boxBackgroundColor="@color/rescue_surface"
@@ -92,9 +92,9 @@
             android:id="@+id/forgotPasswordButton"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_gravity="end"
-            android:layout_marginEnd="32dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:layout_marginTop="4dp"
             android:text="@string/forgot_password_action"
             android:textColor="@color/rescue_splash_text"
@@ -103,9 +103,9 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/loginButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:text="@string/login_action"
             android:textColor="@color/rescue_on_primary"
             android:textStyle="bold"
@@ -116,8 +116,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="32dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -147,9 +147,9 @@
             android:id="@+id/googleSignInButton"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:text="@string/google_sign_in_action"
             android:textColor="#111111"
             android:textStyle="bold"
@@ -161,9 +161,9 @@
             app:strokeColor="#DDE1E8"
             app:strokeWidth="1dp" />
 
-        <LinearLayout
+        <com.rescuefarm.ui.common.ResponsiveActionLayout
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -178,19 +178,19 @@
                 android:id="@+id/registerButton"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                 android:text="@string/register_action_short"
                 android:textColor="#D63D3D"
                 android:textSize="12sp" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/continueAsGuestButton"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:text="@string/continue_guest_action"
             android:textColor="#111111"
             android:textStyle="bold"
@@ -205,5 +205,5 @@
             android:layout_marginTop="8dp"
             android:contentDescription="@string/loading_content_description"
             android:visibility="gone" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

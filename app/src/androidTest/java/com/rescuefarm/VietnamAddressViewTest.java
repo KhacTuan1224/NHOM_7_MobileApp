@@ -107,8 +107,8 @@ public class VietnamAddressViewTest {
                     assertNotNull(checkout.findViewById(R.id.checkoutSavedAddressSpinner));
                     assertTrue(checkout.findViewById(R.id.checkoutAddress) instanceof VietnamAddressView);
                     assertNotNull(checkout.findViewById(R.id.checkoutShippingEstimate));
-                    assertNotNull(checkout.findViewById(R.id.checkoutCoordinates));
-                    assertNotNull(checkout.findViewById(R.id.checkoutUseLocation));
+                    assertNotNull(checkout.findViewById(R.id.checkoutGpsStatus));
+                    assertNotNull(checkout.findViewById(R.id.checkoutUseCurrentLocationButton));
                     assertNotNull(checkout.findViewById(R.id.checkoutName));
                     assertNotNull(checkout.findViewById(R.id.checkoutPhone));
                 }

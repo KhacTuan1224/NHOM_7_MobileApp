@@ -6,15 +6,15 @@
     android:background="@color/rescue_background"
     android:fillViewport="true">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
-        android:paddingBottom="96dp">
+        android:paddingBottom="96dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
 
         <!-- Top Header: Title and Clear Cart Action -->
-        <LinearLayout
+        <com.rescuefarm.ui.common.ResponsiveActionLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -35,7 +35,7 @@
                 android:layout_height="wrap_content"
                 android:text="Xóa tất cả"
                 android:textColor="@color/rescue_critical" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
 
         <!-- Dynamic Notice / Warning Banner (Visible only when prices change or inventory issue arises) -->
@@ -106,11 +106,11 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cartCheckoutButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:backgroundTint="@color/rescue_primary"
             android:text="@string/checkout_action"
             android:textAllCaps="false"
             android:textSize="16sp"
             app:cornerRadius="12dp" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

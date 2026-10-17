@@ -5,14 +5,14 @@
     android:layout_height="match_parent"
     android:background="@color/rescue_background">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/space_md">
+        android:padding="@dimen/space_md" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
 
         <!-- Header with close button -->
-        <LinearLayout
+        <com.rescuefarm.ui.common.ResponsiveActionLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -31,11 +31,11 @@
                 android:id="@+id/closeButton"
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                 android:contentDescription="Đóng"
                 app:icon="@drawable/ic_close"
                 app:iconGravity="textStart" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/discoveryKeywordLayout"
@@ -141,7 +141,7 @@
             android:layout_width="match_parent"
             android:layout_height="48dp" />
 
-        <LinearLayout
+        <com.rescuefarm.ui.common.ResponsiveActionLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -161,7 +161,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="@string/clear_action" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/discoveryLocationButton"
@@ -183,5 +183,5 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:orientation="vertical" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

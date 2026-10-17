@@ -6,15 +6,15 @@
     android:background="@color/rescue_surface"
     android:fillViewport="true">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="20dp">
+        android:paddingBottom="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/form_max_width">
 
         <ImageView
             android:layout_width="match_parent"
-            android:layout_height="112dp"
+            android:layout_height="@dimen/auth_banner_height"
             android:contentDescription="@string/login_banner_description"
             android:scaleType="centerCrop"
             android:src="@drawable/login_leaf_banner" />
@@ -23,9 +23,9 @@
             android:id="@+id/registerTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="14dp"
-            android:layout_marginEnd="24dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:gravity="center"
             android:text="@string/register_customer_title"
             android:textColor="@color/rescue_on_surface"
@@ -36,9 +36,9 @@
             android:id="@+id/customerTypeGroup"
             android:layout_width="match_parent"
             android:layout_height="44dp"
-            android:layout_marginStart="34dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="34dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:visibility="gone"
             app:checkedButton="@id/individualTypeButton"
             app:selectionRequired="true"
@@ -77,9 +77,9 @@
             android:id="@+id/sellerRegistrationNotice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:gravity="center"
             android:text="@string/seller_registration_notice"
             android:textColor="@color/rescue_on_surface_variant"
@@ -90,9 +90,9 @@
             style="@style/Widget.Material3.TextInputLayout.FilledBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="12dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:elevation="2dp"
             android:hint="@string/full_name_label"
             app:boxBackgroundColor="@color/rescue_surface"
@@ -110,9 +110,9 @@
             style="@style/Widget.Material3.TextInputLayout.FilledBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:elevation="2dp"
             android:hint="@string/phone_label"
             app:boxBackgroundColor="@color/rescue_surface"
@@ -130,9 +130,9 @@
             style="@style/Widget.Material3.TextInputLayout.FilledBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:elevation="2dp"
             android:hint="@string/email_label"
             app:boxBackgroundColor="@color/rescue_surface"
@@ -150,9 +150,9 @@
             style="@style/Widget.Material3.TextInputLayout.FilledBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:elevation="2dp"
             android:hint="@string/password_label"
             app:boxBackgroundColor="@color/rescue_surface"
@@ -178,9 +178,9 @@
                 style="@style/Widget.Material3.TextInputLayout.FilledBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="28dp"
+                android:layout_marginStart="@dimen/auth_horizontal_margin"
                 android:layout_marginTop="8dp"
-                android:layout_marginEnd="28dp"
+                android:layout_marginEnd="@dimen/auth_horizontal_margin"
                 android:elevation="2dp"
                 android:hint="@string/company_name_label"
                 app:boxBackgroundColor="@color/rescue_surface"
@@ -198,9 +198,9 @@
                 style="@style/Widget.Material3.TextInputLayout.FilledBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="28dp"
+                android:layout_marginStart="@dimen/auth_horizontal_margin"
                 android:layout_marginTop="8dp"
-                android:layout_marginEnd="28dp"
+                android:layout_marginEnd="@dimen/auth_horizontal_margin"
                 android:elevation="2dp"
                 android:hint="@string/tax_code_label"
                 app:boxBackgroundColor="@color/rescue_surface"
@@ -216,12 +216,12 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
-        <LinearLayout
+        <com.rescuefarm.ui.common.ResponsiveActionLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="12dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -229,7 +229,7 @@
                 android:id="@+id/backToLoginButton"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="@string/cancel_action"
@@ -241,7 +241,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/createAccountButton"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="@string/create_account_action"
@@ -249,7 +249,7 @@
                 android:textStyle="bold"
                 app:backgroundTint="@color/rescue_splash_green"
                 app:cornerRadius="24dp" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         <ProgressBar
             android:id="@+id/authProgress"
@@ -259,5 +259,5 @@
             android:layout_marginTop="8dp"
             android:contentDescription="@string/loading_content_description"
             android:visibility="gone" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

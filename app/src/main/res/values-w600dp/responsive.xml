@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="auth_horizontal_margin">32dp</dimen>
+    <dimen name="auth_banner_height">180dp</dimen>
+    <dimen name="home_banner_height">220dp</dimen>
+</resources>

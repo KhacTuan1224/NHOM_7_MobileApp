@@ -21,7 +21,6 @@ import android.widget.LinearLayout;
 import android.widget.EditText;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
-import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
@@ -525,29 +524,8 @@ public class GuestHomeFragment extends Fragment {
     }
 
     private <T> void addGrid(LinearLayout container, List<T> values, Function<T, View> createView) {
-        int horizontalGap = dp(6);
-        container.setClipChildren(false);
-        container.setClipToPadding(false);
-        for (int index = 0; index < values.size(); index += 2) {
-            LinearLayout row = new LinearLayout(requireContext());
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setClipChildren(false);
-            row.setClipToPadding(false);
-            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, -2);
-            rowParams.setMargins(0, dp(2), 0, dp(5));
-            container.addView(row, rowParams);
-
-            View first = createView.apply(values.get(index));
-            LinearLayout.LayoutParams firstParams = new LinearLayout.LayoutParams(0, -2, 1f);
-            firstParams.setMargins(0, 0, horizontalGap, 0);
-            row.addView(first, firstParams);
-            if (index + 1 < values.size()) {
-                View second = createView.apply(values.get(index + 1));
-                row.addView(second, new LinearLayout.LayoutParams(0, -2, 1f));
-            } else {
-                row.addView(new Space(requireContext()), new LinearLayout.LayoutParams(0, 1, 1f));
-            }
-        }
+        for (T value : values) container.addView(createView.apply(value),
+                new LinearLayout.LayoutParams(-1, -2));
     }
     private void openCampaign(String id) {
         Bundle args = new Bundle(); args.putString("campaignId", id);

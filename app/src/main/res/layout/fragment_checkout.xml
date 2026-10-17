@@ -7,11 +7,11 @@
     android:background="@color/rescue_background"
     android:fillViewport="true">
     
-    <LinearLayout 
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent" 
         android:layout_height="wrap_content" 
         android:orientation="vertical" 
-        android:padding="16dp">
+        android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         
         <!-- Title -->
         <TextView 
@@ -73,7 +73,7 @@
             android:id="@+id/checkoutUseCurrentLocationButton"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
             android:text="@string/checkout_use_gps_action"
@@ -187,8 +187,8 @@
         <com.google.android.material.button.MaterialButton 
             android:id="@+id/submitCheckoutButton" 
             android:layout_width="match_parent" 
-            android:layout_height="@dimen/touch_target_min" 
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/place_order_action"
             android:layout_marginBottom="16dp" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

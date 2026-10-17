@@ -79,7 +79,7 @@
             </LinearLayout>
 
             <View
-                android:layout_width="96dp"
+                android:layout_width="80dp"
                 android:layout_height="match_parent"
                 android:importantForAccessibility="no" />
 

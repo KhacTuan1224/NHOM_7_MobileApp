@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
+    android:background="@color/rescue_background" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/address_list_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <com.google.android.material.button.MaterialButton android:id="@+id/addAddressButton"
-            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginTop="@dimen/space_lg" android:text="@string/add_address_action" />
         <TextView android:id="@+id/emptyAddressText" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_lg"
@@ -15,5 +15,5 @@
         <LinearLayout android:id="@+id/addressContainer" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md"
             android:orientation="vertical" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

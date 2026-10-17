@@ -38,22 +38,9 @@ final class AdminDashboardCards {
     }
 
     static void addGrid(Context context, LinearLayout parent, List<Metric> metrics) {
-        int horizontalGap = dp(context, 8);
-        int verticalGap = dp(context, 8);
-        for (int index = 0; index < metrics.size(); index += 2) {
-            LinearLayout row = new LinearLayout(context);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            if (index > 0) rowParams.topMargin = verticalGap;
-            parent.addView(row, rowParams);
-            addMetricCard(context, row, metrics.get(index), horizontalGap);
-            if (index + 1 < metrics.size()) addMetricCard(context, row, metrics.get(index + 1), 0);
-            else {
-                View spacer = new View(context);
-                row.addView(spacer, new LinearLayout.LayoutParams(0, 1, 1));
-            }
-        }
+        LinearLayout grid = new com.rescuefarm.ui.common.ResponsiveGridLayout(context);
+        parent.addView(grid, new LinearLayout.LayoutParams(-1, -2));
+        for (Metric metric : metrics) addMetricCard(context, grid, metric, 0);
     }
 
     static void addFootnote(Context context, LinearLayout parent, String text) {
@@ -238,14 +225,12 @@ final class AdminDashboardCards {
 
         TextView title = new TextView(context);
         title.setText(metric.title); title.setTextSize(11); title.setTypeface(null, Typeface.BOLD);
-        title.setMaxLines(2);
         title.setTextColor(ContextCompat.getColor(context, R.color.rescue_on_surface_variant));
         card.addView(title, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         TextView value = new TextView(context);
         value.setText(metric.value); value.setTextSize(20); value.setTypeface(null, Typeface.BOLD);
-        value.setSingleLine(true);
         value.setTextColor(ContextCompat.getColor(context, accent));
         LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -261,8 +246,8 @@ final class AdminDashboardCards {
         }
 
         card.setMinimumHeight(dp(context, 104));
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.MATCH_PARENT, 1);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         cardParams.setMarginEnd(endMargin); row.addView(card, cardParams);
     }
 
