@@ -76,7 +76,7 @@
             android:id="@+id/orderStatusTimeline"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
+            android:layout_marginTop="@dimen/space_md"
             android:orientation="vertical" />
 
         <TextView

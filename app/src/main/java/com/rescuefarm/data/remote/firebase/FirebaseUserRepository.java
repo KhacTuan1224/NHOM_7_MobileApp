@@ -105,12 +105,17 @@ public class FirebaseUserRepository implements UserRepository {
         fields.put("fullName", clean(fullName)); fields.put("phone", clean(phone));
         fields.put("avatarUrl", clean(avatarUrl)); fields.put("latitude", latitude);
         fields.put("longitude", longitude); fields.put("updatedAt", FieldValue.serverTimestamp());
-        user(userId).get().addOnSuccessListener(previous -> user(userId).update(fields)
+        user(userId).get().addOnSuccessListener(previous -> {
+            if ("SELLER".equals(previous.getString("role"))) {
+                fields.remove("latitude"); fields.remove("longitude");
+            }
+            user(userId).update(fields)
                 .addOnSuccessListener(unused -> {
                     com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
                             previous.getString("avatarUrl"), avatarUrl);
                     getUser(userId, callback);
-                }).addOnFailureListener(error -> notifyFailure(error, callback::onError)))
+                }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 

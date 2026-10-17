@@ -40,6 +40,11 @@ public final class DiscoveryQuery {
         return new DiscoveryQuery("", "", "", null, null, null, Sort.RELEVANCE);
     }
 
+    public DiscoveryQuery withText(String value) {
+        return new DiscoveryQuery(value, categoryId, province, reason, urgency, mode, sort,
+                minPrice, maxPrice, radiusKm, expiryWithinDays, minStock);
+    }
+
     private static String clean(String value) { return value == null ? "" : value.trim(); }
     private static double finiteNonNegative(double value, double fallback) {
         return Double.isFinite(value) && value >= 0D ? value : fallback;

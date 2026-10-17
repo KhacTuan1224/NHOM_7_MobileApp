@@ -48,7 +48,9 @@ import java.util.Set;
 
 public class CheckoutFragment extends Fragment {
     private CheckoutViewModel vm;
-    private EditText name, phone, lat, lng, note;
+    private EditText name, phone, note;
+    private double receiverLatitude, receiverLongitude;
+    private TextView gpsStatus, sellerAddress;
     private VietnamAddressView address;
     private ProfileViewModel locationModel;
     private TextView summary, message;
@@ -59,7 +61,7 @@ public class CheckoutFragment extends Fragment {
             new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 if (Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
                         || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION))) takeLocation();
-                else if (message != null) message.setText("Bạn có thể nhập tọa độ địa chỉ bên dưới.");
+                else if (message != null) message.setText("Cần cấp quyền vị trí để lấy GPS nơi nhận, hoặc chọn địa chỉ đã lưu có GPS.");
             });
     private Spinner fulfillment, payment, savedAddressSpinner;
     private final List<Address> savedAddresses = new ArrayList<>();
@@ -87,8 +89,14 @@ public class CheckoutFragment extends Fragment {
             return;
         }
         name = view.findViewById(R.id.checkoutName); phone = view.findViewById(R.id.checkoutPhone);
-        address = view.findViewById(R.id.checkoutAddress); lat = view.findViewById(R.id.checkoutLatitude);
-        lng = view.findViewById(R.id.checkoutLongitude); note = view.findViewById(R.id.checkoutNote);
+        address = view.findViewById(R.id.checkoutAddress); note = view.findViewById(R.id.checkoutNote);
+        gpsStatus = view.findViewById(R.id.checkoutGpsStatus);
+        sellerAddress = view.findViewById(R.id.checkoutSellerAddress);
+        if (state != null) {
+            receiverLatitude = state.getDouble("receiverLatitude");
+            receiverLongitude = state.getDouble("receiverLongitude");
+        }
+        showReceiverGps();
         fulfillment = view.findViewById(R.id.checkoutFulfillment); payment = view.findViewById(R.id.checkoutPayment);
         savedAddressSpinner = view.findViewById(R.id.checkoutSavedAddressSpinner);
         summary = view.findViewById(R.id.checkoutSummary); message = view.findViewById(R.id.checkoutMessage);
@@ -101,7 +109,14 @@ public class CheckoutFragment extends Fragment {
         locationModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == ProfileScreenState.Status.LOCATION) {
                 if (locationRequestVersion != destinationVersion) { locationModel.clearTransientState(); return; }
-                lat.setText(String.valueOf(value.getLatitude())); lng.setText(String.valueOf(value.getLongitude()));
+                bindingAddressDetails = true;
+                if (value.getGeocodedAddress() != null) address.applyGeocodedAddress(value.getGeocodedAddress());
+                receiverLatitude = value.getLatitude(); receiverLongitude = value.getLongitude();
+                bindingAddressDetails = false;
+                addressEdited = true;
+                selectedAddressId = "";
+                bindingAddresses = true; savedAddressSpinner.setSelection(0); bindingAddresses = false;
+                showReceiverGps(); scheduleShippingEstimate();
                 message.setText("Đã lấy GPS hiện tại. Hãy kiểm tra GPS có đúng địa chỉ nhận hàng.");
                 locationModel.clearTransientState();
             } else if (value.getStatus() == ProfileScreenState.Status.ERROR) {
@@ -113,7 +128,7 @@ public class CheckoutFragment extends Fragment {
             destinationVersion++;
             addressEdited = true; selectedAddressId = "";
             bindingAddresses = true; savedAddressSpinner.setSelection(0); bindingAddresses = false;
-            lat.setText(""); lng.setText(""); scheduleShippingEstimate();
+            receiverLatitude = 0; receiverLongitude = 0; showReceiverGps(); scheduleShippingEstimate();
         });
         fulfillment.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
                 FulfillmentType.values()));
@@ -135,7 +150,7 @@ public class CheckoutFragment extends Fragment {
                 selectedAddressId = next; addressEdited = true; restoringAddress = false;
                 if (position == 0) {
                     destinationVersion++;
-                    address.clear(); lat.setText(""); lng.setText(""); scheduleShippingEstimate();
+                    address.clear(); receiverLatitude = 0; receiverLongitude = 0; showReceiverGps(); scheduleShippingEstimate();
                 } else applyAddress(savedAddresses.get(position - 1));
             }
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
@@ -152,12 +167,6 @@ public class CheckoutFragment extends Fragment {
             }
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
-        TextWatcher locationWatcher = new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { scheduleShippingEstimate(); }
-            @Override public void afterTextChanged(Editable s) { }
-        };
-        lat.addTextChangedListener(locationWatcher); lng.addTextChangedListener(locationWatcher);
         TextWatcher recipientWatcher = new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -204,7 +213,7 @@ public class CheckoutFragment extends Fragment {
             }
             message.setText("Đang tạo đơn hàng và giữ tồn kho…");
             message.setVisibility(View.VISIBLE);
-            vm.submit(text(name), text(phone), address.formattedAddress(), text(lat), text(lng),
+            vm.submit(text(name), text(phone), address.formattedAddress(), String.valueOf(receiverLatitude), String.valueOf(receiverLongitude),
                     (FulfillmentType) fulfillment.getSelectedItem(), (PaymentMethod) payment.getSelectedItem(),
                     text(note), quoteReady ? quotedSubtotal : Double.NaN,
                     quoteReady ? quotedShippingFee : Double.NaN);
@@ -245,8 +254,9 @@ public class CheckoutFragment extends Fragment {
         address.setAddress(saved.getProvince(), saved.getDistrict(), saved.getWard(), saved.getStreet());
         boolean hasLocation = (saved.getLatitude() != 0D || saved.getLongitude() != 0D)
                 && Double.isFinite(saved.getLatitude()) && Double.isFinite(saved.getLongitude());
-        lat.setText(hasLocation ? String.valueOf(saved.getLatitude()) : "");
-        lng.setText(hasLocation ? String.valueOf(saved.getLongitude()) : "");
+        receiverLatitude = hasLocation ? saved.getLatitude() : 0;
+        receiverLongitude = hasLocation ? saved.getLongitude() : 0;
+        showReceiverGps();
         bindingAddressDetails = false;
         scheduleShippingEstimate();
     }
@@ -259,7 +269,7 @@ public class CheckoutFragment extends Fragment {
     }
     private void takeLocation() {
         locationRequestVersion = destinationVersion;
-        locationModel.requestCurrentLocation(false);
+        locationModel.requestCurrentLocation(true);
     }
 
     private void renderCart(Cart cart) {
@@ -296,8 +306,8 @@ public class CheckoutFragment extends Fragment {
         if (count == 0) { estimate.setText("Chọn mặt hàng để xem tạm tính."); return; }
         double customerLat = 0D, customerLng = 0D;
         if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY) {
-            try { customerLat = Double.parseDouble(text(lat)); customerLng = Double.parseDouble(text(lng)); }
-            catch (NumberFormatException error) { estimate.setText("Giao hàng cần tọa độ địa chỉ."); return; }
+            customerLat = receiverLatitude; customerLng = receiverLongitude;
+            if (!hasReceiverGps()) { estimate.setText(R.string.delivery_gps_required); return; }
         }
         JSONObject request = new JSONObject();
         try { request.put("items", items); request.put("fulfillmentType", fulfillment.getSelectedItem().toString());
@@ -329,9 +339,11 @@ public class CheckoutFragment extends Fragment {
                 String campaignId = quote.optString("campaignId", "");
                 if (!campaignId.isEmpty()) summary.append("\nChiến dịch: ").append(quote.optString("campaignTitle"));
                 if (fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE)
-                    summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"))
-                            .append(" · ").append(quote.optDouble("campaignLatitude"))
-                            .append(", ").append(quote.optDouble("campaignLongitude"));
+                    summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"));
+                sellerAddress.setText(fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE
+                        ? "Điểm nhận tại chiến dịch: " + quote.optString("campaignLocationName")
+                        : "Cửa hàng: " + quote.optString("sellerName") + "\nĐiểm gửi / nhận tại cửa hàng: "
+                                + quote.optString("sellerAddress", "Chưa cập nhật"));
                 estimate.setText(summary.toString());
                 message.setText("");
                 quoteReady = Double.isFinite(quotedSubtotal)
@@ -356,9 +368,9 @@ public class CheckoutFragment extends Fragment {
         if (error.contains("Global shipping rate"))
             return "Admin chưa cấu hình hợp lệ appConfig/shipping trong Firestore.";
         if (error.contains("Seller GPS") || error.contains("Seller public profile"))
-            return "Cửa hàng chưa có hồ sơ hoặc tọa độ GPS hợp lệ. Seller hãy cập nhật vị trí trong hồ sơ.";
+            return "Người bán cần cập nhật GPS trong Hồ sơ người bán trước khi giao hàng.";
         if (error.contains("Delivery address coordinates"))
-            return "Địa chỉ nhận hàng chưa có tọa độ GPS hợp lệ. Hãy chọn địa chỉ đã lưu có tọa độ.";
+            return "Hãy lấy GPS tại nơi nhận hàng hoặc chọn địa chỉ đã lưu có GPS.";
         if (error.contains("Shipping configuration unavailable"))
             return "Thiếu appConfig/shipping hoặc hồ sơ vị trí công khai của cửa hàng.";
         return error;
@@ -376,7 +388,8 @@ public class CheckoutFragment extends Fragment {
         if (address != null) address.setVisibility(delivery ? View.VISIBLE : View.GONE);
         View view = getView();
         if (view != null) {
-            view.findViewById(R.id.checkoutCoordinates).setVisibility(delivery ? View.VISIBLE : View.GONE);
+            gpsStatus.setVisibility(delivery ? View.VISIBLE : View.GONE);
+            view.findViewById(R.id.checkoutReceiverAddressTitle).setVisibility(delivery ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.checkoutUseLocation).setVisibility(delivery ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.checkoutLocationHint).setVisibility(delivery ? View.VISIBLE : View.GONE);
             savedAddressSpinner.setVisibility(delivery && vm != null && !vm.isGuest() ? View.VISIBLE : View.GONE);
@@ -397,15 +410,19 @@ public class CheckoutFragment extends Fragment {
         int version = ++bankLoadVersion;
         bankTransferAvailable = false;
         applyPaymentMethods();
-        if (selectedSeller.isEmpty()) return;
+        if (selectedSeller.isEmpty()) { sellerAddress.setText("Chọn sản phẩm để xem địa chỉ cửa hàng."); return; }
         vm.loadStorefront(selectedSeller, new StorefrontRepository.Callback() {
             public void success(SellerStorefront profile) {
                 if (version != bankLoadVersion || getView() == null) return;
-                bankTransferAvailable = profile.acceptsTransfer(); applyPaymentMethods();
+                bankTransferAvailable = profile.acceptsTransfer();
+                if (!quoteReady && fulfillment.getSelectedItem() != FulfillmentType.ON_SITE_RESCUE) sellerAddress.setText(profile.address.trim().isEmpty()
+                        ? "Cửa hàng chưa cập nhật địa chỉ gửi hàng."
+                        : "Điểm gửi / nhận tại cửa hàng: " + profile.shopName + "\n" + profile.address);
+                applyPaymentMethods();
             }
             public void error(String message) {
                 if (version != bankLoadVersion || getView() == null) return;
-                bankTransferAvailable = false; applyPaymentMethods();
+                bankTransferAvailable = false; sellerAddress.setText("Chưa tải được địa chỉ cửa hàng. Hãy thử lại."); applyPaymentMethods();
             }
         });
     }
@@ -425,9 +442,25 @@ public class CheckoutFragment extends Fragment {
         bindingPaymentMethods = false;
     }
 
+    private boolean hasReceiverGps() {
+        return com.rescuefarm.service.location.GpsCoordinates.isValid(receiverLatitude, receiverLongitude);
+    }
+    private void showReceiverGps() {
+        gpsStatus.setText(hasReceiverGps() ? R.string.gps_selected : R.string.delivery_gps_required);
+    }
+
     private String text(EditText field) { return field.getText().toString().trim(); }
+    @Override public void onViewStateRestored(@Nullable Bundle state) {
+        super.onViewStateRestored(state);
+        if (gpsStatus != null && state != null) {
+            receiverLatitude = state.getDouble("receiverLatitude");
+            receiverLongitude = state.getDouble("receiverLongitude"); showReceiverGps();
+            scheduleShippingEstimate();
+        }
+    }
     @Override public void onSaveInstanceState(@NonNull Bundle state) {
         super.onSaveInstanceState(state); state.putString("selectedAddressId", selectedAddressId);
+        state.putDouble("receiverLatitude", receiverLatitude); state.putDouble("receiverLongitude", receiverLongitude);
     }
     @Override public void onDestroyView() {
         quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; bankLoadVersion++; locationRequestVersion = -1;

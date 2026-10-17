@@ -190,7 +190,9 @@
     <string name="hide_product_action">Ẩn</string>
     <string name="product_editor_title">Thông tin sản phẩm</string>
     <string name="available_categories_label">Danh mục đang hoạt động</string>
-    <string name="category_id_label">Mã danh mục</string>
+    <string name="category_id_label">Danh mục</string>
+    <string name="category_selection_hint">Chọn một danh mục đang hoạt động.</string>
+    <string name="no_active_categories">Hiện chưa có danh mục đang hoạt động.</string>
     <string name="product_name_label">Tên sản phẩm</string>
     <string name="product_description_label">Mô tả</string>
     <string name="original_price_label">Giá gốc</string>

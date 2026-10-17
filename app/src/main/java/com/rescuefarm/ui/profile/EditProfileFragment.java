@@ -86,18 +86,12 @@ public class EditProfileFragment extends Fragment {
         mapCaption = view.findViewById(R.id.profileMapCaption);
         openGoogleMapsButton = view.findViewById(R.id.openGoogleMapsButton);
         boolean sellerMap = ActorUiPolicy.isSeller(this);
-        int sellerVisibility = sellerMap ? View.VISIBLE : View.GONE;
-        sellerLocationTitle.setVisibility(sellerVisibility);
-        sellerLocationDescription.setVisibility(sellerVisibility);
-        mapCaption.setVisibility(sellerVisibility);
-        openGoogleMapsButton.setVisibility(View.VISIBLE);
+        sellerLocationTitle.setVisibility(View.GONE);
+        sellerLocationDescription.setVisibility(View.GONE);
+        mapCaption.setVisibility(View.GONE);
+        openGoogleMapsButton.setVisibility(sellerMap ? View.GONE : View.VISIBLE);
         locationView.setVisibility(sellerMap ? View.GONE : View.VISIBLE);
-        if (sellerMap) {
-            com.google.android.material.button.MaterialButton gpsButton = view.findViewById(R.id.useProfileLocationButton);
-            gpsButton.setText("Lấy GPS hiện tại");
-            gpsButton.setTextColor(Color.parseColor("#1769FF"));
-            gpsButton.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#CED7E5")));
-        }
+        view.findViewById(R.id.useProfileLocationButton).setVisibility(sellerMap ? View.GONE : View.VISIBLE);
         openGoogleMapsButton.setOnClickListener(v -> openGoogleMaps());
         mapContainer = view.findViewById(R.id.profileMapContainer);
         locationMap = view.findViewById(R.id.profileLocationMap);
@@ -207,6 +201,7 @@ public class EditProfileFragment extends Fragment {
                 == PackageManager.PERMISSION_GRANTED;
     }
     private void showCoordinates() {
+        if (ActorUiPolicy.isSeller(this)) { mapContainer.setVisibility(View.GONE); return; }
         locationView.setText(getString(R.string.coordinates_format, latitude, longitude));
         if (ActorUiPolicy.isSeller(this)) {
             mapCaption.setText("Vị trí GPS hồ sơ" + System.lineSeparator()
@@ -267,6 +262,7 @@ public class EditProfileFragment extends Fragment {
     }
 
     private void showMap(double lat, double lon) {
+        if (ActorUiPolicy.isSeller(this)) { mapContainer.setVisibility(View.GONE); return; }
         if (!Double.isFinite(lat) || !Double.isFinite(lon)
                 || lat < -90D || lat > 90D || lon < -180D || lon > 180D
                 || (lat == 0D && lon == 0D)) {

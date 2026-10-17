@@ -70,6 +70,9 @@ public interface ProductRepository {
         callback.onError(ErrorCode.NOT_CONFIGURED, "Không thể tải các lô hàng của chiến dịch.");
     }
     void saveProduct(Product product, ProductCallback callback);
+    default void createProduct(Product product, ProductCallback callback) {
+        saveProduct(product, callback);
+    }
     void hideProduct(String productId, ActionCallback callback);
     void saveBatch(ProductBatch batch, long expectedVersion, BatchCallback callback);
     void deleteBatch(String batchId, long expectedVersion, ActionCallback callback);

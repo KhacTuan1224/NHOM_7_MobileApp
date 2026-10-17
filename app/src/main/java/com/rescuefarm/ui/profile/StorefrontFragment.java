@@ -20,8 +20,8 @@ import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public final class StorefrontFragment extends Fragment {
     private LinearLayout root, details, products;
-    private EditText name, description, bank, account, accountName, qr, latitude, longitude;
-    private VietnamAddressView address;
+    private EditText qr;
+    private TextView storeDetails;
     private TextView message;
     private View upload;
     private String sellerId;
@@ -37,7 +37,7 @@ public final class StorefrontFragment extends Fragment {
         AuthRepository auth=AuthRepositoryFactory.create(requireContext());
         editing=getArguments()!=null&&getArguments().getBoolean("edit",false)&&auth.isAuthenticated();
         sellerId=editing?auth.getCurrentUserId():getArguments()==null?"":getArguments().getString("sellerId","");
-        CustomerUi.text(root,editing?"Cửa hàng và chuyển khoản":"Thông tin người bán").setTextSize(24);
+        CustomerUi.text(root,editing?"Ảnh QR thanh toán":"Thông tin người bán").setTextSize(24);
         message=CustomerUi.text(root,""); details=CustomerUi.column(requireContext()); root.addView(details);
         vm=new ViewModelProvider(this,new StorefrontViewModelFactory(requireContext())).get(StorefrontViewModel.class);
         if(editing) buildEditor();
@@ -64,43 +64,19 @@ public final class StorefrontFragment extends Fragment {
         vm.load(sellerId);
     }
     private void buildEditor() {
-        name=CustomerUi.input(details,"Tên cửa hàng",InputType.TYPE_CLASS_TEXT);
-        description=CustomerUi.input(details,"Giới thiệu",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        CustomerUi.text(details,"Địa chỉ nhận hàng tại cửa hàng");
-        address=new VietnamAddressView(requireContext()); address.setId(R.id.storefrontAddressForm); details.addView(address);
-        latitude=CustomerUi.input(details,"Vĩ độ cửa hàng",InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL|InputType.TYPE_NUMBER_FLAG_SIGNED);
-        longitude=CustomerUi.input(details,"Kinh độ cửa hàng",InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL|InputType.TYPE_NUMBER_FLAG_SIGNED);
-        address.setOnAddressChangedListener(() -> { latitude.setText(""); longitude.setText(""); });
-        CustomerUi.text(details,"Phí giao hàng được tính theo khoảng cách GPS từ vị trí cửa hàng đến địa chỉ nhận. Hãy cập nhật tọa độ cửa hàng trong hồ sơ Seller. Pickup và mua tại chỗ miễn phí.");
-        CustomerUi.text(details,"Để trống toàn bộ thông tin ngân hàng nếu chưa nhận chuyển khoản.");
-        bank=CustomerUi.input(details,"Mã ngân hàng (ví dụ: VCB, MB)",InputType.TYPE_CLASS_TEXT);
-        account=CustomerUi.input(details,"Số tài khoản",InputType.TYPE_CLASS_TEXT);
-        accountName=CustomerUi.input(details,"Tên chủ tài khoản",InputType.TYPE_CLASS_TEXT);
+        storeDetails = CustomerUi.text(details, "Đang tải thông tin cửa hàng…");
+        CustomerUi.text(details, "Địa chỉ, GPS và tài khoản ngân hàng được quản lý tại Hồ sơ người bán.");
+        CustomerUi.button(details, "Mở Hồ sơ người bán", v ->
+                Navigation.findNavController(requireView()).navigate(R.id.sellerProfileFragment));
         qr=CustomerUi.input(details,"Đường dẫn ảnh QR (HTTPS)",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);
         upload=CustomerUi.button(details,"Tải ảnh QR từ thiết bị",v->picker.launch("image/*"));
-        View save=CustomerUi.button(details,"Lưu thông tin công khai",v->{
-            if (!address.validate()) return;
-            try {
-                SellerStorefront value=new SellerStorefront(); value.sellerId=sellerId;
-                SellerStorefront previous=vm.storefront.getValue();
-                if(previous!=null){value.latitude=previous.latitude;value.longitude=previous.longitude;value.avatarUrl=previous.avatarUrl;value.shippingFee=previous.shippingFee;}
-                value.shopName=CustomerUi.value(name); value.description=CustomerUi.value(description);
-                value.address=address.formattedAddress();
-                value.latitude=coordinate(latitude,90); value.longitude=coordinate(longitude,180);
-                if(value.latitude==0D&&value.longitude==0D)throw new IllegalArgumentException("Cần tọa độ cửa hàng để tính phí giao hàng.");
-                value.bankName=CustomerUi.value(bank); value.bankAccount=CustomerUi.value(account);
-                value.accountName=CustomerUi.value(accountName); value.qrUrl=CustomerUi.value(qr); vm.save(value);
-            }catch(IllegalArgumentException e){message.setText(e.getMessage());}
-        });
+        View save=CustomerUi.button(details,"Lưu ảnh QR",v->vm.savePaymentQr(sellerId,CustomerUi.value(qr)));
         vm.loading.observe(getViewLifecycleOwner(),loading->save.setEnabled(!Boolean.TRUE.equals(loading)));
     }
     private void render(SellerStorefront value) {
         if(editing) {
-            name.setText(value.shopName); description.setText(value.description); address.setFormattedAddress(value.address);
-            latitude.setText(value.latitude==0D?"":String.valueOf(value.latitude));
-            longitude.setText(value.longitude==0D?"":String.valueOf(value.longitude));
-            bank.setText(value.bankName);
-            account.setText(value.bankAccount); accountName.setText(value.accountName); qr.setText(value.qrUrl);
+            storeDetails.setText(value.shopName + "\n" + value.address);
+            qr.setText(value.qrUrl);
         } else {
             details.removeAllViews();
             if(!value.configured){CustomerUi.text(details,"Người bán chưa cập nhật trang cửa hàng.");return;}
@@ -108,12 +84,5 @@ public final class StorefrontFragment extends Fragment {
             CustomerUi.text(details,value.description); CustomerUi.text(details,value.address);
             CustomerUi.text(details,"Phí giao hàng được tính theo khoảng cách GPS khi đặt giao hàng.");
         }
-    }
-    private double coordinate(EditText input,int limit) {
-        try {
-            double value=Double.parseDouble(CustomerUi.value(input).replace(',','.'));
-            if(!Double.isFinite(value)||Math.abs(value)>limit)throw new NumberFormatException();
-            return value;
-        }catch(NumberFormatException error){throw new IllegalArgumentException("Nhập tọa độ chính xác của địa chỉ cửa hàng, hoặc lấy GPS trong hồ sơ Seller.");}
     }
 }

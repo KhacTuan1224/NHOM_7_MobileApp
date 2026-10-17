@@ -62,15 +62,15 @@ function addressData(owner, id = 'home', isDefault = false) {
     isDefault, updatedAt: serverTimestamp() };
 }
 
-test('all three active roles can manage only their own private addresses', async () => {
-  for (const owner of ['customer-a', 'seller', 'admin']) {
+test('active customers can manage only their own receiver addresses', async () => {
+  for (const owner of ['customer-a', 'customer-b']) {
     const db = env.authenticatedContext(owner).firestore();
     const ref = doc(db, `users/${owner}/addresses/home`);
     await assertSucceeds(setDoc(ref, addressData(owner)));
     await assertSucceeds(getDoc(ref));
     assert.equal((await assertSucceeds(getDocs(collection(db, `users/${owner}/addresses`)))).size, 1);
     await assertSucceeds(updateDoc(ref, { street: '34 Đường Mới', updatedAt: serverTimestamp() }));
-    for (const other of ['customer-a', 'seller', 'admin'].filter(id => id !== owner)) {
+    for (const other of ['customer-a', 'customer-b', 'seller', 'admin'].filter(id => id !== owner)) {
       const foreign = env.authenticatedContext(other).firestore();
       const foreignRef = doc(foreign, `users/${owner}/addresses/home`);
       await assertFails(getDoc(foreignRef));
@@ -81,6 +81,14 @@ test('all three active roles can manage only their own private addresses', async
     }
     await assertFails(updateDoc(ref, { customerId: 'customer-b', updatedAt: serverTimestamp() }));
     await assertSucceeds(deleteDoc(ref));
+  }
+});
+
+test('sellers and admins do not have customer receiver address books', async () => {
+  for (const owner of ['seller', 'admin']) {
+    const db = env.authenticatedContext(owner).firestore();
+    await assertFails(setDoc(doc(db, `users/${owner}/addresses/home`), addressData(owner)));
+    await assertFails(getDocs(collection(db, `users/${owner}/addresses`)));
   }
 });
 
@@ -97,8 +105,8 @@ test('address permissions reject guests, inactive users and forged roles', async
   await assertFails(getDocs(collection(guest, 'users/customer-a/addresses')));
 });
 
-test('default addresses can be switched atomically by every role and cannot be deleted', async () => {
-  for (const [owner, role] of [['customer-a', 'CUSTOMER'], ['seller', 'SELLER'], ['admin', 'ADMIN']]) {
+test('customer default addresses switch atomically and cannot be deleted while default', async () => {
+  for (const [owner, role] of [['customer-a', 'CUSTOMER']]) {
     await seed({ [`users/${owner}`]: {
       id: owner, email: `${owner}@example.com`, fullName: 'Test Owner', phone: '', avatarUrl: '',
       role, status: 'ACTIVE', ...(role === 'SELLER' ? { sellerStatus: 'APPROVED' } : {}),

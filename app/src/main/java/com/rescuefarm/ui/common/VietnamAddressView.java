@@ -68,7 +68,7 @@ public final class VietnamAddressView extends LinearLayout {
         }));
     }
 
-    private static synchronized CompletableFuture<VietnamAddressCatalog> load(Context context) {
+    static synchronized CompletableFuture<VietnamAddressCatalog> load(Context context) {
         if (loading == null) loading = CompletableFuture.supplyAsync(() -> {
             try (InputStreamReader reader = new InputStreamReader(
                     context.getAssets().open("address/dvhcvn.tsv"), StandardCharsets.UTF_8)) {
@@ -195,6 +195,17 @@ public final class VietnamAddressView extends LinearLayout {
         return true;
     }
     public void clear() { setAddress("", "", "", ""); }
+
+    /** Autofill only when the geocoder agrees with the bundled address catalog. */
+    public boolean applyGeocodedAddress(com.rescuefarm.service.location.LocationProvider.GeocodedAddress value) {
+        if (catalog == null || value == null) return false;
+        Unit p = VietnamAddressCatalog.find(catalog.provinces(), value.getProvince());
+        Unit d = VietnamAddressCatalog.find(children(p), value.getDistrict());
+        Unit w = VietnamAddressCatalog.find(children(d), value.getWard());
+        if (p == null || d == null || w == null || value.getStreet().trim().length() < 3) return false;
+        setAddress(p.name, d.name, w.name, value.getStreet());
+        return true;
+    }
 
     @Override protected Parcelable onSaveInstanceState() {
         Bundle state = new Bundle(); state.putParcelable("super", super.onSaveInstanceState());

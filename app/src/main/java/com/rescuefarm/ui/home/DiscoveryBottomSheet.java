@@ -22,6 +22,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
+import com.rescuefarm.ui.common.ProvinceFilterPicker;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.enums.UrgencyLevel;
@@ -38,6 +39,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     private Spinner categorySpinner, reasonSpinner, urgencySpinner, modeSpinner, sortSpinner;
     private LinearLayout results;
     private TextView count;
+    private boolean filterOnly;
     private final List<Category> categories = new ArrayList<>();
     private final ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissions);
@@ -53,6 +55,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        filterOnly = getArguments() != null && getArguments().getBoolean("filterOnly", false);
         
         // Setup bottom sheet behavior to expand fully
         View parent = (View) view.getParent();
@@ -67,6 +70,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         renderer = new HomeCardRenderer(this);
         searchInput = view.findViewById(R.id.searchInput);
         provinceInput = view.findViewById(R.id.provinceInput);
+        ProvinceFilterPicker.bind(provinceInput);
         minPriceInput = view.findViewById(R.id.minPriceInput); maxPriceInput = view.findViewById(R.id.maxPriceInput);
         radiusInput = view.findViewById(R.id.radiusInput); expiryDaysInput = view.findViewById(R.id.expiryDaysInput);
         minStockInput = view.findViewById(R.id.minStockInput);
@@ -78,18 +82,30 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         results = view.findViewById(R.id.searchResultContainer);
         count = view.findViewById(R.id.searchCount);
 
-        setupEnumSpinner(reasonSpinner, "Tất cả reason", RescueReason.values());
-        setupEnumSpinner(urgencySpinner, "Tất cả urgency", UrgencyLevel.values());
-        setupEnumSpinner(modeSpinner, "Tất cả mode", RescueMode.values());
+        setupEnumSpinner(reasonSpinner, "Tất cả lý do", RescueReason.values());
+        setupEnumSpinner(urgencySpinner, "Tất cả mức độ", UrgencyLevel.values());
+        setupEnumSpinner(modeSpinner, "Tất cả hình thức", RescueMode.values());
         setupEnumSpinner(sortSpinner, null, DiscoveryQuery.Sort.values());
 
-        viewModel = new ViewModelProvider(requireActivity(), new HomeViewModelFactory(requireContext()))
+        viewModel = new ViewModelProvider(filterOnly && getParentFragment() instanceof GuestHomeFragment
+                ? requireParentFragment() : requireActivity(), new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
         restoreInputs(viewModel.getQuery());
+        if (filterOnly) {
+            view.findViewById(R.id.discoveryKeywordLayout).setVisibility(View.GONE);
+            ((TextView) view.findViewById(R.id.discoverySheetTitle)).setText(R.string.home_filter_title);
+            count.setVisibility(View.GONE);
+            results.setVisibility(View.GONE);
+        }
         viewModel.getHomeState().observe(getViewLifecycleOwner(), value -> setupCategories(value.getCategories()));
-        viewModel.getSearchResults().observe(getViewLifecycleOwner(), this::render);
+        if (!filterOnly) viewModel.getSearchResults().observe(getViewLifecycleOwner(), this::render);
 
-        view.findViewById(R.id.applyFilterButton).setOnClickListener(v -> apply());
+        view.findViewById(R.id.applyFilterButton).setOnClickListener(v -> {
+            if (apply() && filterOnly) {
+                getParentFragmentManager().setFragmentResult("home.filtersApplied", new Bundle());
+                dismiss();
+            }
+        });
         view.findViewById(R.id.clearFilterButton).setOnClickListener(v -> clear());
         view.findViewById(R.id.discoveryLocationButton).setOnClickListener(v -> requestLocation());
         
@@ -126,7 +142,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     private <T extends Enum<T>> void setupEnumSpinner(Spinner spinner, String allLabel, T[] values) {
         List<String> labels = new ArrayList<>();
         if (allLabel != null) labels.add(allLabel);
-        for (T value : values) labels.add(value.name().replace('_', ' '));
+        for (T value : values) labels.add(enumLabel(value));
         spinner.setAdapter(adapter(labels));
     }
 
@@ -137,19 +153,21 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         return result;
     }
 
-    private void apply() {
+    private boolean apply() {
         String category = categorySpinner.getSelectedItemPosition() <= 0 ? ""
                 : categories.get(categorySpinner.getSelectedItemPosition() - 1).getId();
         try {
             double min = decimal(minPriceInput, 0D), max = decimal(maxPriceInput, Double.MAX_VALUE);
             if (max < min) throw new IllegalArgumentException("Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.");
-            viewModel.setQuery(new DiscoveryQuery(text(searchInput), category, text(provinceInput),
+            viewModel.setQuery(new DiscoveryQuery(filterOnly ? viewModel.getQuery().getText() : text(searchInput), category, text(provinceInput),
                     selected(RescueReason.values(), reasonSpinner), selected(UrgencyLevel.values(), urgencySpinner),
                     selected(RescueMode.values(), modeSpinner),
                     DiscoveryQuery.Sort.values()[sortSpinner.getSelectedItemPosition()], min, max,
                     decimal(radiusInput, 0D), integer(expiryDaysInput), decimal(minStockInput, 0D)));
+            return true;
         } catch (IllegalArgumentException error) {
             Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+            return false;
         }
     }
 
@@ -159,7 +177,8 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void clear() {
-        searchInput.setText("");
+        String keyword = filterOnly ? viewModel.getQuery().getText() : "";
+        searchInput.setText(keyword);
         provinceInput.setText("");
         minPriceInput.setText(""); maxPriceInput.setText(""); radiusInput.setText("");
         expiryDaysInput.setText(""); minStockInput.setText("");
@@ -168,7 +187,8 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         urgencySpinner.setSelection(0);
         modeSpinner.setSelection(0);
         sortSpinner.setSelection(0);
-        viewModel.setQuery(DiscoveryQuery.empty());
+        viewModel.setQuery(DiscoveryQuery.empty().withText(keyword));
+        if (filterOnly) getParentFragmentManager().setFragmentResult("home.filtersApplied", new Bundle());
     }
 
     private void render(List<DiscoveryResult> values) {
@@ -264,8 +284,34 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     }
     private void selectEnum(Spinner spinner, Enum<?> selected) {
         if (selected != null) for (int i = 0; i < spinner.getCount(); i++)
-            if (spinner.getItemAtPosition(i).toString().equals(selected.name().replace('_', ' '))) {
+            if (spinner.getItemAtPosition(i).toString().equals(enumLabel(selected))) {
                 spinner.setSelection(i); return;
             }
+    }
+
+    private String enumLabel(Enum<?> value) {
+        switch (value.name()) {
+            case "OVER_SUPPLY": return "Dư cung";
+            case "NEAR_EXPIRY": return "Gần hết hạn";
+            case "SEASONAL_HARVEST": return "Thu hoạch vào mùa";
+            case "WEATHER_IMPACT": return "Ảnh hưởng thời tiết";
+            case "ORDER_CANCELLED": return "Đơn hàng bị hủy";
+            case "LOGISTICS_DISRUPTION": return "Gián đoạn vận chuyển";
+            case "DEMAND_DROP": return "Nhu cầu giảm";
+            case "COSMETIC_GRADE": return "Ngoại hình chưa đẹp";
+            case "NORMAL": return "Bình thường";
+            case "HIGH": return "Khẩn cấp";
+            case "CRITICAL": return "Rất khẩn cấp";
+            case "FIXED_POINT": return "Điểm cố định";
+            case "MOBILE_POINT": return "Điểm di động";
+            case "RELEVANCE": return "Phù hợp nhất";
+            case "URGENCY": return "Mức độ khẩn cấp";
+            case "DISCOUNT_DESC": return "Giảm giá nhiều nhất";
+            case "PRICE_ASC": return "Giá tăng dần";
+            case "DISTANCE": return "Gần bạn nhất";
+            case "NEAREST_DEADLINE": return "Sắp kết thúc";
+            case "BEST_SELLING": return "Bán chạy nhất";
+            default: return value.name().replace('_', ' ');
+        }
     }
 }

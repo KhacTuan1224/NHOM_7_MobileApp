@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:background="@drawable/bg_search_dropdown"
+    android:paddingTop="4dp" android:paddingBottom="6dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp"
+        android:paddingStart="16dp" android:paddingEnd="4dp" android:gravity="center_vertical">
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="wrap_content" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/home_search_suggestions" android:textSize="13sp" android:textStyle="bold"
+                android:textColor="@color/rescue_on_surface" />
+            <TextView android:id="@+id/homeSearchCount" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textSize="11sp"
+                android:textColor="@color/rescue_on_surface_variant" android:accessibilityLiveRegion="polite" />
+        </LinearLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/homeSearchClose"
+            style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp"
+            android:contentDescription="@string/home_search_close" app:icon="@drawable/ic_close" app:iconSize="18dp" />
+    </LinearLayout>
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:layout_marginHorizontal="12dp" android:background="@color/rescue_outline" android:alpha="0.5" />
+    <androidx.core.widget.NestedScrollView android:id="@+id/homeSearchScroll"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:overScrollMode="never" android:scrollbars="vertical">
+        <LinearLayout android:id="@+id/homeSearchSuggestions" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

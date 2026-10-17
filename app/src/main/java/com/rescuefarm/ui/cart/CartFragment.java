@@ -40,6 +40,7 @@ public class CartFragment extends Fragment {
     private TextView noticeText;
     private boolean initialRevalidation;
     private final Map<String, Product> productMap = new HashMap<>();
+    private final Map<String, TextView> sellerTitles = new HashMap<>();
     private final NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 
     @Nullable
@@ -65,6 +66,11 @@ public class CartFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this, new CartViewModelFactory(requireContext()))
                 .get(CartViewModel.class);
+
+        viewModel.getSellerNames().observe(getViewLifecycleOwner(), names -> {
+            for (Map.Entry<String, TextView> title : sellerTitles.entrySet())
+                title.getValue().setText(sellerTitle(title.getKey()));
+        });
 
 
         // Quan sát danh mục sản phẩm để lấy ảnh, tên, đơn vị tính
@@ -149,6 +155,7 @@ public class CartFragment extends Fragment {
 
     private void render(Cart cart) {
         groups.removeAllViews();
+        sellerTitles.clear();
         if (cart == null || cart.getItems().isEmpty()) {
             TextView empty = new TextView(requireContext());
             empty.setText(R.string.cart_empty);
@@ -165,6 +172,7 @@ public class CartFragment extends Fragment {
         for (CartItem item : cart.getItems()) {
             bySeller.computeIfAbsent(item.getSellerId(), ignored -> new ArrayList<>()).add(item);
         }
+        viewModel.loadSellerNames(bySeller.keySet());
 
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (Map.Entry<String, List<CartItem>> seller : bySeller.entrySet()) {
@@ -197,7 +205,8 @@ public class CartFragment extends Fragment {
         // Seller Header
         View headerView = inflater.inflate(R.layout.item_cart_seller_header, body, false);
         TextView title = headerView.findViewById(R.id.sellerHeaderTitle);
-        title.setText(getString(R.string.cart_seller_format, seller.getKey()));
+        title.setText(sellerTitle(seller.getKey()));
+        sellerTitles.put(seller.getKey(), title);
         body.addView(headerView);
 
         // Item Rows
@@ -275,5 +284,17 @@ public class CartFragment extends Fragment {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private String sellerTitle(String sellerId) {
+        Map<String, String> names = viewModel.getSellerNames().getValue();
+        String name = names == null ? null : names.get(sellerId);
+        return name == null || name.trim().isEmpty() ? getString(R.string.cart_seller_name_unavailable)
+                : getString(R.string.cart_seller_format, name);
+    }
+
+    @Override public void onDestroyView() {
+        sellerTitles.clear();
+        super.onDestroyView();
     }
 }

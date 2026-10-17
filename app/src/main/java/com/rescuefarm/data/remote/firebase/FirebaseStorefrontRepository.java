@@ -7,6 +7,16 @@ import com.rescuefarm.data.repository.SellerStorefront;
 import java.util.Map;
 
 public final class FirebaseStorefrontRepository implements com.rescuefarm.data.repository.StorefrontRepository {
+    @Override public void savePaymentQr(String sellerId, String qrUrl, Callback callback) {
+        String url = text(qrUrl);
+        if (!url.isEmpty() && (!url.startsWith("https://") || url.length() > 2048)) {
+            callback.error("Ảnh QR phải là đường dẫn HTTPS hợp lệ."); return;
+        }
+        FirebaseFirestore.getInstance().collection("sellerPaymentProfiles").document(sellerId)
+                .update("qrUrl", url, "updatedAt", FieldValue.serverTimestamp())
+                .addOnSuccessListener(unused -> load(sellerId, callback))
+                .addOnFailureListener(error -> callback.error("Hãy lưu tài khoản ngân hàng trong Hồ sơ người bán trước khi lưu QR."));
+    }
     public androidx.lifecycle.LiveData<SellerStorefront> observe(String id) {
         return new androidx.lifecycle.LiveData<SellerStorefront>() {
             private com.google.firebase.firestore.ListenerRegistration listener;

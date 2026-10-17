@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
+import com.rescuefarm.ui.common.DatePickerInput;
 import com.rescuefarm.domain.model.ProductBatch;
 import com.rescuefarm.domain.enums.BatchStatus;
 import com.rescuefarm.service.inventory.InventoryAlertEvaluator;
@@ -45,6 +46,8 @@ public class BatchManagerFragment extends Fragment {
         alertFilterButton = view.findViewById(R.id.batchAlertFilterButton);
         alertFilterButton.setOnClickListener(unused -> cycleAlertFilter());
         expiry = view.findViewById(R.id.expiryDateInput); quantity = view.findViewById(R.id.batchQuantityInput);
+        DatePickerInput.bind(harvest);
+        DatePickerInput.bind(expiry);
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);
         TextWatcher watcher = new TextWatcher() {

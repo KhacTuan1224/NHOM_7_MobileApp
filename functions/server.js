@@ -78,6 +78,7 @@ async function auth(req, roles = []) {
   return {uid: decoded.uid, role};
 }
 app.get("/health", (_, res) => res.json({ok: true}));
+app.use(require('./seller-names').createSellerNamesApi({db}).router);
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
 app.use(campaignLifecycle.router);
 app.use(require('./seller-analytics').createSellerAnalytics({db, admin, authenticate: auth}).router);

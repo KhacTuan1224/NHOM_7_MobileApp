@@ -27,6 +27,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 import com.rescuefarm.ui.common.VietnamAddressView;
+import com.rescuefarm.ui.common.DatePickerInput;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.model.ProductBatch;
@@ -43,7 +44,17 @@ import java.util.UUID;
 public class CampaignEditorFragment extends Fragment {
     private String id = "";
     private CampaignViewModel viewModel;
-    private TextInputEditText title, description, start, end, latitude, longitude;
+    private TextInputEditText title, description, start, end;
+    private double campaignLatitude, campaignLongitude;
+    private TextView gpsStatus;
+    private com.rescuefarm.ui.profile.ProfileViewModel gpsModel;
+    private int addressVersion, gpsRequestVersion;
+    private final ActivityResultLauncher<String[]> gpsPermission = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                if (Boolean.TRUE.equals(result.get(android.Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(result.get(android.Manifest.permission.ACCESS_COARSE_LOCATION))) takeGps();
+                else if (gpsStatus != null) gpsStatus.setText("Cần cấp quyền vị trí để lấy GPS điểm giải cứu.");
+            });
     private VietnamAddressView locationName;
     private Spinner reason, mode;
     private LinearLayout batchContainer;
@@ -74,8 +85,12 @@ public class CampaignEditorFragment extends Fragment {
         description.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(3000)});
         start = view.findViewById(R.id.campaignStartInput);
         end = view.findViewById(R.id.campaignEndInput);
-        latitude = view.findViewById(R.id.campaignLatitudeInput);
-        longitude = view.findViewById(R.id.campaignLongitudeInput);
+        DatePickerInput.bind(start);
+        DatePickerInput.bind(end);
+        gpsStatus = view.findViewById(R.id.campaignGpsStatus);
+        gpsModel = new ViewModelProvider(this, new com.rescuefarm.ui.profile.ProfileViewModelFactory(requireContext()))
+                .get(com.rescuefarm.ui.profile.ProfileViewModel.class);
+        view.findViewById(R.id.campaignUseGpsButton).setOnClickListener(v -> requestGps());
         locationName = view.findViewById(R.id.campaignLocationNameInput);
         reason = view.findViewById(R.id.campaignReasonSpinner);
         mode = view.findViewById(R.id.campaignModeSpinner);
@@ -103,10 +118,9 @@ public class CampaignEditorFragment extends Fragment {
             }
             @Override public void afterTextChanged(Editable s) { }
         };
-        for (TextInputEditText input : new TextInputEditText[]{title, description, start, end,
-                latitude, longitude}) input.addTextChangedListener(watcher);
+        for (TextInputEditText input : new TextInputEditText[]{title, description, start, end}) input.addTextChangedListener(watcher);
         locationName.setOnAddressChangedListener(() -> {
-            if (!binding) { dirty = true; latitude.setText(""); longitude.setText(""); }
+            if (!binding) { dirty = true; addressVersion++; campaignLatitude = 0; campaignLongitude = 0; showGps(); }
         });
         installSpinnerDirtyListener(reason);
         installSpinnerDirtyListener(mode);
@@ -127,6 +141,19 @@ public class CampaignEditorFragment extends Fragment {
                 if (value != null && !dirty) populate(value);
             });
         }
+        gpsModel.getState().observe(getViewLifecycleOwner(), result -> {
+            if (result.getStatus() == com.rescuefarm.ui.profile.ProfileScreenState.Status.LOCATION) {
+                if (gpsRequestVersion == addressVersion) {
+                    binding = true;
+                    locationName.applyGeocodedAddress(result.getGeocodedAddress());
+                    campaignLatitude = result.getLatitude(); campaignLongitude = result.getLongitude();
+                    binding = false; dirty = true; showGps();
+                }
+                gpsModel.clearTransientState();
+            } else if (result.getStatus() == com.rescuefarm.ui.profile.ProfileScreenState.Status.ERROR) {
+                gpsStatus.setText(result.getMessage()); gpsModel.clearTransientState();
+            }
+        });
         viewModel.loadSellerBatches(id);
         if (!id.isEmpty()) viewModel.load(id);
     }
@@ -257,7 +284,7 @@ public class CampaignEditorFragment extends Fragment {
         preserveVisibleTargets();
         viewModel.save(id, text(title), text(description), (RescueReason) reason.getSelectedItem(),
                 (RescueMode) mode.getSelectedItem(), new LinkedHashMap<>(selectedTargets), text(start),
-            text(end), text(latitude), text(longitude), locationName.isComplete()
+            text(end), String.valueOf(campaignLatitude), String.valueOf(campaignLongitude), locationName.isComplete()
                     ? locationName.formattedAddress() : locationName.street(), submit,
             new ArrayList<>(imageUrls), new ArrayList<>(imagePublicIds));
     }
@@ -319,9 +346,38 @@ public class CampaignEditorFragment extends Fragment {
         if (optionsLoaded) renderBatchOptions(viewModel.getBatchOptions().getValue());
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         start.setText(format.format(value.getStartDate())); end.setText(format.format(value.getEndDate()));
-        latitude.setText(String.valueOf(value.getLatitude())); longitude.setText(String.valueOf(value.getLongitude()));
+        campaignLatitude = value.getLatitude(); campaignLongitude = value.getLongitude(); showGps();
         locationName.setFormattedAddress(value.getLocationName());
         binding = false;
+    }
+
+    private void requestGps() {
+        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED) takeGps();
+        else gpsPermission.launch(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION});
+    }
+    private void takeGps() {
+        gpsRequestVersion = addressVersion;
+        gpsStatus.setText("Đang lấy GPS điểm giải cứu…");
+        gpsModel.requestCurrentLocation(true);
+    }
+    private void showGps() {
+        gpsStatus.setText(com.rescuefarm.service.location.GpsCoordinates.isValid(campaignLatitude, campaignLongitude)
+                ? R.string.gps_selected : R.string.gps_not_selected);
+    }
+    @Override public void onViewStateRestored(@Nullable Bundle state) {
+        super.onViewStateRestored(state);
+        if (state != null) {
+            campaignLatitude = state.getDouble("campaignLatitude"); campaignLongitude = state.getDouble("campaignLongitude");
+            dirty = true; showGps();
+        }
+    }
+    @Override public void onSaveInstanceState(@NonNull Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putDouble("campaignLatitude", campaignLatitude); state.putDouble("campaignLongitude", campaignLongitude);
     }
 
     private String date(Date value) {

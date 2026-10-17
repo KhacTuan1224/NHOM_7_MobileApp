@@ -2,7 +2,8 @@
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background" android:fillViewport="true">
+    android:background="@color/rescue_background" android:fillViewport="true"
+    android:focusableInTouchMode="true">
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:paddingStart="16dp" android:paddingEnd="16dp"
@@ -45,24 +46,32 @@
                         android:contentDescription="@string/notifications_title" android:padding="9dp"
                         android:src="@drawable/ic_home_notifications" app:tint="@android:color/white" />
                 </LinearLayout>
-                <com.google.android.material.card.MaterialCardView android:id="@+id/searchButton"
-                    android:layout_width="match_parent" android:layout_height="44dp"
-                    android:layout_marginTop="10dp" android:clickable="true" android:focusable="true"
-                    app:cardBackgroundColor="@color/rescue_surface" app:cardCornerRadius="22dp"
-                    app:cardElevation="0dp">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
-                        android:gravity="center_vertical" android:orientation="horizontal"
-                        android:paddingStart="12dp" android:paddingEnd="12dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                            android:contentDescription="@null" android:src="@drawable/ic_home_search"
-                            app:tint="@color/rescue_splash_green" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp" android:text="@string/home_search_hint"
-                            android:textColor="@color/rescue_on_surface_variant" android:textSize="14sp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp" android:orientation="horizontal" android:gravity="center_vertical">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/searchButton"
+                        android:layout_width="0dp" android:layout_weight="1" android:layout_height="48dp"
+                        app:cardBackgroundColor="@color/rescue_surface" app:cardCornerRadius="24dp" app:cardElevation="0dp">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                            android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="12dp" android:paddingEnd="8dp">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:contentDescription="@null" android:src="@drawable/ic_home_search" app:tint="@color/rescue_primary" />
+                            <androidx.appcompat.widget.AppCompatEditText android:id="@+id/homeSearchInput"
+                                android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
+                                android:layout_marginStart="8dp" android:background="@null" android:hint="@string/home_search_hint"
+                                android:inputType="text" android:imeOptions="actionSearch" android:singleLine="true"
+                                android:textColor="@color/rescue_on_surface" android:textColorHint="@color/rescue_on_surface_variant" android:textSize="14sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/homeFilterButton"
+                        style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp"
+                        android:layout_marginStart="8dp" android:contentDescription="@string/home_filter_title"
+                        app:icon="@drawable/ic_home_filter" app:iconTint="@color/rescue_primary"
+                        app:backgroundTint="@color/rescue_surface" app:cornerRadius="24dp" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="6dp" android:gravity="center_vertical"

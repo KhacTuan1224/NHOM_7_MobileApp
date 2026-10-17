@@ -17,6 +17,13 @@ import com.rescuefarm.service.pricing.PricingService;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import com.rescuefarm.service.backend.RenderBackendClient;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CartViewModel extends ViewModel {
@@ -27,6 +34,8 @@ public class CartViewModel extends ViewModel {
     private final CartGroupingService groupingService = new CartGroupingService();
     private final CartRevalidationService revalidationService = new CartRevalidationService(pricingService);
     private final MutableLiveData<CartScreenState> state = new MutableLiveData<>(CartScreenState.idle());
+    private final MutableLiveData<Map<String, String>> sellerNames = new MutableLiveData<>(new HashMap<>());
+    private final Set<String> requestedSellerNames = new HashSet<>();
 
     public CartViewModel(CartRepository cartRepository, ProductRepository productRepository) {
         this.cartRepository = cartRepository; this.productRepository = productRepository;
@@ -35,6 +44,35 @@ public class CartViewModel extends ViewModel {
     public LiveData<Cart> getCart() { return cart; }
     public LiveData<List<Product>> getProducts() { return productRepository.observeProducts(); }
     public LiveData<CartScreenState> getState() { return state; }
+    public LiveData<Map<String, String>> getSellerNames() { return sellerNames; }
+
+    public void loadSellerNames(Set<String> sellerIds) {
+        List<String> missing = new ArrayList<>();
+        for (String id : sellerIds) {
+            if (id != null && !id.trim().isEmpty() && requestedSellerNames.add(id)) missing.add(id);
+        }
+        for (int start = 0; start < missing.size(); start += 50) {
+            List<String> batch = new ArrayList<>(missing.subList(start, Math.min(start + 50, missing.size())));
+            JSONObject body = new JSONObject();
+            try { body.put("sellerIds", new JSONArray(batch)); }
+            catch (org.json.JSONException error) { requestedSellerNames.removeAll(batch); continue; }
+            RenderBackendClient.postGuest("/sellers/names", body, new RenderBackendClient.Callback() {
+                @Override public void onSuccess(JSONObject response) {
+                    Map<String, String> names = new HashMap<>(sellerNames.getValue());
+                    JSONObject values = response.optJSONObject("sellerNames");
+                    if (values != null) for (String id : batch) {
+                        String name = values.optString(id, "").trim();
+                        if (!name.isEmpty()) names.put(id, name);
+                    }
+                    sellerNames.setValue(names);
+                }
+                @Override public void onError(String message) {
+                    // Retry on the next cart refresh; never expose an internal ID as a name.
+                    requestedSellerNames.removeAll(batch);
+                }
+            });
+        }
+    }
     public boolean isGuestCart() { return cartRepository.getOwnerType() == CartOwnerType.GUEST; }
     public Map<String, List<CartItem>> groupSelectedBySeller(Cart cart) {
         return groupingService.groupSelectedBySeller(cart);
