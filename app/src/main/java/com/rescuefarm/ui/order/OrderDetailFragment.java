@@ -1,4 +1,6 @@
 package com.rescuefarm.ui.order;
+import com.rescuefarm.ui.common.EnumLabels;
+import com.rescuefarm.ui.common.EnumLabelAdapter;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -161,43 +163,19 @@ public class OrderDetailFragment extends Fragment {
     }
 
     private String fulfillmentLabel(com.rescuefarm.domain.enums.FulfillmentType value) {
-        switch (value) {
-            case DELIVERY: return "Giao hàng đến địa chỉ";
-            case PICKUP: return "Nhận tại cửa hàng";
-            case ON_SITE_RESCUE: return "Nhận tại điểm giải cứu";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private String paymentMethodLabel(PaymentMethod value) {
-        switch (value) {
-            case COD: return "Thanh toán khi nhận hàng (COD)";
-            case BANK_TRANSFER: return "Chuyển khoản ngân hàng";
-            case CASH_ON_SITE: return "Tiền mặt tại điểm nhận";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private String paymentStatusLabel(PaymentStatus value) {
-        switch (value) {
-            case UNPAID: return "Chưa thanh toán";
-            case PENDING: return "Đang chờ xác nhận";
-            case PAID: return "Đã thanh toán";
-            case FAILED: return "Thanh toán thất bại";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private String shipmentStatusLabel(com.rescuefarm.domain.enums.ShipmentStatus value) {
-        switch (value) {
-            case PENDING: return "Chờ xử lý";
-            case READY: return "Sẵn sàng giao";
-            case SHIPPING: return "Đang vận chuyển";
-            case DELIVERED: return "Đã giao";
-            case FAILED: return "Giao thất bại";
-            case CANCELLED: return "Đã hủy";
-            default: return value.name();
-        }
+        return EnumLabels.label(value);
     }
 
     private void render(OrderLifecycleState state) {
@@ -224,8 +202,7 @@ public class OrderDetailFragment extends Fragment {
                 : Collections.emptyList();
         if (!displayedTargets.equals(nextStatuses)) {
             displayedTargets = nextStatuses;
-            target.setAdapter(new ArrayAdapter<>(requireContext(),
-                    android.R.layout.simple_spinner_dropdown_item, nextStatuses));
+            target.setAdapter(new EnumLabelAdapter<>(requireContext(), nextStatuses));
         }
         boolean canTransition = seller && !nextStatuses.isEmpty();
         transitionButton.setVisibility(canTransition ? View.VISIBLE : View.GONE);
@@ -378,7 +355,7 @@ public class OrderDetailFragment extends Fragment {
             case DELIVERED: return fulfillment == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY
                     ? "Đã giao hàng" : "Đã nhận nông sản";
             case CANCELLED: return "Đã hủy";
-            default: return status.name();
+            default: return EnumLabels.label(status);
         }
     }
 

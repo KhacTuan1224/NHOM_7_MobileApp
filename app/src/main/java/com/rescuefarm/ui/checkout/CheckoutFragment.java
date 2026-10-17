@@ -1,10 +1,9 @@
 package com.rescuefarm.ui.checkout;
+import com.rescuefarm.ui.common.EnumLabelAdapter;
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -17,9 +16,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -32,10 +28,11 @@ import com.rescuefarm.domain.enums.FulfillmentType;
 import com.rescuefarm.domain.enums.PaymentMethod;
 import com.rescuefarm.domain.model.Address;
 import com.rescuefarm.domain.model.Cart;
+import com.rescuefarm.domain.model.User;
+import com.rescuefarm.service.location.LocationProvider;
+import com.rescuefarm.service.location.LocationProviderFactory;
+import com.rescuefarm.service.location.GpsCoordinates;
 import com.rescuefarm.ui.common.VietnamAddressView;
-import com.rescuefarm.ui.profile.ProfileViewModel;
-import com.rescuefarm.ui.profile.ProfileViewModelFactory;
-import com.rescuefarm.ui.profile.ProfileScreenState;
 import com.rescuefarm.service.backend.RenderBackendClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -50,24 +47,24 @@ public class CheckoutFragment extends Fragment {
     private CheckoutViewModel vm;
     private EditText name, phone, note;
     private double receiverLatitude, receiverLongitude;
-    private TextView gpsStatus, sellerAddress;
+    private TextView gpsStatus, sellerAddress, paymentStatus;
     private VietnamAddressView address;
-    private ProfileViewModel locationModel;
+    private static final String PROFILE_ADDRESS = "__customer_profile__";
+    private LocationProvider locationProvider;
+    private User customer;
+    private TextView selectedAddressText;
+    private String receiverAddressText = "", resolvingAddress, failedAddress;
+    private String destinationError = "";
     private TextView summary, message;
     private String selectedAddressId;
     private boolean addressEdited, restoringAddress, bindingAddressDetails;
-    private int locationRequestVersion = -1, destinationVersion;
-    private final ActivityResultLauncher<String[]> locationPermission = registerForActivityResult(
-            new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-                if (Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
-                        || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION))) takeLocation();
-                else if (message != null) message.setText("Cần cấp quyền vị trí để lấy GPS nơi nhận, hoặc chọn địa chỉ đã lưu có GPS.");
-            });
+    private int destinationVersion;
     private Spinner fulfillment, payment, savedAddressSpinner;
     private final List<Address> savedAddresses = new ArrayList<>();
     private boolean bindingAddresses;
     private boolean bindingPaymentMethods;
     private boolean bankTransferAvailable;
+    private String paymentSellerId = "";
     private int bankLoadVersion;
     private boolean quoteReady;
     private double quotedSubtotal;
@@ -91,10 +88,14 @@ public class CheckoutFragment extends Fragment {
         name = view.findViewById(R.id.checkoutName); phone = view.findViewById(R.id.checkoutPhone);
         address = view.findViewById(R.id.checkoutAddress); note = view.findViewById(R.id.checkoutNote);
         gpsStatus = view.findViewById(R.id.checkoutGpsStatus);
+        selectedAddressText = view.findViewById(R.id.checkoutSelectedAddress);
+        locationProvider = LocationProviderFactory.create(requireContext());
         sellerAddress = view.findViewById(R.id.checkoutSellerAddress);
+        paymentStatus = view.findViewById(R.id.checkoutPaymentStatus);
         if (state != null) {
             receiverLatitude = state.getDouble("receiverLatitude");
             receiverLongitude = state.getDouble("receiverLongitude");
+            receiverAddressText = state.getString("receiverAddressText", "");
         }
         showReceiverGps();
         fulfillment = view.findViewById(R.id.checkoutFulfillment); payment = view.findViewById(R.id.checkoutPayment);
@@ -103,35 +104,15 @@ public class CheckoutFragment extends Fragment {
         if (state != null) selectedAddressId = state.getString("selectedAddressId", "");
         restoringAddress = state != null || addressEdited;
         addressEdited = addressEdited || state != null;
-        locationModel = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext()))
-                .get(ProfileViewModel.class);
-        view.findViewById(R.id.checkoutUseLocation).setOnClickListener(v -> requestLocation());
-        locationModel.getState().observe(getViewLifecycleOwner(), value -> {
-            if (value.getStatus() == ProfileScreenState.Status.LOCATION) {
-                if (locationRequestVersion != destinationVersion) { locationModel.clearTransientState(); return; }
-                bindingAddressDetails = true;
-                if (value.getGeocodedAddress() != null) address.applyGeocodedAddress(value.getGeocodedAddress());
-                receiverLatitude = value.getLatitude(); receiverLongitude = value.getLongitude();
-                bindingAddressDetails = false;
-                addressEdited = true;
-                selectedAddressId = "";
-                bindingAddresses = true; savedAddressSpinner.setSelection(0); bindingAddresses = false;
-                showReceiverGps(); scheduleShippingEstimate();
-                message.setText("Đã lấy GPS hiện tại. Hãy kiểm tra GPS có đúng địa chỉ nhận hàng.");
-                locationModel.clearTransientState();
-            } else if (value.getStatus() == ProfileScreenState.Status.ERROR) {
-                message.setText(value.getMessage()); locationModel.clearTransientState();
-            }
-        });
         address.setOnAddressChangedListener(() -> {
             if (bindingAddressDetails) return;
-            destinationVersion++;
+            destinationVersion++; resolvingAddress = null;
             addressEdited = true; selectedAddressId = "";
             bindingAddresses = true; savedAddressSpinner.setSelection(0); bindingAddresses = false;
+            receiverAddressText = ""; failedAddress = null; destinationError = "";
             receiverLatitude = 0; receiverLongitude = 0; showReceiverGps(); scheduleShippingEstimate();
         });
-        fulfillment.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
-                FulfillmentType.values()));
+        fulfillment.setAdapter(new EnumLabelAdapter<>(requireContext(), FulfillmentType.values()));
         updateFulfillmentFields();
         bindPaymentMethods();
         vm = new ViewModelProvider(this, new CheckoutViewModelFactory(requireContext()))
@@ -140,18 +121,31 @@ public class CheckoutFragment extends Fragment {
                 vm.isGuest() ? R.string.guest_checkout_notice : R.string.customer_checkout_notice);
         if (!vm.isGuest()) {
             vm.observeAddresses().observe(getViewLifecycleOwner(), this::renderAddresses);
+            vm.observeCustomer().observe(getViewLifecycleOwner(), value -> {
+                customer = value;
+                if (PROFILE_ADDRESS.equals(selectedAddressId)) applyCustomerLocation();
+                else if (selectedAddressId == null && value != null
+                        && GpsCoordinates.isValid(value.getLatitude(), value.getLongitude())) {
+                    selectedAddressId = PROFILE_ADDRESS;
+                    renderAddresses(new ArrayList<>(savedAddresses));
+                    applyCustomerLocation();
+                }
+            });
         }
         updateFulfillmentFields();
         savedAddressSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(android.widget.AdapterView<?> parent, View row, int position, long id) {
-                if (bindingAddresses || position < 0 || position > savedAddresses.size()) return;
-                String next = position == 0 ? "" : savedAddresses.get(position - 1).getId();
+                if (bindingAddresses || position < 0 || position > savedAddresses.size() + 1) return;
+                String next = position == 0 ? "" : position == 1 ? PROFILE_ADDRESS : savedAddresses.get(position - 2).getId();
                 if (next.equals(selectedAddressId)) return;
                 selectedAddressId = next; addressEdited = true; restoringAddress = false;
                 if (position == 0) {
-                    destinationVersion++;
-                    address.clear(); receiverLatitude = 0; receiverLongitude = 0; showReceiverGps(); scheduleShippingEstimate();
-                } else applyAddress(savedAddresses.get(position - 1));
+                    destinationVersion++; resolvingAddress = null;
+                    address.clear(); receiverAddressText = ""; failedAddress = null; destinationError = "";
+                    receiverLatitude = 0; receiverLongitude = 0; showReceiverGps(); scheduleShippingEstimate();
+                } else if (position == 1) applyCustomerLocation();
+                else applyAddress(savedAddresses.get(position - 2));
+                updateFulfillmentFields();
             }
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
@@ -198,8 +192,10 @@ public class CheckoutFragment extends Fragment {
         });
         View submit = view.findViewById(R.id.submitCheckoutButton);
         submit.setOnClickListener(unused -> {
-            if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY && !address.validate()) {
-                String validationMessage = "Vui lòng hoàn thiện địa chỉ nhận hàng trước khi đặt đơn.";
+            if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY
+                    && (hasSelectedAddress() ? receiverAddressText.trim().isEmpty() : !address.validate())) {
+                String validationMessage = destinationError.isEmpty()
+                        ? "Vui lòng hoàn thiện địa chỉ nhận hàng trước khi đặt đơn." : destinationError;
                 message.setText(validationMessage);
                 message.setVisibility(View.VISIBLE);
                 Toast.makeText(requireContext(), validationMessage, Toast.LENGTH_LONG).show();
@@ -207,13 +203,16 @@ public class CheckoutFragment extends Fragment {
                 return;
             }
             if (!quoteReady) {
-                message.setText("Đang chờ báo giá mới nhất từ máy chủ. Hãy kiểm tra kết nối rồi thử lại.");
+                message.setText(destinationError.isEmpty()
+                        ? "Đang cập nhật địa chỉ và báo giá. Vui lòng đợi trong giây lát."
+                        : destinationError);
+                failedAddress = null;
                 message.setVisibility(View.VISIBLE);
                 scheduleShippingEstimate(); return;
             }
             message.setText("Đang tạo đơn hàng và giữ tồn kho…");
             message.setVisibility(View.VISIBLE);
-            vm.submit(text(name), text(phone), address.formattedAddress(), String.valueOf(receiverLatitude), String.valueOf(receiverLongitude),
+            vm.submit(text(name), text(phone), deliveryAddress(), String.valueOf(receiverLatitude), String.valueOf(receiverLongitude),
                     (FulfillmentType) fulfillment.getSelectedItem(), (PaymentMethod) payment.getSelectedItem(),
                     text(note), quoteReady ? quotedSubtotal : Double.NaN,
                     quoteReady ? quotedShippingFee : Double.NaN);
@@ -226,6 +225,7 @@ public class CheckoutFragment extends Fragment {
         savedAddresses.clear(); if (values != null) savedAddresses.addAll(values);
         List<String> labels = new ArrayList<>();
         labels.add(getString(R.string.checkout_other_address));
+        labels.add("Vị trí của tôi · Hồ sơ cá nhân");
         for (Address saved : savedAddresses) labels.add((saved.isDefault() ? "Mặc định · " : "")
                 + saved.getReceiverName() + " · " + saved.getFormattedAddress());
         bindingAddresses = true;
@@ -234,26 +234,47 @@ public class CheckoutFragment extends Fragment {
         int selected = 0;
         boolean initial = selectedAddressId == null && !addressEdited && !restoringAddress;
         if (initial && !savedAddresses.isEmpty()) {
+            selected = 2;
+            for (int i = 0; i < savedAddresses.size(); i++) if (savedAddresses.get(i).isDefault()) { selected = i + 2; break; }
+            selectedAddressId = savedAddresses.get(selected - 2).getId();
+        } else if (initial) {
             selected = 1;
-            for (int i = 0; i < savedAddresses.size(); i++) if (savedAddresses.get(i).isDefault()) { selected = i + 1; break; }
-            selectedAddressId = savedAddresses.get(selected - 1).getId();
+            selectedAddressId = PROFILE_ADDRESS;
         } else {
-            for (int i = 0; i < savedAddresses.size(); i++)
-                if (savedAddresses.get(i).getId().equals(selectedAddressId)) { selected = i + 1; break; }
+            if (PROFILE_ADDRESS.equals(selectedAddressId)) selected = 1;
+            else for (int i = 0; i < savedAddresses.size(); i++)
+                if (savedAddresses.get(i).getId().equals(selectedAddressId)) { selected = i + 2; break; }
+        }
+        if (selected == 0 && hasSelectedAddress()) {
+            destinationVersion++; resolvingAddress = null; failedAddress = null;
+            receiverLatitude = 0; receiverLongitude = 0; receiverAddressText = "";
+            destinationError = "Địa chỉ đã chọn không còn trong sổ địa chỉ. Vui lòng chọn lại điểm nhận.";
+            address.clear(); showReceiverGps(); scheduleShippingEstimate();
         }
         if (selected == 0) selectedAddressId = "";
         savedAddressSpinner.setSelection(selected);
-        if (initial && selected > 0) applyAddress(savedAddresses.get(selected - 1));
+        if (initial && selected > 1) applyAddress(savedAddresses.get(selected - 2));
+        else if (initial && selected == 1) applyCustomerLocation();
+        else if (selected > 1) {
+            Address saved = savedAddresses.get(selected - 2);
+            if (!saved.getFormattedAddress().equals(receiverAddressText)
+                    || (GpsCoordinates.isValid(saved.getLatitude(), saved.getLongitude())
+                    && (saved.getLatitude() != receiverLatitude || saved.getLongitude() != receiverLongitude)))
+                applyAddress(saved);
+        }
         bindingAddresses = false;
+        updateFulfillmentFields();
     }
 
     private void applyAddress(Address saved) {
         destinationVersion++;
+        resolvingAddress = null;
         bindingAddressDetails = true;
         name.setText(saved.getReceiverName()); phone.setText(saved.getReceiverPhone());
         address.setAddress(saved.getProvince(), saved.getDistrict(), saved.getWard(), saved.getStreet());
-        boolean hasLocation = (saved.getLatitude() != 0D || saved.getLongitude() != 0D)
-                && Double.isFinite(saved.getLatitude()) && Double.isFinite(saved.getLongitude());
+        receiverAddressText = saved.getFormattedAddress(); failedAddress = null; destinationError = "";
+        selectedAddressText.setText(receiverAddressText);
+        boolean hasLocation = GpsCoordinates.isValid(saved.getLatitude(), saved.getLongitude());
         receiverLatitude = hasLocation ? saved.getLatitude() : 0;
         receiverLongitude = hasLocation ? saved.getLongitude() : 0;
         showReceiverGps();
@@ -261,15 +282,75 @@ public class CheckoutFragment extends Fragment {
         scheduleShippingEstimate();
     }
 
-    private void requestLocation() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) takeLocation();
-        else locationPermission.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION});
+    private boolean hasSelectedAddress() {
+        return selectedAddressId != null && !selectedAddressId.isEmpty();
     }
-    private void takeLocation() {
-        locationRequestVersion = destinationVersion;
-        locationModel.requestCurrentLocation(true);
+
+    private String deliveryAddress() {
+        return hasSelectedAddress() ? receiverAddressText : address.formattedAddress();
+    }
+
+    private void applyCustomerLocation() {
+        final int version = ++destinationVersion;
+        resolvingAddress = null;
+        receiverLatitude = 0; receiverLongitude = 0; receiverAddressText = "";
+        destinationError = ""; failedAddress = null;
+        if (customer == null) {
+            destinationError = "Đang tải vị trí trong hồ sơ của bạn…";
+        } else {
+            bindingAddressDetails = true;
+            name.setText(customer.getFullName()); phone.setText(customer.getPhone());
+            bindingAddressDetails = false;
+            if (GpsCoordinates.isValid(customer.getLatitude(), customer.getLongitude())) {
+                receiverLatitude = customer.getLatitude(); receiverLongitude = customer.getLongitude();
+                selectedAddressText.setText("Đang tải địa chỉ vị trí của bạn…");
+                locationProvider.reverseGeocode(receiverLatitude, receiverLongitude, new LocationProvider.GeocodeCallback() {
+                    public void onAddressAvailable(LocationProvider.GeocodedAddress value) {
+                        quoteHandler.post(() -> {
+                            if (getView() == null || version != destinationVersion) return;
+                            receiverAddressText = value.getFullAddress().trim();
+                            if (receiverAddressText.isEmpty()) receiverAddressText = String.join(", ",
+                                    value.getStreet(), value.getWard(), value.getDistrict(), value.getProvince());
+                            selectedAddressText.setText(receiverAddressText);
+                            scheduleShippingEstimate();
+                        });
+                    }
+                    public void onGeocodeUnavailable(String error) {
+                        quoteHandler.post(() -> {
+                            if (getView() == null || version != destinationVersion) return;
+                            destinationError = "Chưa tải được địa chỉ vị trí trong hồ sơ. Vui lòng chọn địa chỉ nhận đã lưu.";
+                            selectedAddressText.setText(destinationError);
+                            scheduleShippingEstimate();
+                        });
+                    }
+                });
+            } else destinationError = "Hồ sơ của bạn chưa có vị trí. Vui lòng chọn địa chỉ nhận đã lưu hoặc cập nhật vị trí trong hồ sơ cá nhân.";
+        }
+        if (!destinationError.isEmpty()) selectedAddressText.setText(destinationError);
+        showReceiverGps(); updateFulfillmentFields(); scheduleShippingEstimate();
+    }
+
+    private void resolveDeliveryAddress() {
+        if (PROFILE_ADDRESS.equals(selectedAddressId)) return;
+        final String target = deliveryAddress();
+        if ((!hasSelectedAddress() && !address.isComplete()) || target.trim().isEmpty()) return;
+        if (target.equals(resolvingAddress) || target.equals(failedAddress)) return;
+        final int version = destinationVersion;
+        resolvingAddress = target;
+        gpsStatus.setText("Đang xác định vị trí địa chỉ nhận hàng…");
+        locationProvider.geocodeAddress(target, new LocationProvider.LocationCallback() {
+            public void onLocationAvailable(double latitude, double longitude) {
+                if (getView() == null || version != destinationVersion) return;
+                resolvingAddress = null;
+                receiverLatitude = latitude; receiverLongitude = longitude; destinationError = "";
+                showReceiverGps(); scheduleShippingEstimate();
+            }
+            public void onLocationUnavailable(String error) {
+                if (getView() == null || version != destinationVersion) return;
+                resolvingAddress = null; failedAddress = target; destinationError = error;
+                gpsStatus.setText(error); scheduleShippingEstimate();
+            }
+        });
     }
 
     private void renderCart(Cart cart) {
@@ -307,17 +388,23 @@ public class CheckoutFragment extends Fragment {
         double customerLat = 0D, customerLng = 0D;
         if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY) {
             customerLat = receiverLatitude; customerLng = receiverLongitude;
-            if (!hasReceiverGps()) { estimate.setText(R.string.delivery_gps_required); return; }
+            if (!hasReceiverGps() || (hasSelectedAddress() && receiverAddressText.trim().isEmpty())) {
+                resolveDeliveryAddress();
+                estimate.setText(destinationError.isEmpty() ? "Đang chờ địa chỉ nhận hàng của bạn." : destinationError);
+                return;
+            }
         }
         JSONObject request = new JSONObject();
-        try { request.put("items", items); request.put("fulfillmentType", fulfillment.getSelectedItem().toString());
-            request.put("paymentMethod", payment.getSelectedItem().toString()); request.put("latitude", customerLat);
+        try { request.put("items", items); request.put("fulfillmentType", ((FulfillmentType) fulfillment.getSelectedItem()).name());
+            request.put("paymentMethod", ((PaymentMethod) payment.getSelectedItem()).name()); request.put("latitude", customerLat);
             request.put("longitude", customerLng); }
         catch (org.json.JSONException error) { quoteReady = false; estimate.setText("Không tạo được request báo giá."); return; }
         estimate.setText("Đang cập nhật giá và phí giao hàng…");
         RenderBackendClient.Callback quoteCallback = new RenderBackendClient.Callback() {
             @Override public void onSuccess(JSONObject quote) {
                 if (version != quoteVersion || !isAdded()) return;
+                JSONArray methods = quote.optJSONArray("availablePaymentMethods");
+                if (methods != null) updatePaymentAvailability(methods);
                 quotedSubtotal = quote.optDouble("subtotal", Double.NaN);
                 quotedShippingFee = quote.optDouble("shippingFee", Double.NaN);
                 NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -342,7 +429,8 @@ public class CheckoutFragment extends Fragment {
                     summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"));
                 sellerAddress.setText(fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE
                         ? "Điểm nhận tại chiến dịch: " + quote.optString("campaignLocationName")
-                        : "Cửa hàng: " + quote.optString("sellerName") + "\nĐiểm gửi / nhận tại cửa hàng: "
+                        : "Cửa hàng: " + quote.optString("sellerName") + (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY
+                                ? "\nĐiểm gửi: " : "\nĐiểm nhận tại cửa hàng: ")
                                 + quote.optString("sellerAddress", "Chưa cập nhật"));
                 estimate.setText(summary.toString());
                 message.setText("");
@@ -370,7 +458,7 @@ public class CheckoutFragment extends Fragment {
         if (error.contains("Seller GPS") || error.contains("Seller public profile"))
             return "Người bán cần cập nhật GPS trong Hồ sơ người bán trước khi giao hàng.";
         if (error.contains("Delivery address coordinates"))
-            return "Hãy lấy GPS tại nơi nhận hàng hoặc chọn địa chỉ đã lưu có GPS.";
+            return "Chưa xác định được vị trí địa chỉ nhận hàng đã chọn.";
         if (error.contains("Shipping configuration unavailable"))
             return "Thiếu appConfig/shipping hoặc hồ sơ vị trí công khai của cửa hàng.";
         return error;
@@ -385,20 +473,22 @@ public class CheckoutFragment extends Fragment {
     private void updateFulfillmentFields() {
         if (fulfillment == null) return;
         boolean delivery = fulfillment.getSelectedItem() == FulfillmentType.DELIVERY;
-        if (address != null) address.setVisibility(delivery ? View.VISIBLE : View.GONE);
+        if (address != null) address.setVisibility(delivery && !hasSelectedAddress() ? View.VISIBLE : View.GONE);
+        if (selectedAddressText != null) {
+            selectedAddressText.setVisibility(delivery && hasSelectedAddress() ? View.VISIBLE : View.GONE);
+            if (!receiverAddressText.isEmpty()) selectedAddressText.setText(receiverAddressText);
+        }
         View view = getView();
         if (view != null) {
             gpsStatus.setVisibility(delivery ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.checkoutReceiverAddressTitle).setVisibility(delivery ? View.VISIBLE : View.GONE);
-            view.findViewById(R.id.checkoutUseLocation).setVisibility(delivery ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.checkoutLocationHint).setVisibility(delivery ? View.VISIBLE : View.GONE);
             savedAddressSpinner.setVisibility(delivery && vm != null && !vm.isGuest() ? View.VISIBLE : View.GONE);
         }
     }
 
     private void bindPaymentMethods() {
-        payment.setAdapter(new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_dropdown_item, new PaymentMethod[] {PaymentMethod.CASH_ON_SITE}));
+        payment.setAdapter(new EnumLabelAdapter<>(requireContext(), new PaymentMethod[] {PaymentMethod.CASH_ON_SITE}));
     }
 
     private void refreshPaymentMethods() {
@@ -408,23 +498,59 @@ public class CheckoutFragment extends Fragment {
             if (item.isSelected()) { sellerId = item.getSellerId(); break; }
         final String selectedSeller = sellerId;
         int version = ++bankLoadVersion;
-        bankTransferAvailable = false;
+        if (!selectedSeller.equals(paymentSellerId)) {
+            bankTransferAvailable = false;
+            paymentSellerId = selectedSeller;
+        }
         applyPaymentMethods();
         if (selectedSeller.isEmpty()) { sellerAddress.setText("Chọn sản phẩm để xem địa chỉ cửa hàng."); return; }
+        paymentStatus.setText("Đang tải phương thức thanh toán của cửa hàng…");
+        JSONObject optionsRequest = new JSONObject();
+        try {
+            optionsRequest.put("sellerId", selectedSeller);
+            optionsRequest.put("fulfillmentType", ((FulfillmentType) fulfillment.getSelectedItem()).name());
+        } catch (org.json.JSONException ignored) { }
+        RenderBackendClient.postGuest("/sellers/payment-options", optionsRequest, new RenderBackendClient.Callback() {
+            public void onSuccess(JSONObject body) {
+                if (version != bankLoadVersion || getView() == null) return;
+                updatePaymentAvailability(body.optJSONArray("availablePaymentMethods"));
+            }
+            public void onError(String error) {
+                if (version != bankLoadVersion || getView() == null) return;
+                paymentStatus.setText("Chưa tải được phương thức thanh toán. Vui lòng thử lại. "
+                        + (error != null && error.contains("HTTP 404")
+                        ? "Máy chủ cần cập nhật API thanh toán." : ""));
+            }
+        });
         vm.loadStorefront(selectedSeller, new StorefrontRepository.Callback() {
             public void success(SellerStorefront profile) {
                 if (version != bankLoadVersion || getView() == null) return;
-                bankTransferAvailable = profile.acceptsTransfer();
                 if (!quoteReady && fulfillment.getSelectedItem() != FulfillmentType.ON_SITE_RESCUE) sellerAddress.setText(profile.address.trim().isEmpty()
                         ? "Cửa hàng chưa cập nhật địa chỉ gửi hàng."
-                        : "Điểm gửi / nhận tại cửa hàng: " + profile.shopName + "\n" + profile.address);
-                applyPaymentMethods();
+                        : (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY
+                                ? "Điểm gửi từ cửa hàng: " : "Điểm nhận tại cửa hàng: ") + profile.shopName + "\n" + profile.address);
             }
             public void error(String message) {
                 if (version != bankLoadVersion || getView() == null) return;
-                bankTransferAvailable = false; sellerAddress.setText("Chưa tải được địa chỉ cửa hàng. Hãy thử lại."); applyPaymentMethods();
+                sellerAddress.setText("Chưa tải được địa chỉ cửa hàng. Hãy thử lại.");
             }
         });
+    }
+
+    private void updatePaymentAvailability(JSONArray methods) {
+        if (methods == null) {
+            paymentStatus.setText("Máy chủ chưa trả về phương thức thanh toán. Vui lòng cập nhật backend.");
+            return;
+        }
+        boolean available = false;
+        for (int i = 0; i < methods.length(); i++)
+            if (PaymentMethod.BANK_TRANSFER.name().equals(methods.optString(i))) available = true;
+        if (bankTransferAvailable != available) {
+            bankTransferAvailable = available;
+            applyPaymentMethods();
+        }
+        paymentStatus.setText(available ? "Có thể thanh toán bằng chuyển khoản ngân hàng."
+                : "Cửa hàng chưa cấu hình đủ thông tin nhận chuyển khoản.");
     }
 
     private void applyPaymentMethods() {
@@ -434,9 +560,12 @@ public class CheckoutFragment extends Fragment {
         if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY) allowed.add(PaymentMethod.COD);
         else allowed.add(PaymentMethod.CASH_ON_SITE);
         if (bankTransferAvailable) allowed.add(PaymentMethod.BANK_TRANSFER);
+        boolean unchanged = payment.getCount() == allowed.size();
+        for (int i = 0; unchanged && i < allowed.size(); i++)
+            unchanged = allowed.get(i).equals(payment.getItemAtPosition(i));
+        if (unchanged) return;
         bindingPaymentMethods = true;
-        payment.setAdapter(new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_dropdown_item, allowed));
+        payment.setAdapter(new EnumLabelAdapter<>(requireContext(), allowed));
         int selected = previous == null ? -1 : allowed.indexOf(previous);
         payment.setSelection(selected < 0 ? 0 : selected);
         bindingPaymentMethods = false;
@@ -446,24 +575,27 @@ public class CheckoutFragment extends Fragment {
         return com.rescuefarm.service.location.GpsCoordinates.isValid(receiverLatitude, receiverLongitude);
     }
     private void showReceiverGps() {
-        gpsStatus.setText(hasReceiverGps() ? R.string.gps_selected : R.string.delivery_gps_required);
+        gpsStatus.setText(hasReceiverGps() ? "Đã xác định vị trí nhận hàng."
+                : destinationError.isEmpty() ? getString(R.string.delivery_gps_required) : destinationError);
     }
 
     private String text(EditText field) { return field.getText().toString().trim(); }
     @Override public void onViewStateRestored(@Nullable Bundle state) {
         super.onViewStateRestored(state);
         if (gpsStatus != null && state != null) {
-            receiverLatitude = state.getDouble("receiverLatitude");
-            receiverLongitude = state.getDouble("receiverLongitude"); showReceiverGps();
+            showReceiverGps(); updateFulfillmentFields();
             scheduleShippingEstimate();
         }
     }
     @Override public void onSaveInstanceState(@NonNull Bundle state) {
         super.onSaveInstanceState(state); state.putString("selectedAddressId", selectedAddressId);
+        state.putString("receiverAddressText", receiverAddressText);
         state.putDouble("receiverLatitude", receiverLatitude); state.putDouble("receiverLongitude", receiverLongitude);
     }
     @Override public void onDestroyView() {
-        quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; bankLoadVersion++; locationRequestVersion = -1;
+        quoteHandler.removeCallbacks(quoteRunnable); quoteVersion++; bankLoadVersion++; destinationVersion++;
+        resolvingAddress = null; failedAddress = null;
+        if (locationProvider != null) locationProvider.close();
         super.onDestroyView();
     }
 }

@@ -1,7 +1,7 @@
 <resources>
     <string name="gps_not_selected">Chưa có GPS. Hãy lấy GPS tại đúng địa điểm.</string>
     <string name="gps_selected">Đã có GPS của địa chỉ này.</string>
-    <string name="delivery_gps_required">Chọn địa chỉ đã lưu có GPS hoặc lấy GPS tại nơi nhận hàng.</string>
+    <string name="delivery_gps_required">Chọn vị trí của bạn hoặc địa chỉ nhận hàng. Ứng dụng tự xác định tọa độ để tính phí giao hàng.</string>
     <string name="checkout_store_loading">Đang tải địa chỉ cửa hàng…</string>
     <string name="checkout_receiver_address_title">Địa chỉ nhận hàng của bạn</string>
     <string name="campaign_gps_action">Lấy GPS điểm giải cứu</string>

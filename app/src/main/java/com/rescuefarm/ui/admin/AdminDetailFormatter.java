@@ -126,12 +126,13 @@ public final class AdminDetailFormatter {
         String text = key.replace('_', ' ').replaceAll("([a-z0-9])([A-Z])", "$1 $2");
         return text.isEmpty() ? "Thông tin" : text.substring(0, 1).toUpperCase(VI) + text.substring(1);
     }
-    public static String status(String value) { return STATES.getOrDefault(value, value); }
+    public static String status(String value) { return com.rescuefarm.ui.common.EnumLabels.hasLabel(value)
+            ? com.rescuefarm.ui.common.EnumLabels.label(value) : STATES.getOrDefault(value, value); }
     public static boolean isEnum(String key) {
         return Arrays.asList("status", "sellerStatus", "applicationStatus", "role", "customerType", "ownerType",
                 "paymentMethod", "paymentStatus", "fulfillmentType", "type", "targetType", "resourceType", "method",
                 "urgencyLevel", "rescueReason", "rescueMode", "mode", "finalizedStatus", "moderationPreviousStatus",
-                "fromState", "toState").contains(key);
+                "fromState", "toState", "unitStatus").contains(key);
     }
     public static String value(String key, Object value) {
         if (value == null || value instanceof String && ((String) value).trim().isEmpty()) return "Chưa cập nhật";

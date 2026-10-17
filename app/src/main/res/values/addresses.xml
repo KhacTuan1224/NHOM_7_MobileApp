@@ -8,6 +8,5 @@
     <string name="address_search_hint">Tìm theo tên (có thể nhập không dấu)</string>
     <string name="checkout_other_address">Nhập địa chỉ nhận hàng khác</string>
     <string name="checkout_saved_address_label">Địa chỉ nhận hàng đã lưu hoặc địa chỉ khác</string>
-    <string name="checkout_location_action">Lấy GPS nơi nhận hàng</string>
-    <string name="checkout_location_hint">Điểm gửi tự lấy từ hồ sơ cửa hàng. Chọn địa chỉ đã lưu có GPS hoặc lấy GPS khi đang ở nơi nhận hàng.</string>
+    <string name="checkout_location_hint">Điểm gửi tự lấy từ hồ sơ công khai của cửa hàng. Điểm nhận là vị trí của bạn hoặc địa chỉ nhận hàng bạn chọn.</string>
 </resources>

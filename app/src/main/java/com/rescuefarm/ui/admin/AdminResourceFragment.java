@@ -138,8 +138,7 @@ public final class AdminResourceFragment extends Fragment {
             if (section == Section.ORDERS) searchInput.setHint("orderCode / code: / seller: / customer: / id:");
             else if (section == Section.REPORTS) searchInput.setHint("target ID hoặc target:...");
             else searchInput.setHint("Tìm theo tên hoặc nhập id:<mã>");
-            statusFilter.setAdapter(new ArrayAdapter<>(requireContext(),
-                    android.R.layout.simple_spinner_dropdown_item,
+            statusFilter.setAdapter(new com.rescuefarm.ui.common.CodeLabelAdapter(requireContext(),
                     getResources().getStringArray(R.array.admin_status_filters)));
             statusFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
                 @Override public void onItemSelected(android.widget.AdapterView<?> parent, View row, int position, long id) {
@@ -272,7 +271,7 @@ public final class AdminResourceFragment extends Fragment {
         row.setPadding(0, 16, 0, 16);
         TextView text = new TextView(requireContext());
         text.setText(getString(R.string.admin_resource_row_format, item.getTitle(), item.getSubtitle(),
-                item.getStatus(), item.getId()));
+                AdminDetailFormatter.status(item.getStatus()), item.getId()));
         row.addView(text);
         Button detail = button(R.string.admin_view_detail_action);
         detail.setOnClickListener(v -> openDetail(item));
@@ -487,13 +486,13 @@ public final class AdminResourceFragment extends Fragment {
                         String.valueOf(value.total(Section.CAMPAIGNS)), String.valueOf(value.total(Section.ORDERS))}, 0);
         AdminDashboardCards.addColumnChart(requireContext(), container,
                 "Doanh thu đơn đã giao", "All-time, gồm phí giao hàng",
-                new String[]{"DELIVERED"}, new double[]{value.getDeliveredRevenue()},
+                new String[]{"Đã giao hàng"}, new double[]{value.getDeliveredRevenue()},
                 new String[]{currency.format(value.getDeliveredRevenue())}, 1);
 
         AdminDashboardCards.addSectionTitle(requireContext(), container, "RESCUE ANALYTICS");
         AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Campaign đang hoạt động và cần ưu tiên", "Critical là tập con của Campaign ACTIVE",
-                new String[]{"Active", "Critical"},
+                "Campaign đang hoạt động và cần ưu tiên", "Các chiến dịch rất khẩn cấp đang hoạt động",
+                new String[]{"Đang hoạt động", "Rất khẩn cấp"},
                 new double[]{value.getActiveCampaigns(), value.getCriticalCampaigns()},
                 new String[]{String.valueOf(value.getActiveCampaigns()), String.valueOf(value.getCriticalCampaigns())}, 0);
         AdminDashboardCards.addColumnChart(requireContext(), container,
@@ -509,7 +508,7 @@ public final class AdminResourceFragment extends Fragment {
                 "Rescued / target của Campaign kg đã xác minh và được kích hoạt",
                 value.getCompletionRate());
         AdminDashboardCards.addFootnote(requireContext(), container,
-                "Doanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
+                "Doanh thu là tổng all-time của đơn đã giao, gồm phí giao hàng."
                         + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
     }
 
@@ -530,7 +529,7 @@ public final class AdminResourceFragment extends Fragment {
             AdminUiStyles.sectionButton(requireContext(), (MaterialButton) view, section);
         }
     }
-    private String label(Section value) { return value.name().replace('_', ' '); }
+    private String label(Section value) { return com.rescuefarm.ui.common.EnumLabels.label(value); }
 
     @Override public void onResume() {
         super.onResume();

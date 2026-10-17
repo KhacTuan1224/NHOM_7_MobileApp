@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.profile;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.Manifest;
@@ -150,7 +151,7 @@ public class SellerProfileFragment extends Fragment {
                 ((TextView) view.findViewById(R.id.sellerShopName)).setText(
                         seller.getShopName() == null || seller.getShopName().isEmpty()
                                 ? getString(R.string.shop_not_updated) : seller.getShopName());
-                ((TextView) view.findViewById(R.id.sellerStatus)).setText(seller.getSellerStatus().name());
+                ((TextView) view.findViewById(R.id.sellerStatus)).setText(EnumLabels.label(seller.getSellerStatus()));
                 ((TextView) view.findViewById(R.id.sellerBusinessRule)).setText(seller.canSell()
                         ? R.string.seller_approved_message : R.string.seller_pending_message);
                 if (!dirty) populate(seller);

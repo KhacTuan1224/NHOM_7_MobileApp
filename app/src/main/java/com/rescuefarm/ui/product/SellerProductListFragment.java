@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.product;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -69,7 +70,7 @@ public class SellerProductListFragment extends Fragment {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2); params.setMargins(0, 0, 0, dp(12)); card.setLayoutParams(params);
         card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14), dp(14), dp(14), dp(14));
-        TextView title = new TextView(requireContext()); title.setText(product.getName() + " • " + product.getStatus().name()); title.setTextSize(17); title.setTypeface(title.getTypeface(), 1);
+        TextView title = new TextView(requireContext()); title.setText(product.getName() + " • " + EnumLabels.label(product.getStatus())); title.setTextSize(17); title.setTypeface(title.getTypeface(), 1);
         LinearLayout actions = new LinearLayout(requireContext());
         Button batches = new Button(requireContext()); batches.setText(R.string.manage_batches_action); batches.setOnClickListener(v -> navigateBatches(product));
         actions.setOrientation(LinearLayout.VERTICAL);

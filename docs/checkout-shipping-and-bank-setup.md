@@ -37,7 +37,9 @@ Khi seller lưu hồ sơ, ứng dụng tự cập nhật hồ sơ cửa hàng c�
 
 Nguồn chuẩn để tính phí là `sellerPublicProfiles/{sellerId}.latitude/longitude/address`. `users/{sellerId}` chỉ giữ bản sao tương thích; GPS của hồ sơ cá nhân không được dùng làm điểm gửi. Màn hình sửa hồ sơ cá nhân của seller không còn phần vị trí. Trang QR chỉ cập nhật `sellerPaymentProfiles.qrUrl`, không được ghi đè địa chỉ/GPS/ngân hàng của cửa hàng.
 
-Customer chọn địa chỉ nhận đã lưu có GPS hoặc lấy GPS tại nơi nhận. Guest nhập địa chỉ nhận và lấy GPS tại nơi nhận. Checkout tự tải địa chỉ người bán và không có ô nhập điểm gửi. Danh sách tỉnh/huyện/phường phục vụ địa chỉ giao nhận, không dùng thay cho GPS trong công thức số km. Đổi địa chỉ nhận hàng bằng tay sẽ xóa GPS cũ để tránh dùng nhầm điểm nhận; phải lấy lại GPS hoặc chọn địa chỉ đã lưu. Với seller, sửa nhãn địa chỉ cửa hàng không xóa GPS; khi chuyển địa điểm thực tế phải lấy GPS lại tại cửa hàng mới.
+Customer chỉ chọn **Vị trí của tôi · Hồ sơ cá nhân** (tọa độ `users/{customerId}` đã lưu) hoặc địa chỉ trong sổ địa chỉ. Checkout không xin GPS thiết bị và không có nút lấy GPS. Vị trí hồ sơ được tự chuyển thành địa chỉ nhận; địa chỉ đã lưu dùng tọa độ của chính địa chỉ đó. Địa chỉ cũ thiếu tọa độ và địa chỉ nhập mới của Customer/Guest được tự tra tọa độ theo địa chỉ đầy đủ bằng Geocoder; không dùng vị trí hiện tại hoặc tọa độ seller để thay cho điểm nhận. Nếu dịch vụ tra địa chỉ không khả dụng hoặc không xác định được đường, hiển thị lỗi để kiểm tra địa chỉ/cập nhật vị trí trong hồ sơ hoặc sổ địa chỉ; không tự lấy tâm tỉnh/thành để báo phí.
+
+Điểm gửi luôn tự tải từ hồ sơ công khai của seller; không có ô nhập điểm gửi. Danh mục tỉnh/huyện/phường phục vụ địa chỉ giao nhận, không dùng trực tiếp để tính số km. Đổi địa chỉ nhập tay sẽ bỏ tọa độ cũ và tra lại địa chỉ mới. Với seller, sửa nhãn địa chỉ cửa hàng không xóa GPS; khi chuyển địa điểm thực tế phải lấy GPS lại tại cửa hàng mới.
 
 Seller và Admin không có sổ địa chỉ nhận hàng của Customer. Các bản ghi cũ không bị xóa nhưng Rules không cho những vai trò này truy cập. Pickup tại cửa hàng và giải cứu tại chỗ không thu phí giao hàng; vị trí giải cứu tại chỗ lấy từ Campaign (hoặc GPS di động còn hiệu lực), không thay đổi vị trí cửa hàng.
 
@@ -46,6 +48,10 @@ Không tự thay GPS lỗi bằng một tọa độ thành phố mặc định. 
 Màn hình hiển thị phí ước tính; transaction khi đặt đơn tính lại phí từ Firestore và ghi đúng vào Order/Shipment. Không có cấu hình phí hoặc thiếu tọa độ thì đơn giao tận nơi bị chặn kèm thông báo.
 
 Đơn giao hàng lưu ảnh chụp địa chỉ/GPS gửi và nhận trong Shipment để lần sửa hồ sơ sau không làm thay đổi vị trí của đơn đã đặt. Triển khai backend Render và Firestore Rules mới trước khi phân phối APK mới.
+
+Checkout tải phương thức thanh toán qua backend `POST /sellers/payment-options` (`sellerId`, `fulfillmentType`). API đọc `sellerPaymentProfiles` riêng tư và chỉ trả về `availablePaymentMethods`, không trả thông tin ngân hàng hoặc ảnh QR. Quote cũng trả cùng danh sách. Khi đủ mã ngân hàng, tên và số tài khoản, có thể chọn **Chuyển khoản ngân hàng**; không bắt buộc tạo lại ảnh QR để bật phương thức này. COD chỉ dùng cho giao tận nơi, tiền mặt tại điểm nhận dùng cho nhận tại cửa hàng/điểm giải cứu. Backend xác thực lại cấu hình ngân hàng khi báo giá và đặt đơn.
+
+**Cần triển khai backend Render mới trước khi dùng APK mới** để API phương thức thanh toán hoạt động với cả Customer và Guest. Không mở quyền đọc hồ sơ thanh toán riêng cho Customer/Guest.
 
 ## 4. Tạo QR cửa hàng qua VietQR API và lưu Cloudinary
 

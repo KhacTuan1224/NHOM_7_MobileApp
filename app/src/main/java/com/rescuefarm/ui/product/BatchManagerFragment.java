@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.product;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -88,7 +89,7 @@ public class BatchManagerFragment extends Fragment {
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(12), dp(12), dp(12), dp(12));
         TextView info = new TextView(requireContext()); info.setText(getString(R.string.batch_info_format,
                 batch.getAvailableQuantity(), batch.getReservedQuantity(), batch.getSoldQuantity(),
-                batch.getStatus().name(), batch.getInventoryVersion()));
+                EnumLabels.label(batch.getStatus()), batch.getInventoryVersion()));
         TextView alerts = new TextView(requireContext());
         StringBuilder warning = new StringBuilder();
         if (batch.getStatus() == BatchStatus.EXPIRED || batch.isExpired(now)) {

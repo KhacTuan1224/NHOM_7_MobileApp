@@ -31,6 +31,32 @@ test('shipping origin uses the public store GPS, ignoring personal GPS and calle
   assert.equal(result.sellerAddress, '10 đường A, Đồng Tháp'); assert.equal(result.sellerName, 'Nguyễn An');
 });
 
+test('checkout quote exposes payment choices from private bank configuration without exposing account data', async () => {
+  const f = fixture();
+  assert.deepEqual((await f.quote()).public.availablePaymentMethods, ['COD']);
+  f.db.documents.set('sellerPaymentProfiles/seller', {bankCode: 'MB', bankAccountName: 'NGUYEN AN',
+    bankAccountNumber: 'secret-number', qrUrl: 'https://example.com/secret-qr'});
+  const quote = (await f.quote()).public;
+  assert.deepEqual(quote.availablePaymentMethods, ['COD', 'BANK_TRANSFER']);
+  assert.equal(JSON.stringify(quote).includes('secret-number'), false);
+  assert.equal(JSON.stringify(quote).includes('secret-qr'), false);
+});
+
+test('customer and guest can place bank-transfer orders using the saved private bank account', async () => {
+  for (const ownerType of ['CUSTOMER', 'GUEST']) {
+    const f = fixture();
+    f.db.documents.set('sellerPaymentProfiles/seller', {bankCode: 'MB', bankAccountName: 'NGUYEN AN',
+      bankAccountNumber: '123456789', qrUrl: 'https://example.com/qr.png'});
+    await f.api.checkout({...f.data, paymentMethod: 'BANK_TRANSFER'},
+      {ownerType, ownerId: 'buyer', tokenHash: ownerType === 'GUEST' ? 'guest-token-hash' : ''});
+    const payment = f.db.snapshot('payments/' + f.data.requestId).data();
+    assert.equal(payment.method, 'BANK_TRANSFER');
+    assert.equal(payment.bankAccountNumber, '123456789');
+    assert.equal(payment.bankCode, 'MB');
+    assert.notEqual(payment.status, 'PAID');
+  }
+});
+
 test('textual administrative addresses do not alter the GPS distance or fee', async () => {
   const f = fixture(); const first = (await f.quote()).public;
   f.db.documents.set('sellerPublicProfiles/seller', {address: 'Địa chỉ hiển thị mới', latitude: 10.8, longitude: 106.7});

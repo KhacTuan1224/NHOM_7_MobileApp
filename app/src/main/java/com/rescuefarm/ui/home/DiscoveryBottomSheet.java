@@ -1,4 +1,5 @@
 package com.rescuefarm.ui.home;
+import com.rescuefarm.ui.common.EnumLabels;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -290,28 +291,6 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     }
 
     private String enumLabel(Enum<?> value) {
-        switch (value.name()) {
-            case "OVER_SUPPLY": return "Dư cung";
-            case "NEAR_EXPIRY": return "Gần hết hạn";
-            case "SEASONAL_HARVEST": return "Thu hoạch vào mùa";
-            case "WEATHER_IMPACT": return "Ảnh hưởng thời tiết";
-            case "ORDER_CANCELLED": return "Đơn hàng bị hủy";
-            case "LOGISTICS_DISRUPTION": return "Gián đoạn vận chuyển";
-            case "DEMAND_DROP": return "Nhu cầu giảm";
-            case "COSMETIC_GRADE": return "Ngoại hình chưa đẹp";
-            case "NORMAL": return "Bình thường";
-            case "HIGH": return "Khẩn cấp";
-            case "CRITICAL": return "Rất khẩn cấp";
-            case "FIXED_POINT": return "Điểm cố định";
-            case "MOBILE_POINT": return "Điểm di động";
-            case "RELEVANCE": return "Phù hợp nhất";
-            case "URGENCY": return "Mức độ khẩn cấp";
-            case "DISCOUNT_DESC": return "Giảm giá nhiều nhất";
-            case "PRICE_ASC": return "Giá tăng dần";
-            case "DISTANCE": return "Gần bạn nhất";
-            case "NEAREST_DEADLINE": return "Sắp kết thúc";
-            case "BEST_SELLING": return "Bán chạy nhất";
-            default: return value.name().replace('_', ' ');
-        }
+        return EnumLabels.label(value);
     }
 }
