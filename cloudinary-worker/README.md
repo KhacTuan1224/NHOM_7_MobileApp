@@ -1,3 +1,7 @@
+# Cập nhật A17: upload Campaign an toàn
+
+**Trước khi deploy bản hiện tại, đọc [cấu hình A13–A17](../docs/a13-a17-implementation.md#cấu-hình-bắt-buộc-trước-khi-dùng-bản-mới).** Worker cần MEDIA_BACKEND_URL và shared secret MEDIA_WORKER_SECRET ở cả Worker/Render. Campaign không dùng sign-upload nữa; các asset khác cũng kiểm tra tham chiếu Campaign trước khi ký/xóa. Backend, Worker, Rules và APK cần được cập nhật đồng bộ.
+
 ### BƯỚC 1: Lấy API Key & Secret từ Cloudinary Console
 
 1. Truy cập [Cloudinary Console](https://console.cloudinary.com/).

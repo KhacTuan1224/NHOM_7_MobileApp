@@ -3,6 +3,7 @@ main = "src/index.js"
 compatibility_date = "2026-10-11"
 
 [vars]
+MEDIA_BACKEND_URL = "https://rescuefarm-backend.onrender.com"
 FIREBASE_PROJECT_ID = "nhom7-rescuefarm"
 CLOUDINARY_CLOUD_NAME = "dmahghpku"
 CLOUDINARY_API_KEY = "342486666341846"

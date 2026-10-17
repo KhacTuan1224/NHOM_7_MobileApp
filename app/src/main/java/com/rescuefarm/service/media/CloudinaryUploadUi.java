@@ -21,11 +21,16 @@ public final class CloudinaryUploadUi {
                               TextView statusView, ImageView preview, Result callback) {
         if (uri == null || !fragment.isAdded()) return;
         Context context = fragment.requireContext();
+        View boundRoot = fragment.getView();
+        String uploader = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() == null ? ""
+                : com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
         progressView.setEnabled(false);
         if (statusView != null) statusView.setText("Đang tải ảnh lên…");
         new CloudinaryMediaStorage(context).uploadImage(uri.toString(), assetType, resourceId, slot).whenComplete((url, error) ->
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    if (!fragment.isAdded()) return;
+                    String current = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() == null ? ""
+                            : com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    if (!fragment.isAdded() || fragment.getView() != boundRoot || !uploader.equals(current)) return;
                     progressView.setEnabled(true);
                     if (error != null) {
                         String message = error.getCause() != null ? error.getCause().getMessage() : error.getMessage();

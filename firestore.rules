@@ -95,7 +95,9 @@ service cloud.firestore {
                 ])
               && data.get('customerType', 'INDIVIDUAL') in ['INDIVIDUAL', 'BUSINESS']
               && data.get('companyName', '') is string && data.get('companyName', '').size() <= 160
-              && data.get('taxCode', '') is string && data.get('taxCode', '').size() <= 40))
+              && data.get('taxCode', '') is string && data.get('taxCode', '').size() <= 40
+              && (data.get('customerType', 'INDIVIDUAL') != 'BUSINESS'
+                || (data.get('companyName', '').size() >= 2 && data.get('taxCode', '').size() > 0))))
           && (data.role != 'SELLER'
             || (data.sellerStatus in ['PENDING_APPROVAL', 'APPROVED', 'REJECTED']
               && data.get('representativeName', '') is string
@@ -506,6 +508,11 @@ service cloud.firestore {
             'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && validUserProfile(request.resource.data, userId)
+          && request.resource.data.get('customerType', 'INDIVIDUAL') == resource.data.get('customerType', 'INDIVIDUAL')
+          && ((resource.data.role == 'CUSTOMER' && resource.data.get('customerType', 'INDIVIDUAL') == 'BUSINESS'
+                && request.resource.data.companyName.size() >= 2 && request.resource.data.companyName.size() <= 160
+                && request.resource.data.taxCode.size() > 0 && request.resource.data.taxCode.size() <= 40)
+              || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['companyName', 'taxCode']))
           && (resource.data.role != 'SELLER'
               || request.resource.data.sellerStatus == resource.data.sellerStatus)
           && (resource.data.role == 'SELLER'
@@ -982,6 +989,8 @@ service cloud.firestore {
           && request.resource.data.get('allocationVersion', 0) == 0
           && request.resource.data.get('unitStatus', 'UNVERIFIED') in ['UNVERIFIED', 'DECLARED']
           && request.resource.data.get('viewCount', 0) == 0
+          && request.resource.data.get('imageUrls', []).size() == 0
+          && request.resource.data.get('imagePublicIds', []).size() == 0
           && validCampaign(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow update: if (
@@ -994,7 +1003,10 @@ service cloud.firestore {
               && request.resource.data.get('reservedByBatch', {}) == resource.data.get('reservedByBatch', {})
               && request.resource.data.get('rescuedByBatch', {}) == resource.data.get('rescuedByBatch', {})
               && request.resource.data.get('allocationVersion', 0) == resource.data.get('allocationVersion', 0)
-              && request.resource.data.get('unitStatus', 'UNVERIFIED') in ['UNVERIFIED', 'DECLARED'])
+              && request.resource.data.get('unitStatus', 'UNVERIFIED') in ['UNVERIFIED', 'DECLARED']
+              && request.resource.data.get('imageUrls', []) == resource.data.get('imageUrls', [])
+              && request.resource.data.get('imagePublicIds', []) == resource.data.get('imagePublicIds', [])
+              && (request.resource.data.status != 'PENDING_APPROVAL' || resource.data.get('imageUrls', []).size() == 0))
             || (isApprovedSeller(request.auth.uid)
               && resource.data.sellerId == request.auth.uid
               && resource.data.status == 'ACTIVE'
@@ -1396,6 +1408,11 @@ service cloud.firestore {
                 && (isAdmin() || (isApprovedSeller(request.auth.uid) && after.sellerId == request.auth.uid))
                 && after.paymentStatus == 'PAID' && get(path).data.paymentStatus != 'PAID'));
     }
+    // Campaign upload/commit/cleanup are trusted backend operations only.
+    match /campaignAssetReferences/{id} { allow read, write: if false; }
+    match /campaignMediaUploads/{id} { allow read, write: if false; }
+    match /campaignMediaDrafts/{id} { allow read, write: if false; }
+
     match /notificationOutbox/{eventId} {
       allow create: if validClientNotificationEvent(request.resource.data);
       allow get, list, update, delete: if false;

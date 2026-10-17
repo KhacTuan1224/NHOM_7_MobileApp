@@ -26,6 +26,8 @@ import com.rescuefarm.data.repository.SellerStorefront;
 
 
 public class HomeViewModel extends ViewModel {
+    private final Map<String,LiveData<com.rescuefarm.domain.model.Promotion>> promotionSources=new java.util.HashMap<>();
+    private final Map<String,com.rescuefarm.domain.model.Promotion> promotions=new java.util.HashMap<>();
     private final ProductRepository productRepository;
     private final CampaignRepository campaignRepository;
     private final AuthRepository authRepository;
@@ -80,7 +82,7 @@ public class HomeViewModel extends ViewModel {
         this.query = DiscoveryQueryState.restore(savedState);
         loadGreetingName();
         homeState.addSource(productRepository.observeProducts(), values -> {
-            products = safe(values); syncBatchSources(); syncSellerLocationSources(); publish();
+            products = safe(values); syncPromotionSources(); syncBatchSources(); syncSellerLocationSources(); publish();
         });
         homeState.addSource(productRepository.observeCategories(), values -> {
             categories = safe(values); publish();
@@ -266,6 +268,16 @@ public class HomeViewModel extends ViewModel {
         DiscoveryQueryState.save(savedState, query);
     }
 
+    private void syncPromotionSources() {
+        Set<String> needed=new HashSet<>(); for(Product p:products) if(p!=null&&p.isAvailable()) needed.add(p.getId());
+        for(String id:new ArrayList<>(promotionSources.keySet())) if(!needed.contains(id)) {
+            homeState.removeSource(promotionSources.remove(id)); promotions.remove(id);
+        }
+        for(String id:needed) if(!promotionSources.containsKey(id)) {
+            LiveData<com.rescuefarm.domain.model.Promotion> source=productRepository.observePromotion(id); promotionSources.put(id,source);
+            homeState.addSource(source, promo->{if(promo==null) promotions.remove(id); else promotions.put(id,promo); publish();});
+        }
+    }
     private void syncBatchSources() {
         // Home needs expiry/stock even when there is no campaign and no search filter.
         Set<String> needed = new HashSet<>();
@@ -336,10 +348,19 @@ public class HomeViewModel extends ViewModel {
     private void publish() {
         homeState.postValue(contentBuilder.build(banners, products, campaigns, categories,
                 productBatches, latitude, longitude, new Date(), locationState,
-                refreshing, message, freshness, customLocationLabel));
+                refreshing, message, freshness, customLocationLabel).withVolumeOffers(
+                        contentBuilder.volumeOffers(products,promotions,productBatches,campaigns,new Date())));
         publishSearch();
     }
     public void refreshTimeSensitiveContent() { publish(); }
+    public long nextPromotionChangeDelay() {
+        long now=System.currentTimeMillis(),next=Long.MAX_VALUE;
+        for(com.rescuefarm.domain.model.Promotion promo:promotions.values()) if(promo!=null&&promo.isActive()) {
+            if(promo.getStartDate()!=null&&promo.getStartDate().getTime()>now)next=Math.min(next,promo.getStartDate().getTime());
+            if(promo.getEndDate()!=null&&promo.getEndDate().getTime()>now)next=Math.min(next,promo.getEndDate().getTime());
+        }
+        return next==Long.MAX_VALUE?Long.MAX_VALUE:Math.max(1L,next-now+1);
+    }
     private void publishSearch() {
         searchResults.postValue(discoveryEngine.search(products, campaigns, productBatches, sellerCoordinates, query,
                 latitude, longitude, new Date()));
@@ -348,6 +369,8 @@ public class HomeViewModel extends ViewModel {
         return values == null ? new ArrayList<>() : new ArrayList<>(values);
     }
     @Override protected void onCleared() {
+        for(LiveData<com.rescuefarm.domain.model.Promotion> source:promotionSources.values()) homeState.removeSource(source);
+        promotionSources.clear(); promotions.clear();
         for (LiveData<SellerStorefront> source : sellerLocationSources.values()) homeState.removeSource(source);
         sellerLocationSources.clear(); sellerCoordinates.clear();
         productRepository.close(); campaignRepository.close(); locationProvider.close();

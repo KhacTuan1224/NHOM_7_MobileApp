@@ -16,13 +16,16 @@ public final class HomeViewState {
     public enum DataFreshness { FRESH, STALE, OFFLINE }
     public enum Section {
         BANNERS, CRITICAL, NEARBY_MOBILE, NEARBY_FIXED, ENDING_SOON, NEAR_EXPIRY,
-        VALUE_PRODUCTS, ACTIVE_CAMPAIGNS, CATEGORIES, RESCUE_FEED
+        VALUE_PRODUCTS, VOLUME_OFFERS, ACTIVE_CAMPAIGNS, CATEGORIES, RESCUE_FEED
     }
     public static final List<Section> SECTION_ORDER = Collections.unmodifiableList(Arrays.asList(
             Section.BANNERS, Section.CRITICAL, Section.NEARBY_MOBILE, Section.NEARBY_FIXED,
-            Section.ENDING_SOON, Section.NEAR_EXPIRY, Section.VALUE_PRODUCTS, Section.ACTIVE_CAMPAIGNS,
+            Section.ENDING_SOON, Section.NEAR_EXPIRY, Section.VALUE_PRODUCTS, Section.VOLUME_OFFERS, Section.ACTIVE_CAMPAIGNS,
             Section.CATEGORIES, Section.RESCUE_FEED));
 
+    private List<VolumeOffer> volumeOffers = Collections.emptyList();
+    public HomeViewState withVolumeOffers(List<VolumeOffer> offers) { volumeOffers=copy(offers); return this; }
+    public List<VolumeOffer> getVolumeOffers() { return volumeOffers; }
     private final List<Banner> banners;
     private final List<RescueCampaign> critical;
     private final List<RescueCampaign> nearbyMobile;

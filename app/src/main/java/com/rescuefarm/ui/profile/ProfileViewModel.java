@@ -77,6 +77,20 @@ public class ProfileViewModel extends ViewModel {
                 });
     }
 
+    public void updateBusinessProfile(String fullName, String phone, String avatarUrl,
+            double latitude, double longitude, String companyName, String taxCode) {
+        String validation = ProfileValidator.validateProfile(fullName, phone);
+        if (validation == null) validation = ProfileValidator.validateBusiness(companyName, taxCode);
+        if (validation != null) { state.setValue(ProfileScreenState.error(validation)); return; }
+        String userId = requireUserId(); if (userId == null) return;
+        state.setValue(ProfileScreenState.loading());
+        userRepository.updateBusinessProfile(userId, fullName, phone, avatarUrl, latitude, longitude, companyName, taxCode,
+                new UserRepository.UserCallback() {
+                    @Override public void onSuccess(User user) { state.postValue(ProfileScreenState.saved("Đã cập nhật hồ sơ doanh nghiệp.")); }
+                    @Override public void onError(UserRepository.ProfileError error, String message) { state.postValue(ProfileScreenState.error(message)); }
+                });
+    }
+
     public void updateSellerProfile(String representativeName, String shopName,
             String shopDescription, String shopAvatarUrl, String address, String bankCode,
             String bankAccountName, String bankAccountNumber, double latitude, double longitude) {

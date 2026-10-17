@@ -463,16 +463,20 @@ public class FirebaseProductRepository implements ProductRepository {
     @Override public LiveData<Promotion> observePromotion(String productId) {
         return new LiveData<Promotion>() {
             private ListenerRegistration registration;
-            @Override protected void onActive() {
-                registration = firestore.collection(PROMOTIONS).document(productId)
-                        .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
-                            postValue(snapshot.exists() ? mapPromotion(snapshot) : null);
-                        });
+            private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+            private final Runnable retry = this::listen;
+            private void listen() {
+                if (!hasActiveObservers()) return;
+                if (registration != null) registration.remove();
+                registration = firestore.collection(PROMOTIONS).document(productId).addSnapshotListener((snapshot, error) -> {
+                    if (error != null || snapshot == null) {
+                        postValue(null); handler.removeCallbacks(retry); handler.postDelayed(retry, 60000L); return;
+                    }
+                    handler.removeCallbacks(retry); postValue(snapshot.exists() ? mapPromotion(snapshot) : null);
+                });
             }
-            @Override protected void onInactive() {
-                if (registration != null) { registration.remove(); registration = null; }
-            }
+            @Override protected void onActive() { listen(); }
+            @Override protected void onInactive() { handler.removeCallbacks(retry); if (registration != null) { registration.remove(); registration = null; } }
         };
     }
 

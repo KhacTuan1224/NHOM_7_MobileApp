@@ -60,6 +60,34 @@ import java.util.Locale;
 
 public class CampaignDetailFragment extends Fragment {
     
+    private final android.os.Handler clock = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable timeTick = new Runnable() {
+        @Override public void run() { updateTemporalUi(); clock.postDelayed(this, 1000L); }
+    };
+    private void updateTemporalUi() {
+        View root=getView(); if(root==null || campaign==null) return;
+        Date now=new Date();
+        set(root,R.id.campaignDetailSchedule,dateFormat.format(campaign.getStartDate())+" – "+dateFormat.format(campaign.getEndDate())
+                +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.remaining(campaign,now));
+        boolean open=com.rescuefarm.service.campaign.CampaignTimeFormatter.withinSchedule(campaign,now);
+        boolean purchase=com.rescuefarm.service.campaign.CampaignTimeFormatter.canPurchase(campaign,now)
+                && selectedProduct!=null && selectedBatch!=null && selectedBatch.isSellable(now) && !ActorUiPolicy.isSellerReadOnly(this);
+        root.findViewById(R.id.campaignAddToCartButton).setEnabled(purchase);
+        root.findViewById(R.id.campaignRescueNowButton).setEnabled(purchase);
+        boolean mobile=campaign.getRescueMode()==RescueMode.MOBILE_POINT;
+        root.findViewById(R.id.campaignDirectionsButton).setEnabled(open && (!mobile || campaign.isLocationFresh(now)));
+        for(int id:new int[]{R.id.campaignSendCommentButton,R.id.campaignLikeButton,R.id.campaignSupportButton,R.id.campaignCareButton})
+            root.findViewById(id).setEnabled(open && canUseCampaignSocialActions());
+        if(mobile) {
+            set(root,R.id.campaignDetailLocation,com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(campaign,now)
+                    +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.locationUpdated(campaign.getLocationUpdatedAt(),now));
+            if(!open || !campaign.isLocationFresh(now)) {
+                TextView distance=root.findViewById(R.id.campaignDistanceText); distance.setText("Không dùng vị trí cũ để chỉ đường hoặc đặt hàng."); distance.setOnClickListener(null);
+            }
+        }
+    }
+    @Override public void onStart() { super.onStart(); clock.removeCallbacks(timeTick); clock.post(timeTick); }
+    @Override public void onStop() { clock.removeCallbacks(timeTick); super.onStop(); }
     private String campaignId = "";
     private RescueCampaign campaign;
     private CartViewModel cartViewModel;
@@ -326,6 +354,7 @@ public class CampaignDetailFragment extends Fragment {
         
         updateLocationInfo(value);
         loadCampaignBatchesAndProducts(value);
+        updateTemporalUi();
     }
 
     private void renderStoryImages(View root, RescueCampaign value) {
@@ -580,7 +609,8 @@ public class CampaignDetailFragment extends Fragment {
         
         locationProvider.getCurrentLocation(new LocationProvider.LocationCallback() {
             @Override public void onLocationAvailable(double userLat, double userLng) {
-                if (!isAdded()) return;
+                if (!isAdded() || campaign != value || !value.isLocationFresh(new Date())
+                        || !com.rescuefarm.service.campaign.CampaignTimeFormatter.withinSchedule(value, new Date())) return;
                 double dist = distanceService.distanceKilometers(userLat, userLng,
                         value.getCurrentLatitude(), value.getCurrentLongitude());
                 View root = getView();
@@ -754,6 +784,9 @@ public class CampaignDetailFragment extends Fragment {
         if (campaign != null && "REVIEW_REQUIRED".equals(campaign.getUnitStatus())) {
             Toast.makeText(requireContext(), "Chiến dịch cần đối soát đơn vị trước khi đặt hàng.", Toast.LENGTH_LONG).show(); return;
         }
+        if (!com.rescuefarm.service.campaign.CampaignTimeFormatter.canPurchase(campaign, new Date())) {
+            Toast.makeText(requireContext(), "Chiến dịch chưa nhận đơn, đã hết hạn hoặc vị trí di động chưa còn hiệu lực.", Toast.LENGTH_LONG).show(); return;
+        }
         if (ActorUiPolicy.isSellerReadOnly(this)) {
             Toast.makeText(requireContext(), "Tài khoản người bán không thể đặt hàng giải cứu.", Toast.LENGTH_SHORT).show();
             return;
@@ -859,7 +892,7 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private void openDirections() {
-        if (campaign == null) return;
+        if (!com.rescuefarm.service.campaign.CampaignTimeFormatter.withinSchedule(campaign, new Date())) return;
         double latitude = campaign.getLatitude();
         double longitude = campaign.getLongitude();
         if (campaign.getRescueMode() == RescueMode.MOBILE_POINT) {
@@ -885,6 +918,7 @@ public class CampaignDetailFragment extends Fragment {
     }
     
     @Override public void onDestroyView() {
+        clock.removeCallbacks(timeTick);
         if (locationProvider != null) {
             locationProvider.close();
         }

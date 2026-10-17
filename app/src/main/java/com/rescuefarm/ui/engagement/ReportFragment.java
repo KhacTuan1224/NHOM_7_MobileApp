@@ -15,6 +15,8 @@ public class ReportFragment extends Fragment {
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         Spinner type=view.findViewById(R.id.reportTargetType);
         EditText id=view.findViewById(R.id.reportTargetId), reason=view.findViewById(R.id.reportReason), description=view.findViewById(R.id.reportDescription);
+        reason.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(120)});
+        description.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(1000)});
         LinearLayout form=(LinearLayout)id.getParent();
         Spinner parentType=new Spinner(requireContext());
         parentType.setAdapter(new ArrayAdapter<>(requireContext(),android.R.layout.simple_spinner_dropdown_item,new String[]{"Bình luận trong chiến dịch","Bình luận trong bài viết cũ"}));
@@ -45,6 +47,16 @@ public class ReportFragment extends Fragment {
             if(value.getStatus()==EngagementState.Status.ERROR||value.getStatus()==EngagementState.Status.SUCCESS)
                 Toast.makeText(requireContext(),value.getMessage(),Toast.LENGTH_LONG).show();
         });
+        // Public flow has a fixed target supplied by the content screen, never a user-entered ID.
+        boolean contextual = args != null && !args.getString("targetId", "").trim().isEmpty();
+        type.setVisibility(View.GONE); id.setVisibility(View.GONE); parentType.setVisibility(View.GONE); parentId.setVisibility(View.GONE);
+        TextView context = new TextView(requireContext());
+        String subject=type.getSelectedItem()==ReportTargetType.REVIEW?"đánh giá":type.getSelectedItem()==ReportTargetType.COMMENT?"bình luận"
+                :type.getSelectedItem()==ReportTargetType.USER?"người bán":type.getSelectedItem()==ReportTargetType.CAMPAIGN?"chiến dịch":"nội dung";
+        context.setText(contextual ? "Báo cáo "+subject+" này. Vui lòng cho biết lý do và thông tin giúp quản trị viên xem xét."
+                : "Hãy chọn Báo cáo ngay tại đánh giá, bình luận hoặc hồ sơ người bán cần phản ánh.");
+        form.addView(context, 0); view.findViewById(R.id.submitReportButton).setEnabled(contextual);
+        type.setOnItemSelectedListener(null);
         view.findViewById(R.id.submitReportButton).setOnClickListener(v -> {
             String uid=FirebaseAuth.getInstance().getCurrentUser()==null?"":FirebaseAuth.getInstance().getCurrentUser().getUid();
             String target=id.getText().toString().trim(); ReportTargetType selected=(ReportTargetType)type.getSelectedItem();

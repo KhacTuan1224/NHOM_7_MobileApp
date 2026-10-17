@@ -15,10 +15,10 @@ import org.junit.Test;
 
 public class HomeContentBuilderTest {
     @Test public void sectionOrder_includesBatchExpiryBeforeValueProducts() {
-        assertEquals(10, HomeViewState.SECTION_ORDER.size());
+        assertEquals(11, HomeViewState.SECTION_ORDER.size());
         assertEquals(HomeViewState.Section.NEAR_EXPIRY, HomeViewState.SECTION_ORDER.get(5));
         assertEquals(HomeViewState.Section.BANNERS, HomeViewState.SECTION_ORDER.get(0));
-        assertEquals(HomeViewState.Section.RESCUE_FEED, HomeViewState.SECTION_ORDER.get(9));
+        assertEquals(HomeViewState.Section.RESCUE_FEED, HomeViewState.SECTION_ORDER.get(10));
     }
 
     @Test public void criticalIsFirst_andStaleMobileIsExcludedFromNearby() {
