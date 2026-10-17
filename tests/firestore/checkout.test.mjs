@@ -760,3 +760,34 @@ test('Campaign image references and operational leases cannot bypass the trusted
   await seed({'campaigns/media':{...campaign,status:'ACTIVE'}});
   await assertFails(updateDoc(doc(db,'campaigns/media'),{imageUrls:[],imagePublicIds:[],description:'Edited active story',updatedAt:serverTimestamp()}));
 });
+
+
+test('Admin edits legacy category metadata while preserving seed image and missing embedded ID', async () => {
+  const oldImage = 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=1000&q=85';
+  await seed({'categories/cat-grains': {name: 'Củ & Hạt', imageUrl: oldImage, active: true, displayOrder: 3}});
+  const db = env.authenticatedContext('admin').firestore();
+  const changes = {name: 'Củ và Hạt', description: '', displayOrder: 4, imagePublicId: '',
+    moderatedBy: 'admin', moderatedAt: serverTimestamp(), moderationReason: '', updatedAt: serverTimestamp()};
+  await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), changes));
+  const saved = (await getDoc(doc(db, 'categories/cat-grains'))).data();
+  assert.equal(saved.name, 'Củ và Hạt'); assert.equal(saved.imageUrl, oldImage); assert.equal(saved.displayOrder, 4);
+  await assertFails(updateDoc(doc(db, 'categories/cat-grains'), {...changes, imageUrl: 'https://example.com/replacement.png'}));
+  await assertFails(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false}));
+  await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false, moderationReason: 'Tạm ngừng danh mục'}));
+  await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: true,
+    imageUrl: 'https://res.cloudinary.com/demo/image/upload/category.png'}));
+});
+
+test('Admin can retain existing banner seed image but cannot create new catalog external images', async () => {
+  const oldImage = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef';
+  await seed({'banners/seed-banner': {id: 'seed-banner', title: 'Mùa thu hoạch', imageUrl: oldImage,
+    campaignId: '', displayOrder: 1, startDate: past, endDate: future, active: true}});
+  const db = env.authenticatedContext('admin').firestore();
+  const moderation = {moderatedBy: 'admin', moderatedAt: serverTimestamp(), moderationReason: '', updatedAt: serverTimestamp()};
+  await assertSucceeds(updateDoc(doc(db, 'banners/seed-banner'), {...moderation, title: 'Mùa thu hoạch mới'}));
+  await assertFails(setDoc(doc(db, 'categories/new-category'), {...moderation, id: 'new-category', name: 'Danh mục mới',
+    imageUrl: oldImage, displayOrder: 0, active: true, createdAt: serverTimestamp()}));
+  await assertSucceeds(setDoc(doc(db, 'categories/no-image'), {...moderation, id: 'no-image', name: 'Danh mục chưa có ảnh',
+    imageUrl: '', displayOrder: 0, active: true, createdAt: serverTimestamp()}));
+  await assertFails(updateDoc(doc(env.authenticatedContext('customer-a').firestore(), 'categories/no-image'), {...moderation, name: 'Giả mạo'}));
+});
