@@ -73,8 +73,8 @@ public class SellerOrderListFragment extends Fragment {
             code.setTypeface(code.getTypeface(), android.graphics.Typeface.BOLD);
             TextView details = new TextView(requireContext());
             details.setText(deliveryOnly
-                    ? "Giao hàng: " + EnumLabels.label(order.getStatus()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus())
-                    : EnumLabels.label(order.getStatus()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus()));
+                    ? "Giao hàng: " + com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus())
+                    : com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus()));
             details.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface_variant));
             details.setTextSize(13);
             row.addView(code);

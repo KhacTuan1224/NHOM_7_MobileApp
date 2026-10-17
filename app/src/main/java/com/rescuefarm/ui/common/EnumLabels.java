@@ -134,6 +134,7 @@ public final class EnumLabels {
         if (value == null) return "Chưa cập nhật";
         String type = value.getDeclaringClass().getSimpleName();
         String code = value.name();
+        if ("OrderStatus".equals(type) && "DELIVERED".equals(code)) return "Đã nhận hàng";
         if ("PENDING".equals(code)) {
             if ("OrderStatus".equals(type)) return "Chờ xác nhận";
             if ("PaymentStatus".equals(type)) return "Chờ xác nhận thanh toán";

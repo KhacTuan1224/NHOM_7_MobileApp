@@ -1,4 +1,6 @@
 const express = require('express');
+const crypto = require('node:crypto');
+const {orderStatusLabel} = require('./order-status-labels');
 const {campaignUnit, normalizeUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
 const EPSILON = 0.000001;
@@ -223,7 +225,7 @@ function createCampaignLifecycle({db, admin, authenticate}) {
   }
 
   async function transitionOrder(caller, data) {
-    if (!['SELLER', 'ADMIN'].includes(caller.role)) throw fail(403, 'Bạn không có quyền xử lý đơn.');
+    if (!['SELLER', 'ADMIN', 'CUSTOMER', 'GUEST'].includes(caller.role)) throw fail(403, 'Bạn không có quyền xử lý đơn.');
     const id = text(data.orderId), target = text(data.targetStatus);
     if (!validId(id) || !['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'SHIPPING', 'DELIVERED', 'CANCELLED'].includes(target))
       throw fail(400, 'Đơn hoặc trạng thái không hợp lệ.');
@@ -236,7 +238,19 @@ function createCampaignLifecycle({db, admin, authenticate}) {
         if (order.sellerId !== caller.uid || !seller.exists || seller.get('status') !== 'ACTIVE'
             || seller.get('sellerStatus') !== 'APPROVED') throw fail(403, 'Seller không có quyền xử lý đơn này.');
       }
+      let buyer = caller.role === 'CUSTOMER' && order.ownerType === 'CUSTOMER' && order.ownerId === caller.uid;
+      if (caller.role === 'GUEST') {
+        const receipt = await tx.get(db.collection('checkoutReceipts').doc(id));
+        buyer = order.ownerType === 'GUEST' && receipt.exists && receipt.get('ownerType') === 'GUEST'
+          && receipt.get('ownerId') === order.ownerId && /^[a-f0-9]{64}$/i.test(text(caller.accessToken))
+          && receipt.get('tokenHash') === crypto.createHash('sha256').update(caller.accessToken).digest('hex');
+      }
+      if ((target === 'DELIVERED' && !buyer) || (target !== 'DELIVERED' && ['CUSTOMER', 'GUEST'].includes(caller.role)))
+        throw fail(403, 'Chỉ người mua của đơn hàng được xác nhận đã nhận hàng.');
       if (order.status === target) return {ok: true, replay: true};
+      if (order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus !== 'PAID'
+          && !['CANCELLED', 'DELIVERED'].includes(target))
+        throw fail(409, 'Cần nhập mã giao dịch và xác nhận đã nhận tiền trước khi xử lý đơn chuyển khoản.');
       const allowed = {PENDING: ['CONFIRMED', 'CANCELLED'], CONFIRMED: ['PREPARING', 'CANCELLED'],
         PREPARING: ['CANCELLED', order.fulfillmentType === 'DELIVERY' ? 'SHIPPING' : order.fulfillmentType === 'PICKUP' ? 'READY_FOR_PICKUP' : 'DELIVERED'],
         READY_FOR_PICKUP: ['DELIVERED', 'CANCELLED'], SHIPPING: ['DELIVERED']};
@@ -300,15 +314,59 @@ function createCampaignLifecycle({db, admin, authenticate}) {
         : target === 'CANCELLED' ? 'FAILED' : order.paymentStatus;
       tx.update(orderRef, {status: target, paymentStatus, updatedAt: stamp(),
         ...(terminal ? {inventoryFinalized: true, finalizedStatus: target} : {}),
-        ...(target === 'DELIVERED' ? {deliveredAt: stamp()} : {})});
+        ...(target === 'DELIVERED' ? {deliveredAt: stamp(), receivedAt: stamp(), receivedBy: caller.uid || order.ownerId} : {})});
       if (terminal) tx.update(paymentRef, {status: paymentStatus, updatedAt: stamp(),
         ...(paymentStatus === 'PAID' && payment.get('status') !== 'PAID' ? {paidAt: stamp()} : {})});
       if (shipment) tx.update(shipmentRef, {status: ({PREPARING: 'READY', SHIPPING: 'SHIPPING', DELIVERED: 'DELIVERED', CANCELLED: 'CANCELLED'})[target] || 'PENDING', updatedAt: stamp()});
-      if (order.ownerType === 'CUSTOMER') tx.set(db.collection('notifications').doc(`${id}_${target}`), {
-        id: `${id}_${target}`, userId: order.ownerId, type: 'ORDER', referenceId: id, orderStatus: target,
-        title: 'Cập nhật đơn hàng', body: `Trạng thái: ${target}`, isRead: false, createdAt: stamp()});
-      if (order.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${id}_${target}`, {
-        kind: 'DIRECT', resourceType: 'ORDER', resourceId: id, recipientUid: order.ownerId, decision: target, inboxId: `${id}_${target}`});
+      const recipients = [...new Set([...(order.ownerType === 'CUSTOMER' ? [order.ownerId] : []),
+        ...(buyer ? [order.sellerId] : [])])];
+      for (const recipient of recipients) {
+        const inboxId = `${id}_${target}${recipient === order.sellerId ? '_seller' : ''}`;
+        const publicMessage = `Trạng thái: ${orderStatusLabel(target, order.paymentMethod)}`;
+        tx.set(db.collection('notifications').doc(inboxId), {id: inboxId, userId: recipient, type: 'ORDER',
+          referenceId: id, orderStatus: target, title: 'Cập nhật đơn hàng', body: publicMessage,
+          isRead: false, createdAt: stamp()});
+        enqueueNotification(tx, db, admin, `order_${inboxId}`, {kind: 'DIRECT', resourceType: 'ORDER',
+          resourceId: id, recipientUid: recipient, decision: target, publicMessage, inboxId});
+      }
+      return {ok: true, replay: false};
+    });
+  }
+
+  async function confirmBankTransfer(caller, data) {
+    if (caller.role !== 'SELLER') throw fail(403, 'Chỉ cửa hàng của đơn được xác nhận nhận tiền.');
+    const id = text(data.orderId), reference = text(data.referenceCode);
+    if (!validId(id) || reference.length < 3 || reference.length > 120)
+      throw fail(400, 'Nhập mã giao dịch chuyển khoản từ 3 đến 120 ký tự.');
+    return db.runTransaction(async tx => {
+      const orderRef = db.collection('orders').doc(id), paymentRef = db.collection('payments').doc(id);
+      const orderSnap = await tx.get(orderRef), payment = await tx.get(paymentRef);
+      const seller = await tx.get(db.collection('users').doc(caller.uid));
+      if (!orderSnap.exists || !payment.exists) throw fail(404, 'Không tìm thấy đơn hoặc thanh toán.');
+      const order = orderSnap.data();
+      if (order.sellerId !== caller.uid || !seller.exists || seller.get('status') !== 'ACTIVE'
+          || seller.get('sellerStatus') !== 'APPROVED') throw fail(403, 'Bạn không có quyền xác nhận đơn này.');
+      if (order.paymentMethod !== 'BANK_TRANSFER' || payment.get('method') !== 'BANK_TRANSFER'
+          || order.status === 'CANCELLED') throw fail(409, 'Đơn không thể xác nhận chuyển khoản.');
+      if (order.paymentStatus === 'PAID' && payment.get('status') === 'PAID') {
+        if (payment.get('referenceCode') !== reference) throw fail(409, 'Đơn đã được xác nhận bằng mã giao dịch khác.');
+        return {ok: true, replay: true};
+      }
+      if (order.paymentStatus !== 'PENDING' || payment.get('status') !== 'PENDING'
+          || !['PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'SHIPPING'].includes(order.status))
+        throw fail(409, 'Trạng thái đơn hoặc thanh toán không cho phép xác nhận.');
+      tx.update(paymentRef, {status: 'PAID', referenceCode: reference, paidAt: stamp(), updatedAt: stamp()});
+      tx.update(orderRef, {paymentStatus: 'PAID', status: order.status === 'PENDING' ? 'CONFIRMED' : order.status,
+        ...(order.status === 'PENDING' ? {confirmedAt: stamp()} : {}), updatedAt: stamp()});
+      if (order.ownerType === 'CUSTOMER') {
+        const inboxId = `${id}_BANK_CONFIRMED`;
+        const publicMessage = 'Cửa hàng đã nhận tiền và xác nhận đơn hàng.';
+        tx.set(db.collection('notifications').doc(inboxId), {id: inboxId, userId: order.ownerId, type: 'ORDER',
+          referenceId: id, orderStatus: order.status === 'PENDING' ? 'CONFIRMED' : order.status,
+          title: 'Đã nhận tiền và xác nhận đơn', body: publicMessage, isRead: false, createdAt: stamp()});
+        enqueueNotification(tx, db, admin, `order_${inboxId}`, {kind: 'DIRECT', resourceType: 'ORDER',
+          resourceId: id, recipientUid: order.ownerId, publicMessage, inboxId});
+      }
       return {ok: true, replay: false};
     });
   }
@@ -344,9 +402,17 @@ function createCampaignLifecycle({db, admin, authenticate}) {
     try { res.json(await moderate(await authenticate(req, ['ADMIN']), req.body || {})); } catch (error) { next(error); }
   });
   router.post('/orders/transition', async (req, res, next) => {
-    try { res.json(await transitionOrder(await authenticate(req, ['SELLER', 'ADMIN']), req.body || {})); } catch (error) { next(error); }
+    try { res.json(await transitionOrder(await authenticate(req, ['SELLER', 'ADMIN', 'CUSTOMER']), req.body || {})); } catch (error) { next(error); }
   });
-  return {router, moderate, transitionOrder, reconcileItems, reconcileAll, reconcileExpired, reconcileCampaign};
+  router.post('/orders/confirm-bank-transfer', async (req, res, next) => {
+    try { res.json(await confirmBankTransfer(await authenticate(req, ['SELLER']), req.body || {})); }
+    catch (error) { next(error); }
+  });
+  router.post('/orders/confirm-guest-receipt', async (req, res, next) => {
+    try { res.json(await transitionOrder({role: 'GUEST', accessToken: text(req.body && req.body.accessToken)},
+      {orderId: req.body && req.body.orderId, targetStatus: 'DELIVERED'})); } catch (error) { next(error); }
+  });
+  return {router, moderate, confirmBankTransfer, transitionOrder, reconcileItems, reconcileAll, reconcileExpired, reconcileCampaign};
 }
 
 module.exports = {createCampaignLifecycle, readAllocations, orderAllocations, validateProgress, quantityMap, sum, isLive, nextClosedStatus};

@@ -8,7 +8,7 @@ function compareTimestamp(a, b) {
 }
 const text = value => typeof value === 'string' ? value.trim() : '';
 const decisionLabel = value => ({PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', PREPARING: 'Đang chuẩn bị', SHIPPING: 'Đang giao',
-  READY_FOR_PICKUP: 'Sẵn sàng nhận', DELIVERED: 'Đã giao', CANCELLED: 'Đã hủy', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối',
+  READY_FOR_PICKUP: 'Sẵn sàng nhận', DELIVERED: 'Đã nhận hàng', CANCELLED: 'Đã hủy', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối',
   ACTIVE: 'Đang hoạt động', STOPPED: 'Đã dừng', HIDDEN: 'Đã ẩn', BLOCKED: 'Đã khóa'})[value] || value;
 
 function enqueueNotification(tx, db, admin, id, event) {

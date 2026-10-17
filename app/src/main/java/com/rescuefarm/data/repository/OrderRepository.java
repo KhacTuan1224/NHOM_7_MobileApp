@@ -38,6 +38,7 @@ public interface OrderRepository {
             ActionCallback callback) {
         callback.onError(ErrorCode.NOT_FOUND, "Chức năng cập nhật shipment chưa được cấu hình.");
     }
+    default boolean canConfirmGuestReceipt(String orderId) { return false; }
     void confirmBankTransfer(String orderId, String referenceCode, LifecycleCallback callback);
     default void close() { }
 }

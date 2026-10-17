@@ -24,11 +24,13 @@ function setup(overrides = {}) {
 const data = (batch = 'a', quantity = 10) => ({requestId: crypto.randomUUID(), items: [{productId: `p-${batch}`, batchId: batch, sellerId: 'seller', quantity}],
   receiverName: 'Buyer', receiverPhone: '0912345678', receiverAddress: '', latitude: 0, longitude: 0,
   fulfillmentType: 'PICKUP', paymentMethod: 'CASH_ON_SITE', note: ''});
-const identity = {ownerType: 'GUEST', ownerId: 'guest_11111111-1111-1111-1111-111111111111', tokenHash: 'hash'};
+const guestToken = 'a'.repeat(64);
+const buyer = {role: 'GUEST', accessToken: guestToken};
+const identity = {ownerType: 'GUEST', ownerId: 'guest_11111111-1111-1111-1111-111111111111', tokenHash: crypto.createHash('sha256').update(guestToken).digest('hex')};
 async function activate(fixture) { await fixture.lifecycle.moderate(moderator, {campaignId: 'campaign', targetStatus: 'ACTIVE'}); }
 async function finish(fixture, id) {
   for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'DELIVERED'])
-    await fixture.lifecycle.transitionOrder(seller, {orderId: id, targetStatus});
+    await fixture.lifecycle.transitionOrder(targetStatus === 'DELIVERED' ? buyer : seller, {orderId: id, targetStatus});
 }
 
 test('approval links batches atomically, initializes allocation maps, and is idempotent', async () => {
@@ -161,27 +163,79 @@ for (const fulfillmentType of ['DELIVERY', 'ON_SITE_RESCUE']) {
       paymentMethod: fulfillmentType === 'DELIVERY' ? 'COD' : 'CASH_ON_SITE', receiverAddress: 'Test address'};
     await f.commerce.checkout(request, identity);
     const states = fulfillmentType === 'DELIVERY' ? ['CONFIRMED', 'PREPARING', 'SHIPPING', 'DELIVERED'] : ['CONFIRMED', 'PREPARING', 'DELIVERED'];
-    for (const targetStatus of states) await f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus});
+    for (const targetStatus of states) await f.lifecycle.transitionOrder(targetStatus === 'DELIVERED' ? buyer : seller, {orderId: request.requestId, targetStatus});
     assert.equal(f.db.snapshot('campaigns/campaign').get('rescuedByBatch').a, 10);
     assert.equal(f.db.snapshot(`payments/${request.requestId}`).get('status'), 'PAID');
     if (fulfillmentType === 'DELIVERY') assert.equal(f.db.snapshot(`shipments/${request.requestId}`).get('status'), 'DELIVERED');
   });
 }
 
-test('bank transfer must be confirmed before delivery and paid orders cannot be cancelled', async () => {
+test('bank transfer atomically confirms payment and order before preparation; only buyer completes receipt', async () => {
   const f = setup(); await activate(f);
   f.db.documents.set('sellerPaymentProfiles/seller', {bankCode: 'VCB', bankAccountName: 'Test', bankAccountNumber: '123456'});
   const request = {...data(), paymentMethod: 'BANK_TRANSFER'}; await f.commerce.checkout(request, identity);
-  for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'])
-    await f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus});
-  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'DELIVERED'}), /chuyển khoản/);
-  for (const path of [`orders/${request.requestId}`, `payments/${request.requestId}`]) {
-    const value = f.db.snapshot(path).data();
-    f.db.documents.set(path, {...value, ...(path.startsWith('orders/') ? {paymentStatus: 'PAID'} : {status: 'PAID'})});
-  }
-  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'CANCELLED'}), /hoàn tiền/);
-  await f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'DELIVERED'});
+  const id = request.requestId;
+  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: id, targetStatus: 'CONFIRMED'}), /mã giao dịch/);
+  await assert.rejects(() => f.lifecycle.confirmBankTransfer(seller, {orderId: id, referenceCode: ''}), e => e.status === 400);
+  assert.equal(f.db.snapshot(`orders/${id}`).get('status'), 'PENDING');
+  await f.lifecycle.confirmBankTransfer(seller, {orderId: id, referenceCode: 'BANK-123'});
+  assert.equal(f.db.snapshot(`orders/${id}`).get('status'), 'CONFIRMED');
+  assert.equal(f.db.snapshot(`orders/${id}`).get('paymentStatus'), 'PAID');
+  assert.equal(f.db.snapshot(`payments/${id}`).get('referenceCode'), 'BANK-123');
+  assert.equal((await f.lifecycle.confirmBankTransfer(seller, {orderId: id, referenceCode: 'BANK-123'})).replay, true);
+  await assert.rejects(() => f.lifecycle.confirmBankTransfer(seller, {orderId: id, referenceCode: 'OTHER'}), /khác/);
+  await assert.rejects(() => f.lifecycle.transitionOrder(buyer, {orderId: id, targetStatus: 'DELIVERED'}), e => e.status === 409);
+  for (const targetStatus of ['PREPARING', 'READY_FOR_PICKUP']) await f.lifecycle.transitionOrder(seller, {orderId: id, targetStatus});
+  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: id, targetStatus: 'CANCELLED'}), /hoàn tiền/);
+  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: id, targetStatus: 'DELIVERED'}), e => e.status === 403);
+  await f.lifecycle.transitionOrder(buyer, {orderId: id, targetStatus: 'DELIVERED'});
   assert.equal(f.db.snapshot('campaigns/campaign').get('rescuedByBatch').a, 10);
+  assert.equal(f.db.snapshot(`orders/${id}`).get('receivedBy'), identity.ownerId);
+});
+
+test('COD receipt requires the actual customer and finalizes payment and inventory exactly once', async () => {
+  const f = setup(); await activate(f);
+  f.db.documents.set('sellerPublicProfiles/seller', {latitude: 10.8, longitude: 106.7});
+  f.db.documents.set('appConfig/shipping', {baseFeeVnd: 1000, perKmFeeVnd: 100, freeDistanceKm: 0});
+  const request = {...data(), fulfillmentType: 'DELIVERY', paymentMethod: 'COD',
+    latitude: 10.8, longitude: 106.7, receiverAddress: '12 đường A'};
+  f.db.documents.set('users/customer', {role: 'CUSTOMER', status: 'ACTIVE'});
+  await f.commerce.checkout(request, {ownerType: 'CUSTOMER', ownerId: 'customer'});
+  const command = {orderId: request.requestId, targetStatus: 'DELIVERED'};
+  const customer = {uid: 'customer', role: 'CUSTOMER'};
+  await assert.rejects(() => f.lifecycle.transitionOrder(customer, command), e => e.status === 409);
+  for (const targetStatus of ['CONFIRMED', 'PREPARING', 'SHIPPING'])
+    await f.lifecycle.transitionOrder(seller, {...command, targetStatus});
+  for (const actor of [seller, moderator, {uid: 'other', role: 'CUSTOMER'},
+    {role: 'GUEST', accessToken: guestToken}])
+    await assert.rejects(() => f.lifecycle.transitionOrder(actor, command), e => e.status === 403);
+  assert.equal(f.db.snapshot(`payments/${request.requestId}`).get('status'), 'UNPAID');
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 0);
+  await f.lifecycle.transitionOrder(customer, command);
+  assert.equal(f.db.snapshot(`payments/${request.requestId}`).get('status'), 'PAID');
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+  assert.equal(f.db.snapshot(`notifications/${request.requestId}_DELIVERED`).get('body'),
+    'Trạng thái: Đã thanh toán và nhận đơn');
+  assert.equal(f.db.snapshot(`notifications/${request.requestId}_DELIVERED_seller`).get('userId'), 'seller');
+  assert.equal((await f.lifecycle.transitionOrder(customer, command)).replay, true);
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+});
+
+test('guest receipt requires its matching checkout token and bank confirmation requires the owning seller', async () => {
+  const f = setup(); await activate(f);
+  f.db.documents.set('sellerPaymentProfiles/seller', {bankCode: 'MB', bankAccountName: 'Test', bankAccountNumber: '123456'});
+  const request = {...data(), paymentMethod: 'BANK_TRANSFER'}, command = {orderId: request.requestId, referenceCode: 'TX123'};
+  await f.commerce.checkout(request, identity);
+  for (const actor of [moderator, {role: 'CUSTOMER', uid: 'customer'}, {role: 'SELLER', uid: 'other'}])
+    await assert.rejects(() => f.lifecycle.confirmBankTransfer(actor, command), e => e.status === 403);
+  await f.lifecycle.confirmBankTransfer(seller, command);
+  for (const targetStatus of ['PREPARING', 'READY_FOR_PICKUP'])
+    await f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus});
+  for (const accessToken of ['', 'b'.repeat(64)])
+    await assert.rejects(() => f.lifecycle.transitionOrder({role: 'GUEST', accessToken},
+      {orderId: request.requestId, targetStatus: 'DELIVERED'}), e => e.status === 403);
+  await f.lifecycle.transitionOrder(buyer, {orderId: request.requestId, targetStatus: 'DELIVERED'});
+  assert.equal(f.db.snapshot(`payments/${request.requestId}`).get('referenceCode'), 'TX123');
 });
 
 test('mixed-unit approval is rejected atomically even when numeric targets fit', async () => {

@@ -74,7 +74,7 @@ public class OrderConfirmationFragment extends Fragment {
     private void render(Order order) {
         binding = true; code.setText(order.getOrderCode()); phone.setText(order.getReceiverPhone()); binding = false;
         orderId = order.getId();
-        output.setText(getString(R.string.order_tracking_format, order.getOrderCode(), EnumLabels.label(order.getStatus()),
+        output.setText(getString(R.string.order_tracking_format, order.getOrderCode(), com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()),
                 EnumLabels.label(order.getPaymentStatus()), order.getTotalAmount()));
     }
 }

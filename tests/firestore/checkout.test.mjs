@@ -657,7 +657,7 @@ test('future Promotion can persist its scheduled notification event atomically',
   batch.set(doc(db, 'notificationOutbox/promotion'), outboxData('seller', 'PROMOTION', 'product-a', 'PROMOTION'));
   await assertSucceeds(batch.commit());
 });
-test('confirming bank payment can enqueue an event only with the actual payment change', async () => {
+test('bank payment and confirmation require trusted API instead of direct client writes', async () => {
   await seed({'orders/bank': {id: 'bank', ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller',
     status: 'PENDING', paymentMethod: 'BANK_TRANSFER', paymentStatus: 'PENDING', updatedAt: past},
     'payments/bank': {id: 'bank', orderId: 'bank', method: 'BANK_TRANSFER', amount: 1000, status: 'PENDING', referenceCode: '', updatedAt: past}});
@@ -665,7 +665,7 @@ test('confirming bank payment can enqueue an event only with the actual payment 
   batch.update(doc(db, 'orders/bank'), {paymentStatus: 'PAID', updatedAt: serverTimestamp()});
   batch.update(doc(db, 'payments/bank'), {status: 'PAID', referenceCode: 'BANK123', paidAt: serverTimestamp(), updatedAt: serverTimestamp()});
   batch.set(doc(db, 'notificationOutbox/payment'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT'));
-  await assertSucceeds(batch.commit());
+  await assertFails(batch.commit());
   await assertFails(setDoc(doc(db, 'notificationOutbox/payment-replay'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT')));
 });
 
