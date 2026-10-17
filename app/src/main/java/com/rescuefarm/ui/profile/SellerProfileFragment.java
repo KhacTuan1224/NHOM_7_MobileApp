@@ -28,7 +28,6 @@ import com.bumptech.glide.Glide;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
-import com.rescuefarm.ui.common.VietnamAddressView;
 import java.util.Map;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 
@@ -38,7 +37,10 @@ public class SellerProfileFragment extends Fragment {
     private double storeLatitude, storeLongitude;
     private int storeAddressVersion, gpsRequestVersion;
     private com.rescuefarm.data.repository.SellerStorefront publicStorefront;
-    private VietnamAddressView addressInput;
+    private TextInputEditText addressInput;
+    private com.google.android.material.button.MaterialButton saveButton;
+    private TextView saveStatus;
+    private boolean saving;
     private ImageView sellerAvatarView;
     private ProfileViewModel viewModel;
     private TextView locationStatus;
@@ -78,6 +80,8 @@ public class SellerProfileFragment extends Fragment {
         uploadAvatarButton = view.findViewById(R.id.uploadSellerAvatarButton);
         uploadAvatarButton.setOnClickListener(v -> avatarPicker.launch("image/*"));
         locationStatus = view.findViewById(R.id.sellerLocationStatus);
+        saveButton = view.findViewById(R.id.saveSellerProfileButton);
+        saveStatus = view.findViewById(R.id.sellerSaveStatus);
         view.findViewById(R.id.useSellerLocationButton).setOnClickListener(v -> requestSellerLocation());
         view.findViewById(R.id.openSellerApplicationButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(
@@ -94,20 +98,30 @@ public class SellerProfileFragment extends Fragment {
         view.findViewById(R.id.openSellerOrdersButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(
                         R.id.action_sellerProfileFragment_to_sellerOrderListFragment));
-        view.findViewById(R.id.saveSellerProfileButton).setOnClickListener(v -> {
-            if (!addressInput.validate()) return;
+        saveButton.setOnClickListener(v -> {
+            if (saving) return;
+            addressInput.setError(null);
+            if (text(addressInput).trim().length() < 5) {
+                String error = "Hãy lấy GPS để điền địa chỉ cửa hàng hoặc nhập địa chỉ đầy đủ.";
+                addressInput.setError(error); addressInput.requestFocus();
+                showSaveMessage(error, true); return;
+            }
+            if (!com.rescuefarm.service.location.GpsCoordinates.isValid(storeLatitude, storeLongitude)) {
+                showSaveMessage("Chưa có GPS cửa hàng. Hãy nhấn Lấy GPS cửa hàng trước khi lưu.", true); return;
+            }
+            saving = true; setSaving(true);
             try {
                 viewModel.updateSellerProfile(text(representativeInput), text(shopNameInput),
-                        text(descriptionInput), text(avatarInput), addressInput.formattedAddress(),
+                        text(descriptionInput), text(avatarInput), text(addressInput).trim(),
                         text(bankCodeInput), text(bankAccountNameInput), text(bankAccountNumberInput),
                         storeLatitude, storeLongitude);
             } catch (IllegalArgumentException error) {
-                Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                saving = false; setSaving(false); showSaveMessage(error.getMessage(), true);
             }
         });
         android.view.ViewGroup parent = (android.view.ViewGroup)view.findViewById(R.id.saveSellerProfileButton).getParent();
         com.google.android.material.button.MaterialButton settings = new com.google.android.material.button.MaterialButton(requireContext());
-        settings.setText("Ảnh QR thanh toán");
+        settings.setText("Mã QR thanh toán");
         settings.setOnClickListener(v -> { Bundle args = new Bundle(); args.putBoolean("edit",true);
             Navigation.findNavController(view).navigate(R.id.storefrontFragment,args); });
         parent.addView(settings, parent.indexOfChild(view.findViewById(R.id.saveSellerProfileButton))+1);
@@ -126,9 +140,9 @@ public class SellerProfileFragment extends Fragment {
                         .show());
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == ProfileScreenState.Status.ERROR) {
-                Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
+                saving = false; setSaving(false); showSaveMessage(value.getMessage(), true);
             } else if (value.getStatus() == ProfileScreenState.Status.LOCATION) {
-                if (gpsRequestVersion == storeAddressVersion) renderSellerLocation(value);
+                renderSellerLocation(value);
                 viewModel.clearTransientState();
             } else if (value.getStatus() == ProfileScreenState.Status.PROFILE
                     && value.getUser() instanceof Seller) {
@@ -142,7 +156,7 @@ public class SellerProfileFragment extends Fragment {
                 if (!dirty) populate(seller);
                 renderAvatar(seller.getShopAvatarUrl());
             } else if (value.getStatus() == ProfileScreenState.Status.SAVED) {
-                Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show();
+                saving = false; setSaving(false); showSaveMessage(value.getMessage(), false);
                 dirty = false;
                 viewModel.loadProfile();
             }
@@ -158,8 +172,12 @@ public class SellerProfileFragment extends Fragment {
         shopNameInput.addTextChangedListener(watcher);
         descriptionInput.addTextChangedListener(watcher);
         avatarInput.addTextChangedListener(watcher);
-        addressInput.setOnAddressChangedListener(() -> {
-            if (!binding) { dirty = true; storeAddressVersion++; storeLatitude = 0; storeLongitude = 0; locationStatus.setText(R.string.gps_not_selected); }
+        addressInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!binding) { dirty = true; storeAddressVersion++; }
+            }
+            @Override public void afterTextChanged(Editable s) { }
         });
         bankCodeInput.addTextChangedListener(watcher); bankAccountNameInput.addTextChangedListener(watcher);
         bankAccountNumberInput.addTextChangedListener(watcher);
@@ -194,14 +212,22 @@ public class SellerProfileFragment extends Fragment {
         binding = true;
         storeLatitude = value.getLatitude();
         storeLongitude = value.getLongitude();
-        if (value.getGeocodedAddress() != null) {
-            addressInput.applyGeocodedAddress(value.getGeocodedAddress());
+        if (value.getGeocodedAddress() != null && gpsRequestVersion == storeAddressVersion) {
+            com.rescuefarm.service.location.LocationProvider.GeocodedAddress resolved = value.getGeocodedAddress();
+            String full = resolved.getFullAddress().trim();
+            if (full.isEmpty()) {
+                java.util.List<String> parts = new java.util.ArrayList<>();
+                for (String part : new String[]{resolved.getStreet(), resolved.getWard(), resolved.getDistrict(), resolved.getProvince()})
+                    if (part != null && !part.trim().isEmpty()) parts.add(part.trim());
+                full = String.join(", ", parts);
+            }
+            if (!full.isEmpty()) addressInput.setText(full);
         }
         binding = false;
         dirty = true;
         String message = value.getMessage();
         locationStatus.setText(message == null || message.trim().isEmpty()
-                ? "Đã lấy vị trí hiện tại và điền địa chỉ nếu có."
+                ? "Đã lấy GPS cửa hàng. Kiểm tra địa chỉ bên dưới; nếu chuyển địa điểm, hãy lấy GPS lại tại cửa hàng mới."
                 : message);
     }
     private void navigateToLogin() {
@@ -218,7 +244,7 @@ public class SellerProfileFragment extends Fragment {
         avatarInput.setText(seller.getShopAvatarUrl());
         avatarUploadStatus.setText(seller.getShopAvatarUrl() == null || seller.getShopAvatarUrl().trim().isEmpty()
                 ? R.string.no_shop_avatar_selected : R.string.shop_avatar_saved_status);
-        addressInput.setFormattedAddress(seller.getAddress());
+        addressInput.setText(seller.getAddress());
         bankCodeInput.setText(seller.getBankCode()); bankAccountNameInput.setText(seller.getBankAccountName());
         bankAccountNumberInput.setText(seller.getBankAccountNumber());
         // Existing private fields are only a legacy fallback until the public profile loads.
@@ -232,7 +258,7 @@ public class SellerProfileFragment extends Fragment {
         if (publicStorefront == null || !publicStorefront.configured) return;
         shopNameInput.setText(publicStorefront.shopName);
         descriptionInput.setText(publicStorefront.description);
-        addressInput.setFormattedAddress(publicStorefront.address);
+        addressInput.setText(publicStorefront.address);
         storeLatitude = publicStorefront.latitude; storeLongitude = publicStorefront.longitude;
     }
     private void showStoreGps() {
@@ -251,6 +277,20 @@ public class SellerProfileFragment extends Fragment {
         super.onSaveInstanceState(state);
         state.putDouble("storeLatitude", storeLatitude); state.putDouble("storeLongitude", storeLongitude);
         state.putBoolean("sellerDirty", dirty);
+    }
+
+    private void setSaving(boolean active) {
+        saveButton.setEnabled(!active);
+        saveButton.setText(active ? "Đang lưu hồ sơ…" : getString(R.string.save_seller_profile_action));
+        requireView().findViewById(R.id.useSellerLocationButton).setEnabled(!active);
+        if (active) showSaveMessage("Đang lưu hồ sơ cửa hàng…", false);
+    }
+    private void showSaveMessage(String message, boolean error) {
+        String value = message == null ? "Không lưu được hồ sơ. Vui lòng thử lại." : message;
+        saveStatus.setText(value);
+        saveStatus.setTextColor(requireContext().getColor(error ? R.color.rescue_critical : R.color.rescue_primary));
+        saveStatus.setVisibility(View.VISIBLE);
+        if (error) Toast.makeText(requireContext(), value, Toast.LENGTH_LONG).show();
     }
 
     private void renderAvatar(String shopAvatarUrl) {

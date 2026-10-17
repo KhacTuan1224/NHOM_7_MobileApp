@@ -62,6 +62,25 @@ function addressData(owner, id = 'home', isDefault = false) {
     isDefault, updatedAt: serverTimestamp() };
 }
 
+test('Seller profile save commits text address, public GPS and private payment together', async () => {
+  const db = env.authenticatedContext('seller').firestore();
+  const business = {representativeName: 'Nguyễn Văn An', shopName: 'Vườn nhà', shopDescription: 'Nông sản',
+    shopAvatarUrl: '', address: '12 đường Vườn, tỉnh Đồng Tháp', bankCode: 'MB', bankAccountName: 'NGUYEN VAN AN',
+    bankAccountNumber: '123456789', latitude: 10.8, longitude: 106.7, updatedAt: serverTimestamp()};
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'users/seller'), business);
+  batch.set(doc(db, 'sellerPublicProfiles/seller'), {sellerId: 'seller', shopName: business.shopName,
+    shopDescription: business.shopDescription, shopAvatarUrl: '', address: business.address,
+    latitude: 10.8, longitude: 106.7, updatedAt: serverTimestamp(),
+    bankCode: deleteField(), bankAccountName: deleteField(), bankAccountNumber: deleteField(), qrUrl: deleteField()}, {merge: true});
+  batch.set(doc(db, 'sellerPaymentProfiles/seller'), {sellerId: 'seller', bankCode: 'MB',
+    bankAccountName: 'NGUYEN VAN AN', bankAccountNumber: '123456789', updatedAt: serverTimestamp()}, {merge: true});
+  await assertSucceeds(batch.commit());
+  assert.equal((await getDoc(doc(db, 'users/seller'))).data().address, business.address);
+  assert.equal((await getDoc(doc(db, 'sellerPublicProfiles/seller'))).data().latitude, 10.8);
+  assert.equal((await getDoc(doc(db, 'sellerPaymentProfiles/seller'))).data().bankCode, 'MB');
+});
+
 test('active customers can manage only their own receiver addresses', async () => {
   for (const owner of ['customer-a', 'customer-b']) {
     const db = env.authenticatedContext(owner).firestore();

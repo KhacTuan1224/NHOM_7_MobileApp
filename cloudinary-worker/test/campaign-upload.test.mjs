@@ -2,6 +2,16 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import worker,{resolveAsset,imageMime,readCampaignImage,uploadCampaign} from '../src/index.js';
 const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
 const image=(bytes=png,mime='image/png')=>new Request('https://worker/upload-campaign?resourceId=campaign&slot=0',{method:'POST',headers:{'Content-Type':mime},body:bytes});
+
+test('generated payment QR uses immutable owner-scoped IDs, including sellers preparing their profile', async () => {
+  const version='12345678-1234-1234-1234-123456789abc';
+  const asset=await resolveAsset({assetType:'paymentQr',resourceId:'seller',slot:0,version},'seller',
+    {role:'SELLER',sellerStatus:'PENDING_APPROVAL'});
+  assert.equal(asset.publicId,`rescuefarm/sellers/seller/payment-qr-${version}`);
+  assert.equal(asset.immutable,true);
+  assert.equal(await resolveAsset({assetType:'paymentQr',resourceId:'other',slot:0,version},'seller',{role:'SELLER'}),null);
+  assert.equal(await resolveAsset({assetType:'paymentQr',resourceId:'seller',slot:0,version:'invalid'},'seller',{role:'SELLER'}),null);
+});
 test('signed routes cannot produce Campaign overwrite or ordinary delete permissions',async()=>{
   const profile={role:'SELLER',sellerStatus:'APPROVED'};
   assert.equal(await resolveAsset({assetType:'campaign',resourceId:'campaign',slot:0},'seller',profile),null);

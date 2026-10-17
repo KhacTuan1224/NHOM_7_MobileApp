@@ -11,6 +11,24 @@ public final class ProfileValidator {
         return com.rescuefarm.service.profile.ProfileInputPolicy.business(companyName, taxCode);
     }
 
+    public static String validateSellerProfile(String representative, String shop, String description,
+            String avatar, String address, String bank, String accountName, String accountNumber) {
+        if (clean(representative).length() < 2 || clean(representative).length() > 100)
+            return "Tên người đại diện cần từ 2 đến 100 ký tự.";
+        if (clean(shop).length() < 2 || clean(shop).length() > 120)
+            return "Tên cửa hàng cần từ 2 đến 120 ký tự.";
+        if (clean(address).length() < 5 || clean(address).length() > 500)
+            return "Địa chỉ cửa hàng cần từ 5 đến 500 ký tự.";
+        if (clean(description).length() > 2000) return "Giới thiệu cửa hàng tối đa 2.000 ký tự.";
+        if (clean(avatar).length() > 2048) return "Đường dẫn ảnh cửa hàng quá dài.";
+        if (clean(bank).length() > 24 || clean(accountName).length() > 120 || clean(accountNumber).length() > 40)
+            return "Thông tin tài khoản ngân hàng quá dài.";
+        boolean anyBank = !clean(bank).isEmpty() || !clean(accountName).isEmpty() || !clean(accountNumber).isEmpty();
+        if (anyBank && (clean(bank).isEmpty() || clean(accountName).isEmpty() || clean(accountNumber).isEmpty()))
+            return "Hãy điền đủ mã ngân hàng, chủ tài khoản và số tài khoản, hoặc để trống cả ba.";
+        return null;
+    }
+
     public static String validateAddress(String receiverName, String phone, String province,
             String district, String ward, String street) {
         if (clean(receiverName).length() < 2) return "Vui lòng nhập tên người nhận.";
