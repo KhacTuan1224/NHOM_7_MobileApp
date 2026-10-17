@@ -22,4 +22,26 @@
     <color name="rescue_chart_purple">#8064B2</color>
     <color name="rescue_chart_red">#D45B55</color>
     <color name="rescue_chart_yellow">#C99A21</color>
+    <color name="admin_seller">#8064B2</color>
+    <color name="admin_seller_soft">#F1ECF8</color>
+    <color name="admin_users">#3778B8</color>
+    <color name="admin_users_soft">#EAF2FA</color>
+    <color name="admin_products">#E58A2B</color>
+    <color name="admin_products_soft">#FFF3E5</color>
+    <color name="admin_campaigns">#2E8B57</color>
+    <color name="admin_campaigns_soft">#E8F5EC</color>
+    <color name="admin_categories">#259A91</color>
+    <color name="admin_categories_soft">#E7F5F3</color>
+    <color name="admin_banners">#5865A8</color>
+    <color name="admin_banners_soft">#EEF0FA</color>
+    <color name="admin_reviews">#C99A21</color>
+    <color name="admin_reviews_soft">#FFF7DF</color>
+    <color name="admin_reports">#C43D3D</color>
+    <color name="admin_reports_soft">#FCECEC</color>
+    <color name="admin_orders">#2877A8</color>
+    <color name="admin_orders_soft">#E8F3F9</color>
+    <color name="admin_analytics">#168A83</color>
+    <color name="admin_analytics_soft">#E6F5F3</color>
+    <color name="admin_shipping">#6652A3</color>
+    <color name="admin_shipping_soft">#F0EDFA</color>
 </resources>
