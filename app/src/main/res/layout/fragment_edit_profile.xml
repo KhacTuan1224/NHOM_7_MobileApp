@@ -58,6 +58,11 @@
 
             <WebView android:id="@+id/profileLocationMap" android:layout_width="match_parent"
                 android:layout_height="match_parent" android:background="@android:color/transparent" />
+            <TextView android:id="@+id/profileMapStatus" android:layout_width="match_parent"
+                android:layout_height="match_parent" android:gravity="center" android:padding="24dp"
+                android:background="@color/rescue_background" android:text="@string/profile_map_loading"
+                android:textColor="@color/rescue_on_surface_variant" android:clickable="true"
+                android:focusable="true" />
             <TextView android:id="@+id/profileMapCaption" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:layout_gravity="bottom"
                 android:background="#F7F8FA" android:elevation="4dp"

@@ -3,6 +3,10 @@ package com.rescuefarm.ui.profile;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.util.Log;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -18,6 +22,11 @@ import android.text.Editable;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebResourceError;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -42,6 +51,10 @@ public class EditProfileFragment extends Fragment {
     private View openGoogleMapsButton;
     private View mapContainer;
     private WebView locationMap;
+    private TextView mapStatus;
+    private final Handler mapHandler = new Handler(Looper.getMainLooper());
+    private int mapGeneration;
+    private double mappedLatitude = Double.NaN, mappedLongitude = Double.NaN;
     private ImageView avatarPreview;
     private TextView avatarStatus;
     private View uploadAvatarButton;
@@ -74,7 +87,7 @@ public class EditProfileFragment extends Fragment {
         sellerLocationTitle.setVisibility(sellerVisibility);
         sellerLocationDescription.setVisibility(sellerVisibility);
         mapCaption.setVisibility(sellerVisibility);
-        openGoogleMapsButton.setVisibility(sellerVisibility);
+        openGoogleMapsButton.setVisibility(View.VISIBLE);
         locationView.setVisibility(sellerMap ? View.GONE : View.VISIBLE);
         if (sellerMap) {
             com.google.android.material.button.MaterialButton gpsButton = view.findViewById(R.id.useProfileLocationButton);
@@ -85,6 +98,11 @@ public class EditProfileFragment extends Fragment {
         openGoogleMapsButton.setOnClickListener(v -> openGoogleMaps());
         mapContainer = view.findViewById(R.id.profileMapContainer);
         locationMap = view.findViewById(R.id.profileLocationMap);
+        mapStatus = view.findViewById(R.id.profileMapStatus);
+        mapStatus.setOnClickListener(v -> {
+            mappedLatitude = Double.NaN;
+            showMap(latitude, longitude);
+        });
         configureMap();
         viewModel = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext()))
                 .get(ProfileViewModel.class);
@@ -154,9 +172,9 @@ public class EditProfileFragment extends Fragment {
             mapCaption.setText("Vị trí GPS hồ sơ" + System.lineSeparator()
                     + "Vĩ độ " + String.format(Locale.US, "%.6f", latitude)
                     + " · Kinh độ " + String.format(Locale.US, "%.6f", longitude));
-            openGoogleMapsButton.setEnabled(Double.isFinite(latitude) && Double.isFinite(longitude)
-                    && (latitude != 0D || longitude != 0D));
         }
+        openGoogleMapsButton.setEnabled(Double.isFinite(latitude) && Double.isFinite(longitude)
+                && (latitude != 0D || longitude != 0D));
         showMap(latitude, longitude);
     }
 
@@ -176,7 +194,36 @@ public class EditProfileFragment extends Fragment {
         String defaultUserAgent = settings.getUserAgentString();
         settings.setUserAgentString(defaultUserAgent + " RescueFarmAndroidApp/1.0 (com.example.nhom_7_mobileapp)");
         locationMap.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-        locationMap.setWebViewClient(new WebViewClient());
+        locationMap.setWebViewClient(new WebViewClient() {
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                if ("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) {
+                    String path = uri.getPath();
+                    if ("/maps/leaflet.js".equals(path) || "/maps/leaflet.css".equals(path)) {
+                        try {
+                            return new WebResourceResponse(path.endsWith(".js") ? "text/javascript" : "text/css",
+                                    "UTF-8", view.getContext().getAssets().open("maps/leaflet/" + uri.getLastPathSegment()));
+                        } catch (java.io.IOException error) {
+                            Log.e("ProfileMap", "Missing bundled map library", error);
+                            return new WebResourceResponse("text/plain", "UTF-8",
+                                    new java.io.ByteArrayInputStream(new byte[0]));
+                        }
+                    }
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                Log.w("ProfileMap", "Resource failed: " + request.getUrl().getHost() + ", code=" + error.getErrorCode());
+            }
+        });
+        locationMap.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage message) {
+                if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
+                    Log.e("ProfileMap", message.message());
+                return true;
+            }
+        });
     }
 
     private void showMap(double lat, double lon) {
@@ -184,12 +231,40 @@ public class EditProfileFragment extends Fragment {
                 || lat < -90D || lat > 90D || lon < -180D || lon > 180D
                 || (lat == 0D && lon == 0D)) {
             mapContainer.setVisibility(View.GONE);
+            mapGeneration++;
+            mapHandler.removeCallbacksAndMessages(null);
+            mappedLatitude = Double.NaN;
             return;
         }
         mapContainer.setVisibility(View.VISIBLE);
+        if (Double.compare(mappedLatitude, lat) == 0 && Double.compare(mappedLongitude, lon) == 0) return;
+        mappedLatitude = lat;
+        mappedLongitude = lon;
+        mapHandler.removeCallbacksAndMessages(null);
+        int generation = ++mapGeneration;
+        mapStatus.setText(R.string.profile_map_loading);
+        mapStatus.setVisibility(View.VISIBLE);
+        mapStatus.setEnabled(false);
         String html = mapHtml(lat, lon);
-        locationMap.loadDataWithBaseURL("https://www.openstreetmap.org/", html,
+        locationMap.loadDataWithBaseURL("https://appassets.androidplatform.net/maps/", html,
                 "text/html", "UTF-8", null);
+        long deadline = SystemClock.uptimeMillis() + 12000L;
+        mapHandler.postDelayed(() -> checkMapReady(generation, deadline), 300L);
+    }
+
+    private void checkMapReady(int generation, long deadline) {
+        if (locationMap == null || generation != mapGeneration) return;
+        locationMap.evaluateJavascript("Boolean(window.rescueMapReady)", ready -> {
+            if (locationMap == null || generation != mapGeneration) return;
+            if ("true".equals(ready)) {
+                mapStatus.setVisibility(View.GONE);
+            } else if (SystemClock.uptimeMillis() >= deadline) {
+                mapStatus.setText(R.string.profile_map_retry);
+                mapStatus.setEnabled(true);
+            } else {
+                mapHandler.postDelayed(() -> checkMapReady(generation, deadline), 300L);
+            }
+        });
     }
 
     private String mapHtml(double lat, double lon) {
@@ -204,26 +279,26 @@ public class EditProfileFragment extends Fragment {
                 : "Sources: <a href=\"https://www.esri.com/\">Esri</a>, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, "
                         + "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, and the GIS User Community";
         return "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">"
-                + "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\">"
+                + "<link rel=\"stylesheet\" href=\"leaflet.css\">"
                 + "<style>html,body,#map{height:100%;width:100%;margin:0;background:#f8faf6}"
                 + (sellerMap ? ".leaflet-tile{filter:grayscale(.94) brightness(1.08) contrast(.92)}.map-pin{width:26px;height:26px;position:relative;transform:rotate(-45deg);border-radius:50% 50% 50% 0;background:#1769ff;border:3px solid #fff;box-shadow:0 2px 8px #0004}.map-pin span{position:absolute;width:8px;height:8px;left:6px;top:6px;border-radius:50%;background:#fff;transform:rotate(45deg)}" : "")
                 + "#status{position:absolute;z-index:1000;inset:0;display:flex;align-items:center;justify-content:center;"
                 + "padding:16px;text-align:center;font:14px sans-serif;color:#586159;background:#f8faf6}"
                 + ".leaflet-popup-content{font:13px sans-serif}</style></head><body><div id=\"map\"></div>"
                 + "<div id=\"status\">" + getString(R.string.profile_map_loading) + "</div>"
-                + "<script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"></script><script>"
-                + "const p=[" + latitudeText + "," + longitudeText + "],sellerMap=" + sellerMap + ",status=document.getElementById('status');"
+                + "<script src=\"leaflet.js\"></script><script>"
+                + "const p=[" + latitudeText + "," + longitudeText + "],sellerMap=" + sellerMap + ",statusElement=document.getElementById('status');"
                 + "try{const map=L.map('map',{scrollWheelZoom:false}).setView(p,15);"
                 + "const pin=L.divIcon({className:'',html:'<div class=map-pin><span></span></div>',iconSize:[32,42],iconAnchor:[16,40]});const marker=sellerMap?L.marker(p,{icon:pin}):L.circleMarker(p,{radius:9,color:'#fff',weight:3,fillColor:'#2e6b45',fillOpacity:1});marker.addTo(map);"
                 + "if(!sellerMap)marker.bindPopup('Vĩ độ " + latitudeText + "<br>Kinh độ " + longitudeText + "').openPopup();"
                 + "const tiles=L.tileLayer('" + tileUrl + "',{maxZoom:19,"
                 + "attribution:'" + attribution + "'}).addTo(map);"
-                + "let ready=false;tiles.once('tileload',()=>{ready=true;status.style.display='none'});"
-                + "tiles.on('tileerror',()=>{if(!ready)status.textContent='"
+                + "let ready=false;tiles.once('tileload',()=>{ready=true;window.rescueMapReady=true;statusElement.style.display='none'});"
+                + "tiles.on('tileerror',()=>{if(!ready)statusElement.textContent='"
                 + getString(R.string.profile_map_unavailable) + "'});"
-                + "setTimeout(()=>{if(status.style.display!=='none')status.textContent='"
+                + "setTimeout(()=>{if(statusElement.style.display!=='none')statusElement.textContent='"
                 + getString(R.string.profile_map_unavailable) + "';},10000);"
-                + "}catch(e){status.textContent='" + getString(R.string.profile_map_unavailable) + "';}</script></body></html>";
+                + "}catch(e){statusElement.textContent='" + getString(R.string.profile_map_unavailable) + "';}</script></body></html>";
     }
     private void renderAvatar(String url) {
         if (url == null || url.trim().isEmpty()) {
@@ -249,14 +324,20 @@ public class EditProfileFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        mapGeneration++;
+        mapHandler.removeCallbacksAndMessages(null);
+        mappedLatitude = Double.NaN;
+        mappedLongitude = Double.NaN;
         if (locationMap != null) {
             locationMap.stopLoading();
             locationMap.loadUrl("about:blank");
             locationMap.setWebViewClient(null);
+            locationMap.setWebChromeClient(null);
             locationMap.destroy();
             locationMap = null;
         }
         mapContainer = null;
+        mapStatus = null;
         super.onDestroyView();
     }
     private static String text(TextInputEditText input) {

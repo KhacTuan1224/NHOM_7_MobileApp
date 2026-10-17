@@ -49,7 +49,10 @@ public class ProfileViewModel extends ViewModel {
     public String getCurrentUserId() { return authRepository.getCurrentUserId(); }
 
     public void signOut() { authRepository.signOut(); }
-    public void signOut(AuthRepository.ActionCallback callback) { authRepository.signOut(callback); }
+    public void signOut(AuthRepository.ActionCallback callback) {
+        state.setValue(ProfileScreenState.loading());
+        authRepository.signOut(callback);
+    }
 
     public void loadProfile() {
         String userId = requireUserId(); if (userId == null) return;

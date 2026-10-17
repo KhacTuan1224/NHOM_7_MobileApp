@@ -49,7 +49,9 @@ public final class HomeCardRenderer {
         body.addView(imageFrame(image, dp(112), 12));
 
         TextView title = text(campaign.getTitle(), 14, true, R.color.rescue_on_surface);
-        title.setMaxLines(2); title.setPadding(0, dp(8), 0, dp(3)); body.addView(title);
+        title.setMinLines(2); title.setMaxLines(2);
+        title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        title.setPadding(0, dp(8), 0, dp(3)); body.addView(title);
 
         TextView urgency = text(campaign.getUrgencyLevel() == UrgencyLevel.CRITICAL
                 ? "CẦN GIẢI CỨU GẤP" : campaign.getHighlightLabel(), 10, true,

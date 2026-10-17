@@ -126,6 +126,7 @@
     <string name="coordinates_format">Vĩ độ %1$.6f • Kinh độ %2$.6f</string>
     <string name="profile_map_loading">Đang tải bản đồ vị trí…</string>
     <string name="profile_map_unavailable">Không tải được bản đồ. Hãy kiểm tra kết nối mạng.</string>
+    <string name="profile_map_retry">Không tải được bản đồ. Nhấn để thử lại hoặc mở bản đồ bên ngoài bằng nút bên dưới.</string>
     <string name="save_action">Lưu thay đổi</string>
     <string name="address_list_title">Địa chỉ nhận hàng</string>
     <string name="add_address_action">Thêm địa chỉ</string>
