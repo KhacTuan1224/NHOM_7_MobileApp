@@ -78,7 +78,11 @@ async function auth(req, roles = []) {
   return {uid: decoded.uid, role};
 }
 app.get("/health", (_, res) => res.json({ok: true}));
+const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
+app.use(campaignLifecycle.router);
+app.use(require('./seller-analytics').createSellerAnalytics({db, admin, authenticate: auth}).router);
 const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth,
+  campaignLifecycle,
   notifyNewOrder: (sellerId, orderId, title, message) => notifyCustomer(
     sellerId, "ORDER", title, message, orderId, `${orderId}_SELLER_PENDING`),
   notifyAdmins: (orderId, title, message) => notifyAdmins(
@@ -307,6 +311,17 @@ app.use((error, req, res, __) => {
 });
 migrateSellerPaymentProfiles().then(() => {
   app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));
+  let reconciling = false;
+  const reconcile = async () => {
+    if (reconciling) return;
+    reconciling = true;
+    try { await campaignLifecycle.reconcileExpired(); }
+    catch (error) { console.error('Campaign reconciliation failed:', error.message); }
+    finally { reconciling = false; }
+  };
+  campaignLifecycle.reconcileAll().catch(error => console.error('Legacy Campaign link repair failed:', error.message));
+  reconcile();
+  setInterval(reconcile, 60000).unref();
 }).catch(error => {
   console.error("Seller payment profile migration failed; API will not start:", error);
   process.exit(1);

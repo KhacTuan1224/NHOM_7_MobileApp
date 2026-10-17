@@ -443,11 +443,11 @@ test('notifications cannot be forged outside an atomic order status change', asy
   }));
 });
 
-test('seller status transition creates a notification visible only to the order customer', async () => {
+test('clients cannot bypass backend order transitions; backend notifications stay private', async () => {
   const customer = env.authenticatedContext('customer-a').firestore();
   await seed({'orders/new-order': {id: 'new-order', ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller', status: 'PENDING', paymentMethod: 'COD', paymentStatus: 'UNPAID', fulfillmentType: 'DELIVERY', inventoryFinalized: false, finalizedStatus: ''}});
   const seller = env.authenticatedContext('seller').firestore();
-  await assertSucceeds(runTransaction(seller, async tx => {
+  await assertFails(runTransaction(seller, async tx => {
     const order = await tx.get(doc(seller, 'orders/new-order'));
     tx.update(order.ref, { status: 'CONFIRMED', updatedAt: serverTimestamp() });
     tx.set(doc(seller, 'notifications/new-order_CONFIRMED'), {
@@ -455,6 +455,7 @@ test('seller status transition creates a notification visible only to the order 
       referenceId: 'new-order', isRead: false, createdAt: serverTimestamp()
     });
   }));
+  await seed({'notifications/new-order_CONFIRMED': {id: 'new-order_CONFIRMED', userId: 'customer-a', type: 'ORDER', referenceId: 'new-order', isRead: false}});
   await assertSucceeds(getDoc(doc(customer, 'notifications/new-order_CONFIRMED')));
   await assertFails(getDoc(doc(env.authenticatedContext('customer-b').firestore(), 'notifications/new-order_CONFIRMED')));
 });

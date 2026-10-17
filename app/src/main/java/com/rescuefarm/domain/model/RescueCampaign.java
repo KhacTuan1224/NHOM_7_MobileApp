@@ -7,6 +7,7 @@ import com.rescuefarm.domain.enums.UrgencyLevel;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,9 @@ public class RescueCampaign {
     private UrgencyLevel urgencyLevel;
     private RescueMode rescueMode;
     private Map<String, Double> batchTargets;
+    private Map<String, Double> reservedByBatch = new LinkedHashMap<>();
+    private Map<String, Double> rescuedByBatch = new LinkedHashMap<>();
+    private int allocationVersion;
     private double targetQuantity;
     private double reservedQuantity;
     private double rescuedQuantity;
@@ -94,6 +98,46 @@ public class RescueCampaign {
     }
 
     public void setViewCount(long value) { viewCount = Math.max(0L, value); }
+    public void setAllocationProgress(Map<String, Double> reserved, Map<String, Double> rescued, int version) {
+        Map<String, Double> nextReserved = new LinkedHashMap<>(), nextRescued = new LinkedHashMap<>();
+        for (Map.Entry<String, Double> entry : (reserved == null ? java.util.Collections.<String, Double>emptyMap() : reserved).entrySet()) {
+            requireAllocation(entry.getKey(), entry.getValue()); nextReserved.put(entry.getKey(), entry.getValue());
+        }
+        for (Map.Entry<String, Double> entry : (rescued == null ? java.util.Collections.<String, Double>emptyMap() : rescued).entrySet()) {
+            requireAllocation(entry.getKey(), entry.getValue()); nextRescued.put(entry.getKey(), entry.getValue());
+        }
+        if (version == 1) {
+            double reservedTotal = 0D, rescuedTotal = 0D;
+            for (String id : batchTargets.keySet()) {
+                double held = nextReserved.containsKey(id) ? nextReserved.get(id) : 0D;
+                double delivered = nextRescued.containsKey(id) ? nextRescued.get(id) : 0D;
+                if (held + delivered > batchTargets.get(id) + QUANTITY_TOLERANCE)
+                    throw new IllegalStateException("Batch allocation exceeds its target");
+                reservedTotal += held; rescuedTotal += delivered;
+            }
+            if (Math.abs(reservedTotal - reservedQuantity) > QUANTITY_TOLERANCE
+                    || Math.abs(rescuedTotal - rescuedQuantity) > QUANTITY_TOLERANCE)
+                throw new IllegalStateException("Campaign allocation totals do not match");
+        }
+        reservedByBatch = nextReserved; rescuedByBatch = nextRescued; allocationVersion = version;
+    }
+
+    private void requireAllocation(String id, Double quantity) {
+        if (!batchTargets.containsKey(id) || quantity == null || !Double.isFinite(quantity) || quantity < 0D)
+            throw new IllegalArgumentException("Invalid batch allocation");
+    }
+
+    public Map<String, Double> getReservedByBatch() { return java.util.Collections.unmodifiableMap(reservedByBatch); }
+    public Map<String, Double> getRescuedByBatch() { return java.util.Collections.unmodifiableMap(rescuedByBatch); }
+    public int getAllocationVersion() { return allocationVersion; }
+
+    public double calculateRemainingForBatch(String batchId) {
+        Double target = batchTargets.get(batchId);
+        if (target == null) return 0D;
+        return Math.max(0D, Math.min(calculateRemainingQuantity(), target
+                - (reservedByBatch.containsKey(batchId) ? reservedByBatch.get(batchId) : 0D)
+                - (rescuedByBatch.containsKey(batchId) ? rescuedByBatch.get(batchId) : 0D)));
+    }
     public void increaseViewCount() { viewCount++; }
 
     public void defineCampaign(
