@@ -6,7 +6,8 @@ const {enqueueNotification} = require('./notification-outbox');
 const EPSILON = 0.000001;
 const fail = (status, message) => Object.assign(new Error(message), {status});
 const text = value => typeof value === 'string' ? value.trim() : '';
-const millis = value => value && typeof value.toMillis === 'function' ? value.toMillis() : 0;
+const millis = value => value && typeof value.toMillis === 'function' ? value.toMillis()
+  : (value instanceof Date ? value.getTime() : (typeof value === 'number' ? value : 0));
 const sum = values => Object.values(values).reduce((total, quantity) => total + quantity, 0);
 const validId = value => /^[A-Za-z0-9_-]{1,128}$/.test(text(value));
 const terminalOrders = new Set(['DELIVERED', 'CANCELLED']);
@@ -240,10 +241,19 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       }
       let buyer = caller.role === 'CUSTOMER' && order.ownerType === 'CUSTOMER' && order.ownerId === caller.uid;
       if (caller.role === 'GUEST') {
-        const receipt = await tx.get(db.collection('checkoutReceipts').doc(id));
-        buyer = order.ownerType === 'GUEST' && receipt.exists && receipt.get('ownerType') === 'GUEST'
-          && receipt.get('ownerId') === order.ownerId && /^[a-f0-9]{64}$/i.test(text(caller.accessToken))
-          && receipt.get('tokenHash') === crypto.createHash('sha256').update(caller.accessToken).digest('hex');
+        const token = text(caller.accessToken);
+        if (/^[a-f0-9]{64}$/i.test(token) && order.ownerType === 'GUEST') {
+          const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+          const [receipt, grant] = await Promise.all([
+            tx.get(db.collection('checkoutReceipts').doc(id)),
+            tx.get(db.collection('guestOrderGrants').doc(tokenHash))
+          ]);
+          const ownerAccess = receipt.exists && receipt.get('ownerType') === 'GUEST'
+            && receipt.get('ownerId') === order.ownerId && receipt.get('tokenHash') === tokenHash;
+          const lookupAccess = grant.exists && grant.get('orderId') === id
+            && (millis(grant.get('expiresAt')) > Date.now());
+          buyer = Boolean(ownerAccess || lookupAccess);
+        }
       }
       if ((target === 'DELIVERED' && !buyer) || (target !== 'DELIVERED' && ['CUSTOMER', 'GUEST'].includes(caller.role)))
         throw fail(403, 'Chỉ người mua của đơn hàng được xác nhận đã nhận hàng.');

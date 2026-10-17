@@ -307,6 +307,7 @@
     <string name="order_created_format">Đã tạo đơn %1$s • %2$s. Hàng đã được giữ; số lượng giải cứu được ghi nhận khi hoàn tất đơn.</string>
     <string name="order_tracking_format">Đơn %1$s\nTrạng thái: %2$s\nThanh toán: %3$s\nTổng: %4$.0f ₫</string>
     <string name="open_order_detail_action">Thanh toán &amp; trạng thái giao nhận</string>
+
     <string name="order_detail_title">Thanh toán &amp; giao nhận</string>
     <string name="order_detail_format">Đơn %1$s\nTrạng thái đơn: %2$s\nNhận hàng: %3$s\nPhương thức: %4$s\nThanh toán: %5$s\nShipment: %6$s\nTổng: %7$s</string>
     <string name="shipment_not_required">Không tạo shipment (nhận tại điểm)</string>

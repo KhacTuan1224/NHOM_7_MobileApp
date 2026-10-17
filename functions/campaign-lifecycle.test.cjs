@@ -238,6 +238,37 @@ test('guest receipt requires its matching checkout token and bank confirmation r
   assert.equal(f.db.snapshot(`payments/${request.requestId}`).get('referenceCode'), 'TX123');
 });
 
+test('guest receipt confirms successfully using lookup grant access token and rejects invalid or expired grants', async () => {
+  const f = setup(); await activate(f);
+  const request = {...data(), fulfillmentType: 'PICKUP', paymentMethod: 'CASH_ON_SITE'};
+  await f.commerce.checkout(request, identity);
+  const orderId = request.requestId;
+  for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'])
+    await f.lifecycle.transitionOrder(seller, {orderId, targetStatus});
+
+  const lookupToken = 'c'.repeat(64);
+  const lookupHash = crypto.createHash('sha256').update(lookupToken).digest('hex');
+  f.db.documents.set(`guestOrderGrants/${lookupHash}`, {orderId, expiresAt: ts(86400000)});
+
+  const expiredToken = 'd'.repeat(64);
+  const expiredHash = crypto.createHash('sha256').update(expiredToken).digest('hex');
+  f.db.documents.set(`guestOrderGrants/${expiredHash}`, {orderId, expiresAt: ts(-1000)});
+  await assert.rejects(() => f.lifecycle.transitionOrder({role: 'GUEST', accessToken: expiredToken},
+    {orderId, targetStatus: 'DELIVERED'}), e => e.status === 403);
+
+  const wrongOrderToken = 'e'.repeat(64);
+  const wrongOrderHash = crypto.createHash('sha256').update(wrongOrderToken).digest('hex');
+  f.db.documents.set(`guestOrderGrants/${wrongOrderHash}`, {orderId: 'other-order', expiresAt: ts(86400000)});
+  await assert.rejects(() => f.lifecycle.transitionOrder({role: 'GUEST', accessToken: wrongOrderToken},
+    {orderId, targetStatus: 'DELIVERED'}), e => e.status === 403);
+
+  await f.lifecycle.transitionOrder({role: 'GUEST', accessToken: lookupToken},
+    {orderId, targetStatus: 'DELIVERED'});
+  assert.equal(f.db.snapshot(`orders/${orderId}`).get('status'), 'DELIVERED');
+  assert.equal(f.db.snapshot(`orders/${orderId}`).get('paymentStatus'), 'PAID');
+  assert.equal(f.db.snapshot(`orders/${orderId}`).get('receivedBy'), identity.ownerId);
+});
+
 test('mixed-unit approval is rejected atomically even when numeric targets fit', async () => {
   const f = setup(); f.db.documents.set('products/p-b', {...f.db.snapshot('products/p-b').data(), unit: 'bó'});
   await assert.rejects(() => activate(f), /cùng một đơn vị/);

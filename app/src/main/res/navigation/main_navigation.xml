@@ -250,7 +250,9 @@
         android:label="@string/checkout_title"><action android:id="@+id/action_checkoutFragment_to_orderConfirmationFragment"
         app:destination="@id/orderConfirmationFragment" /></fragment>
     <fragment android:id="@+id/orderConfirmationFragment" android:name="com.rescuefarm.ui.checkout.OrderConfirmationFragment"
-        android:label="@string/order_confirmation_title"><action android:id="@+id/action_orderConfirmationFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" /></fragment>
+        android:label="@string/order_confirmation_title">
+        <action android:id="@+id/action_orderConfirmationFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" />
+    </fragment>
     <fragment android:id="@+id/customerOrderListFragment"
         android:name="com.rescuefarm.ui.order.CustomerOrderListFragment"
         android:label="@string/customer_orders_title">

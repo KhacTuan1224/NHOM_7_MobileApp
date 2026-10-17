@@ -1,1 +1,63 @@
-<?xml version="1.0" encoding="utf-8"?><com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/rescue_background" xmlns:app="http://schemas.android.com/apk/res-auto"><com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width"><TextView android:id="@+id/orderConfirmationTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/order_confirmation_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"/><TextView android:id="@+id/orderConfirmationText" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="@dimen/space_md"/><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/guest_tracking_title" android:textStyle="bold"/><EditText android:id="@+id/trackingOrderCode" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/order_code_hint"/><EditText android:id="@+id/trackingPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/receiver_phone_hint" android:inputType="phone"/><com.google.android.material.button.MaterialButton android:id="@+id/trackOrderButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:text="@string/track_order_action"/><com.google.android.material.button.MaterialButton android:id="@+id/openOrderDetailButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:text="@string/open_order_detail_action"/></com.rescuefarm.ui.common.ResponsiveContentLayout></com.rescuefarm.ui.common.NavigationAwareScrollView>
+<?xml version="1.0" encoding="utf-8"?>
+<com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rescue_background"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_lg"
+        android:layout_gravity="center_horizontal"
+        app:maxContentWidth="@dimen/reading_max_width">
+
+        <TextView
+            android:id="@+id/orderConfirmationTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/order_confirmation_title"
+            android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+
+        <TextView
+            android:id="@+id/orderConfirmationText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/space_md" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/guest_tracking_title"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/trackingOrderCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/order_code_hint" />
+
+        <EditText
+            android:id="@+id/trackingPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/receiver_phone_hint"
+            android:inputType="phone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/trackOrderButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_target_min"
+            android:text="@string/track_order_action" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/openOrderDetailButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_target_min"
+            android:text="@string/open_order_detail_action" />
+
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
+</com.rescuefarm.ui.common.NavigationAwareScrollView>

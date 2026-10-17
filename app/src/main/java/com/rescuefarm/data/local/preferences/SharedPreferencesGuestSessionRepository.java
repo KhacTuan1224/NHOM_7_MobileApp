@@ -57,6 +57,28 @@ public class SharedPreferencesGuestSessionRepository implements GuestSessionRepo
         return preferences.getString("order_access_" + orderId, "");
     }
 
+    public void saveRecentGuestOrder(String orderId, String orderCode, String phone) {
+        if (orderCode != null && !orderCode.trim().isEmpty()) {
+            preferences.edit()
+                    .putString("last_guest_order_id", orderId == null ? "" : orderId.trim())
+                    .putString("last_guest_order_code", orderCode.trim())
+                    .putString("last_guest_phone", phone == null ? "" : phone.trim())
+                    .apply();
+        }
+    }
+
+    public String getLastGuestOrderId() {
+        return preferences.getString("last_guest_order_id", "");
+    }
+
+    public String getLastGuestOrderCode() {
+        return preferences.getString("last_guest_order_code", "");
+    }
+
+    public String getLastGuestPhone() {
+        return preferences.getString("last_guest_phone", "");
+    }
+
     @Override
     public boolean hasCompletedOnboarding() {
         return preferences.getBoolean(KEY_ONBOARDING_COMPLETED, false);
