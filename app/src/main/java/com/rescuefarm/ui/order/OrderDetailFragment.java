@@ -444,7 +444,7 @@ public class OrderDetailFragment extends Fragment {
         String url = "https://img.vietqr.io/image/" + Uri.encode(code) + "-" + Uri.encode(account)
                 + "-compact.png?amount=" + Math.round(order.getTotalAmount()) + "&addInfo="
                 + Uri.encode(order.getOrderCode()) + "&accountName=" + Uri.encode(name);
-        qrImage.setVisibility(View.VISIBLE); Glide.with(this).load(payment.getQrUrl().isEmpty() ? url : payment.getQrUrl()).into(qrImage);
+        qrImage.setVisibility(View.VISIBLE); Glide.with(this).load(url).into(qrImage);
     }
 
     private String paymentInstructions(Payment payment) {

@@ -78,6 +78,7 @@ async function auth(req, roles = []) {
   return {uid: decoded.uid, role};
 }
 app.get("/health", (_, res) => res.json({ok: true}));
+app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: auth}).router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
 app.use(campaignLifecycle.router);
@@ -206,7 +207,7 @@ app.use((error, req, res, __) => {
   const status = error.status || 500;
   if (status >= 500) console.error("[api]", req.method, req.originalUrl,
     "code=", error.code || "", "message=", error.message || "", error.stack || "");
-  res.status(status).json({error: status >= 500 ? "Internal server error" : error.message});
+  res.status(status).json({error: status >= 500 && error.expose !== true ? "Internal server error" : error.message});
 });
 migrateSellerPaymentProfiles().then(() => campaignMedia.migrateReferences()).then(() => {
   app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));

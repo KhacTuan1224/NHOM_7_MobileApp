@@ -149,8 +149,11 @@ async function resolveAsset(body, uid, profile) {
     return { publicId: `rescuefarm/users/${uid}/avatar`, assetFolder: `rescuefarm_assets/avatars/${uid}` };
   if (type === "shopAvatar" && resourceId === uid && profile.role === "SELLER")
     return { publicId: `rescuefarm/sellers/${uid}/shop-avatar`, assetFolder: `rescuefarm_assets/avatars/${uid}` };
-  if (type === "paymentQr" && resourceId === uid && profile.role === "SELLER" && profile.sellerStatus === "APPROVED")
-    return { publicId: `rescuefarm/sellers/${uid}/payment-qr`, assetFolder: `rescuefarm_assets/payment_qr/${uid}` };
+  if (type === "paymentQr" && resourceId === uid && profile.role === "SELLER") {
+    if (body.version !== undefined && !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(body.version)) return null;
+    return { publicId: `rescuefarm/sellers/${uid}/payment-qr${body.version ? '-' + body.version : ''}`,
+      assetFolder: `rescuefarm_assets/payment_qr/${uid}`, immutable: Boolean(body.version) };
+  }
   if (type === "sellerProof" && resourceId === uid)
     return { publicId: `rescuefarm/sellers/${uid}/application-proof`, assetFolder: `rescuefarm_assets/seller_applications/${uid}` };
   if (type === "product" && profile.role === "SELLER" && profile.sellerStatus === "APPROVED")
