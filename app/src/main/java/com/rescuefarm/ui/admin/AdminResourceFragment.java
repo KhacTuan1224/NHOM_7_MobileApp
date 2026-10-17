@@ -91,6 +91,13 @@ public final class AdminResourceFragment extends Fragment {
         orderFromButton = view.findViewById(R.id.adminOrderFromDate);
         orderThroughButton = view.findViewById(R.id.adminOrderThroughDate);
         title.setText(getString(R.string.admin_section_title_format, label(section)));
+        styleSectionButton(view.findViewById(R.id.adminResourceBackButton));
+        styleSectionButton(view.findViewById(R.id.adminAddCatalogResourceButton));
+        styleSectionButton(orderFromButton);
+        styleSectionButton(orderThroughButton);
+        styleSectionButton(view.findViewById(R.id.adminOrderClearDates));
+        styleSectionButton(view.findViewById(R.id.refreshAdminResourceButton));
+        styleSectionButton(loadMoreButton);
         View addCatalog = view.findViewById(R.id.adminAddCatalogResourceButton);
         if (section == Section.CATEGORIES || section == Section.BANNERS) {
             addCatalog.setVisibility(View.VISIBLE);
@@ -499,15 +506,20 @@ public final class AdminResourceFragment extends Fragment {
 
     private Button button(int label) {
         MaterialButton button = new MaterialButton(requireContext());
-        AdminUiStyles.outlinedButton(requireContext(), button);
+        AdminUiStyles.sectionButton(requireContext(), button, section);
         button.setText(label);
         return button;
     }
     private Button buttonText(String label) {
         MaterialButton button = new MaterialButton(requireContext());
-        AdminUiStyles.outlinedButton(requireContext(), button);
+        AdminUiStyles.sectionButton(requireContext(), button, section);
         button.setText(label);
         return button;
+    }
+    private void styleSectionButton(View view) {
+        if (view instanceof MaterialButton) {
+            AdminUiStyles.sectionButton(requireContext(), (MaterialButton) view, section);
+        }
     }
     private String label(Section value) { return value.name().replace('_', ' '); }
 
