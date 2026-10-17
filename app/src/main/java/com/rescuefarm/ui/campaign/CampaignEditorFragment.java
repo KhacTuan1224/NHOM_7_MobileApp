@@ -49,13 +49,18 @@ public class CampaignEditorFragment extends Fragment {
     private TextInputEditText title, description, start, end;
     private double campaignLatitude, campaignLongitude;
     private TextView gpsStatus;
+    private TextView editorMessage;
     private com.rescuefarm.ui.profile.ProfileViewModel gpsModel;
     private int addressVersion, gpsRequestVersion;
+    private boolean gpsFillAddress;
     private final ActivityResultLauncher<String[]> gpsPermission = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 if (Boolean.TRUE.equals(result.get(android.Manifest.permission.ACCESS_FINE_LOCATION))
                         || Boolean.TRUE.equals(result.get(android.Manifest.permission.ACCESS_COARSE_LOCATION))) takeGps();
-                else if (gpsStatus != null) gpsStatus.setText("Cần cấp quyền vị trí để lấy GPS điểm giải cứu.");
+                else if (gpsStatus != null) {
+                    gpsStatus.setText(R.string.campaign_gps_permission_required);
+                    showMessage(getString(R.string.campaign_gps_permission_required));
+                }
             });
     private VietnamAddressView locationName;
     private Spinner reason, mode;
@@ -90,6 +95,7 @@ public class CampaignEditorFragment extends Fragment {
         DatePickerInput.bind(start);
         DatePickerInput.bind(end);
         gpsStatus = view.findViewById(R.id.campaignGpsStatus);
+        editorMessage = view.findViewById(R.id.campaignEditorMessage);
         gpsModel = new ViewModelProvider(this, new com.rescuefarm.ui.profile.ProfileViewModelFactory(requireContext()))
                 .get(com.rescuefarm.ui.profile.ProfileViewModel.class);
         view.findViewById(R.id.campaignUseGpsButton).setOnClickListener(v -> requestGps());
@@ -120,7 +126,13 @@ public class CampaignEditorFragment extends Fragment {
         };
         for (TextInputEditText input : new TextInputEditText[]{title, description, start, end}) input.addTextChangedListener(watcher);
         locationName.setOnAddressChangedListener(() -> {
-            if (!binding) { dirty = true; addressVersion++; campaignLatitude = 0; campaignLongitude = 0; showGps(); }
+            if (!binding) {
+                dirty = true;
+                addressVersion++;
+                // Completing the geocoder's missing administrative fields must not erase the GPS fix.
+                showGps();
+                showMessage("");
+            }
         });
         installSpinnerDirtyListener(reason);
         installSpinnerDirtyListener(mode);
@@ -131,8 +143,10 @@ public class CampaignEditorFragment extends Fragment {
             else if (value.getStatus() == CampaignScreenState.Status.SAVED) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show();
                 NavHostFragment.findNavController(this).popBackStack();
-            } else if (value.getStatus() == CampaignScreenState.Status.ERROR)
+            } else if (value.getStatus() == CampaignScreenState.Status.ERROR) {
+                showMessage(value.getMessage());
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
+            }
         });
         view.findViewById(R.id.saveCampaignDraftButton).setOnClickListener(v -> save(false));
         view.findViewById(R.id.submitCampaignButton).setOnClickListener(v -> save(true));
@@ -142,20 +156,37 @@ public class CampaignEditorFragment extends Fragment {
             });
         }
         gpsModel.getState().observe(getViewLifecycleOwner(), result -> {
+            view.findViewById(R.id.campaignUseGpsButton).setEnabled(
+                    result.getStatus() != com.rescuefarm.ui.profile.ProfileScreenState.Status.LOADING);
             if (result.getStatus() == com.rescuefarm.ui.profile.ProfileScreenState.Status.LOCATION) {
-                if (gpsRequestVersion == addressVersion) {
+                if (!com.rescuefarm.service.location.GpsCoordinates.isValid(
+                        result.getLatitude(), result.getLongitude())) {
+                    showGps();
+                    showMessage(getString(R.string.campaign_gps_required));
+                    gpsModel.clearTransientState();
+                    return;
+                }
+                // A GPS result is still usable when the address was edited while it was loading.
+                // Only autofill an untouched empty address; keep anything the seller entered.
+                if (gpsFillAddress && gpsRequestVersion == addressVersion) {
                     binding = true;
                     locationName.applyGeocodedAddress(result.getGeocodedAddress());
-                    campaignLatitude = result.getLatitude(); campaignLongitude = result.getLongitude();
-                    binding = false; dirty = true; showGps();
+                    binding = false;
                 }
+                campaignLatitude = result.getLatitude(); campaignLongitude = result.getLongitude();
+                dirty = true;
+                showGps();
+                showMessage(locationName.isComplete() ? "" : getString(R.string.campaign_address_completion_hint));
                 gpsModel.clearTransientState();
             } else if (result.getStatus() == com.rescuefarm.ui.profile.ProfileScreenState.Status.ERROR) {
-                gpsStatus.setText(result.getMessage()); gpsModel.clearTransientState();
+                showGps();
+                showMessage(result.getMessage()); gpsModel.clearTransientState();
             }
         });
         viewModel.loadSellerBatches(id);
-        if (!id.isEmpty()) viewModel.load(id);
+        // A new campaign has a local UUID but no server document to load yet.
+        if (getArguments() != null && !getArguments().getString("campaignId", "").trim().isEmpty())
+            viewModel.load(id);
     }
 
     private void renderBatchOptions(List<CampaignBatchOption> options) {
@@ -280,7 +311,24 @@ public class CampaignEditorFragment extends Fragment {
     }
 
     private void save(boolean submit) {
-        if (submit && !locationName.validate()) return;
+        showMessage("");
+        if (submit) {
+            if (gpsModel.getState().getValue() != null && gpsModel.getState().getValue().getStatus()
+                    == com.rescuefarm.ui.profile.ProfileScreenState.Status.LOADING) {
+                showMessage(getString(R.string.campaign_gps_wait));
+                return;
+            }
+            boolean addressValid = locationName.validate();
+            boolean gpsValid = com.rescuefarm.service.location.GpsCoordinates.isValid(
+                    campaignLatitude, campaignLongitude);
+            if (!addressValid || !gpsValid) {
+                showGps();
+                showMessage(getString(!addressValid && !gpsValid
+                        ? R.string.campaign_address_and_gps_required
+                        : !gpsValid ? R.string.campaign_gps_required : R.string.campaign_address_required));
+                return;
+            }
+        }
         preserveVisibleTargets();
         viewModel.save(id, text(title), text(description), (RescueReason) reason.getSelectedItem(),
                 (RescueMode) mode.getSelectedItem(), new LinkedHashMap<>(selectedTargets), text(start),
@@ -361,12 +409,20 @@ public class CampaignEditorFragment extends Fragment {
     }
     private void takeGps() {
         gpsRequestVersion = addressVersion;
+        gpsFillAddress = locationName.province().isEmpty() && locationName.district().isEmpty()
+                && locationName.ward().isEmpty() && locationName.street().isEmpty();
+        showMessage("");
         gpsStatus.setText("Đang lấy GPS điểm giải cứu…");
         gpsModel.requestCurrentLocation(true);
     }
     private void showGps() {
         gpsStatus.setText(com.rescuefarm.service.location.GpsCoordinates.isValid(campaignLatitude, campaignLongitude)
-                ? R.string.gps_selected : R.string.gps_not_selected);
+                ? getString(R.string.campaign_gps_selected, campaignLatitude, campaignLongitude)
+                : getString(R.string.campaign_gps_required));
+    }
+    private void showMessage(String message) {
+        editorMessage.setText(message);
+        editorMessage.setVisibility(message == null || message.isEmpty() ? View.GONE : View.VISIBLE);
     }
     @Override public void onViewStateRestored(@Nullable Bundle state) {
         super.onViewStateRestored(state);
