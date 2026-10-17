@@ -39,3 +39,28 @@ test('rescue rate averages campaign percentages without summing mixed-unit targe
   assert.equal(result.rescueRate, 75); assert.equal(result.rescueRateCampaigns, 2);
   assert.equal(result.hasData, true);
 });
+
+function call(router, path, body) {
+  const handle = router.stack.find(layer => layer.route && layer.route.path === path).route.stack[0].handle;
+  return new Promise((resolve, reject) => handle({body}, {json: resolve}, reject));
+}
+test('Seller Home consumes full backend totals, all-time work queue and delivery-period revenue', async () => {
+  const now = Date.now(), old = new Timestamp(now - 60 * 86400000), recent = new Timestamp(now - 1000);
+  const seed = {'users/seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'}};
+  for (let i = 0; i < 451; i++) seed['orders/' + i] = {sellerId: 'seller', createdAt: old, deliveredAt: recent,
+    updatedAt: recent, subtotal: 100, quantityDiscount: 5, totalAmount: 120, status: 'DELIVERED'};
+  seed['orders/queued'] = {sellerId: 'seller', status: 'PREPARING', createdAt: old, fulfillmentType: 'DELIVERY'};
+  for (let i = 0; i < 205; i++) seed['products/' + i] = {sellerId: 'seller', status: 'ACTIVE'};
+  seed['products/foreign'] = {sellerId: 'other', status: 'ACTIVE'};
+  const db = new MemoryFirestore(seed);
+  const {router} = require('./seller-analytics').createSellerAnalytics({db, admin, authenticate: async () => ({uid: 'seller'})});
+  const first = await call(router, '/seller/statistics', {days: 7});
+  const second = await call(router, '/seller/statistics', {days: 7});
+  assert.equal(first.revenue, 451 * 95); assert.equal(first.orders, 0);
+  assert.equal(first.pendingOrders, 1); assert.equal(first.inventory.deliveryOrders, 1);
+  assert.equal(first.inventory.products, 205); assert.equal(first.totalOrders, 452); assert.equal(first.recentOrders.length, 5);
+  assert.equal(second.revenue, first.revenue); assert.deepEqual(second.inventory, first.inventory);
+  const all = await call(router, '/seller/statistics', {days: 0});
+  assert.equal(all.orders, 452); assert.equal(all.pendingOrders, 1);
+  await assert.rejects(() => call(router, '/seller/statistics', {days: 1}), e => e.status === 400);
+});

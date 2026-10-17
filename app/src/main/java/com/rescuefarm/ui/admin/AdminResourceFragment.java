@@ -40,6 +40,15 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
 public final class AdminResourceFragment extends Fragment {
+    private final android.os.Handler timeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable timeRefresh = new Runnable() {
+        @Override public void run() {
+            if (getView() != null && viewModel != null && section == Section.ANALYTICS
+                    && (viewModel.getState().getValue() == null || viewModel.getState().getValue().getStatus() != AdminScreenState.Status.LOADING))
+                viewModel.refreshDashboard();
+            timeHandler.postDelayed(this, 60000L);
+        }
+    };
     private AdminViewModel viewModel;
     private Section section;
     private TextView title, message;
@@ -525,9 +534,13 @@ public final class AdminResourceFragment extends Fragment {
 
     @Override public void onResume() {
         super.onResume();
-        if (resumedOnce && section != Section.ANALYTICS && section != Section.SHIPPING_SETTINGS) {
+        timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+        if (resumedOnce && section != Section.SHIPPING_SETTINGS) {
             viewModel.refreshSection(section);
         }
         resumedOnce = true;
+    }
+    @Override public void onPause() {
+        timeHandler.removeCallbacks(timeRefresh); super.onPause();
     }
 }

@@ -64,6 +64,7 @@ public final class AdminDetailFormatter {
                 "resolutionNote", "Ghi chú xử lý", "moderationPreviousStatus", "Trạng thái trước kiểm duyệt",
                 "active", "Hiển thị", "isDefault", "Địa chỉ mặc định", "isRead", "Đã đọc", "isSharingLocation", "Chia sẻ vị trí",
                 "sharingLocation", "Chia sẻ vị trí", "displayOrder", "Thứ tự hiển thị", "inventoryFinalized", "Đã chốt tồn kho",
+                "targetResolutionError", "Không xác định được bình luận", "parentType", "Loại nội dung cha", "parentId", "Mã nội dung cha", "targetPath", "Đường dẫn bình luận", "commentParent", "Nội dung chứa bình luận",
                 "finalizedStatus", "Trạng thái chốt", "targetType", "Loại nội dung bị báo cáo", "resourceType", "Loại tài nguyên",
                 "fromState", "Trạng thái trước", "toState", "Trạng thái sau", "body", "Nội dung thông báo",
                 "sellerProfile", "Hồ sơ người bán", "customerProfile", "Hồ sơ khách hàng", "targetOwnerProfile", "Người tạo nội dung",

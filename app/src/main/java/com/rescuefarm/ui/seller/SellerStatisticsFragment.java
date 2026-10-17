@@ -24,6 +24,15 @@ import java.util.List;
 import java.util.Locale;
 
 public final class SellerStatisticsFragment extends Fragment {
+    private final android.os.Handler timeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable timeRefresh = new Runnable() {
+        @Override public void run() {
+            if (getView() != null && viewModel != null && (viewModel.getState().getValue() == null
+                    || viewModel.getState().getValue().status != SellerStatisticsViewModel.Status.LOADING))
+                viewModel.load(viewModel.getDays(), true);
+            timeHandler.postDelayed(this, 60000L);
+        }
+    };
     private SellerStatisticsViewModel viewModel;
     private LinearLayout content;
     private TextView message;
@@ -49,7 +58,6 @@ public final class SellerStatisticsFragment extends Fragment {
         view.findViewById(R.id.sellerStatisticsBack).setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
         view.findViewById(R.id.sellerStatisticsRefresh).setOnClickListener(v -> viewModel.load(periods[period.getSelectedItemPosition()], true));
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
-        viewModel.load(viewModel.getDays(), false);
     }
     private void render(SellerStatisticsViewModel.State state) {
         content.removeAllViews(); message.setText(state.message);
@@ -108,5 +116,10 @@ public final class SellerStatisticsFragment extends Fragment {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
         params.topMargin = Math.round(12 * getResources().getDisplayMetrics().density); content.addView(view, params);
     }
+    @Override public void onResume() {
+        super.onResume(); if (viewModel != null) viewModel.load(viewModel.getDays(), true);
+        timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+    }
+    @Override public void onPause() { timeHandler.removeCallbacks(timeRefresh); super.onPause(); }
     @Override public void onDestroyView() { content = null; message = null; progress = null; super.onDestroyView(); }
 }

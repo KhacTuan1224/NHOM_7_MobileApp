@@ -21,6 +21,15 @@ import java.util.Arrays;
 import java.util.Locale;
 
 public final class AdminDashboardFragment extends Fragment {
+    private final android.os.Handler timeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable timeRefresh = new Runnable() {
+        @Override public void run() {
+            if (getView() != null && viewModel != null
+                    && (viewModel.getState().getValue() == null || viewModel.getState().getValue().getStatus() != AdminScreenState.Status.LOADING))
+                viewModel.refreshDashboard();
+            timeHandler.postDelayed(this, 60000L);
+        }
+    };
     private AdminViewModel viewModel;
     private ProgressBar progress;
     private TextView message;
@@ -56,7 +65,6 @@ public final class AdminDashboardFragment extends Fragment {
         bind(view, R.id.adminOrdersButton, Section.ORDERS);
         bind(view, R.id.adminAnalyticsButton, Section.ANALYTICS);
         bind(view, R.id.adminShippingSettingsButton, Section.SHIPPING_SETTINGS);
-        viewModel.refreshDashboard();
     }
 
     private void bind(View root, int id, Section section) {
@@ -108,5 +116,11 @@ public final class AdminDashboardFragment extends Fragment {
 
     private AdminDashboardCards.Metric metric(String title, String value, String detail) {
         return new AdminDashboardCards.Metric(title, value, detail);
+    }
+    @Override public void onResume() {
+        super.onResume(); if (viewModel != null) viewModel.refreshDashboard(); timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+    }
+    @Override public void onPause() {
+        timeHandler.removeCallbacks(timeRefresh); super.onPause();
     }
 }

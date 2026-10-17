@@ -39,10 +39,13 @@ public final class DiscoveryEngine {
         Date at = now == null ? new Date() : now;
         Map<String, List<ProductBatch>> batches = batchesByProduct == null
                 ? Collections.emptyMap() : batchesByProduct;
+        Map<String, List<ProductBatch>> publicBatches = new HashMap<>();
+        if (products != null) for (Product product : products) if (product != null && product.isAvailable())
+            publicBatches.put(product.getId(), batches.get(product.getId()));
         Map<String, RescueCampaign> campaignById = new HashMap<>();
         if (campaigns != null) for (RescueCampaign campaign : campaigns) {
             if (campaign != null && campaign.getId() != null) {
-                refreshUrgency(campaign, batches, at);
+                refreshUrgency(campaign, publicBatches, at);
                 campaignById.put(campaign.getId(), campaign);
             }
         }
@@ -73,15 +76,20 @@ public final class DiscoveryEngine {
         }
 
         if (campaigns != null) for (RescueCampaign campaign : campaigns) {
-            if (!matchesCampaign(campaign, q, at)
-                    || !campaignHasMatchingStock(campaign, q, batches, at)) continue;
+            if (!matchesCampaign(campaign, q, at)) continue;
+            double[] metrics = campaignMetrics(campaign, products, q, batches, at);
+            if (metrics == null) continue;
             double distance = distance(campaign, latitude, longitude, at);
             if ((q.getSort() == DiscoveryQuery.Sort.DISTANCE && !Double.isFinite(distance))
                     || (q.getRadiusKm() > 0D && (!Double.isFinite(distance)
                     || distance > q.getRadiusKm()))) continue;
-            result.add(DiscoveryResult.campaign(campaign, distance));
+            result.add(DiscoveryResult.campaign(campaign, distance).withCampaignMetrics(metrics[0], metrics[1], metrics[2]));
         }
-        result.sort(comparator(q.getSort(), batches));
+        Comparator<DiscoveryResult> order = comparator(q.getSort(), batches);
+        if (q.getSort() == DiscoveryQuery.Sort.PRICE_ASC || q.getSort() == DiscoveryQuery.Sort.BEST_SELLING)
+            order = Comparator.comparing(this::unit).thenComparing(order);
+        result.sort(order.thenComparing(value -> value.getType().name() + ":" +
+                (value.getProduct() == null ? value.getCampaign().getId() : value.getProduct().getId())));
         return result;
     }
 
@@ -149,47 +157,53 @@ public final class DiscoveryEngine {
                 earliest = batch.getExpiryDate();
             }
         }
-        if (earliest != null && campaign.getEndDate() != null) campaign.calculateUrgency(now, earliest);
+        if (campaign.getEndDate() != null) campaign.calculateUrgency(now, earliest);
     }
 
     private boolean matchesCampaign(RescueCampaign value, DiscoveryQuery q, Date now) {
         if (value == null || value.getStatus() != CampaignStatus.ACTIVE || value.getEndDate() == null
-                || !value.getEndDate().after(now) || value.calculateRemainingQuantity() <= 0D) return false;
+                || !value.getEndDate().after(now) || (value.getStartDate() != null && value.getStartDate().after(now)) || value.calculateRemainingQuantity() <= 0D) return false;
         if (q.getReason() != null && q.getReason() != value.getRescueReason()) return false;
         if (q.getUrgency() != null && q.getUrgency() != value.getUrgencyLevel()) return false;
         if (q.getMode() != null && q.getMode() != value.getRescueMode()) return false;
-        if (!q.getProvince().isEmpty() && !contains(value.getLocationName(), q.getProvince())) return false;
-        return q.getText().isEmpty() || contains(value.getTitle(), q.getText())
-                || contains(value.getDescription(), q.getText())
-                || contains(value.getLocationName(), q.getText())
-                || contains(value.getRescueReason().name(), q.getText());
+        return true;
     }
 
-    private boolean campaignHasMatchingStock(RescueCampaign campaign, DiscoveryQuery q,
+    /** All predicates apply to the same sellable batch/product, never across unrelated rows. */
+    private double[] campaignMetrics(RescueCampaign campaign, List<Product> products, DiscoveryQuery q,
             Map<String, List<ProductBatch>> byProduct, Date now) {
-        long expiryLimit = q.getExpiryWithinDays() == 0 ? Long.MAX_VALUE
-                : now.getTime() + q.getExpiryWithinDays() * 86400000L;
-        double available = 0D;
-        boolean expiryMatch = q.getExpiryWithinDays() == 0;
-        boolean foundBatch = false;
-        for (List<ProductBatch> values : byProduct.values()) if (values != null) {
-            for (ProductBatch batch : values) if (batch != null
-                    && campaign.getBatchTargets().containsKey(batch.getId())) {
-                foundBatch = true;
-                if (batch.isSellable(now)) {
-                    available += batch.getAvailableQuantity();
-                    if (batch.getExpiryDate() != null && batch.getExpiryDate().getTime() <= expiryLimit) {
-                        expiryMatch = true;
-                    }
-                }
+        if (products == null || !"VERIFIED".equals(campaign.getUnitStatus())) return null;
+        double price = Double.MAX_VALUE, discount = -1, sold = 0;
+        boolean found = false;
+        boolean campaignText = q.getText().isEmpty() || contains(campaign.getTitle(), q.getText())
+                || contains(campaign.getDescription(), q.getText()) || contains(campaign.getLocationName(), q.getText())
+                || contains(campaign.getRescueReason().name(), q.getText());
+        long expiryLimit = now.getTime() + q.getExpiryWithinDays() * 86400000L;
+        for (Product product : products) {
+            if (product == null || !product.isAvailable()
+                    || (!campaignText && !contains(product.getName(), q.getText()) && !contains(product.getDescription(), q.getText())
+                    && !contains(product.getOrigin(), q.getText()) && !contains(product.getProvince(), q.getText()))
+                    || (!q.getProvince().isEmpty() && !contains(campaign.getLocationName(), q.getProvince()) && !contains(product.getProvince(), q.getProvince()))
+                    || !com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(product.getUnit())
+                    .equals(com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(campaign.getQuantityUnit()))
+                    || (!q.getCategoryId().isEmpty() && !q.getCategoryId().equals(product.getCategoryId()))
+                    || product.getRescuePrice() < q.getMinPrice() || product.getRescuePrice() > q.getMaxPrice()) continue;
+            List<ProductBatch> values = byProduct.get(product.getId());
+            if (values == null) continue;
+            for (ProductBatch batch : values) {
+                if (batch == null || !campaign.getBatchTargets().containsKey(batch.getId())
+                        || !campaign.getId().equals(batch.getActiveCampaignId()) || !batch.isSellable(now)) continue;
+                double available = Math.min(batch.getAvailableQuantity(), campaign.calculateRemainingForBatch(batch.getId()));
+                if (available <= 0 || available < q.getMinStock()
+                        || (q.getExpiryWithinDays() > 0 && (batch.getExpiryDate() == null
+                        || batch.getExpiryDate().getTime() > expiryLimit))) continue;
+                found = true; price = Math.min(price, product.getRescuePrice());
+                discount = Math.max(discount, product.calculateDiscountPercent());
+                // Delivered Campaign allocation, not unrelated sales of this physical batch.
+                sold += campaign.getRescuedByBatch().getOrDefault(batch.getId(), 0D);
             }
         }
-        if (!foundBatch) {
-            if (q.getExpiryWithinDays() > 0) return false;
-            double remaining = campaign.calculateRemainingQuantity();
-            return remaining > 0D && remaining >= q.getMinStock();
-        }
-        return available > 0D && available >= q.getMinStock() && expiryMatch;
+        return found ? new double[]{price, discount, sold} : null;
     }
 
     private boolean hasCampaignFilter(DiscoveryQuery q) {
@@ -240,11 +254,15 @@ public final class DiscoveryEngine {
         UrgencyLevel level = campaign.getUrgencyLevel();
         return level == UrgencyLevel.CRITICAL ? 0 : level == UrgencyLevel.HIGH ? 1 : 2;
     }
+    private String unit(DiscoveryResult value) {
+        return com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(value.getProduct() == null
+                ? value.getCampaign().getQuantityUnit() : value.getProduct().getUnit());
+    }
     private double discount(DiscoveryResult value) {
-        return value.getProduct() == null ? -1D : value.getProduct().calculateDiscountPercent();
+        return value.getProduct() == null ? value.getMaximumDiscount() : value.getProduct().calculateDiscountPercent();
     }
     private double price(DiscoveryResult value) {
-        return value.getProduct() == null ? Double.MAX_VALUE : value.getProduct().getRescuePrice();
+        return value.getProduct() == null ? value.getMinimumPrice() : value.getProduct().getRescuePrice();
     }
     private double distanceOrMax(DiscoveryResult value) {
         return Double.isFinite(value.getDistanceKilometers()) ? value.getDistanceKilometers() : Double.MAX_VALUE;
@@ -271,7 +289,7 @@ public final class DiscoveryEngine {
         return earliest;
     }
     private double sold(DiscoveryResult value, Map<String, List<ProductBatch>> batches) {
-        if (value.getProduct() == null) return -1D;
+        if (value.getProduct() == null) return value.getSoldQuantity();
         double total = 0D;
         List<ProductBatch> values = batches.get(value.getProduct().getId());
         if (values != null) for (ProductBatch batch : values) if (batch != null) total += batch.getSoldQuantity();
