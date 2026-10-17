@@ -197,9 +197,9 @@ public class OrderDetailFragment extends Fragment {
         if (state.getStatus() != OrderLifecycleState.Status.SUCCESS) return;
         Order order = state.getOrder(); Payment payment = state.getPayment(); Shipment shipment = state.getShipment();
         orderCodeView.setText("Mã đơn " + order.getOrderCode());
-        orderStatusView.setText(statusLabel(order.getStatus(), order.getPaymentMethod()));
+        orderStatusView.setText(paymentStatusLabel(order.getStatus(), payment));
         renderOrderInfo(order, payment, shipment);
-        renderTimeline(order);
+        renderTimeline(order, payment);
         instructions.setText(paymentInstructions(payment));
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -216,7 +216,7 @@ public class OrderDetailFragment extends Fragment {
         target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         statusActionTitle.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         boolean bank = payment.getMethod() == PaymentMethod.BANK_TRANSFER;
-        boolean pendingSellerBankConfirmation = seller && bank && payment.getStatus() == PaymentStatus.PENDING
+        boolean pendingSellerBankConfirmation = seller && bank && !payment.usesAutomaticVerification() && payment.getStatus() == PaymentStatus.PENDING
                 && order.getStatus() != OrderStatus.CANCELLED && order.getStatus() != OrderStatus.DELIVERED;
         reference.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
         confirmButton.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
@@ -240,11 +240,18 @@ public class OrderDetailFragment extends Fragment {
         receiptButton.setText(payment.getMethod() == PaymentMethod.COD ? "Đã thanh toán và nhận đơn" : "Đã nhận hàng");
         boolean customer = !uid.isEmpty() && uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
         renderItems(order, customer);
-        if (bank && !seller) showSellerBankInfo(order, payment);
+        if (bank && !seller && payment.getStatus() == PaymentStatus.PENDING
+                && order.getStatus() != OrderStatus.CANCELLED) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
     }
 
-    private void renderTimeline(Order order) {
+    private String paymentStatusLabel(OrderStatus status, Payment payment) {
+        if (status == OrderStatus.PENDING && payment.getMethod() == PaymentMethod.BANK_TRANSFER
+                && payment.usesAutomaticVerification()) return "Chờ hệ thống xác minh chuyển khoản";
+        return statusLabel(status, payment.getMethod());
+    }
+
+    private void renderTimeline(Order order, Payment payment) {
         timeline.removeAllViews();
         if (order.getStatus() == OrderStatus.CANCELLED) {
             addTimelineRow("Đơn hàng đã hủy", OrderStatus.CANCELLED, false, true, true);
@@ -267,7 +274,7 @@ public class OrderDetailFragment extends Fragment {
         for (int i = 0; i < steps.size(); i++) {
             boolean complete = current >= 0 && i < current;
             boolean active = i == current;
-            addTimelineRow(statusLabel(steps.get(i), order.getPaymentMethod()),
+            addTimelineRow(paymentStatusLabel(steps.get(i), payment),
                     steps.get(i), complete, active, i == steps.size() - 1);
         }
     }
@@ -431,16 +438,25 @@ public class OrderDetailFragment extends Fragment {
         if (blank(code) || blank(account) || blank(name)) {
             bankInfo.setText("Đơn chưa lưu thông tin tài khoản nhận chuyển khoản."); return;
         }
+        String transferContent = payment.getTransferContent().isEmpty() ? order.getOrderCode() : payment.getTransferContent();
         bankInfo.setText("Chuyển khoản đến " + name + " · " + code + " · " + account
-                + "\nNội dung: " + order.getOrderCode() + " · Số tiền: "
+                + "\nNội dung: " + transferContent + " · Số tiền: "
                 + NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(order.getTotalAmount()));
         String url = "https://img.vietqr.io/image/" + Uri.encode(code) + "-" + Uri.encode(account)
                 + "-compact.png?amount=" + Math.round(order.getTotalAmount()) + "&addInfo="
-                + Uri.encode(order.getOrderCode()) + "&accountName=" + Uri.encode(name);
+                + Uri.encode(transferContent) + "&accountName=" + Uri.encode(name);
         qrImage.setVisibility(View.VISIBLE); Glide.with(this).load(url).into(qrImage);
     }
 
     private String paymentInstructions(Payment payment) {
+        if (payment.getMethod() == PaymentMethod.BANK_TRANSFER && payment.usesAutomaticVerification()) {
+            if (payment.getStatus() == PaymentStatus.PAID)
+                return "Hệ thống đã xác minh chuyển khoản thành công. Người mua xác nhận Đã nhận hàng sau khi nhận đủ hàng.";
+            if (payment.getStatus() == PaymentStatus.FAILED)
+                return "Đơn đã hủy hoặc không còn chờ thanh toán. Không chuyển khoản cho đơn này.";
+            return "Thanh toán được SePay xác minh tự động. Quét đúng QR hoặc nhập chính xác nội dung "
+                    + payment.getTransferContent() + ". Khi tiền về, trạng thái đơn sẽ tự cập nhật; không cần cửa hàng xác nhận thủ công.";
+        }
         if (payment.getMethod() == PaymentMethod.BANK_TRANSFER)
             return getString(R.string.bank_transfer_manual_instruction, payment.getOrderId());
         if (payment.getMethod() == PaymentMethod.CASH_ON_SITE) return getString(R.string.cash_onsite_instruction);

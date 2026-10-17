@@ -1,4 +1,5 @@
 const express = require("express");
+const {paymentDetails} = require('./sepay');
 const {availablePaymentMethods} = require('./seller-payment-options');
 const {normalizeUnit, campaignUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
@@ -61,7 +62,7 @@ function distanceKm(aLat, aLng, bLat, bLng) {
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
+function createCommerce({db, admin, authenticate, campaignLifecycle = null, env = process.env}) {
   const router = express.Router();
   const lifecycle = campaignLifecycle || createCampaignLifecycle({db, admin, authenticate});
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
@@ -222,6 +223,8 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
         throw error(409, "QUOTE_CHANGED: Giá hoặc phí giao hàng đã thay đổi. Hãy kiểm tra báo giá mới.");
       }
       const paymentStatus = normalized.paymentMethod === 'BANK_TRANSFER' ? 'PENDING' : 'UNPAID';
+      const bankTransfer = normalized.paymentMethod === 'BANK_TRANSFER'
+        ? paymentDetails(q.sellerId, q.paymentProfile, env) : {verificationProvider: '', transferContent: ''};
       const order = {id: requestId, requestId, ownerType: identity.ownerType, ownerId: identity.ownerId,
         orderCode: `RF-${requestId.replace(/-/g, '').toUpperCase()}`, sellerId: q.sellerId, campaignId: q.public.campaignId,
         ...normalized, subtotal: q.public.subtotal, quantityDiscount: 0, shippingFee: q.public.shippingFee,
@@ -233,6 +236,10 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
       delete order.items; order.receiverLatitude = normalized.latitude; order.receiverLongitude = normalized.longitude;
       delete order.latitude; delete order.longitude;
       tx.create(orderRef, order);
+      if (bankTransfer.verificationProvider === 'SEPAY') tx.create(
+        db.collection('bankTransferReferences').doc(bankTransfer.transferContent), {
+          orderId: requestId, sellerId: q.sellerId, createdAt: stamp()
+        });
       tx.create(receiptRef, {ownerId: identity.ownerId, ownerType: identity.ownerType, fingerprint,
         tokenHash: identity.tokenHash || '', createdAt: stamp()});
       const sellerNotificationId = `${requestId}_SELLER_PENDING`;
@@ -263,7 +270,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
       }
       const bank = q.paymentProfile || {};
       tx.create(db.collection('payments').doc(requestId), {id: requestId, orderId: requestId,
-        method: normalized.paymentMethod, status: paymentStatus, amount: order.totalAmount, referenceCode: '',
+        ...bankTransfer, method: normalized.paymentMethod, status: paymentStatus, amount: order.totalAmount, referenceCode: '',
         bankCode: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.bankCode) : '',
         bankAccountName: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.bankAccountName) : '',
         bankAccountNumber: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.bankAccountNumber) : '',

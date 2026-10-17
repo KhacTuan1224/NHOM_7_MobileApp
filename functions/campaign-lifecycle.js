@@ -346,6 +346,8 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       const order = orderSnap.data();
       if (order.sellerId !== caller.uid || !seller.exists || seller.get('status') !== 'ACTIVE'
           || seller.get('sellerStatus') !== 'APPROVED') throw fail(403, 'Bạn không có quyền xác nhận đơn này.');
+      if (payment.get('verificationProvider') === 'SEPAY')
+        throw fail(409, 'Đơn dùng SePay: hệ thống tự xác minh khi ngân hàng báo tiền về.');
       if (order.paymentMethod !== 'BANK_TRANSFER' || payment.get('method') !== 'BANK_TRANSFER'
           || order.status === 'CANCELLED') throw fail(409, 'Đơn không thể xác nhận chuyển khoản.');
       if (order.paymentStatus === 'PAID' && payment.get('status') === 'PAID') {

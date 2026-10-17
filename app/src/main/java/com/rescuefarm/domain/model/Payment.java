@@ -6,6 +6,13 @@ import com.rescuefarm.domain.enums.PaymentStatus;
 import java.util.Date;
 
 public class Payment {
+    private String verificationProvider = "", transferContent = "";
+    public void setVerificationDetails(String provider, String content) {
+        verificationProvider = provider == null ? "" : provider.trim();
+        transferContent = content == null ? "" : content.trim();
+    }
+    public boolean usesAutomaticVerification() { return "SEPAY".equals(verificationProvider); }
+    public String getTransferContent() { return transferContent; }
     private String qrUrl = "";
     public String getQrUrl() { return qrUrl; }
     public void setQrUrl(String value) { qrUrl = value == null ? "" : value.trim(); }

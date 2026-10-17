@@ -6,7 +6,10 @@ if (!serviceAccount) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is required 
 admin.initializeApp({credential: admin.credential.cert(JSON.parse(serviceAccount))});
 const db = admin.firestore();
 const app = express();
-app.use(express.json({limit: "256kb"}));
+app.use(express.json({limit: "256kb", verify: (req, res, bytes) => {
+  if (req.originalUrl.startsWith('/webhooks/sepay/')) req.rawBody = Buffer.from(bytes);
+}}));
+app.use(require('./sepay').createSePayApi({db, admin}).router);
 
 async function migrateSellerPaymentProfiles() {
   const marker = db.collection("systemMigrations").doc("sellerPaymentProfilesV1");
