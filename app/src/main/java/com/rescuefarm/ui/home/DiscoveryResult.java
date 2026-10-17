@@ -5,6 +5,7 @@ import com.rescuefarm.domain.model.RescueCampaign;
 
 public final class DiscoveryResult {
     public enum Type { PRODUCT, CAMPAIGN }
+    private double minimumPrice = Double.MAX_VALUE, maximumDiscount = -1, soldQuantity = -1;
     private final Type type;
     private final Product product;
     private final RescueCampaign campaign;
@@ -36,6 +37,12 @@ public final class DiscoveryResult {
     public static DiscoveryResult campaign(RescueCampaign value, double distance) {
         return new DiscoveryResult(Type.CAMPAIGN, null, value, distance, "", "");
     }
+    public DiscoveryResult withCampaignMetrics(double price, double discount, double sold) {
+        minimumPrice = price; maximumDiscount = discount; soldQuantity = sold; return this;
+    }
+    public double getMinimumPrice() { return minimumPrice; }
+    public double getMaximumDiscount() { return maximumDiscount; }
+    public double getSoldQuantity() { return soldQuantity; }
     public Type getType() { return type; }
     public Product getProduct() { return product; }
     public RescueCampaign getCampaign() { return campaign; }

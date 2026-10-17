@@ -1153,7 +1153,18 @@ service cloud.firestore {
 
       match /comments/{commentId} {
         allow get, list: if publishedPost(postId) || isAdmin();
-        allow create, update, delete: if false;
+        // Legacy content remains read-only to users; Admin can still enforce reports.
+        allow update: if isAdmin()
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.postId == resource.data.postId
+            && request.resource.data.userId == resource.data.userId
+            && resource.data.status in ['ACTIVE', 'EDITED']
+            && request.resource.data.status == 'HIDDEN'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'])
+            && hasAdminModerationFields(request.resource.data)
+            && validComment(request.resource.data, postId);
+        allow create, delete: if false;
       }
     }
 
@@ -1247,12 +1258,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validReportCommentContext(data) {
+      let collection = data.get('parentType', '') == 'CAMPAIGN' ? 'campaigns' : 'posts';
+      let parentId = data.get('parentId', '');
+      let id = data.targetId;
+      let path = /databases/$(database)/documents/$(collection)/$(parentId)/comments/$(id);
+      return data.get('parentType', '') in ['CAMPAIGN', 'POST']
+          && parentId is string && parentId.size() > 0 && !parentId.matches('.*[/].*')
+          && !id.matches('.*[/].*')
+          && data.get('targetPath', '') == collection + '/' + parentId + '/comments/' + id
+          && exists(path) && get(path).data.status in ['ACTIVE', 'EDITED']
+          && (isAdmin() || (collection == 'campaigns' && activeCampaign(parentId))
+            || (collection == 'posts' && publishedPost(parentId)));
+    }
+
     match /reports/{reportId} {
       allow get, list: if isAdmin();
       allow create: if isActiveAccount() && request.resource.data.id == reportId
           && request.resource.data.reporterId == request.auth.uid
           && request.resource.data.targetType in ['USER', 'PRODUCT', 'CAMPAIGN', 'POST', 'COMMENT', 'REVIEW']
           && request.resource.data.targetId is string && request.resource.data.targetId.size() > 0
+          && (request.resource.data.targetType != 'COMMENT' || validReportCommentContext(request.resource.data))
           && request.resource.data.reason is string
           && request.resource.data.reason.size() > 0 && request.resource.data.reason.size() <= 120
           && request.resource.data.description is string && request.resource.data.description.size() <= 1000
@@ -1261,7 +1287,7 @@ service cloud.firestore {
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time
           && request.resource.data.keys().hasOnly([
-            'id', 'reporterId', 'targetType', 'targetId', 'reason', 'description',
+            'id', 'reporterId', 'targetType', 'targetId', 'targetPath', 'parentType', 'parentId', 'reason', 'description',
             'status', 'resolvedBy', 'resolutionNote', 'createdAt', 'updatedAt'
           ]);
       allow update: if isAdmin()
@@ -1325,12 +1351,12 @@ service cloud.firestore {
       allow get, list: if isAdmin();
       allow create: if isAdmin()
           && request.resource.data.keys().hasOnly([
-            'adminId', 'resourceType', 'resourceId', 'fromState', 'toState', 'reason', 'createdAt', 'reportId'
+            'adminId', 'resourceType', 'resourceId', 'fromState', 'toState', 'reason', 'createdAt', 'reportId', 'resourcePath'
           ])
           && request.resource.data.adminId == request.auth.uid
           && request.resource.data.resourceType in [
             'SELLER_APPLICATIONS', 'USERS', 'POSTS', 'PRODUCTS', 'CAMPAIGNS',
-            'CATEGORIES', 'BANNERS', 'REVIEWS', 'REPORTS', 'ORDERS', 'PRODUCT_BATCHES', 'SHIPPING_SETTINGS'
+            'CATEGORIES', 'BANNERS', 'REVIEWS', 'REPORTS', 'COMMENTS', 'ORDERS', 'PRODUCT_BATCHES', 'SHIPPING_SETTINGS'
           ]
           && request.resource.data.resourceId is string
           && request.resource.data.resourceId.size() > 0
@@ -1340,6 +1366,8 @@ service cloud.firestore {
           && request.resource.data.reason.size() <= 500
           && request.resource.data.get('reportId', '') is string
           && request.resource.data.get('reportId', '').size() <= 128
+          && request.resource.data.get('resourcePath', '') is string
+          && request.resource.data.get('resourcePath', '').size() <= 1024
           && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
     }

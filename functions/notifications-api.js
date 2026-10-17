@@ -81,7 +81,8 @@ function createNotificationsApi({db, admin, authenticate}) {
         docs = (await query.get()).docs;
       }
       res.json({nextCursor: !id && docs.length === 50 ? docs[docs.length - 1].id : '', reports: docs.map(doc => ({id: doc.id, targetType: doc.get('targetType'), status: doc.get('status'),
-        reason: doc.get('reason'), description: doc.get('description'),
+        reason: doc.get('reason'), description: doc.get('description'), targetId: doc.get('targetId'),
+        parentType: doc.get('parentType') || '', parentId: doc.get('parentId') || '', targetPath: doc.get('targetPath') || '',
         publicResult: doc.get('status') === 'RESOLVED' ? 'Báo cáo đã được xử lý. Cảm ơn bạn đã góp phần bảo vệ cộng đồng.'
           : doc.get('status') === 'REJECTED' ? 'Báo cáo chưa đủ cơ sở để áp dụng xử lý.' : 'Báo cáo đang được tiếp nhận và xem xét.'}))});
     } catch (e) { next(e); }

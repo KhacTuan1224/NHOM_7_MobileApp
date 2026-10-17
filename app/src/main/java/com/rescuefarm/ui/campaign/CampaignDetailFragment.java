@@ -404,6 +404,16 @@ public class CampaignDetailFragment extends Fragment {
                                 campaignId, comment.getId(), currentUserId(), actionRefresh())).show());
                 actions.addView(edit); actions.addView(delete); row.addView(actions);
             }
+            if (canUseCampaignSocialActions() && (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.ACTIVE
+                    || comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED)) {
+                com.google.android.material.button.MaterialButton report = new com.google.android.material.button.MaterialButton(
+                        requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
+                report.setText("Báo cáo bình luận"); report.setOnClickListener(v -> {
+                    Bundle args = new Bundle(); args.putString("targetType", "COMMENT");
+                    args.putString("targetId", "campaigns/" + campaignId + "/comments/" + comment.getId());
+                    androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.action_campaignDetailFragment_to_reportFragment, args);
+                }); row.addView(report);
+            }
             commentContainer.addView(row);
         }
     }
