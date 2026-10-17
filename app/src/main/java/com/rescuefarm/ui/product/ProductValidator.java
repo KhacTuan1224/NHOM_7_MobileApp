@@ -10,7 +10,7 @@ public final class ProductValidator {
 
     public static String validateProduct(String categoryId, String name, String originalPrice,
             String rescuePrice, String unit) {
-        if (clean(categoryId).isEmpty()) return "Vui lòng chọn/nhập mã danh mục.";
+        if (clean(categoryId).isEmpty()) return "Vui lòng chọn danh mục đang hoạt động.";
         if (clean(name).length() < 2) return "Tên sản phẩm phải có ít nhất 2 ký tự.";
         Double original = number(originalPrice); Double rescue = number(rescuePrice);
         if (original == null || rescue == null || original <= 0 || rescue <= 0) {

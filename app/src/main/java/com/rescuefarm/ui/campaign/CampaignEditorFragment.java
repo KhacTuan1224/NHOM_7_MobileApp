@@ -27,6 +27,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.rescuefarm.R;
 import com.rescuefarm.service.media.CloudinaryUploadUi;
 import com.rescuefarm.ui.common.VietnamAddressView;
+import com.rescuefarm.ui.common.DatePickerInput;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.model.ProductBatch;
@@ -74,6 +75,8 @@ public class CampaignEditorFragment extends Fragment {
         description.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(3000)});
         start = view.findViewById(R.id.campaignStartInput);
         end = view.findViewById(R.id.campaignEndInput);
+        DatePickerInput.bind(start);
+        DatePickerInput.bind(end);
         latitude = view.findViewById(R.id.campaignLatitudeInput);
         longitude = view.findViewById(R.id.campaignLongitudeInput);
         locationName = view.findViewById(R.id.campaignLocationNameInput);

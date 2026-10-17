@@ -341,6 +341,26 @@ public class FirebaseProductRepository implements ProductRepository {
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+    @Override public void createProduct(Product product, ProductCallback callback) {
+        if (!online(callback, "Không thể lưu sản phẩm khi offline; thay đổi không được xếp hàng.")) return;
+        String sellerId = currentUserId();
+        if (sellerId == null) { callback.onError(ErrorCode.FORBIDDEN, "Vui lòng đăng nhập seller."); return; }
+        DocumentReference reference = firestore.collection(PRODUCTS).document(clean(product.getId()));
+        Product saved;
+        try { saved = copyProduct(reference.getId(), sellerId, product); }
+        catch (IllegalArgumentException error) {
+            callback.onError(ErrorCode.VALIDATION, error.getMessage()); return;
+        }
+        Map<String, Object> data = productMap(saved);
+        data.put("createdAt", FieldValue.serverTimestamp());
+        data.put("updatedAt", FieldValue.serverTimestamp());
+        reference.set(data).addOnSuccessListener(unused -> {
+            cacheExecutor.execute(() -> dao.replaceProduct(CatalogCacheMapper.toEntity(
+                    saved, System.currentTimeMillis())));
+            callback.onSuccess(saved);
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
     @Override public void hideProduct(String productId, ActionCallback callback) {
         if (!online(callback, "Không thể ẩn sản phẩm khi offline; thay đổi không được xếp hàng.")) return;
         DocumentReference reference = firestore.collection(PRODUCTS).document(productId);
@@ -361,6 +381,22 @@ public class FirebaseProductRepository implements ProductRepository {
         DocumentReference batchRef = clean(batch.getId()).isEmpty()
                 ? firestore.collection(BATCHES).document()
                 : firestore.collection(BATCHES).document(batch.getId());
+        if (clean(batch.getId()).isEmpty()) {
+            ProductBatch saved = ProductBatch.restore(batchRef.getId(), batch.getProductId(), null,
+                    batch.getHarvestDate(), batch.getExpiryDate(), batch.getInitialQuantity(),
+                    batch.getInitialQuantity(), 0D, 0D, batch.getStatus(), 1L);
+            saved.updateDetails(batch.getHarvestDate(), batch.getExpiryDate(),
+                    batch.getInitialQuantity(), new Date());
+            Map<String, Object> data = batchMap(saved);
+            data.put("updatedAt", FieldValue.serverTimestamp());
+            data.put("createdAt", FieldValue.serverTimestamp());
+            batchRef.set(data).addOnSuccessListener(unused -> {
+                cacheExecutor.execute(() -> dao.replaceBatch(CatalogCacheMapper.toEntity(
+                        saved, System.currentTimeMillis())));
+                callback.onSuccess(saved);
+            }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+            return;
+        }
         firestore.runTransaction(transaction -> {
             DocumentSnapshot productSnapshot = transaction.get(productRef);
             DocumentSnapshot existing = transaction.get(batchRef);

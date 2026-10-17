@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.rescuefarm.R;
+import com.rescuefarm.ui.common.DatePickerInput;
 import com.rescuefarm.domain.enums.PromotionType;
 import com.rescuefarm.domain.model.Promotion;
 import java.text.SimpleDateFormat;
@@ -49,6 +50,8 @@ public class PromotionEditorFragment extends Fragment {
         tiers = view.findViewById(R.id.promotionTiersInput);
         start = view.findViewById(R.id.promotionStartInput);
         end = view.findViewById(R.id.promotionEndInput);
+        DatePickerInput.bind(start);
+        DatePickerInput.bind(end);
         active = view.findViewById(R.id.promotionActiveSwitch);
         type.setAdapter(new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_dropdown_item, PromotionType.values()));

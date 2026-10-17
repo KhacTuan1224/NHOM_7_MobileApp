@@ -153,6 +153,13 @@ public class ProductViewModel extends ViewModel {
     public void saveProduct(String id, String categoryId, String name, String description,
             String originalPrice, String rescuePrice, String unit, String origin, String province,
             String imageUrls, ProductStatus status) {
+        saveProduct(id, categoryId, name, description, originalPrice, rescuePrice, unit,
+                origin, province, imageUrls, status, id == null || id.trim().isEmpty());
+    }
+
+    public void saveProduct(String id, String categoryId, String name, String description,
+            String originalPrice, String rescuePrice, String unit, String origin, String province,
+            String imageUrls, ProductStatus status, boolean creatingNewProduct) {
         String validation = ProductValidator.validateProduct(categoryId, name, originalPrice, rescuePrice, unit);
         if (validation != null) { state.setValue(ProductScreenState.error(validation)); return; }
         String sellerId = requireUserId(); if (sellerId == null) return;
@@ -160,14 +167,16 @@ public class ProductViewModel extends ViewModel {
                 ProductValidator.parseNumber(originalPrice), ProductValidator.parseNumber(rescuePrice), unit,
                 origin, province, parseUrls(imageUrls), status);
         state.setValue(ProductScreenState.loading());
-        repository.saveProduct(product, new ProductRepository.ProductCallback() {
+        ProductRepository.ProductCallback callback = new ProductRepository.ProductCallback() {
             @Override public void onSuccess(Product value) {
                 state.postValue(ProductScreenState.saved("Đã lưu sản phẩm."));
             }
             @Override public void onError(ProductRepository.ErrorCode error, String message) {
                 state.postValue(ProductScreenState.error(message));
             }
-        });
+        };
+        if (creatingNewProduct) repository.createProduct(product, callback);
+        else repository.saveProduct(product, callback);
     }
 
     public void hideProduct(String productId) {

@@ -25,11 +25,14 @@ import java.util.List;
 
 public class ProductEditorFragment extends Fragment {
     private ProductViewModel viewModel; private String id = "";
-    private TextInputEditText category, name, description, originalPrice, rescuePrice, unit, origin, province, images;
+    private com.google.android.material.textfield.MaterialAutoCompleteTextView category;
+    private TextInputEditText name, description, originalPrice, rescuePrice, unit, origin, province, images;
     private RadioGroup statusGroup;
-    private boolean dirty, binding;
+    private boolean dirty, binding, creatingNewProduct;
     private TextView imagesStatus;
     private View uploadImagesButton;
+    private final List<Category> activeCategories = new java.util.ArrayList<>();
+    private String selectedCategoryId = "";
     private final ActivityResultLauncher<String> imagePicker = registerForActivityResult(
             new ActivityResultContracts.GetContent(), uri -> CloudinaryUploadUi.upload(this, uri,
                     "product", id, imageCount(), uploadImagesButton, imagesStatus, null,
@@ -50,8 +53,14 @@ public class ProductEditorFragment extends Fragment {
         view.findViewById(R.id.clearProductImagesButton).setOnClickListener(v -> {
             images.setText(""); updateImageCount(); dirty = true;
         });
+        category.setOnItemClickListener((parent, itemView, position, itemId) -> {
+            if (position < 0 || position >= activeCategories.size()) return;
+            selectedCategoryId = activeCategories.get(position).getId();
+            dirty = true;
+        });
         readArguments();
         boolean editingExisting = !id.isEmpty();
+        creatingNewProduct = !editingExisting;
         if (id.isEmpty()) id = java.util.UUID.randomUUID().toString();
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);
@@ -62,7 +71,7 @@ public class ProductEditorFragment extends Fragment {
             }
             @Override public void afterTextChanged(Editable s) { }
         };
-        for (TextInputEditText input : new TextInputEditText[]{category, name, description,
+        for (TextInputEditText input : new TextInputEditText[]{name, description,
                 originalPrice, rescuePrice, unit, origin, province, images}) input.addTextChangedListener(watcher);
         statusGroup.setOnCheckedChangeListener((group, checkedId) -> { if (!binding) dirty = true; });
         if (editingExisting) viewModel.observeProduct(id).observe(getViewLifecycleOwner(), value -> {
@@ -77,13 +86,14 @@ public class ProductEditorFragment extends Fragment {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
         });
         view.findViewById(R.id.saveProductButton).setOnClickListener(v -> viewModel.saveProduct(id,
-                text(category), text(name), text(description), text(originalPrice), text(rescuePrice),
-                text(unit), text(origin), text(province), text(images), selectedStatus()));
+                selectedCategoryId, text(name), text(description), text(originalPrice), text(rescuePrice),
+                text(unit), text(origin), text(province), text(images), selectedStatus(), creatingNewProduct));
         viewModel.refreshCatalog();
     }
     private void populate(com.rescuefarm.domain.model.Product value) {
         binding = true;
-        category.setText(value.getCategoryId()); name.setText(value.getName());
+        selectedCategoryId = value.getCategoryId();
+        displaySelectedCategory(); name.setText(value.getName());
         description.setText(value.getDescription());
         originalPrice.setText(String.valueOf(value.getOriginalPrice()));
         rescuePrice.setText(String.valueOf(value.getRescuePrice())); unit.setText(value.getUnit());
@@ -96,7 +106,7 @@ public class ProductEditorFragment extends Fragment {
     }
     private void readArguments() {
         Bundle b = getArguments(); if (b == null) return; id = safe(b.getString("id"));
-        category.setText(b.getString("categoryId")); name.setText(b.getString("name"));
+        selectedCategoryId = safe(b.getString("categoryId")); name.setText(b.getString("name"));
         description.setText(b.getString("description"));
         if (b.containsKey("originalPrice")) originalPrice.setText(String.valueOf(b.getDouble("originalPrice")));
         if (b.containsKey("rescuePrice")) rescuePrice.setText(String.valueOf(b.getDouble("rescuePrice")));
@@ -106,9 +116,32 @@ public class ProductEditorFragment extends Fragment {
         if (ProductStatus.INACTIVE.name().equals(b.getString("status"))) statusGroup.check(R.id.productStatusInactive);
     }
     private void showCategories(View view, List<Category> values) {
-        StringBuilder text = new StringBuilder(getString(R.string.available_categories_label));
-        if (values != null) for (Category value : values) text.append("\n• ").append(value.getName()).append(": ").append(value.getId());
-        ((TextView) view.findViewById(R.id.availableCategoriesText)).setText(text.toString());
+        activeCategories.clear();
+        if (values != null) activeCategories.addAll(values);
+        List<String> labels = new java.util.ArrayList<>();
+        for (Category value : activeCategories) labels.add(value.getName() + " · " + value.getId());
+        category.setAdapter(new android.widget.ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_list_item_1, labels));
+        category.setEnabled(!activeCategories.isEmpty());
+        TextView categoryHint = view.findViewById(R.id.availableCategoriesText);
+        categoryHint.setText(activeCategories.isEmpty() ? R.string.no_active_categories
+                : R.string.category_selection_hint);
+        displaySelectedCategory();
+    }
+    private void displaySelectedCategory() {
+        if (category == null) return;
+        if (activeCategories.isEmpty()) {
+            category.setText("", false);
+            return;
+        }
+        for (Category value : activeCategories) {
+            if (value.getId().equals(selectedCategoryId)) {
+                category.setText(value.getName() + " · " + value.getId(), false);
+                return;
+            }
+        }
+        selectedCategoryId = "";
+        category.setText("", false);
     }
     private ProductStatus selectedStatus() {
         return statusGroup.getCheckedRadioButtonId() == R.id.productStatusInactive
