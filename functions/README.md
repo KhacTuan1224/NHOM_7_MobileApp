@@ -49,3 +49,7 @@ Install functions dependencies with npm ci. From tests/firestore, run npm ci and
 ### Checkout payment availability
 
 `POST /sellers/payment-options` accepts `{sellerId, fulfillmentType}` for customers and guests and returns only `{ok, availablePaymentMethods}`. It verifies the seller is active and approved, reads the private `sellerPaymentProfiles` document, and enables bank transfer when all bank fields are complete. Stored QR images are optional for payment eligibility. COD quotes also include the same capability list; checkout revalidates the saved bank configuration for bank transfers. Deploy this backend before distributing the updated Android checkout.
+
+### Order confirmation and receipt
+
+Deploy this backend with the updated Firestore Rules and Android build. Bank-transfer sellers call `POST /orders/confirm-bank-transfer` with `orderId` and `referenceCode` to mark the payment paid and confirm a pending order atomically. Regular transitions cannot confirm an unpaid bank order. Only the owning customer may transition an order to DELIVERED; sellers/admins cannot confirm receipt. Guests use `POST /orders/confirm-guest-receipt` with their saved order access token. Receipt finalizes inventory, campaign allocations, shipment and cash payment in one idempotent transaction. DELIVERED remains the stored code; user-facing text describes buyer receipt and payment. New inbox/push messages contain Vietnamese labels.

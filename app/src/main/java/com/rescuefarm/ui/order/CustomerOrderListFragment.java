@@ -117,7 +117,7 @@ public class CustomerOrderListFragment extends Fragment {
             code.setTextSize(14);
             code.setTypeface(code.getTypeface(), android.graphics.Typeface.BOLD);
             TextView details = new TextView(requireContext());
-            details.setText(statuses[order.getStatus().ordinal()] + " • "
+            details.setText(com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " • "
                     + money.format(order.getTotalAmount()) + "\nXem chi tiết");
             details.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface_variant));
             details.setTextSize(13);

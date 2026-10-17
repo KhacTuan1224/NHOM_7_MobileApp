@@ -8,6 +8,28 @@ import static org.junit.Assert.*;
 public class OrderLifecycleServiceTest {
     private final OrderLifecycleService service = new OrderLifecycleService();
 
+    @Test public void sellerCannotCompleteReceiptAndCannotConfirmUnpaidBankOrder() {
+        assertFalse(service.getSellerNextStatuses(FulfillmentType.DELIVERY, OrderStatus.SHIPPING,
+                PaymentMethod.COD, PaymentStatus.UNPAID).contains(OrderStatus.DELIVERED));
+        assertFalse(service.getSellerNextStatuses(FulfillmentType.PICKUP, OrderStatus.READY_FOR_PICKUP,
+                PaymentMethod.BANK_TRANSFER, PaymentStatus.PAID).contains(OrderStatus.DELIVERED));
+        assertFalse(service.getSellerNextStatuses(FulfillmentType.DELIVERY, OrderStatus.PENDING,
+                PaymentMethod.BANK_TRANSFER, PaymentStatus.PENDING).contains(OrderStatus.CONFIRMED));
+    }
+
+    @Test public void buyerCanReceiveOnlyWhenGoodsAreReadyAndTransferIsPaid() {
+        assertTrue(service.canConfirmReceipt(FulfillmentType.DELIVERY, OrderStatus.SHIPPING,
+                PaymentMethod.COD, PaymentStatus.UNPAID));
+        assertFalse(service.canConfirmReceipt(FulfillmentType.DELIVERY, OrderStatus.PREPARING,
+                PaymentMethod.COD, PaymentStatus.UNPAID));
+        assertFalse(service.canConfirmReceipt(FulfillmentType.DELIVERY, OrderStatus.SHIPPING,
+                PaymentMethod.BANK_TRANSFER, PaymentStatus.PENDING));
+        assertTrue(service.canConfirmReceipt(FulfillmentType.DELIVERY, OrderStatus.SHIPPING,
+                PaymentMethod.BANK_TRANSFER, PaymentStatus.PAID));
+        assertFalse(service.canConfirmReceipt(FulfillmentType.DELIVERY, OrderStatus.DELIVERED,
+                PaymentMethod.BANK_TRANSFER, PaymentStatus.PAID));
+    }
+
     @Test public void deliveryFollowsShippingPath() {
         legal(FulfillmentType.DELIVERY, OrderStatus.PENDING, OrderStatus.CONFIRMED);
         legal(FulfillmentType.DELIVERY, OrderStatus.CONFIRMED, OrderStatus.PREPARING);

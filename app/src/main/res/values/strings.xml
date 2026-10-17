@@ -308,11 +308,11 @@
     <string name="order_detail_format">Đơn %1$s\nTrạng thái đơn: %2$s\nNhận hàng: %3$s\nPhương thức: %4$s\nThanh toán: %5$s\nShipment: %6$s\nTổng: %7$s</string>
     <string name="shipment_not_required">Không tạo shipment (nhận tại điểm)</string>
     <string name="update_order_status_action">Cập nhật trạng thái hợp lệ</string>
-    <string name="bank_reference_hint">Mã tham chiếu / biên nhận chuyển khoản</string>
-    <string name="confirm_bank_transfer_action">Seller xác nhận đã nhận chuyển khoản</string>
-    <string name="bank_transfer_manual_instruction">Chuyển khoản được xác nhận thủ công bởi seller. Nội dung đối soát: %1$s. Ứng dụng không tự giả lập xác minh ngân hàng.</string>
+    <string name="bank_reference_hint">Mã giao dịch chuyển khoản</string>
+    <string name="confirm_bank_transfer_action">Đã nhận tiền và xác nhận đơn</string>
+    <string name="bank_transfer_manual_instruction">Cửa hàng nhập mã giao dịch để xác nhận đã nhận tiền và xác nhận đơn. Sau khi nhận đủ hàng, người mua nhấn Đã nhận hàng. Mã đối soát: %1$s.</string>
     <string name="cash_onsite_instruction">Thanh toán tiền mặt tại điểm nhận; hệ thống ghi nhận đã thanh toán khi đơn hoàn tất.</string>
-    <string name="cod_instruction">Thanh toán khi nhận hàng. Hệ thống ghi nhận đã thanh toán khi giao hàng thành công.</string>
+    <string name="cod_instruction">Sau khi nhận đủ hàng và thanh toán, hãy nhấn Đã thanh toán và nhận đơn để hoàn tất đơn hàng.</string>
     <string name="order_id_missing">Thiếu Order ID.</string>
     <string name="track_before_open_detail">Hãy tra cứu đơn trước khi mở chi tiết.</string>
     <string name="seller_orders_action">Đơn hàng &amp; giao nhận</string>

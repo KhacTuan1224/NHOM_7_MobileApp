@@ -11,6 +11,21 @@ import java.util.List;
 
 /** Pure lifecycle policy shared by the repository, UI and unit tests. */
 public final class OrderLifecycleService {
+    public List<OrderStatus> getSellerNextStatuses(FulfillmentType fulfillment, OrderStatus current,
+            PaymentMethod method, PaymentStatus payment) {
+        List<OrderStatus> result = new ArrayList<>(getAllowedNextStatuses(fulfillment, current, method, payment));
+        result.remove(OrderStatus.DELIVERED);
+        return Collections.unmodifiableList(result);
+    }
+
+    public boolean canConfirmReceipt(FulfillmentType fulfillment, OrderStatus current,
+            PaymentMethod method, PaymentStatus payment) {
+        try {
+            if (current == OrderStatus.DELIVERED) return false;
+            requireLegalTransition(fulfillment, current, OrderStatus.DELIVERED, method, payment);
+            return true;
+        } catch (IllegalArgumentException | IllegalStateException error) { return false; }
+    }
     /** Returns only transitions allowed by the same policy enforced during writes. */
     public List<OrderStatus> getAllowedNextStatuses(FulfillmentType fulfillment, OrderStatus current,
             PaymentMethod paymentMethod, PaymentStatus paymentStatus) {
@@ -51,6 +66,9 @@ public final class OrderLifecycleService {
             default: legal = false;
         }
         if (!legal) throw new IllegalStateException("ILLEGAL_ORDER_TRANSITION");
+        if (paymentMethod == PaymentMethod.BANK_TRANSFER && paymentStatus != PaymentStatus.PAID
+                && target != OrderStatus.CANCELLED && target != OrderStatus.DELIVERED)
+            throw new IllegalStateException("BANK_TRANSFER_NOT_CONFIRMED");
         if (target == OrderStatus.DELIVERED && paymentMethod == PaymentMethod.BANK_TRANSFER
                 && paymentStatus != PaymentStatus.PAID) {
             throw new IllegalStateException("BANK_TRANSFER_NOT_CONFIRMED");

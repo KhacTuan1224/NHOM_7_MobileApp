@@ -897,7 +897,7 @@ service cloud.firestore {
       // Trusted HTTP checkout creates the order, items, payment and reservations atomically.
       allow create: if false;
       // Order status and inventory allocations are changed only by the trusted lifecycle API.
-      allow update: if bankConfirmationOrderUpdate(resource.data, request.resource.data);
+      allow update: if false;
       allow delete: if false;
       match /items/{itemId} {
         allow get, list: if orderReadable(
@@ -912,28 +912,8 @@ service cloud.firestore {
           get(/databases/$(database)/documents/orders/$(paymentId)).data);
       allow list: if false;
       allow create: if false;
-      allow update: if request.resource.data.id == resource.data.id
-          && request.resource.data.orderId == resource.data.orderId
-          && request.resource.data.method == resource.data.method
-          && request.resource.data.amount == resource.data.amount
-          && (
-            (resource.data.method == 'BANK_TRANSFER' && resource.data.status == 'PENDING'
-              && request.resource.data.status == 'PAID'
-              && request.resource.data.referenceCode is string
-              && request.resource.data.referenceCode.size() >= 3
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                'status', 'referenceCode', 'paidAt', 'updatedAt'
-              ])
-              && bankConfirmationOrderUpdate(
-                get(/databases/$(database)/documents/orders/$(paymentId)).data,
-                getAfter(/databases/$(database)/documents/orders/$(paymentId)).data))
-            || (lifecycleActor(get(/databases/$(database)/documents/orders/$(paymentId)).data)
-              && request.resource.data.status == getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.paymentStatus
-              && getAfter(/databases/$(database)/documents/orders/$(paymentId)).data.status in ['DELIVERED', 'CANCELLED']
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                'status', 'paidAt', 'updatedAt'
-              ]))
-          );
+      // Bank confirmation and payment changes are atomic trusted API operations.
+      allow update: if false;
       allow delete: if false;
     }
 

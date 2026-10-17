@@ -71,3 +71,14 @@ Mỗi ảnh có public ID riêng, không ghi đè ảnh cũ. Thay đổi ngân h
 Đây là QR nhận tiền chung của cửa hàng, không có số tiền cố định. Màn hình chi tiết đơn dùng QR riêng theo thông tin ngân hàng đã chụp vào Payment, kèm đúng số tiền và mã đơn; không dùng ảnh QR chung thay thế. Người bán vẫn xác nhận nhận tiền thủ công.
 
 Tài liệu chính thức: [API Generate](https://www.vietqr.io/danh-sach-api/link-tao-ma-nhanh/api-tao-ma-qr). Theo [thông báo tháng 10/2026](https://www.vietqr.io/thong-bao-cap-nhat), API Generate hoạt động đến hết 31/12/2026 và dừng từ 01/01/2027; cần thay phần tạo QR trong `functions/payment-qr.js` bằng thư viện `vietqr-core` trước thời hạn đó. Luồng upload và lưu Cloudinary có thể giữ nguyên.
+
+## 5. Xác nhận tiền và người mua xác nhận nhận hàng
+
+- Chuyển khoản: seller nhập mã giao dịch (3–120 ký tự), bấm **Đã nhận tiền và xác nhận đơn**. `POST /orders/confirm-bank-transfer` kiểm tra đúng seller sở hữu đơn, cập nhật Payment thành PAID và Order từ PENDING thành CONFIRMED trong cùng transaction. API hỗ trợ hoàn tất xác nhận thanh toán của đơn cũ đã ở bước xử lý, không kéo lùi trạng thái đơn.
+- Seller tiếp tục chuẩn bị và giao hàng/chuẩn bị nhận tại điểm. Seller không thể gọi bước DELIVERED, kể cả qua API; Admin cũng không thay người mua xác nhận nhận hàng.
+- Người mua đăng nhập xác nhận qua `POST /orders/transition` với đích DELIVERED; chỉ đúng customer sở hữu đơn và chỉ ở bước SHIPPING / READY_FOR_PICKUP / PREPARING tại điểm giải cứu mới được phép. Nhãn chuyển khoản là **Đã nhận hàng**, COD là **Đã thanh toán và nhận đơn**.
+- Guest xác nhận bằng token đơn đã lưu qua `POST /orders/confirm-guest-receipt`; backend kiểm tra hash token và chủ đơn trong checkoutReceipts. Biết mã đơn hoặc số điện thoại không đủ để xác nhận.
+- Chỉ transaction nhận hàng mới chốt lượng hàng đã bán/đã giải cứu, cập nhật shipment và ghi nhận PAID cho COD/tiền mặt. Gửi lặp thao tác không chốt tồn kho lần hai. Mã lưu trữ DELIVERED được giữ để tương thích lịch sử và báo cáo.
+- Thông báo mới lưu tiếng Việt; ứng dụng dịch những thông báo trạng thái cũ chứa enum khi hiển thị. Ảnh sản phẩm trong chi tiết đơn dùng productImageSnapshot tại lúc đặt đơn; thiếu ảnh hiển thị biểu tượng thay thế.
+
+Triển khai backend Render, Firestore Rules và APK mới cùng đợt. Firestore client không còn quyền ghi trực tiếp trạng thái Order/Payment, bao gồm xác nhận chuyển khoản, để tránh bỏ qua API xác nhận đồng thời.
