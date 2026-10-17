@@ -1,0 +1,14 @@
+<resources>
+    <string name="home_filter_title">Bộ lọc</string>
+    <string name="home_search_close">Đóng gợi ý tìm kiếm</string>
+    <string name="home_search_count">%1$d gợi ý phù hợp</string>
+    <string name="home_search_empty">Không có kết quả phù hợp. Thử từ khóa khác hoặc điều chỉnh bộ lọc.</string>
+    <string name="home_search_empty_title">Không có kết quả phù hợp</string>
+    <string name="home_search_empty_hint">Thử từ khóa khác\nhoặc điều chỉnh bộ lọc.</string>
+    <string name="home_search_product">Nông sản · %1$s</string>
+    <string name="home_search_campaign">Chiến dịch · %1$s</string>
+    <string name="home_search_suggestions">Gợi ý tìm kiếm</string>
+    <string name="home_search_product_type">Nông sản</string>
+    <string name="home_search_campaign_type">Chiến dịch</string>
+    <string name="discovery_all_provinces">Tất cả tỉnh/thành phố</string>
+</resources>

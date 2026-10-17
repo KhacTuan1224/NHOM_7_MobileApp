@@ -68,7 +68,7 @@ public final class VietnamAddressView extends LinearLayout {
         }));
     }
 
-    private static synchronized CompletableFuture<VietnamAddressCatalog> load(Context context) {
+    static synchronized CompletableFuture<VietnamAddressCatalog> load(Context context) {
         if (loading == null) loading = CompletableFuture.supplyAsync(() -> {
             try (InputStreamReader reader = new InputStreamReader(
                     context.getAssets().open("address/dvhcvn.tsv"), StandardCharsets.UTF_8)) {

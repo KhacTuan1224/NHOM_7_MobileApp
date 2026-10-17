@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="68dp"
+    android:orientation="horizontal" android:gravity="center_vertical"
+    android:paddingHorizontal="14dp" android:paddingVertical="10dp"
+    android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+        android:layout_marginEnd="6dp" android:orientation="vertical">
+        <TextView android:id="@+id/suggestionTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="14sp" android:textStyle="bold" android:textColor="@color/rescue_on_surface"
+            android:maxLines="2" android:ellipsize="end" />
+        <TextView android:id="@+id/suggestionSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="3dp" android:textSize="11sp" android:textColor="@color/rescue_on_surface_variant"
+            android:maxLines="1" android:ellipsize="end" />
+    </LinearLayout>
+    <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_arrow_forward"
+        app:tint="@color/rescue_on_surface_variant" android:contentDescription="@null" />
+</LinearLayout>

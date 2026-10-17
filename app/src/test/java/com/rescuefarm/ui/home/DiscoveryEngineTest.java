@@ -17,6 +17,37 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 public class DiscoveryEngineTest {
+    @Test public void catalogProvinceNames_matchShortSavedNames_andStayAppliedWhileTyping() {
+        Product mango = Product.restore("mango", "s", "fruit", "Xoài cát", "Nông sản",
+                50D, 30D, "kg", "Vườn nhà", "Đồng Tháp", Collections.emptyList(),
+                0D, 0, ProductStatus.ACTIVE);
+        Product otherProvince = Product.restore("other", "s", "fruit", "Xoài cát", "Nông sản",
+                50D, 30D, "kg", "Vườn nhà", "Tiền Giang", Collections.emptyList(),
+                0D, 0, ProductStatus.ACTIVE);
+        DiscoveryQuery filter = new DiscoveryQuery("", "fruit", "Tỉnh Đồng Tháp", null, null, null,
+                DiscoveryQuery.Sort.RELEVANCE);
+        DiscoveryEngine engine = new DiscoveryEngine();
+        List<Product> products = Arrays.asList(mango, otherProvince);
+        List<DiscoveryResult> result = engine.search(products, Collections.emptyList(),
+                filter.withText("xoai"), null, null, new Date());
+        assertEquals(1, result.size());
+        assertEquals("mango", result.get(0).getProduct().getId());
+        assertTrue(engine.search(products, Collections.emptyList(), filter.withText("bo"),
+                null, null, new Date()).isEmpty());
+        assertEquals(2, engine.search(products, Collections.emptyList(), DiscoveryQuery.empty(),
+                null, null, new Date()).size());
+    }
+
+    @Test public void catalogCityName_matchesAbbreviatedLocation() {
+        Product product = Product.restore("p", "s", "fruit", "Xoài", "Nông sản",
+                50D, 30D, "kg", "Vườn nhà", "TP. HCM", Collections.emptyList(),
+                0D, 0, ProductStatus.ACTIVE);
+        DiscoveryQuery query = new DiscoveryQuery("", "", "Thành phố Hồ Chí Minh", null, null, null,
+                DiscoveryQuery.Sort.RELEVANCE);
+        assertEquals(1, new DiscoveryEngine().search(Collections.singletonList(product),
+                Collections.emptyList(), query, null, null, new Date()).size());
+    }
+
     @Test public void textSearch_isAccentInsensitive_andCriticalComesFirst() {
         Product mango = Product.restore("p", "s", "fruit", "Xoài cát", "Nông sản",
                 50D, 30D, "kg", "Vườn nhà", "Đồng Tháp", Collections.emptyList(),
