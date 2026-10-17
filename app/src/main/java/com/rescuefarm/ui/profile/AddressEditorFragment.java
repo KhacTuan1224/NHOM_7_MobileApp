@@ -33,6 +33,7 @@ public class AddressEditorFragment extends Fragment {
     private RadioGroup typeGroup; private CheckBox defaultCheck; private TextView locationText;
     private String id = ""; private double latitude, longitude;
     private boolean dirty, binding;
+    private int addressVersion, gpsRequestVersion;
     private final ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissionResult);
 
@@ -41,6 +42,11 @@ public class AddressEditorFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_address_editor, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        if (com.rescuefarm.ui.navigation.ActorUiPolicy.isSeller(this)) {
+            androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.sellerProfileFragment);
+            return;
+        }
+
         name = view.findViewById(R.id.receiverNameInput); phone = view.findViewById(R.id.receiverPhoneInput);
         address = view.findViewById(R.id.addressForm);
         typeGroup = view.findViewById(R.id.addressTypeGroup); defaultCheck = view.findViewById(R.id.defaultAddressCheck);
@@ -58,7 +64,7 @@ public class AddressEditorFragment extends Fragment {
         };
         name.addTextChangedListener(watcher); phone.addTextChangedListener(watcher);
         address.setOnAddressChangedListener(() -> {
-            if (!binding) { dirty = true; latitude = 0; longitude = 0; showCoordinates(); }
+            if (!binding) { dirty = true; addressVersion++; latitude = 0; longitude = 0; showCoordinates(); }
         });
         defaultCheck.setOnCheckedChangeListener((button, checked) -> { if (!binding) dirty = true; });
         typeGroup.setOnCheckedChangeListener((group, checkedId) -> { if (!binding) dirty = true; });
@@ -100,14 +106,15 @@ public class AddressEditorFragment extends Fragment {
     }
     private void render(ProfileScreenState state) {
         if (state.getStatus() == ProfileScreenState.Status.LOCATION) {
-            latitude = state.getLatitude(); longitude = state.getLongitude(); showCoordinates();
-            if (state.getGeocodedAddress() != null) {
-                address.setAddress(state.getGeocodedAddress().getProvince(), state.getGeocodedAddress().getDistrict(),
-                        state.getGeocodedAddress().getWard(), state.getGeocodedAddress().getStreet());
-            }
+            if (gpsRequestVersion != addressVersion) { viewModel.clearTransientState(); return; }
+            binding = true;
+            address.applyGeocodedAddress(state.getGeocodedAddress());
+            latitude = state.getLatitude(); longitude = state.getLongitude();
+            binding = false; dirty = true; showCoordinates();
             if (state.getMessage() != null) {
                 Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_LONG).show();
             }
+            viewModel.clearTransientState();
         } else if (state.getStatus() == ProfileScreenState.Status.SAVED) {
             Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_SHORT).show();
             NavHostFragment.findNavController(this).popBackStack();
@@ -116,6 +123,7 @@ public class AddressEditorFragment extends Fragment {
         }
     }
     private void requestLocation() {
+        gpsRequestVersion = addressVersion;
         if (hasPermission()) viewModel.requestCurrentLocation(true);
         else permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION});
@@ -140,6 +148,7 @@ public class AddressEditorFragment extends Fragment {
     private static String text(TextInputEditText input) { return input.getText() == null ? "" : input.getText().toString(); }
     @Override public void onViewStateRestored(@Nullable Bundle state) {
         super.onViewStateRestored(state);
+        if (locationText == null) return;
         if (state != null) { dirty = true; latitude = state.getDouble("latitude"); longitude = state.getDouble("longitude"); showCoordinates(); }
     }
     @Override public void onSaveInstanceState(@NonNull Bundle state) {

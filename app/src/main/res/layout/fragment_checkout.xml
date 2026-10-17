@@ -63,38 +63,19 @@
             android:padding="12dp"
             android:layout_marginBottom="8dp" />
         
+        <TextView android:id="@+id/checkoutSellerAddress" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:paddingVertical="12dp"
+            android:text="@string/checkout_store_loading" android:textColor="@color/rescue_primary" />
+        <TextView android:id="@+id/checkoutReceiverAddressTitle" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/checkout_receiver_address_title"
+            android:textStyle="bold" />
         <com.rescuefarm.ui.common.VietnamAddressView android:id="@+id/checkoutAddress" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <TextView android:id="@+id/checkoutLocationHint" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_location_hint" />
         <com.google.android.material.button.MaterialButton android:id="@+id/checkoutUseLocation" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_location_action" />
         
-        <LinearLayout android:id="@+id/checkoutCoordinates"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-            
-            <EditText 
-                android:id="@+id/checkoutLatitude" 
-                android:layout_width="0dp" 
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:hint="@string/latitude_hint" 
-                android:inputType="numberDecimal|numberSigned"
-                android:background="@color/rescue_surface"
-                android:padding="12dp" />
-            
-            <EditText 
-                android:id="@+id/checkoutLongitude" 
-                android:layout_width="0dp" 
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:hint="@string/longitude_hint" 
-                android:inputType="numberDecimal|numberSigned"
-                android:background="@color/rescue_surface"
-                android:padding="12dp" />
-        </LinearLayout>
+        <TextView android:id="@+id/checkoutGpsStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:paddingVertical="8dp"
+            android:text="@string/delivery_gps_required" android:textColor="@color/rescue_on_surface_variant" />
         
         <!-- Fulfillment method -->
         <TextView

@@ -84,21 +84,13 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
         </com.google.android.material.textfield.TextInputLayout>
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" android:text="Tọa độ lấy hàng của cửa hàng (để tính phí theo km)"
+            android:layout_marginTop="@dimen/space_md" android:text="GPS cửa hàng để tính phí giao hàng"
             android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerLatitudeInput"
-                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                android:hint="Vĩ độ" android:inputType="numberDecimal|numberSigned" />
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/sellerLongitudeInput"
-                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                android:hint="Kinh độ" android:inputType="numberDecimal|numberSigned" />
-        </LinearLayout>
+
         <com.google.android.material.button.MaterialButton android:id="@+id/useSellerLocationButton"
             style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
             android:layout_height="@dimen/touch_target_min" android:layout_marginTop="@dimen/space_sm"
-            android:text="Lấy GPS và tự điền địa chỉ" />
+            android:text="Lấy GPS cửa hàng" />
         <TextView android:id="@+id/sellerLocationStatus" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:paddingTop="@dimen/space_xs"
             android:textColor="@color/rescue_on_surface_variant" android:textSize="12sp" />

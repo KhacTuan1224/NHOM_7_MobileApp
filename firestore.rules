@@ -19,7 +19,7 @@ service cloud.firestore {
     function canManageOwnAddresses(userId) {
       return isOwner(userId)
           && get(/databases/$(database)/documents/users/$(userId)).data.status == 'ACTIVE'
-          && get(/databases/$(database)/documents/users/$(userId)).data.role in ['CUSTOMER', 'SELLER', 'ADMIN'];
+          && get(/databases/$(database)/documents/users/$(userId)).data.role == 'CUSTOMER';
     }
 
     function isApprovedSeller(userId) {

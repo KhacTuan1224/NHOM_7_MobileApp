@@ -46,6 +46,10 @@ public class ProfileViewModel extends ViewModel {
                 : userRepository.observeSellerApplication(userId);
     }
     public boolean isAuthenticated() { return authRepository.isAuthenticated(); }
+    public LiveData<com.rescuefarm.data.repository.SellerStorefront> observeStorefront() {
+        String id = authRepository.getCurrentUserId();
+        return id == null ? new MutableLiveData<>() : userRepository.observePublicStorefront(id);
+    }
     public String getCurrentUserId() { return authRepository.getCurrentUserId(); }
 
     public void signOut() { authRepository.signOut(); }
@@ -105,7 +109,7 @@ public class ProfileViewModel extends ViewModel {
                 || latitude < -90D || latitude > 90D || longitude < -180D || longitude > 180D
                 || (latitude == 0D && longitude == 0D)) {
             state.setValue(ProfileScreenState.error(
-                    "Hãy lấy GPS cửa hàng hoặc nhập tọa độ hợp lệ trước khi lưu để tính phí giao hàng."));
+                    "Hãy lấy GPS tại cửa hàng trước khi lưu để tính phí giao hàng."));
             return;
         }
         String userId = requireUserId(); if (userId == null) return;

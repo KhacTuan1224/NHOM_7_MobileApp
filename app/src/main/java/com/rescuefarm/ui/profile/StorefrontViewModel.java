@@ -14,11 +14,14 @@ public final class StorefrontViewModel extends ViewModel {
     public androidx.lifecycle.LiveData<SellerStorefront> observe(String id) { return repository.observe(id); }
     public void load(String id) { loading.setValue(true); repository.load(id, callback(false)); }
     public void save(SellerStorefront value) { loading.setValue(true); repository.save(value, callback(true)); }
+    public void savePaymentQr(String id, String qrUrl) {
+        loading.setValue(true); repository.savePaymentQr(id, qrUrl, callback(true));
+    }
     private StorefrontRepository.Callback callback(boolean saved) {
         return new StorefrontRepository.Callback() {
             public void success(SellerStorefront value) {
                 loading.setValue(false); storefront.setValue(value);
-                message.setValue(saved ? "Đã lưu thông tin công khai và thanh toán." : "");
+                message.setValue(saved ? "Đã lưu ảnh QR thanh toán." : "");
             }
             public void error(String value) { loading.setValue(false); message.setValue(value); }
         };

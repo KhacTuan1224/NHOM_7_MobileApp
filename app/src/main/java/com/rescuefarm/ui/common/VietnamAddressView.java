@@ -196,6 +196,17 @@ public final class VietnamAddressView extends LinearLayout {
     }
     public void clear() { setAddress("", "", "", ""); }
 
+    /** Autofill only when the geocoder agrees with the bundled address catalog. */
+    public boolean applyGeocodedAddress(com.rescuefarm.service.location.LocationProvider.GeocodedAddress value) {
+        if (catalog == null || value == null) return false;
+        Unit p = VietnamAddressCatalog.find(catalog.provinces(), value.getProvince());
+        Unit d = VietnamAddressCatalog.find(children(p), value.getDistrict());
+        Unit w = VietnamAddressCatalog.find(children(d), value.getWard());
+        if (p == null || d == null || w == null || value.getStreet().trim().length() < 3) return false;
+        setAddress(p.name, d.name, w.name, value.getStreet());
+        return true;
+    }
+
     @Override protected Parcelable onSaveInstanceState() {
         Bundle state = new Bundle(); state.putParcelable("super", super.onSaveInstanceState());
         state.putStringArray("address", catalog == null ? pending

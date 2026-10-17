@@ -44,6 +44,7 @@ public class ProfileFragment extends Fragment {
         android.view.ViewGroup form = (android.view.ViewGroup)statusView.getParent(); form.addView(businessInfo, form.indexOfChild(statusView) + 1);
         progress = view.findViewById(R.id.profileProgress);
         addressButton = view.findViewById(R.id.addressesButton);
+        addressButton.setVisibility(View.GONE);
         sellerButton = view.findViewById(R.id.sellerProfileButton);
         favoritesButton = view.findViewById(R.id.favoritesButton);
         view.findViewById(R.id.editProfileButton).setOnClickListener(
@@ -120,7 +121,7 @@ public class ProfileFragment extends Fragment {
             businessInfo.setVisibility(View.VISIBLE); businessInfo.setText("Khách hàng doanh nghiệp\n" + customer.getCompanyName() + "\nMã số thuế: " + customer.getTaxCode());
         }
         roleView.setText(user.getRole().name());
-        addressButton.setVisibility(View.VISIBLE);
+        addressButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         sellerButton.setVisibility(user.getRole() == UserRole.SELLER ? View.VISIBLE : View.GONE);
         favoritesButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         if (user instanceof Seller) {

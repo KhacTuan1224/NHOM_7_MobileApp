@@ -29,6 +29,11 @@ public class AddressListFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_address_list, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        if (com.rescuefarm.ui.navigation.ActorUiPolicy.isSeller(this)) {
+            androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.sellerProfileFragment);
+            return;
+        }
+
         container = view.findViewById(R.id.addressContainer);
         emptyView = view.findViewById(R.id.emptyAddressText);
         view.findViewById(R.id.addAddressButton).setOnClickListener(
