@@ -296,6 +296,9 @@
     <string name="cart_item_price_format">Đơn giá %1$s • Thành tiền %2$s</string>
     <string name="cart_no_sellable_batch">Không có batch còn hạn và đủ số lượng.</string>
     <string name="checkout_action">Checkout theo seller</string><string name="checkout_title">Checkout giải cứu</string>
+    <string name="checkout_use_gps_action">Lấy vị trí GPS hiện tại</string>
+    <string name="checkout_gps_fetching">Đang lấy vị trí GPS hiện tại…</string>
+    <string name="checkout_gps_success">Đã tự động điền địa chỉ từ vị trí hiện tại.</string>
     <string name="guest_checkout_notice">Guest checkout: giữ lại mã đơn và số điện thoại để tra cứu.</string><string name="customer_checkout_notice">Customer checkout: đơn gắn với tài khoản hiện tại.</string>
     <string name="receiver_name_hint">Tên người nhận</string><string name="receiver_phone_hint">Số điện thoại người nhận</string><string name="receiver_address_hint">Địa chỉ nhận hàng</string>
     <string name="fulfillment_label">Hình thức nhận hàng</string><string name="payment_method_label">Phương thức thanh toán</string><string name="order_note_hint">Ghi chú đơn hàng</string>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@color/rescue_background" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -18,6 +19,17 @@
         <TextView android:id="@+id/checkoutReceiverAddressTitle" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:text="@string/checkout_receiver_address_title"
             android:textStyle="bold" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/checkoutUseCurrentLocationButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target_min"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/checkout_use_gps_action"
+            android:textColor="@color/rescue_primary"
+            app:icon="@drawable/ic_home_location"
+            app:iconTint="@color/rescue_primary" />
         <TextView android:id="@+id/checkoutSelectedAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="12dp" android:visibility="gone" android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium" />
         <com.rescuefarm.ui.common.VietnamAddressView android:id="@+id/checkoutAddress" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <TextView android:id="@+id/checkoutLocationHint" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/checkout_location_hint" />

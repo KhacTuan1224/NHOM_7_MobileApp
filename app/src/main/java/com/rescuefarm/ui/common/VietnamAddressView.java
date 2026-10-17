@@ -161,10 +161,16 @@ public final class VietnamAddressView extends LinearLayout {
 
     /** Existing seller documents store a single formatted address; retain unmatched text. */
     public void setFormattedAddress(String address) {
-        if (catalog == null) {
-            setAddress("", "", "", address); pendingFormatted = safe(address); return;
+        String clean = safe(address);
+        if (clean.toLowerCase(java.util.Locale.ROOT).endsWith(", việt nam")) {
+            clean = clean.substring(0, clean.length() - 10).trim();
+        } else if (clean.toLowerCase(java.util.Locale.ROOT).endsWith(", vietnam")) {
+            clean = clean.substring(0, clean.length() - 9).trim();
         }
-        String[] parts = safe(address).split(",\\s*");
+        if (catalog == null) {
+            setAddress("", "", "", clean); pendingFormatted = clean; return;
+        }
+        String[] parts = clean.split(",\\s*");
         int n = parts.length;
         Unit p = n < 4 ? null : VietnamAddressCatalog.find(catalog.provinces(), parts[n - 1]);
         Unit d = n < 4 ? null : VietnamAddressCatalog.find(children(p), parts[n - 2]);
@@ -172,8 +178,8 @@ public final class VietnamAddressView extends LinearLayout {
         if (w != null) setAddress(p.name, d.name, w.name,
                 String.join(", ", java.util.Arrays.copyOf(parts, n - 3)));
         else {
-            setAddress("", "", "", address);
-            if (!safe(address).isEmpty()) status.setText(R.string.address_reselect_hint);
+            setAddress("", "", "", clean);
+            if (!clean.isEmpty()) status.setText(R.string.address_reselect_hint);
         }
     }
     public String province() { return province == null ? "" : province.name; }
@@ -198,13 +204,32 @@ public final class VietnamAddressView extends LinearLayout {
 
     /** Autofill only when the geocoder agrees with the bundled address catalog. */
     public boolean applyGeocodedAddress(com.rescuefarm.service.location.LocationProvider.GeocodedAddress value) {
-        if (catalog == null || value == null) return false;
+        if (value == null) return false;
+        if (catalog == null) {
+            if (value.getFullAddress() != null && !value.getFullAddress().trim().isEmpty()) {
+                setFormattedAddress(value.getFullAddress());
+            } else {
+                setAddress(value.getProvince(), value.getDistrict(), value.getWard(), value.getStreet());
+            }
+            return true;
+        }
         Unit p = VietnamAddressCatalog.find(catalog.provinces(), value.getProvince());
         Unit d = VietnamAddressCatalog.find(children(p), value.getDistrict());
         Unit w = VietnamAddressCatalog.find(children(d), value.getWard());
-        if (p == null || d == null || w == null || value.getStreet().trim().length() < 3) return false;
-        setAddress(p.name, d.name, w.name, value.getStreet());
-        return true;
+        if (p != null && d != null && w != null && value.getStreet() != null && value.getStreet().trim().length() >= 3) {
+            setAddress(p.name, d.name, w.name, value.getStreet().trim());
+            return true;
+        }
+        if (value.getFullAddress() != null && !value.getFullAddress().trim().isEmpty()) {
+            setFormattedAddress(value.getFullAddress());
+            if (isComplete()) return true;
+        }
+        if (p != null) {
+            setAddress(p.name, d != null ? d.name : "", w != null ? w.name : "",
+                    value.getStreet() == null ? "" : value.getStreet().trim());
+            return isComplete();
+        }
+        return false;
     }
 
     @Override protected Parcelable onSaveInstanceState() {
