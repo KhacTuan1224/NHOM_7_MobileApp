@@ -76,7 +76,7 @@ public class CampaignDetailFragment extends Fragment {
         root.findViewById(R.id.campaignRescueNowButton).setEnabled(purchase);
         boolean mobile=campaign.getRescueMode()==RescueMode.MOBILE_POINT;
         root.findViewById(R.id.campaignDirectionsButton).setEnabled(open && (!mobile || campaign.isLocationFresh(now)));
-        for(int id:new int[]{R.id.campaignSendCommentButton,R.id.campaignLikeButton,R.id.campaignSupportButton,R.id.campaignCareButton})
+        for(int id:new int[]{R.id.campaignSendCommentButton, R.id.campaignCareButton})
             root.findViewById(id).setEnabled(open && canUseCampaignSocialActions());
         if(mobile) {
             set(root,R.id.campaignDetailLocation,com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(campaign,now)
