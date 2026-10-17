@@ -77,6 +77,10 @@ public interface UserRepository {
             double longitude,
             UserCallback callback
     );
+    default void updateBusinessProfile(String userId, String fullName, String phone, String avatarUrl,
+            double latitude, double longitude, String companyName, String taxCode, UserCallback callback) {
+        callback.onError(ProfileError.VALIDATION, "Chưa hỗ trợ chỉnh sửa hồ sơ doanh nghiệp.");
+    }
     void updateSellerProfile(
             String sellerId,
             String representativeName,

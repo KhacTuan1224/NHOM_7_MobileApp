@@ -44,6 +44,16 @@ public final class HomeContentBuilder {
             Map<String, List<ProductBatch>> batchesByProduct, Double latitude, Double longitude,
             Date now, HomeViewState.LocationState locationState, boolean refreshing,
             String message, HomeViewState.DataFreshness freshness) {
+        return build(bannerSource, productSource, campaignSource, categorySource,
+                batchesByProduct, latitude, longitude, now, locationState, refreshing,
+                message, freshness, "");
+    }
+
+    public HomeViewState build(List<Banner> bannerSource, List<Product> productSource,
+            List<RescueCampaign> campaignSource, List<Category> categorySource,
+            Map<String, List<ProductBatch>> batchesByProduct, Double latitude, Double longitude,
+            Date now, HomeViewState.LocationState locationState, boolean refreshing,
+            String message, HomeViewState.DataFreshness freshness, String locationLabel) {
         Date safeNow = now == null ? new Date() : now;
         List<Banner> banners = new ArrayList<>();
         if (bannerSource != null) for (Banner value : bannerSource) {
@@ -51,11 +61,16 @@ public final class HomeContentBuilder {
         }
         banners.sort(Comparator.comparingInt(Banner::getDisplayOrder).thenComparing(Banner::getId));
 
+        Map<String, List<ProductBatch>> publicBatches = new LinkedHashMap<>();
+        if (productSource != null && batchesByProduct != null) for (Product product : productSource)
+            if (product != null && product.isAvailable()) publicBatches.put(product.getId(), batchesByProduct.get(product.getId()));
         List<RescueCampaign> active = new ArrayList<>();
         if (campaignSource != null) for (RescueCampaign value : campaignSource) {
             if (value != null && value.getStatus() == CampaignStatus.ACTIVE
-                    && value.getEndDate() != null && value.getEndDate().after(safeNow)) {
-                refreshUrgency(value, batchesByProduct, safeNow);
+                    && value.getEndDate() != null && value.getEndDate().after(safeNow)
+                    && (value.getStartDate() == null || !value.getStartDate().after(safeNow))
+                    && value.calculateRemainingQuantity() > 0D) {
+                refreshUrgency(value, publicBatches, safeNow);
                 active.add(value);
             }
         }
@@ -113,12 +128,45 @@ public final class HomeContentBuilder {
         }
         categories.sort(Comparator.comparingInt(Category::getDisplayOrder).thenComparing(Category::getName));
         return new HomeViewState(banners, critical, mobile, fixed, endingSoon, valueProducts,
-                active, categories, distances, locationState, refreshing, message, freshness, nearExpiry);
+                active, categories, distances, locationState, refreshing, message, freshness,
+                nearExpiry, locationLabel);
+    }
+
+    public List<VolumeOffer> volumeOffers(List<Product> products, Map<String, com.rescuefarm.domain.model.Promotion> promotions,
+            Map<String,List<ProductBatch>> batches, List<RescueCampaign> campaigns, Date now) {
+        List<VolumeOffer> offers=new ArrayList<>(); if(products==null||promotions==null||batches==null) return offers;
+        Map<String,RescueCampaign> byId=new LinkedHashMap<>(); if(campaigns!=null) for(RescueCampaign c:campaigns) byId.put(c.getId(),c);
+        for(Product p:products) {
+            if(p==null||!p.isAvailable()) continue;
+            com.rescuefarm.domain.model.Promotion promo=promotions.get(p.getId());
+            if(promo==null||!promo.isValid(now)||!p.getSellerId().equals(promo.getSellerId())||!p.getId().equals(promo.getProductId())) continue;
+            List<ProductBatch> stock=batches.get(p.getId()); if(stock==null) continue;
+            VolumeOffer best=null;
+            for(ProductBatch batch:stock) {
+                if(batch==null||!batch.isSellable(now)) continue;
+                double available=batch.getAvailableQuantity(); String cid=batch.getActiveCampaignId();
+                if(cid!=null&&!cid.isEmpty()) {
+                    RescueCampaign c=byId.get(cid); if(!com.rescuefarm.service.campaign.CampaignTimeFormatter.canPurchase(c,now)) continue;
+                    available=Math.min(available,c.calculateRemainingForBatch(batch.getId()));
+                }
+                for(Map.Entry<String,Double> tier:promo.getQuantityDiscountTiers().entrySet()) {
+                    double threshold; try{threshold=Double.parseDouble(tier.getKey());}catch(NumberFormatException e){continue;}
+                    if(!Double.isFinite(threshold)||threshold<=0||available+.000001<threshold||tier.getValue()<=0) continue;
+                    double percent=promo.calculateDiscount(threshold);
+                    double price=new com.rescuefarm.service.pricing.PricingService().calculatePrice(p.getOriginalPrice(),p.getRescuePrice(),threshold,promo,now).getFinalUnitPrice();
+                    VolumeOffer candidate=new VolumeOffer(p,batch.getId(),cid,threshold,percent,price);
+                    if(best==null||threshold<best.threshold||(threshold==best.threshold&&batch.getId().compareTo(best.batchId)<0)) best=candidate;
+                }
+            }
+            if(best!=null) offers.add(best);
+        }
+        offers.sort(java.util.Comparator.comparingDouble((VolumeOffer o)->o.percent).reversed().thenComparing(o->o.product.getId()));
+        return offers;
     }
 
     private void refreshUrgency(RescueCampaign campaign,
             Map<String, List<ProductBatch>> batchesByProduct, Date now) {
-        if (batchesByProduct == null || batchesByProduct.isEmpty()) return;
+        if (batchesByProduct == null) batchesByProduct = java.util.Collections.emptyMap();
         Date earliest = null;
         for (List<ProductBatch> values : batchesByProduct.values()) if (values != null) {
             for (ProductBatch batch : values) if (batch != null
@@ -129,7 +177,7 @@ public final class HomeContentBuilder {
                 earliest = batch.getExpiryDate();
             }
         }
-        if (earliest != null && campaign.getEndDate() != null) campaign.calculateUrgency(now, earliest);
+        if (campaign.getEndDate() != null) campaign.calculateUrgency(now, earliest);
     }
 
     private static Comparator<RescueCampaign> campaignComparator() {

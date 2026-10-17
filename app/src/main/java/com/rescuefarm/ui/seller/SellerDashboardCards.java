@@ -76,7 +76,8 @@ final class SellerDashboardCards {
         background.setCornerRadius(dp(context, 14));
         background.setStroke(dp(context, 1), ContextCompat.getColor(context, R.color.rescue_outline));
         card.setBackground(background);
-        card.setElevation(dp(context, 2));
+        card.setElevation(0);
+        card.setMinimumHeight(dp(context, 112));
 
         TextView title = new TextView(context);
         title.setText(metric.title);
@@ -108,7 +109,7 @@ final class SellerDashboardCards {
         }
 
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+                LinearLayout.LayoutParams.MATCH_PARENT, 1);
         cardParams.setMarginEnd(endMargin);
         row.addView(card, cardParams);
     }

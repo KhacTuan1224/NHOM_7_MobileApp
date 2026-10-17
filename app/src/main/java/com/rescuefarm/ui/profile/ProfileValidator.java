@@ -4,9 +4,11 @@ public final class ProfileValidator {
     private ProfileValidator() { }
 
     public static String validateProfile(String fullName, String phone) {
-        if (clean(fullName).length() < 2) return "Họ tên phải có ít nhất 2 ký tự.";
-        if (!isPhone(phone)) return "Số điện thoại phải có 9 đến 11 chữ số.";
-        return null;
+        return com.rescuefarm.service.profile.ProfileInputPolicy.profile(fullName, phone);
+    }
+
+    public static String validateBusiness(String companyName, String taxCode) {
+        return com.rescuefarm.service.profile.ProfileInputPolicy.business(companyName, taxCode);
     }
 
     public static String validateAddress(String receiverName, String phone, String province,

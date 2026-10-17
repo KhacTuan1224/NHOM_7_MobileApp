@@ -15,10 +15,10 @@ import org.junit.Test;
 
 public class HomeContentBuilderTest {
     @Test public void sectionOrder_includesBatchExpiryBeforeValueProducts() {
-        assertEquals(10, HomeViewState.SECTION_ORDER.size());
+        assertEquals(11, HomeViewState.SECTION_ORDER.size());
         assertEquals(HomeViewState.Section.NEAR_EXPIRY, HomeViewState.SECTION_ORDER.get(5));
         assertEquals(HomeViewState.Section.BANNERS, HomeViewState.SECTION_ORDER.get(0));
-        assertEquals(HomeViewState.Section.RESCUE_FEED, HomeViewState.SECTION_ORDER.get(9));
+        assertEquals(HomeViewState.Section.RESCUE_FEED, HomeViewState.SECTION_ORDER.get(10));
     }
 
     @Test public void criticalIsFirst_andStaleMobileIsExcludedFromNearby() {
@@ -75,10 +75,53 @@ public class HomeContentBuilderTest {
         assertTrue(state.getNearExpiry().isEmpty());
     }
 
+    @Test public void customLocationLabelIsPreservedInViewState() {
+        HomeViewState state = new HomeContentBuilder().build(Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+                Collections.emptyMap(), 10.7769D, 106.7009D, new Date(),
+                HomeViewState.LocationState.AVAILABLE, false, "OK",
+                HomeViewState.DataFreshness.FRESH, "TP. Hồ Chí Minh");
+        assertEquals("TP. Hồ Chí Minh", state.getLocationLabel());
+        assertEquals(HomeViewState.LocationState.AVAILABLE, state.getLocationState());
+    }
+
+    @Test public void formatAddress_formatsStreetWardAndProvinceAccurately() {
+        com.rescuefarm.service.location.LocationProvider.GeocodedAddress address =
+                new com.rescuefarm.service.location.LocationProvider.GeocodedAddress(
+                        "Thành phố Hồ Chí Minh", "Bình Thạnh", "Bình Lợi Trung", "111/8/8");
+        String formatted = HomeViewModel.formatAddress(address);
+        assertEquals("111/8/8, Bình Lợi Trung, Hồ Chí Minh", formatted);
+    }
+
+    @Test public void formatAddress_shortensLongAddressWithEllipsisOrCompact() {
+        com.rescuefarm.service.location.LocationProvider.GeocodedAddress address =
+                new com.rescuefarm.service.location.LocationProvider.GeocodedAddress(
+                        "Hồ Chí Minh", "Bình Thạnh", "Phường 13", "111/8/2 Đ. Đặng Thuỳ Trâm");
+        String formatted = HomeViewModel.formatAddress(address);
+        assertEquals("111/8/2 Đ. Đặng Thuỳ Trâm, Hồ Chí Minh", formatted);
+    }
+
     private com.rescuefarm.domain.model.Product product(String id) {
         return new com.rescuefarm.domain.model.Product(id, "seller", "category", "Rau " + id, "",
                 40000, 30000, "kg", "", "", Collections.emptyList(), com.rescuefarm.domain.enums.ProductStatus.ACTIVE);
     }
+    @Test public void urgencyAndVisibilityAdvanceWithoutDocumentChanges() {
+        Date now = new Date(TimeUnit.DAYS.toMillis(100));
+        RescueCampaign c = campaign("clock", UrgencyLevel.NORMAL, RescueMode.FIXED_POINT, now, null, false);
+        java.util.Map<String, java.util.List<com.rescuefarm.domain.model.ProductBatch>> batches = Collections.singletonMap("a",
+                Collections.singletonList(batch("batch", "a", now, 4, com.rescuefarm.domain.enums.BatchStatus.RESERVED_PARTIAL)));
+        HomeContentBuilder builder = new HomeContentBuilder();
+        HomeViewState first = builder.build(Collections.emptyList(), Collections.singletonList(product("a")), Collections.singletonList(c),
+                Collections.emptyList(), batches, null, null, now, HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertEquals(UrgencyLevel.HIGH, first.getActiveCampaigns().get(0).getUrgencyLevel());
+        HomeViewState later = builder.build(Collections.emptyList(), Collections.singletonList(product("a")), Collections.singletonList(c),
+                Collections.emptyList(), batches, null, null, new Date(now.getTime() + TimeUnit.DAYS.toMillis(2)), HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertEquals(UrgencyLevel.CRITICAL, later.getActiveCampaigns().get(0).getUrgencyLevel());
+        HomeViewState expired = builder.build(Collections.emptyList(), Collections.singletonList(product("a")), Collections.singletonList(c),
+                Collections.emptyList(), batches, null, null, new Date(now.getTime() + TimeUnit.DAYS.toMillis(10)), HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertTrue(expired.getActiveCampaigns().isEmpty());
+    }
+
     private com.rescuefarm.domain.model.ProductBatch batch(String id, String product, Date now, int days,
             com.rescuefarm.domain.enums.BatchStatus status) {
         boolean sold = status == com.rescuefarm.domain.enums.BatchStatus.SOLD_OUT;
@@ -91,7 +134,7 @@ public class HomeContentBuilderTest {
         return RescueCampaign.restore(id, "seller", "Chiến dịch " + id, "Mô tả",
                 RescueReason.OVER_SUPPLY, urgency, mode, Collections.singletonMap("batch", 10D),
                 10D, 0D, 0D, new Date(now.getTime() - 1000L),
-                new Date(now.getTime() + TimeUnit.DAYS.toMillis(2)), 10D, 106D,
+                new Date(now.getTime() + TimeUnit.DAYS.toMillis(urgency == UrgencyLevel.CRITICAL ? 1 : urgency == UrgencyLevel.HIGH ? 3 : 10)), 10D, 106D,
                 10D, 106D, locationAt, sharing, "TP HCM", CampaignStatus.ACTIVE);
     }
 }

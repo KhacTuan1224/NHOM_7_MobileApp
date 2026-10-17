@@ -194,9 +194,7 @@ public class FirebasePostRepository implements PostRepository {
         }).addOnSuccessListener(saved -> {
             com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
                     previousImageUrls, saved.getImageUrls());
-            if (submit && saved.getStatus() == PostStatus.PENDING_APPROVAL)
-                com.rescuefarm.service.notification.AdminNotificationClient.notifyAdmins(
-                        "MODERATION_SUBMISSION", saved.getId(), "POST");
+
             cache(saved); callback.onSuccess(saved);
         })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));

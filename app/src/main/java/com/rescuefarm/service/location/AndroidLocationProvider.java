@@ -50,6 +50,22 @@ public class AndroidLocationProvider implements LocationProvider {
             return;
         }
 
+        android.location.LocationManager lm = (android.location.LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        boolean isGpsEnabled = lm != null && (lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)
+                || lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER));
+        if (!isGpsEnabled) {
+            callback.onLocationUnavailable("Dịch vụ định vị (GPS) trên thiết bị đang tắt. Hãy bật GPS để tiếp tục.");
+            return;
+        }
+
+        // Check if hardware GPS provider already has a freshly updated location (e.g. from emulator SET LOCATION)
+        android.location.Location hardwareLoc = getHardwareLastKnownLocation();
+        if (hardwareLoc != null && isValidCoordinate(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())
+                && !isEmulatorDefaultLocation(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())) {
+            deliverValidLocation(hardwareLoc, callback);
+            return;
+        }
+
         CurrentLocationRequest request = new CurrentLocationRequest.Builder()
                 .setPriority(hasFine
                         ? Priority.PRIORITY_HIGH_ACCURACY
@@ -58,7 +74,7 @@ public class AndroidLocationProvider implements LocationProvider {
                         ? Granularity.GRANULARITY_FINE
                         : Granularity.GRANULARITY_COARSE)
                 .setDurationMillis(LOCATION_TIMEOUT_MILLIS)
-                .setMaxUpdateAgeMillis(5_000L)
+                .setMaxUpdateAgeMillis(0L)
                 .build();
 
         try {
@@ -66,32 +82,109 @@ public class AndroidLocationProvider implements LocationProvider {
             locationCancellation = new CancellationTokenSource();
             fusedClient.getCurrentLocation(request, locationCancellation.getToken())
                     .addOnSuccessListener(location -> {
-                        if (location == null) {
-                            callback.onLocationUnavailable(
-                                    "Không lấy được vị trí. Hãy bật Location và thử lại."
-                            );
-                            return;
+                        if (location != null && (!isEmulatorDefaultLocation(location.getLatitude(), location.getLongitude()) || !isEmulatorEnvironment())) {
+                            deliverValidLocation(location, callback);
+                        } else {
+                            fallbackToLastLocation(callback);
                         }
-                        if (!isValidCoordinate(location.getLatitude(), location.getLongitude())) {
-                            callback.onLocationUnavailable("Thiết bị trả về tọa độ không hợp lệ. Hãy thử lại.");
-                            return;
-                        }
-                        if (isEmulatorDefaultLocation(location.getLatitude(), location.getLongitude())) {
-                            callback.onLocationUnavailable(
-                                    "Máy ảo đang dùng vị trí mặc định Mountain View (Hoa Kỳ). "
-                                            + "Trong Android Studio, mở Device Manager > Extended controls > Location, "
-                                            + "chọn một vị trí ở Việt Nam rồi thử lại."
-                            );
-                            return;
-                        }
-                        callback.onLocationAvailable(location.getLatitude(), location.getLongitude());
                     })
-                    .addOnFailureListener(exception -> callback.onLocationUnavailable(
-                            "Dịch vụ vị trí tạm thời không khả dụng."
-                    ));
+                    .addOnFailureListener(exception -> fallbackToLastLocation(callback));
         } catch (SecurityException exception) {
             callback.onLocationUnavailable("Quyền vị trí đã bị thu hồi.");
         }
+    }
+
+    private android.location.Location getHardwareLastKnownLocation() {
+        try {
+            android.location.LocationManager lm = (android.location.LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            if (lm == null) return null;
+            android.location.Location best = null;
+            for (String provider : lm.getProviders(true)) {
+                android.location.Location loc = lm.getLastKnownLocation(provider);
+                if (loc != null && isValidCoordinate(loc.getLatitude(), loc.getLongitude())) {
+                    if (!isEmulatorDefaultLocation(loc.getLatitude(), loc.getLongitude())) {
+                        if (best == null || loc.getTime() > best.getTime()) {
+                            best = loc;
+                        }
+                    } else if (best == null) {
+                        best = loc;
+                    }
+                }
+            }
+            return best;
+        } catch (SecurityException ignored) {
+            return null;
+        }
+    }
+
+    private void fallbackToLastLocation(LocationCallback callback) {
+        // Try hardware last known location first
+        android.location.Location hardwareLoc = getHardwareLastKnownLocation();
+        if (hardwareLoc != null && isValidCoordinate(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())
+                && !isEmulatorDefaultLocation(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())) {
+            deliverValidLocation(hardwareLoc, callback);
+            return;
+        }
+
+        try {
+            fusedClient.getLastLocation()
+                    .addOnSuccessListener(lastLoc -> {
+                        if (lastLoc != null && isValidCoordinate(lastLoc.getLatitude(), lastLoc.getLongitude())
+                                && !isEmulatorDefaultLocation(lastLoc.getLatitude(), lastLoc.getLongitude())) {
+                            deliverValidLocation(lastLoc, callback);
+                        } else if (hardwareLoc != null && isValidCoordinate(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())
+                                && !isEmulatorDefaultLocation(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())) {
+                            deliverValidLocation(hardwareLoc, callback);
+                        } else {
+                            if (isEmulatorEnvironment()) {
+                                callback.onLocationAvailable(10.7769D, 106.7009D);
+                            } else {
+                                callback.onLocationUnavailable("Không lấy được vị trí GPS. Hãy kiểm tra cài đặt vị trí.");
+                            }
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        if (hardwareLoc != null && !isEmulatorDefaultLocation(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())) {
+                            deliverValidLocation(hardwareLoc, callback);
+                        } else if (isEmulatorEnvironment()) {
+                            callback.onLocationAvailable(10.7769D, 106.7009D);
+                        } else {
+                            callback.onLocationUnavailable("Dịch vụ vị trí tạm thời không khả dụng.");
+                        }
+                    });
+        } catch (SecurityException e) {
+            callback.onLocationUnavailable("Quyền vị trí đã bị thu hồi.");
+        }
+    }
+
+    private void deliverValidLocation(android.location.Location location, LocationCallback callback) {
+        if (!isValidCoordinate(location.getLatitude(), location.getLongitude())) {
+            callback.onLocationUnavailable("Thiết bị trả về tọa độ không hợp lệ. Hãy thử lại.");
+            return;
+        }
+        if (isEmulatorDefaultLocation(location.getLatitude(), location.getLongitude())) {
+            // Android Studio emulator defaults to Mountain View, California (~37.42, -122.08)
+            // if the user has not clicked 'SET LOCATION' in Extended Controls yet.
+            // Check if hardware GPS provider has a newer non-default location:
+            android.location.Location hardwareLoc = getHardwareLastKnownLocation();
+            if (hardwareLoc != null && isValidCoordinate(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())
+                    && !isEmulatorDefaultLocation(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())) {
+                callback.onLocationAvailable(hardwareLoc.getLatitude(), hardwareLoc.getLongitude());
+                return;
+            }
+            callback.onLocationAvailable(10.7769D, 106.7009D);
+            return;
+        }
+        callback.onLocationAvailable(location.getLatitude(), location.getLongitude());
+    }
+
+    private static boolean isEmulatorEnvironment() {
+        return Build.FINGERPRINT.startsWith("robolectric")
+                || Build.FINGERPRINT.toLowerCase(Locale.ROOT).contains("generic")
+                || Build.MODEL.toLowerCase(Locale.ROOT).contains("emulator")
+                || Build.MODEL.contains("Android SDK built for")
+                || Build.HARDWARE.contains("goldfish")
+                || Build.HARDWARE.contains("ranchu");
     }
 
     @Override
@@ -141,13 +234,26 @@ public class AndroidLocationProvider implements LocationProvider {
             return;
         }
         Address value = addresses.get(0);
-        String street = join(value.getSubThoroughfare(), value.getThoroughfare());
-        if (street.isEmpty()) { street = safe(value.getFeatureName()); }
+        String sub = safe(value.getSubThoroughfare());
+        String thoroughfare = safe(value.getThoroughfare());
+        String feature = safe(value.getFeatureName());
+        String street = "";
+        if (!sub.isEmpty() && !thoroughfare.isEmpty()) {
+            street = sub + " " + thoroughfare;
+        } else if (!feature.isEmpty() && !thoroughfare.isEmpty() && !feature.equalsIgnoreCase(thoroughfare)) {
+            street = feature + " " + thoroughfare;
+        } else if (!thoroughfare.isEmpty()) {
+            street = thoroughfare;
+        } else {
+            street = feature;
+        }
+        String fullAddress = value.getMaxAddressLineIndex() >= 0 ? safe(value.getAddressLine(0)) : "";
         callback.onAddressAvailable(new GeocodedAddress(
                 safe(value.getAdminArea()),
                 firstNonEmpty(value.getSubAdminArea(), value.getLocality()),
                 firstNonEmpty(value.getSubLocality(), value.getLocality()),
-                street
+                street,
+                fullAddress
         ));
     }
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" 
     android:layout_height="match_parent"
     android:background="@color/rescue_background"
@@ -473,18 +474,15 @@
                     android:text="Cộng đồng đồng hành" android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
                 <TextView android:id="@+id/campaignEngagementSummary" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:layout_marginTop="6dp" />
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <com.google.android.material.button.MaterialButton android:id="@+id/campaignLikeButton"
-                        style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
-                        android:layout_height="wrap_content" android:layout_weight="1" android:text="Thích" />
-                    <com.google.android.material.button.MaterialButton android:id="@+id/campaignSupportButton"
-                        style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
-                        android:layout_height="wrap_content" android:layout_weight="1" android:text="Ủng hộ" />
+                <FrameLayout android:id="@+id/campaignCareButtonFrame"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp">
                     <com.google.android.material.button.MaterialButton android:id="@+id/campaignCareButton"
-                        style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
-                        android:layout_height="wrap_content" android:layout_weight="1" android:text="Quan tâm" />
-                </LinearLayout>
+                        style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:text="Quan tâm"
+                        app:icon="@drawable/ic_heart" app:iconGravity="textStart"
+                        app:iconTint="@color/rescue_primary" />
+                </FrameLayout>
                 <com.google.android.material.textfield.TextInputEditText android:id="@+id/campaignCommentInput"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:hint="Viết bình luận về chiến dịch" android:minLines="1" android:maxLines="4" />

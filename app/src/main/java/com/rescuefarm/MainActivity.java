@@ -24,20 +24,27 @@ import com.rescuefarm.data.repository.AuthRepositoryFactory;
 import com.rescuefarm.domain.enums.UserRole;
 import com.rescuefarm.domain.model.User;
 import com.rescuefarm.service.sync.OfflineSyncScheduler;
+import com.rescuefarm.ui.common.NavigationScrollListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationScrollListener {
     private AuthStateListener authStateListener;
     private UserRole currentRole;
     private final MutableLiveData<UserRole> actorRole = new MutableLiveData<>();
     private NavController navController;
     private MaterialButton centerActionButton;
+    private String pendingNotification = "";
+    private boolean openingNotification;
+    private int actorRequest;
+    private boolean bottomNavigationHidden;
+    private int scrollDirectionDistance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         OfflineSyncScheduler.schedule(getApplicationContext());
+        com.rescuefarm.service.notification.FcmDeviceSyncWorker.schedule(getApplicationContext());
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         getWindow().setNavigationBarColor(ContextCompat.getColor(this, R.color.rescue_nav_surface));
@@ -102,6 +109,8 @@ public class MainActivity extends AppCompatActivity {
                         ordersButton, profileButton, destination)
         );
         authStateListener = firebaseAuth -> restoreActorRole();
+        pendingNotification = getPreferences(MODE_PRIVATE).getString("pendingNotification", "");
+        captureNotificationIntent(getIntent());
     }
 
     @Override protected void onStart() {
@@ -115,22 +124,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void restoreActorRole() {
+        final int request = ++actorRequest;
+        final String sessionUid = FirebaseAuth.getInstance().getCurrentUser() == null ? "" : FirebaseAuth.getInstance().getCurrentUser().getUid();
         boolean hasSession = FirebaseAuth.getInstance().getCurrentUser() != null;
         currentRole = null;
         actorRole.setValue(null);
         updateCenterAction(hasSession);
-        if (!hasSession) return;
+        if (!hasSession) { openPendingNotification(); return; }
         AuthRepositoryFactory.create(this).restoreSession(
                 new com.rescuefarm.data.repository.AuthRepository.AuthCallback() {
                     @Override public void onSuccess(User user) {
+                        if (request != actorRequest || FirebaseAuth.getInstance().getCurrentUser() == null
+                                || !sessionUid.equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) return;
                         currentRole = user == null ? null : user.getRole();
                         actorRole.setValue(currentRole);
                         updateCenterAction();
+                        getWindow().getDecorView().post(MainActivity.this::openPendingNotification);
                     }
                     @Override public void onError(com.rescuefarm.data.repository.AuthRepository.ErrorCode error,
                             String message) {
+                        if (request != actorRequest) return;
                         updateCenterAction(true);
                         actorRole.setValue(null);
+                        if (!pendingNotification.isEmpty()) android.widget.Toast.makeText(MainActivity.this,
+                                "Chưa xác định được quyền tài khoản. Kiểm tra kết nối và thử mở thông báo lại.", android.widget.Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -156,7 +173,120 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public UserRole getResolvedActorRole() { return currentRole; }
+    @Override protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent); setIntent(intent); captureNotificationIntent(intent);
+        if (currentRole == null && FirebaseAuth.getInstance().getCurrentUser() != null) restoreActorRole(); else openPendingNotification();
+    }
+    private void captureNotificationIntent(android.content.Intent intent) {
+        android.net.Uri uri = intent == null ? null : intent.getData();
+        if (uri != null && "rescuefarm".equals(uri.getScheme()) && "notification".equals(uri.getHost()))
+            queueNotification(uri.getLastPathSegment());
+    }
+    private void queueNotification(String id) {
+        if (id == null || !id.matches("[A-Za-z0-9_-]{1,128}")) return;
+        pendingNotification = id; getPreferences(MODE_PRIVATE).edit().putString("pendingNotification", id).apply();
+    }
+    public void openNotification(String id) {
+        queueNotification(id);
+        if (currentRole == null && FirebaseAuth.getInstance().getCurrentUser() != null) restoreActorRole(); else openPendingNotification();
+    }
+    private void openPendingNotification() {
+        if (pendingNotification.isEmpty() || openingNotification || navController == null) return;
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) { navigateTo(navController, R.id.loginFragment); return; }
+        if (currentRole == null) return;
+        final String id = pendingNotification, uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        openingNotification = true;
+        org.json.JSONObject request = new org.json.JSONObject();
+        try { request.put("notificationId", id); } catch (org.json.JSONException ignored) { return; }
+        com.rescuefarm.service.backend.RenderBackendClient.post("/notifications/resolve", request,
+            new com.rescuefarm.service.backend.RenderBackendClient.Callback() {
+                public void onSuccess(org.json.JSONObject response) {
+                    openingNotification = false;
+                    if (isFinishing() || FirebaseAuth.getInstance().getCurrentUser() == null
+                            || !uid.equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) return;
+                    if (currentRole == null) return; // Keep the pending ID while onStart restores the actor.
+                    if (!pendingNotification.equals(id)) { openPendingNotification(); return; }
+                    int destination = notificationDestination(response.optString("destination"));
+                    if (destination == 0 || destination == R.id.adminDetailFragment && currentRole != UserRole.ADMIN) {
+                        notificationFailure("Nội dung không khả dụng với tài khoản hiện tại."); return;
+                    }
+                    try {
+                        Bundle args = new Bundle(); org.json.JSONObject values = response.optJSONObject("args");
+                        if (values != null) {
+                            java.util.Iterator<String> keys = values.keys();
+                            while (keys.hasNext()) { String key = keys.next(); Object value = values.opt(key);
+                                if (value instanceof Boolean) args.putBoolean(key, (Boolean)value); else args.putString(key, String.valueOf(value)); }
+                        }
+                        navController.navigate(destination, args);
+                        if (!response.optString("message").isEmpty()) android.widget.Toast.makeText(MainActivity.this, response.optString("message"), android.widget.Toast.LENGTH_LONG).show();
+                        if (pendingNotification.equals(id)) clearPendingNotification();
+                        com.rescuefarm.service.backend.RenderBackendClient.post("/notifications/read", request,
+                            new com.rescuefarm.service.backend.RenderBackendClient.Callback() {
+                                public void onSuccess(org.json.JSONObject value) { }
+                                public void onError(String message) { android.widget.Toast.makeText(MainActivity.this, "Đã mở nội dung; chưa cập nhật được trạng thái đã đọc.", android.widget.Toast.LENGTH_SHORT).show(); }
+                            });
+                    } catch (RuntimeException error) { notificationFailure("Không mở được nội dung. Bạn có thể thử lại từ Thông báo."); }
+                }
+                public void onError(String message) { openingNotification = false; if (pendingNotification.equals(id)) notificationFailure(message); else openPendingNotification(); }
+            });
+    }
+    private int notificationDestination(String name) {
+        switch (name) {
+            case "adminDetailFragment": return R.id.adminDetailFragment;
+            case "reportResultFragment": return R.id.reportResultFragment;
+            case "sellerApplicationFragment": return R.id.sellerApplicationFragment;
+            case "sellerProfileFragment": return R.id.sellerProfileFragment;
+            case "orderDetailFragment": return R.id.orderDetailFragment;
+            case "campaignDetailFragment": return R.id.campaignDetailFragment;
+            case "productDetailFragment": return R.id.productDetailFragment;
+            case "reviewFragment": return R.id.reviewFragment;
+            case "postDetailFragment": return R.id.postDetailFragment;
+            case "profileFragment": return R.id.profileFragment;
+            case "notificationFragment": return R.id.notificationFragment;
+            default: return 0;
+        }
+    }
+    private void clearPendingNotification() { pendingNotification = ""; getPreferences(MODE_PRIVATE).edit().remove("pendingNotification").apply(); }
+    private void notificationFailure(String message) {
+        clearPendingNotification(); android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_LONG).show();
+    }
     public LiveData<UserRole> observeActorRole() { return actorRole; }
+
+    @Override public void onContentScrolled(int deltaY, boolean atTop) {
+        if (deltaY == 0) return;
+        if (atTop && deltaY < 0) {
+            scrollDirectionDistance = 0;
+            setBottomNavigationHidden(false);
+            return;
+        }
+        int direction = deltaY > 0 ? 1 : -1;
+        if (scrollDirectionDistance != 0 && Integer.signum(scrollDirectionDistance) != direction)
+            scrollDirectionDistance = 0;
+        scrollDirectionDistance += deltaY;
+        int threshold = Math.round(12 * getResources().getDisplayMetrics().density);
+        if (Math.abs(scrollDirectionDistance) >= threshold) {
+            setBottomNavigationHidden(direction > 0);
+            scrollDirectionDistance = 0;
+        }
+    }
+
+    private void setBottomNavigationHidden(boolean hidden) {
+        View navigation = findViewById(R.id.customerBottomNavigationContainer);
+        if (navigation == null || navigation.getVisibility() != View.VISIBLE
+                || bottomNavigationHidden == hidden) return;
+        bottomNavigationHidden = hidden;
+        float density = getResources().getDisplayMetrics().density;
+        float distance = (navigation.getHeight() > 0 ? navigation.getHeight()
+                : getResources().getDimensionPixelSize(R.dimen.customer_bottom_navigation_height))
+                + 12 * density;
+        navigation.animate().cancel();
+        navigation.animate()
+                .translationY(hidden ? distance : 0f)
+                .alpha(hidden ? 0f : 1f)
+                .setDuration(220)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+    }
 
     private void navigateTo(NavController navController, int destinationId) {
         if (navController.getCurrentDestination() != null
@@ -227,9 +357,13 @@ public class MainActivity extends AppCompatActivity {
             navHostParams.bottomMargin = desiredBottomMargin;
             navHost.setLayoutParams(navHostParams);
         }
-        findViewById(R.id.customerBottomNavigationContainer).setVisibility(
-                show ? android.view.View.VISIBLE : android.view.View.GONE
-        );
+        View bottomNavigation = findViewById(R.id.customerBottomNavigationContainer);
+        bottomNavigation.animate().cancel();
+        bottomNavigation.setVisibility(show ? View.VISIBLE : View.GONE);
+        bottomNavigation.setTranslationY(0f);
+        bottomNavigation.setAlpha(1f);
+        bottomNavigationHidden = false;
+        scrollDirectionDistance = 0;
         ViewCompat.requestApplyInsets(findViewById(R.id.mainRoot));
         
         int inactive = ContextCompat.getColor(this, R.color.rescue_on_surface_variant);

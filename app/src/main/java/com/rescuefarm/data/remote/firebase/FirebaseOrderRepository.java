@@ -400,78 +400,19 @@ public class FirebaseOrderRepository implements OrderRepository {
     @Override public void transitionOrder(String orderId,OrderStatus target,LifecycleCallback callback){
         if(!network.isOnline()){callback.onError(ErrorCode.NETWORK,"Cập nhật trạng thái cần kết nối mạng.");return;}
         if(clean(orderId).isEmpty()||target==null){callback.onError(ErrorCode.VALIDATION,"Đơn hoặc trạng thái không hợp lệ.");return;}
-        DocumentReference orderRef=db.collection(ORDERS).document(orderId);
-        db.runTransaction(tx->{
-            DocumentSnapshot orderDoc=tx.get(orderRef);
-            if(!orderDoc.exists())throw new IllegalStateException("ORDER_NOT_FOUND");
-            Order order=mapOrder(orderDoc,new ArrayList<>());
-            boolean replay=lifecycle.isReplay(order.getStatus(),target);
-            if(replay)return true;
-            lifecycle.requireLegalTransition(order.getFulfillmentType(),order.getStatus(),target,
-                    order.getPaymentMethod(),order.getPaymentStatus());
-            if(Boolean.TRUE.equals(orderDoc.getBoolean("inventoryFinalized")))throw new IllegalStateException("ORDER_ALREADY_FINALIZED");
-            DocumentReference paymentRef=db.collection(PAYMENTS).document(orderId);
-            DocumentSnapshot paymentDoc=tx.get(paymentRef);
-            if(!paymentDoc.exists())throw new IllegalStateException("PAYMENT_NOT_FOUND");
-            DocumentReference shipmentRef=db.collection(SHIPMENTS).document(orderId);
-            DocumentSnapshot shipmentDoc=null;
-            if(lifecycle.requiresShipment(order.getFulfillmentType())){
-                shipmentDoc=tx.get(shipmentRef);if(!shipmentDoc.exists())throw new IllegalStateException("SHIPMENT_NOT_FOUND");
-            }
-            Map<String,Double> reservations=reservationMap(orderDoc.get("batchReservations"));
-            Map<String,DocumentSnapshot> batchDocs=new HashMap<>();
-            for(String batchId:reservations.keySet())batchDocs.put(batchId,tx.get(db.collection(BATCHES).document(batchId)));
-            DocumentSnapshot campaignDoc=clean(order.getCampaignId()).isEmpty()?null:
-                    tx.get(db.collection(CAMPAIGNS).document(order.getCampaignId()));
-
-            PaymentStatus nextPayment=lifecycle.paymentStatusForTerminal(order.getPaymentMethod(),
-                    order.getPaymentStatus(),target);
-            boolean terminal=target==OrderStatus.DELIVERED||target==OrderStatus.CANCELLED;
-            if(terminal){
-                for(Map.Entry<String,Double> entry:reservations.entrySet()){
-                    DocumentSnapshot before=batchDocs.get(entry.getKey());
-                    if(before==null||!before.exists())throw new IllegalStateException("BATCH_UNAVAILABLE");
-                    ProductBatch batch=requireBatch(before,before.getString("productId"));
-                    if(target==OrderStatus.DELIVERED)inventory.commitReservedStock(batch,entry.getValue());
-                    else inventory.releaseReservedStock(batch,entry.getValue());
-                    Map<String,Object> update=new HashMap<>();
-                    update.put("availableQuantity",batch.getAvailableQuantity());update.put("reservedQuantity",batch.getReservedQuantity());
-                    update.put("soldQuantity",batch.getSoldQuantity());update.put("status",batch.getStatus().name());
-                    update.put("inventoryVersion",longValue(before,"inventoryVersion")+1L);
-                    update.put("lastLifecycleOrderId",orderId);update.put("lastLifecycleAction",target.name());
-                    update.put("lastLifecycleQuantity",entry.getValue());update.put("updatedAt",FieldValue.serverTimestamp());
-                    tx.update(before.getReference(),update);
+        try {
+            JSONObject request = new JSONObject().put("orderId", orderId).put("targetStatus", target.name());
+            RenderBackendClient.post("/orders/transition", request, new RenderBackendClient.Callback() {
+                @Override public void onSuccess(JSONObject response) {
+                    fetchLifecycle(orderId, response.optBoolean("replay"), callback);
                 }
-                double campaignQuantity=number(orderDoc,"campaignReservedQuantity");
-                if(campaignDoc!=null&&campaignQuantity>0D){
-                    if(!campaignDoc.exists()||number(campaignDoc,"reservedQuantity")+0.000001<campaignQuantity)
-                        throw new IllegalStateException("CAMPAIGN_CONFLICT");
-                    Map<String,Object> update=new HashMap<>();
-                    update.put("reservedQuantity",number(campaignDoc,"reservedQuantity")-campaignQuantity);
-                    double rescued=number(campaignDoc,"rescuedQuantity")+(target==OrderStatus.DELIVERED?campaignQuantity:0D);
-                    update.put("rescuedQuantity",rescued);update.put("lastLifecycleOrderId",orderId);
-                    update.put("lastLifecycleAction",target.name());update.put("lastLifecycleQuantity",campaignQuantity);
-                    if(target==OrderStatus.DELIVERED&&rescued+0.000001>=number(campaignDoc,"targetQuantity"))update.put("status",CampaignStatus.COMPLETED.name());
-                    update.put("updatedAt",FieldValue.serverTimestamp());tx.update(campaignDoc.getReference(),update);
+                @Override public void onError(String message) {
+                    callback.onError(ErrorCode.CONFLICT, message);
                 }
-            }
-            Map<String,Object> orderUpdate=new HashMap<>();orderUpdate.put("status",target.name());
-            orderUpdate.put("paymentStatus",nextPayment.name());orderUpdate.put("updatedAt",FieldValue.serverTimestamp());
-            if(terminal){orderUpdate.put("inventoryFinalized",true);orderUpdate.put("finalizedStatus",target.name());}
-            tx.update(orderRef,orderUpdate);
-            if (OrderOwnerType.CUSTOMER.name().equals(orderDoc.getString("ownerType")))
-                writeOrderNotification(tx, orderId, orderDoc.getString("ownerId"), target);
-            if(terminal){Map<String,Object> paymentUpdate=new HashMap<>();paymentUpdate.put("status",nextPayment.name());
-                paymentUpdate.put("updatedAt",FieldValue.serverTimestamp());
-                if(nextPayment==PaymentStatus.PAID&&!PaymentStatus.PAID.name().equals(paymentDoc.getString("status")))
-                    paymentUpdate.put("paidAt",FieldValue.serverTimestamp());
-                tx.update(paymentRef,paymentUpdate);}
-            if(shipmentDoc!=null){Map<String,Object> shipmentUpdate=new HashMap<>();
-                shipmentUpdate.put("status",lifecycle.shipmentStatusFor(target).name());
-                shipmentUpdate.put("updatedAt",FieldValue.serverTimestamp());tx.update(shipmentRef,shipmentUpdate);}
-            return false;
-        }).addOnSuccessListener(replay->fetchLifecycle(orderId,replay,callback))
-                .addOnFailureListener(e->failure(e,callback));
+            });
+        } catch (org.json.JSONException error) {
+            callback.onError(ErrorCode.VALIDATION, "Không tạo được yêu cầu cập nhật đơn.");
+        }
     }
 
     @Override public void confirmBankTransfer(String orderId,String referenceCode,LifecycleCallback callback){
@@ -488,7 +429,7 @@ public class FirebaseOrderRepository implements OrderRepository {
                     ||OrderStatus.CANCELLED.name().equals(order.getString("status")))throw new IllegalStateException("PAYMENT_NOT_CONFIRMABLE");
             tx.update(paymentRef,"status",PaymentStatus.PAID.name(),"referenceCode",reference,
                     "paidAt",FieldValue.serverTimestamp(),"updatedAt",FieldValue.serverTimestamp());
-            tx.update(orderRef,"paymentStatus",PaymentStatus.PAID.name(),"updatedAt",FieldValue.serverTimestamp());return false;
+            tx.update(orderRef,"paymentStatus",PaymentStatus.PAID.name(),"updatedAt",FieldValue.serverTimestamp());com.rescuefarm.service.notification.NotificationOutbox.enqueue(tx,db,"ORDER_PAYMENT","ORDER",orderId);return false;
         }).addOnSuccessListener(replay->fetchLifecycle(orderId,replay,callback))
                 .addOnFailureListener(e->failure(e,callback));
     }

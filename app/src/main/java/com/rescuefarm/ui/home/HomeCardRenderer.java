@@ -49,7 +49,9 @@ public final class HomeCardRenderer {
         body.addView(imageFrame(image, dp(112), 12));
 
         TextView title = text(campaign.getTitle(), 14, true, R.color.rescue_on_surface);
-        title.setMaxLines(2); title.setPadding(0, dp(8), 0, dp(3)); body.addView(title);
+        title.setMinLines(2); title.setMaxLines(2);
+        title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        title.setPadding(0, dp(8), 0, dp(3)); body.addView(title);
 
         TextView urgency = text(campaign.getUrgencyLevel() == UrgencyLevel.CRITICAL
                 ? "CẦN GIẢI CỨU GẤP" : campaign.getHighlightLabel(), 10, true,
@@ -66,7 +68,11 @@ public final class HomeCardRenderer {
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, dp(6));
         progressParams.setMargins(0, dp(6), 0, dp(4)); body.addView(progress, progressParams);
 
-        String unit = related == null ? "kg" : related.getUnit();
+        if ("REVIEW_REQUIRED".equals(campaign.getUnitStatus())) {
+            progress.setVisibility(View.GONE);
+            body.addView(text("Cần đối soát đơn vị chiến dịch", 12, true, R.color.rescue_on_surface_variant));
+        } else {
+        String unit = campaign.getQuantityUnitLabel();
         body.addView(text(String.format(Locale.forLanguageTag("vi-VN"),
                 "%.0f%% hoàn thành · mục tiêu %.2f %s", campaign.calculateProgress(),
                 campaign.getTargetQuantity(), unit),
@@ -76,6 +82,7 @@ public final class HomeCardRenderer {
                 campaign.getRescuedQuantity(), campaign.getReservedQuantity(),
                 campaign.calculateRemainingQuantity(), unit),
                 11, false, R.color.rescue_on_surface_variant));
+        }
         if (Double.isFinite(distance)) {
             body.addView(text(String.format(Locale.forLanguageTag("vi-VN"), "Cách bạn %.1f km", distance),
                     10, false, R.color.rescue_on_surface_variant));

@@ -49,7 +49,6 @@ public class OrderDetailFragment extends Fragment {
     private View statusActionTitle, bankTransferActionTitle;
     private View transitionButton, confirmButton;
     private String orderId = "";
-    private String lastObservedEvent = "";
     private final OrderLifecycleService lifecycleService = new OrderLifecycleService();
     private List<OrderStatus> displayedTargets = Collections.emptyList();
 
@@ -212,10 +211,6 @@ public class OrderDetailFragment extends Fragment {
         }
         if (state.getStatus() != OrderLifecycleState.Status.SUCCESS) return;
         Order order = state.getOrder(); Payment payment = state.getPayment(); Shipment shipment = state.getShipment();
-        String eventKey = order.getStatus().name() + "_" + payment.getStatus().name();
-        if (order.getOwnerType() == com.rescuefarm.domain.enums.OrderOwnerType.CUSTOMER
-                && !lastObservedEvent.isEmpty() && !lastObservedEvent.equals(eventKey)) notifyOrderEvent();
-        lastObservedEvent = eventKey;
         orderCodeView.setText("Mã đơn " + order.getOrderCode());
         orderStatusView.setText(statusLabel(order.getStatus(), order.getFulfillmentType()));
         renderOrderInfo(order, payment, shipment);
@@ -257,18 +252,6 @@ public class OrderDetailFragment extends Fragment {
         renderItems(order, customer);
         if (bank && !seller) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
-    }
-
-    private void notifyOrderEvent() {
-        JSONObject request = new JSONObject();
-        try { request.put("type", "ORDER"); request.put("referenceId", orderId); }
-        catch (org.json.JSONException ignored) { return; }
-        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
-            @Override public void onSuccess(JSONObject response) { }
-            @Override public void onError(String error) {
-                // Order state remains visible in Firestore; push/inbox delivery is best-effort on Render free tier.
-            }
-        });
     }
 
     private void renderTimeline(Order order) {

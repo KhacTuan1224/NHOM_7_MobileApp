@@ -257,6 +257,20 @@ public final class FirebaseAdminRepository implements AdminRepository {
             callback.onError(ErrorCode.VALIDATION, "Thiếu dữ liệu chuyển trạng thái."); return;
         }
         ensureAdmin(() -> {
+            if (section == Section.CAMPAIGNS) {
+                try {
+                    JSONObject request = new JSONObject().put("campaignId", id)
+                            .put("targetStatus", target).put("reason", note);
+                    RenderBackendClient.post("/campaigns/moderate", request, new RenderBackendClient.Callback() {
+                        @Override public void onSuccess(JSONObject response) {
+                            callback.onSuccess();
+
+                        }
+                        @Override public void onError(String message) { callback.onError(ErrorCode.CONFLICT, message); }
+                    });
+                } catch (org.json.JSONException error) { callback.onError(ErrorCode.VALIDATION, "Yêu cầu duyệt không hợp lệ."); }
+                return;
+            }
             if (section == Section.SELLER_APPLICATIONS) {
                 db.collection(section.getCollection()).document(id).get()
                         .addOnSuccessListener(application -> {
@@ -643,15 +657,14 @@ public final class FirebaseAdminRepository implements AdminRepository {
         String targetId = trim(String.valueOf(detail.get("targetId")));
         String collection = targetCollection(type);
         if ("COMMENT".equals(type)) {
-            db.collectionGroup("comments").whereEqualTo("id", targetId).limit(1).get()
-                    .addOnSuccessListener(snapshot -> {
-                        if (snapshot.isEmpty()) { callback.onSuccess(detail); return; }
-                        DocumentSnapshot comment = snapshot.getDocuments().get(0);
-                        Map<String, Object> target = new HashMap<>(comment.getData());
-                        target.put("id", comment.getId()); target.put("postId", comment.getReference().getParent().getParent().getId());
-                        detail.put("target", target);
-                        loadModerationContext(Section.REPORTS, detail, callback);
-                    }).addOnFailureListener(error -> fail(error, callback));
+            resolveCommentReference(detail, reference -> reference.get().addOnSuccessListener(comment -> {
+                if (!comment.exists()) { callback.onSuccess(detail); return; }
+                Map<String, Object> target = new HashMap<>(comment.getData());
+                target.put("id", comment.getId()); target.put("targetPath", reference.getPath());
+                target.put("parentId", reference.getParent().getParent().getId());
+                target.put("parentType", reference.getPath().startsWith("campaigns/") ? "CAMPAIGN" : "POST");
+                detail.put("target", target); loadModerationContext(Section.REPORTS, detail, callback);
+            }).addOnFailureListener(error -> fail(error, callback)), message -> { detail.put("targetResolutionError", message); callback.onSuccess(detail); });
         } else if (collection.isEmpty()) callback.onSuccess(detail);
         else db.collection(collection).document(targetId).get().addOnSuccessListener(target -> {
             if (target.exists()) {
@@ -661,6 +674,31 @@ public final class FirebaseAdminRepository implements AdminRepository {
             }
             loadModerationContext(Section.REPORTS, detail, callback);
         }).addOnFailureListener(error -> fail(error, callback));
+    }
+
+    /** Explicit paths take precedence. Legacy ID-only reports must resolve uniquely. */
+    private void resolveCommentReference(Map<String, Object> report,
+            java.util.function.Consumer<DocumentReference> success, java.util.function.Consumer<String> error) {
+        String id = mapText(report, "targetId"), path = mapText(report, "targetPath");
+        if (!path.isEmpty()) {
+            String[] parts = path.split("/", -1);
+            String parentType = path.startsWith("campaigns/") ? "CAMPAIGN" : "POST";
+            if (parts.length != 4 || !(parts[0].equals("campaigns") || parts[0].equals("posts"))
+                    || !parts[2].equals("comments") || !parts[3].equals(id) || parts[1].isEmpty()
+                    || !parts[1].equals(mapText(report, "parentId")) || !parentType.equals(mapText(report, "parentType"))) {
+                error.accept("Ngữ cảnh bình luận trong báo cáo không hợp lệ."); return;
+            }
+            success.accept(db.document(path)); return;
+        }
+        db.collectionGroup("comments").whereEqualTo("id", id).limit(2).get().addOnSuccessListener(matches -> {
+            if (matches.size() != 1) { error.accept(matches.isEmpty() ? "Bình luận đã bị xóa."
+                    : "Báo cáo cũ có ID trùng ở nhiều nơi; cần bổ sung parentType, parentId và targetPath trước khi xử lý."); return; }
+            DocumentReference reference = matches.getDocuments().get(0).getReference();
+            if (!reference.getPath().matches("(campaigns|posts)/[^/]+/comments/[^/]+")) {
+                error.accept("Loại bình luận không được hỗ trợ."); return;
+            }
+            success.accept(reference);
+        }).addOnFailureListener(e -> error.accept("Không tải được bình luận: " + e.getMessage()));
     }
 
     private static final class RelatedDocument {
@@ -718,6 +756,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 }
                 break;
             case REPORTS:
+                String parentType = mapText(subject, "parentType"), parentId = mapText(subject, "parentId");
+                if (!parentId.isEmpty() && ("CAMPAIGN".equals(parentType) || "POST".equals(parentType)))
+                    related.add(new RelatedDocument(db.collection("CAMPAIGN".equals(parentType) ? "campaigns" : "posts").document(parentId), "commentParent"));
                 Object targetRaw = detail.get("target");
                 if (targetRaw instanceof Map<?, ?>) {
                     Map<?, ?> target = (Map<?, ?>) targetRaw;
@@ -776,11 +817,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 runReportResolution(id, action, note, null, callback); return;
             }
             if ("COMMENT".equals(type)) {
-                db.collectionGroup("comments").whereEqualTo("id", targetId).limit(1).get()
-                        .addOnSuccessListener(matches -> {
-                            if (matches.isEmpty()) { callback.onError(ErrorCode.NOT_FOUND, "Không tìm thấy bình luận."); return; }
-                            runReportResolution(id, action, note, matches.getDocuments().get(0).getReference(), callback);
-                        }).addOnFailureListener(error -> fail(error, callback));
+                resolveCommentReference(report.getData(), reference ->
+                        runReportResolution(id, action, note, reference, callback),
+                        message -> callback.onError(ErrorCode.VALIDATION, message));
                 return;
             }
             String collection = targetCollection(type);
@@ -808,6 +847,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 if (collection.isEmpty()) throw new IllegalArgumentException("Unsupported report target");
                 targetRef = db.collection(collection).document(trim(report.getString("targetId")));
             }
+            if ("COMMENT".equals(type) && targetRef != null && !clean(report.getString("targetPath")).isEmpty()
+                    && !targetRef.getPath().equals(report.getString("targetPath"))) throw new IllegalStateException("REPORT_TARGET_MISMATCH");
             DocumentSnapshot target = targetRef == null ? null : tx.get(targetRef);
             if (targetRef != null && (target == null || !target.exists()))
                 throw new IllegalStateException("REPORT_TARGET_NOT_FOUND");
@@ -851,6 +892,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 Map<String, Object> targetAudit = auditMap(adminId,
                         sectionForCollection(targetCollection), target.getId(), targetStatus,
                         String.valueOf(changes.get("status")), note);
+                if ("comments".equals(targetCollection)) {
+                    targetAudit.put("resourceType", "COMMENTS"); targetAudit.put("resourcePath", targetRef.getPath());
+                }
                 targetAudit.put("reportId", reportId);
                 tx.set(db.collection(AUDIT).document(), targetAudit);
                 if (reviewProduct != null) FirebaseReviewSummary.update(tx, reviewProduct, target,
@@ -1009,20 +1053,11 @@ public final class FirebaseAdminRepository implements AdminRepository {
             return true;
         }).addOnSuccessListener(value -> {
             callback.onSuccess();
-            if (section == Section.CAMPAIGNS && "ACTIVE".equals(target)) notifyCampaignCustomers(id);
+
         })
                 .addOnFailureListener(error -> fail(error, callback));
     }
 
-    private void notifyCampaignCustomers(String campaignId) {
-        JSONObject request = new JSONObject();
-        try { request.put("type", "CAMPAIGN"); request.put("referenceId", campaignId); }
-        catch (org.json.JSONException ignored) { return; }
-        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
-            @Override public void onSuccess(JSONObject response) { }
-            @Override public void onError(String message) { }
-        });
-    }
 
     private void ensureAdmin(Runnable action, Object callback) {
         if (auth.getCurrentUser() == null) {

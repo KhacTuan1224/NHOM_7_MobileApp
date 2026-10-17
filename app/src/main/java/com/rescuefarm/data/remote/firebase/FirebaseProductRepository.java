@@ -305,6 +305,8 @@ public class FirebaseProductRepository implements ProductRepository {
         List<String> previousImageUrls = new ArrayList<>();
         firestore.runTransaction(transaction -> {
             DocumentSnapshot existing = transaction.get(reference);
+            if (existing.exists() && !java.util.Objects.equals(existing.getString("unit"), saved.getUnit()))
+                throw new IllegalArgumentException("Không đổi đơn vị của sản phẩm đã tạo; hãy tạo sản phẩm mới để giữ đúng số liệu lịch sử.");
             previousImageUrls.clear();
             if (existing.exists()) {
                 Object oldImages = existing.get("imageUrls");
@@ -461,16 +463,20 @@ public class FirebaseProductRepository implements ProductRepository {
     @Override public LiveData<Promotion> observePromotion(String productId) {
         return new LiveData<Promotion>() {
             private ListenerRegistration registration;
-            @Override protected void onActive() {
-                registration = firestore.collection(PROMOTIONS).document(productId)
-                        .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
-                            postValue(snapshot.exists() ? mapPromotion(snapshot) : null);
-                        });
+            private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+            private final Runnable retry = this::listen;
+            private void listen() {
+                if (!hasActiveObservers()) return;
+                if (registration != null) registration.remove();
+                registration = firestore.collection(PROMOTIONS).document(productId).addSnapshotListener((snapshot, error) -> {
+                    if (error != null || snapshot == null) {
+                        postValue(null); handler.removeCallbacks(retry); handler.postDelayed(retry, 60000L); return;
+                    }
+                    handler.removeCallbacks(retry); postValue(snapshot.exists() ? mapPromotion(snapshot) : null);
+                });
             }
-            @Override protected void onInactive() {
-                if (registration != null) { registration.remove(); registration = null; }
-            }
+            @Override protected void onActive() { listen(); }
+            @Override protected void onInactive() { handler.removeCallbacks(retry); if (registration != null) { registration.remove(); registration = null; } }
         };
     }
 
@@ -512,8 +518,9 @@ public class FirebaseProductRepository implements ProductRepository {
             if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
             else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
             transaction.set(promotionRef, data);
+            if (candidate.isActive()) com.rescuefarm.service.notification.NotificationOutbox.enqueue(transaction, firestore, "PROMOTION", "PROMOTION", candidate.getProductId());
             return candidate;
-        }).addOnSuccessListener(saved -> { callback.onSuccess(saved); notifyPromotionCustomers(saved.getProductId()); })
+        }).addOnSuccessListener(saved -> { callback.onSuccess(saved); })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
@@ -526,19 +533,10 @@ public class FirebaseProductRepository implements ProductRepository {
             DocumentSnapshot product = transaction.get(firestore.collection(PRODUCTS).document(productId));
             requireOwner(product);
             transaction.update(promotionRef, "active", active, "updatedAt", FieldValue.serverTimestamp());
+            if (active) com.rescuefarm.service.notification.NotificationOutbox.enqueue(transaction, firestore, "PROMOTION", "PROMOTION", productId);
             return null;
-        }).addOnSuccessListener(unused -> { callback.onSuccess(); if (active) notifyPromotionCustomers(productId); })
+        }).addOnSuccessListener(unused -> { callback.onSuccess(); })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
-    }
-
-    private void notifyPromotionCustomers(String productId) {
-        JSONObject request = new JSONObject();
-        try { request.put("type", "PROMOTION"); request.put("referenceId", productId); }
-        catch (org.json.JSONException ignored) { return; }
-        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
-            @Override public void onSuccess(JSONObject response) { }
-            @Override public void onError(String message) { }
-        });
     }
 
     @Override public void getCartQuote(String productId, String batchId, CartQuoteCallback callback) {

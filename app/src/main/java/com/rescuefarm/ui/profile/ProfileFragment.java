@@ -25,6 +25,7 @@ import com.rescuefarm.domain.model.User;
 public class ProfileFragment extends Fragment {
     private ProfileViewModel viewModel;
     private TextView nameView, emailView, roleView, statusView;
+    private TextView businessInfo;
     private ImageView avatarView;
     private View progress, addressButton, sellerButton, favoritesButton;
 
@@ -39,6 +40,8 @@ public class ProfileFragment extends Fragment {
         roleView = view.findViewById(R.id.profileRole);
         statusView = view.findViewById(R.id.profileStatus);
         avatarView = view.findViewById(R.id.profileAvatar);
+        businessInfo = new TextView(requireContext()); businessInfo.setVisibility(View.GONE);
+        android.view.ViewGroup form = (android.view.ViewGroup)statusView.getParent(); form.addView(businessInfo, form.indexOfChild(statusView) + 1);
         progress = view.findViewById(R.id.profileProgress);
         addressButton = view.findViewById(R.id.addressesButton);
         sellerButton = view.findViewById(R.id.sellerProfileButton);
@@ -109,6 +112,12 @@ public class ProfileFragment extends Fragment {
             avatarView.setImageResource(R.drawable.ic_nav_profile);
             avatarView.setImageTintList(android.content.res.ColorStateList.valueOf(
                     requireContext().getColor(R.color.rescue_primary)));
+        }
+        businessInfo.setVisibility(View.GONE);
+        if (user instanceof com.rescuefarm.domain.model.Customer && ((com.rescuefarm.domain.model.Customer)user).getCustomerType()
+                == com.rescuefarm.domain.enums.CustomerType.BUSINESS) {
+            com.rescuefarm.domain.model.Customer customer = (com.rescuefarm.domain.model.Customer)user;
+            businessInfo.setVisibility(View.VISIBLE); businessInfo.setText("Khách hàng doanh nghiệp\n" + customer.getCompanyName() + "\nMã số thuế: " + customer.getTaxCode());
         }
         roleView.setText(user.getRole().name());
         addressButton.setVisibility(View.VISIBLE);

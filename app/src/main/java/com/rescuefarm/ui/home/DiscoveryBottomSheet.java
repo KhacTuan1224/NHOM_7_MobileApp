@@ -173,7 +173,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
 
     private void render(List<DiscoveryResult> values) {
         results.removeAllViews();
-        count.setText(values.size() + " kết quả từ cache/Firestore");
+        count.setText(values.size() + " kết quả · Giá và lượng bán so sánh trong cùng đơn vị");
         if (values.isEmpty()) {
             results.addView(renderer.message("Không tìm thấy dữ liệu phù hợp."));
             return;
@@ -182,8 +182,16 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
             if (value.getType() == DiscoveryResult.Type.PRODUCT) {
                 results.addView(renderer.product(value.getProduct(), v -> openProduct(value)));
             } else {
-                results.addView(renderer.campaign(value.getCampaign(), value.getDistanceKilometers(),
+                android.widget.LinearLayout group = new android.widget.LinearLayout(requireContext());
+                group.setOrientation(android.widget.LinearLayout.VERTICAL);
+                group.addView(renderer.campaign(value.getCampaign(), value.getDistanceKilometers(),
                         v -> openCampaign(value.getCampaign().getId())));
+                android.widget.TextView metrics = new android.widget.TextView(requireContext());
+                metrics.setText(String.format(java.util.Locale.forLanguageTag("vi-VN"),
+                        "Từ %,.0f đ / %s · Giảm tối đa %.0f%%\nĐã giao trong Campaign: %.2f %s (toàn thời gian)",
+                        value.getMinimumPrice(), value.getCampaign().getQuantityUnitLabel(), value.getMaximumDiscount(),
+                        value.getSoldQuantity(), value.getCampaign().getQuantityUnitLabel()));
+                group.addView(metrics); results.addView(group);
             }
         }
     }
@@ -193,16 +201,20 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
                 == PackageManager.PERMISSION_GRANTED;
         boolean coarse = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED;
-        if (fine || coarse) viewModel.requestNearbyLocation();
-        else permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+        if (fine || coarse) {
+            Toast.makeText(requireContext(), "Đang lấy vị trí hiện tại…", Toast.LENGTH_SHORT).show();
+            viewModel.requestNearbyLocation();
+        } else permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION});
     }
 
     private void onPermissions(Map<String, Boolean> values) {
         if (Boolean.TRUE.equals(values.get(Manifest.permission.ACCESS_FINE_LOCATION))
                 || Boolean.TRUE.equals(values.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
+            Toast.makeText(requireContext(), "Đang lấy vị trí hiện tại…", Toast.LENGTH_SHORT).show();
             viewModel.requestNearbyLocation();
         } else {
+            Toast.makeText(requireContext(), "Chưa có quyền vị trí.", Toast.LENGTH_SHORT).show();
             viewModel.onLocationPermissionDenied();
         }
     }

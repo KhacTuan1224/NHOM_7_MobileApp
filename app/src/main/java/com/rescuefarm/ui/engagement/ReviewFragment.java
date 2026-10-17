@@ -335,6 +335,7 @@ public class ReviewFragment extends Fragment {
             TextView text = new TextView(requireContext());
             text.setText(getString(R.string.review_row_format, review.getRating(), review.getContent()));
             row.addView(text);
+            ReviewMediaRenderer.append(this, row, review);
             if (uid.equals(review.getCustomerId())) {
                 LinearLayout actions = new LinearLayout(requireContext());
                 com.google.android.material.button.MaterialButton edit = new com.google.android.material.button.MaterialButton(
@@ -359,6 +360,7 @@ public class ReviewFragment extends Fragment {
                                 () -> requestRatingRecalculation("", review.getOrderId(), review.getOrderItemId()))).show());
                 actions.addView(edit); actions.addView(delete); row.addView(actions);
             }
+            ContextReportAction.add(this, row, "REVIEW", review.getId(), review.getCustomerId(), "Báo cáo đánh giá");
             list.addView(row);
         }
         bindSelectedReview();

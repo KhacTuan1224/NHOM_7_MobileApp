@@ -3,6 +3,10 @@ package com.rescuefarm.ui.profile;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.util.Log;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -18,6 +22,11 @@ import android.text.Editable;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebResourceError;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -40,8 +49,15 @@ public class EditProfileFragment extends Fragment {
     private TextInputEditText nameInput, phoneInput, avatarInput;
     private TextView locationView, sellerLocationTitle, sellerLocationDescription, mapCaption;
     private View openGoogleMapsButton;
+    private View businessSection;
+    private android.widget.EditText companyInput, taxInput;
+    private boolean businessCustomer;
     private View mapContainer;
     private WebView locationMap;
+    private TextView mapStatus;
+    private final Handler mapHandler = new Handler(Looper.getMainLooper());
+    private int mapGeneration;
+    private double mappedLatitude = Double.NaN, mappedLongitude = Double.NaN;
     private ImageView avatarPreview;
     private TextView avatarStatus;
     private View uploadAvatarButton;
@@ -74,7 +90,7 @@ public class EditProfileFragment extends Fragment {
         sellerLocationTitle.setVisibility(sellerVisibility);
         sellerLocationDescription.setVisibility(sellerVisibility);
         mapCaption.setVisibility(sellerVisibility);
-        openGoogleMapsButton.setVisibility(sellerVisibility);
+        openGoogleMapsButton.setVisibility(View.VISIBLE);
         locationView.setVisibility(sellerMap ? View.GONE : View.VISIBLE);
         if (sellerMap) {
             com.google.android.material.button.MaterialButton gpsButton = view.findViewById(R.id.useProfileLocationButton);
@@ -85,7 +101,28 @@ public class EditProfileFragment extends Fragment {
         openGoogleMapsButton.setOnClickListener(v -> openGoogleMaps());
         mapContainer = view.findViewById(R.id.profileMapContainer);
         locationMap = view.findViewById(R.id.profileLocationMap);
+        mapStatus = view.findViewById(R.id.profileMapStatus);
+        mapStatus.setOnClickListener(v -> {
+            mappedLatitude = Double.NaN;
+            showMap(latitude, longitude);
+        });
         configureMap();
+        android.widget.LinearLayout business = new android.widget.LinearLayout(requireContext()); business.setOrientation(android.widget.LinearLayout.VERTICAL);
+        android.widget.TextView heading = new android.widget.TextView(requireContext()); heading.setText("Thông tin khách hàng doanh nghiệp"); business.addView(heading);
+        companyInput = new android.widget.EditText(requireContext()); companyInput.setHint("Tên doanh nghiệp");
+        companyInput.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(160)});
+        taxInput = new android.widget.EditText(requireContext()); taxInput.setHint("Mã số thuế");
+        taxInput.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(40)});
+        business.addView(companyInput); business.addView(taxInput); businessSection = business; business.setVisibility(View.GONE);
+        android.widget.LinearLayout form = (android.widget.LinearLayout)view.findViewById(R.id.saveProfileButton).getParent();
+        form.addView(business, 1);
+        if(state!=null && state.containsKey("profileDirty")) {
+            binding=true; dirty=state.getBoolean("profileDirty"); businessCustomer=state.getBoolean("businessCustomer");
+            companyInput.setText(state.getString("companyName","")); taxInput.setText(state.getString("taxCode",""));
+            nameInput.setText(state.getString("fullName","")); phoneInput.setText(state.getString("phone","")); avatarInput.setText(state.getString("avatar",""));
+            latitude=state.getDouble("latitude"); longitude=state.getDouble("longitude");
+            businessSection.setVisibility(businessCustomer?View.VISIBLE:View.GONE); binding=false; renderAvatar(avatarInput.getText().toString()); showCoordinates();
+        }
         viewModel = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext()))
                 .get(ProfileViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
@@ -98,15 +135,29 @@ public class EditProfileFragment extends Fragment {
         };
         nameInput.addTextChangedListener(watcher);
         phoneInput.addTextChangedListener(watcher);
-        avatarInput.addTextChangedListener(watcher);
+        avatarInput.addTextChangedListener(watcher); companyInput.addTextChangedListener(watcher); taxInput.addTextChangedListener(watcher);
         viewModel.observeProfile().observe(getViewLifecycleOwner(), user -> {
-            if (user != null && !dirty) populate(user);
+            if (user != null) {
+                businessCustomer=user instanceof com.rescuefarm.domain.model.Customer && ((com.rescuefarm.domain.model.Customer)user).getCustomerType()==com.rescuefarm.domain.enums.CustomerType.BUSINESS;
+                businessSection.setVisibility(businessCustomer?View.VISIBLE:View.GONE);
+                if(!dirty)populate(user);
+            }
         });
         view.findViewById(R.id.useProfileLocationButton).setOnClickListener(v -> requestLocation());
         uploadAvatarButton.setOnClickListener(v -> avatarPicker.launch("image/*"));
-        view.findViewById(R.id.saveProfileButton).setOnClickListener(v -> viewModel.updateProfile(
-                text(nameInput), text(phoneInput), text(avatarInput), latitude, longitude));
+        view.findViewById(R.id.saveProfileButton).setOnClickListener(v -> {
+            if (businessCustomer) viewModel.updateBusinessProfile(text(nameInput), text(phoneInput), text(avatarInput), latitude, longitude,
+                    companyInput.getText().toString().trim(), taxInput.getText().toString().trim());
+            else viewModel.updateProfile(text(nameInput), text(phoneInput), text(avatarInput), latitude, longitude);
+        });
         viewModel.loadProfile();
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle out) {
+        super.onSaveInstanceState(out); out.putBoolean("profileDirty",dirty); out.putBoolean("businessCustomer",businessCustomer);
+        if(companyInput!=null)out.putString("companyName",companyInput.getText().toString()); if(taxInput!=null)out.putString("taxCode",taxInput.getText().toString());
+        if(nameInput!=null)out.putString("fullName",text(nameInput)); if(phoneInput!=null)out.putString("phone",text(phoneInput)); if(avatarInput!=null)out.putString("avatar",text(avatarInput));
+        out.putDouble("latitude",latitude);out.putDouble("longitude",longitude);
     }
 
     private void render(ProfileScreenState state) {
@@ -126,6 +177,13 @@ public class EditProfileFragment extends Fragment {
         binding = true;
         nameInput.setText(user.getFullName()); phoneInput.setText(user.getPhone());
         avatarInput.setText(user.getAvatarUrl()); latitude = user.getLatitude(); longitude = user.getLongitude();
+        businessCustomer = user instanceof com.rescuefarm.domain.model.Customer
+                && ((com.rescuefarm.domain.model.Customer)user).getCustomerType() == com.rescuefarm.domain.enums.CustomerType.BUSINESS;
+        businessSection.setVisibility(businessCustomer ? View.VISIBLE : View.GONE);
+        if (businessCustomer) {
+            com.rescuefarm.domain.model.Customer customer = (com.rescuefarm.domain.model.Customer)user;
+            companyInput.setText(customer.getCompanyName()); taxInput.setText(customer.getTaxCode());
+        }
         renderAvatar(user.getAvatarUrl());
         binding = false;
         showCoordinates();
@@ -154,9 +212,9 @@ public class EditProfileFragment extends Fragment {
             mapCaption.setText("Vị trí GPS hồ sơ" + System.lineSeparator()
                     + "Vĩ độ " + String.format(Locale.US, "%.6f", latitude)
                     + " · Kinh độ " + String.format(Locale.US, "%.6f", longitude));
-            openGoogleMapsButton.setEnabled(Double.isFinite(latitude) && Double.isFinite(longitude)
-                    && (latitude != 0D || longitude != 0D));
         }
+        openGoogleMapsButton.setEnabled(Double.isFinite(latitude) && Double.isFinite(longitude)
+                && (latitude != 0D || longitude != 0D));
         showMap(latitude, longitude);
     }
 
@@ -176,7 +234,36 @@ public class EditProfileFragment extends Fragment {
         String defaultUserAgent = settings.getUserAgentString();
         settings.setUserAgentString(defaultUserAgent + " RescueFarmAndroidApp/1.0 (com.example.nhom_7_mobileapp)");
         locationMap.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-        locationMap.setWebViewClient(new WebViewClient());
+        locationMap.setWebViewClient(new WebViewClient() {
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                if ("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) {
+                    String path = uri.getPath();
+                    if ("/maps/leaflet.js".equals(path) || "/maps/leaflet.css".equals(path)) {
+                        try {
+                            return new WebResourceResponse(path.endsWith(".js") ? "text/javascript" : "text/css",
+                                    "UTF-8", view.getContext().getAssets().open("maps/leaflet/" + uri.getLastPathSegment()));
+                        } catch (java.io.IOException error) {
+                            Log.e("ProfileMap", "Missing bundled map library", error);
+                            return new WebResourceResponse("text/plain", "UTF-8",
+                                    new java.io.ByteArrayInputStream(new byte[0]));
+                        }
+                    }
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                Log.w("ProfileMap", "Resource failed: " + request.getUrl().getHost() + ", code=" + error.getErrorCode());
+            }
+        });
+        locationMap.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage message) {
+                if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
+                    Log.e("ProfileMap", message.message());
+                return true;
+            }
+        });
     }
 
     private void showMap(double lat, double lon) {
@@ -184,12 +271,40 @@ public class EditProfileFragment extends Fragment {
                 || lat < -90D || lat > 90D || lon < -180D || lon > 180D
                 || (lat == 0D && lon == 0D)) {
             mapContainer.setVisibility(View.GONE);
+            mapGeneration++;
+            mapHandler.removeCallbacksAndMessages(null);
+            mappedLatitude = Double.NaN;
             return;
         }
         mapContainer.setVisibility(View.VISIBLE);
+        if (Double.compare(mappedLatitude, lat) == 0 && Double.compare(mappedLongitude, lon) == 0) return;
+        mappedLatitude = lat;
+        mappedLongitude = lon;
+        mapHandler.removeCallbacksAndMessages(null);
+        int generation = ++mapGeneration;
+        mapStatus.setText(R.string.profile_map_loading);
+        mapStatus.setVisibility(View.VISIBLE);
+        mapStatus.setEnabled(false);
         String html = mapHtml(lat, lon);
-        locationMap.loadDataWithBaseURL("https://www.openstreetmap.org/", html,
+        locationMap.loadDataWithBaseURL("https://appassets.androidplatform.net/maps/", html,
                 "text/html", "UTF-8", null);
+        long deadline = SystemClock.uptimeMillis() + 12000L;
+        mapHandler.postDelayed(() -> checkMapReady(generation, deadline), 300L);
+    }
+
+    private void checkMapReady(int generation, long deadline) {
+        if (locationMap == null || generation != mapGeneration) return;
+        locationMap.evaluateJavascript("Boolean(window.rescueMapReady)", ready -> {
+            if (locationMap == null || generation != mapGeneration) return;
+            if ("true".equals(ready)) {
+                mapStatus.setVisibility(View.GONE);
+            } else if (SystemClock.uptimeMillis() >= deadline) {
+                mapStatus.setText(R.string.profile_map_retry);
+                mapStatus.setEnabled(true);
+            } else {
+                mapHandler.postDelayed(() -> checkMapReady(generation, deadline), 300L);
+            }
+        });
     }
 
     private String mapHtml(double lat, double lon) {
@@ -204,26 +319,26 @@ public class EditProfileFragment extends Fragment {
                 : "Sources: <a href=\"https://www.esri.com/\">Esri</a>, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, "
                         + "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, and the GIS User Community";
         return "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">"
-                + "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\">"
+                + "<link rel=\"stylesheet\" href=\"leaflet.css\">"
                 + "<style>html,body,#map{height:100%;width:100%;margin:0;background:#f8faf6}"
                 + (sellerMap ? ".leaflet-tile{filter:grayscale(.94) brightness(1.08) contrast(.92)}.map-pin{width:26px;height:26px;position:relative;transform:rotate(-45deg);border-radius:50% 50% 50% 0;background:#1769ff;border:3px solid #fff;box-shadow:0 2px 8px #0004}.map-pin span{position:absolute;width:8px;height:8px;left:6px;top:6px;border-radius:50%;background:#fff;transform:rotate(45deg)}" : "")
                 + "#status{position:absolute;z-index:1000;inset:0;display:flex;align-items:center;justify-content:center;"
                 + "padding:16px;text-align:center;font:14px sans-serif;color:#586159;background:#f8faf6}"
                 + ".leaflet-popup-content{font:13px sans-serif}</style></head><body><div id=\"map\"></div>"
                 + "<div id=\"status\">" + getString(R.string.profile_map_loading) + "</div>"
-                + "<script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"></script><script>"
-                + "const p=[" + latitudeText + "," + longitudeText + "],sellerMap=" + sellerMap + ",status=document.getElementById('status');"
+                + "<script src=\"leaflet.js\"></script><script>"
+                + "const p=[" + latitudeText + "," + longitudeText + "],sellerMap=" + sellerMap + ",statusElement=document.getElementById('status');"
                 + "try{const map=L.map('map',{scrollWheelZoom:false}).setView(p,15);"
                 + "const pin=L.divIcon({className:'',html:'<div class=map-pin><span></span></div>',iconSize:[32,42],iconAnchor:[16,40]});const marker=sellerMap?L.marker(p,{icon:pin}):L.circleMarker(p,{radius:9,color:'#fff',weight:3,fillColor:'#2e6b45',fillOpacity:1});marker.addTo(map);"
                 + "if(!sellerMap)marker.bindPopup('Vĩ độ " + latitudeText + "<br>Kinh độ " + longitudeText + "').openPopup();"
                 + "const tiles=L.tileLayer('" + tileUrl + "',{maxZoom:19,"
                 + "attribution:'" + attribution + "'}).addTo(map);"
-                + "let ready=false;tiles.once('tileload',()=>{ready=true;status.style.display='none'});"
-                + "tiles.on('tileerror',()=>{if(!ready)status.textContent='"
+                + "let ready=false;tiles.once('tileload',()=>{ready=true;window.rescueMapReady=true;statusElement.style.display='none'});"
+                + "tiles.on('tileerror',()=>{if(!ready)statusElement.textContent='"
                 + getString(R.string.profile_map_unavailable) + "'});"
-                + "setTimeout(()=>{if(status.style.display!=='none')status.textContent='"
+                + "setTimeout(()=>{if(statusElement.style.display!=='none')statusElement.textContent='"
                 + getString(R.string.profile_map_unavailable) + "';},10000);"
-                + "}catch(e){status.textContent='" + getString(R.string.profile_map_unavailable) + "';}</script></body></html>";
+                + "}catch(e){statusElement.textContent='" + getString(R.string.profile_map_unavailable) + "';}</script></body></html>";
     }
     private void renderAvatar(String url) {
         if (url == null || url.trim().isEmpty()) {
@@ -249,14 +364,20 @@ public class EditProfileFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        mapGeneration++;
+        mapHandler.removeCallbacksAndMessages(null);
+        mappedLatitude = Double.NaN;
+        mappedLongitude = Double.NaN;
         if (locationMap != null) {
             locationMap.stopLoading();
             locationMap.loadUrl("about:blank");
             locationMap.setWebViewClient(null);
+            locationMap.setWebChromeClient(null);
             locationMap.destroy();
             locationMap = null;
         }
         mapContainer = null;
+        mapStatus = null;
         super.onDestroyView();
     }
     private static String text(TextInputEditText input) {

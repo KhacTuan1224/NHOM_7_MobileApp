@@ -1,5 +1,8 @@
 package com.rescuefarm.data.remote.firebase;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
@@ -21,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FirebaseAuthRepository implements AuthRepository {
     private final FirebaseAuth firebaseAuth;
@@ -129,15 +133,34 @@ public class FirebaseAuthRepository implements AuthRepository {
         FirebaseUser current = firebaseAuth.getCurrentUser();
         if (current == null) { if (callback != null) callback.onSuccess(); return; }
         final String uid = current.getUid();
-        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token ->
+        Handler handler = new Handler(Looper.getMainLooper());
+        AtomicBoolean completed = new AtomicBoolean(false);
+        // Device cleanup is best effort. Offline writes and token retrieval must never trap a session.
+        Runnable finish = new Runnable() {
+            @Override public void run() {
+                if (!completed.compareAndSet(false, true)) return;
+                handler.removeCallbacks(this);
+                FirebaseUser active = firebaseAuth.getCurrentUser();
+                if (active != null && uid.equals(active.getUid())) firebaseAuth.signOut();
+                if (callback != null) callback.onSuccess();
+            }
+        };
+        handler.postDelayed(finish, 1500L);
+        try {
+            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+                if (completed.get()) return;
+                if (!task.isSuccessful() || task.getResult() == null || task.getResult().isEmpty()) {
+                    finish.run();
+                    return;
+                }
                 FirebaseFirestore.getInstance().collection("users").document(uid)
-                        .collection("devices").document(hashToken(token)).delete()
-                        .addOnCompleteListener(task -> finishSignOut(callback)))
-                .addOnFailureListener(error -> finishSignOut(callback));
-    }
-
-    private void finishSignOut(ActionCallback callback) {
-        firebaseAuth.signOut(); if (callback != null) callback.onSuccess();
+                        .collection("devices").document(hashToken(task.getResult())).delete()
+                        .addOnCompleteListener(unused -> finish.run());
+            });
+        } catch (RuntimeException error) {
+            Log.w("FirebaseAuthRepository", "Device cleanup failed during sign out", error);
+            finish.run();
+        }
     }
 
     private void loadRequiredProfile(FirebaseUser firebaseUser, AuthCallback callback) {
@@ -232,14 +255,8 @@ public class FirebaseAuthRepository implements AuthRepository {
 
     private void registerUserDevice(User user) {
         if (user == null || !user.isActive()) return;
-        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
-            if (token == null || token.trim().isEmpty()) return;
-            Map<String, Object> device = new HashMap<>();
-            device.put("userId", user.getId()); device.put("token", token);
-            device.put("platform", "ANDROID"); device.put("updatedAt", FieldValue.serverTimestamp());
-            FirebaseFirestore.getInstance().collection("users").document(user.getId())
-                    .collection("devices").document(hashToken(token)).set(device);
-        });
+        com.rescuefarm.service.notification.FcmDeviceSyncWorker.refreshNow(
+                com.google.firebase.FirebaseApp.getInstance().getApplicationContext());
     }
 
     private String hashToken(String token) {

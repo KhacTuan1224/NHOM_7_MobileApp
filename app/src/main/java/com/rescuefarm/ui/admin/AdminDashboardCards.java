@@ -227,10 +227,11 @@ final class AdminDashboardCards {
         LinearLayout card = new LinearLayout(context);
         card.setOrientation(LinearLayout.VERTICAL); card.setGravity(Gravity.TOP);
         int padding = dp(context, 10); card.setPadding(padding, padding, padding, padding);
+        int accent = metricAccent(metric.title);
         GradientDrawable background = new GradientDrawable();
-        background.setColor(ContextCompat.getColor(context, R.color.rescue_surface));
+        background.setColor(ContextCompat.getColor(context, softAccent(metric.title)));
         background.setCornerRadius(dp(context, 14));
-        background.setStroke(dp(context, 1), ContextCompat.getColor(context, R.color.rescue_outline));
+        background.setStroke(dp(context, 1), ContextCompat.getColor(context, accent));
         card.setBackground(background);
         card.setElevation(0);
         card.setStateListAnimator(null);
@@ -245,7 +246,7 @@ final class AdminDashboardCards {
         TextView value = new TextView(context);
         value.setText(metric.value); value.setTextSize(20); value.setTypeface(null, Typeface.BOLD);
         value.setSingleLine(true);
-        value.setTextColor(ContextCompat.getColor(context, R.color.rescue_primary));
+        value.setTextColor(ContextCompat.getColor(context, accent));
         LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         valueParams.topMargin = dp(context, 6); card.addView(value, valueParams);
@@ -259,11 +260,37 @@ final class AdminDashboardCards {
             detailParams.topMargin = dp(context, 4); card.addView(detail, detailParams);
         }
 
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0, dp(context, 120), 1);
+        card.setMinimumHeight(dp(context, 104));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.MATCH_PARENT, 1);
         cardParams.setMarginEnd(endMargin); row.addView(card, cardParams);
     }
 
     private static int dp(Context context, int value) {
         return Math.round(value * context.getResources().getDisplayMetrics().density);
+    }
+
+    private static int metricAccent(String title) {
+        String key = title.toLowerCase(java.util.Locale.ROOT);
+        if (key.contains("báo cáo") || key.contains("gấp")) return R.color.admin_reports;
+        if (key.contains("đánh giá")) return R.color.admin_reviews;
+        if (key.contains("người bán")) return R.color.admin_seller;
+        if (key.contains("chiến dịch") || key.contains("giải cứu") || key.contains("doanh thu")) return R.color.admin_campaigns;
+        if (key.contains("sản phẩm")) return R.color.admin_products;
+        if (key.contains("đơn hàng")) return R.color.admin_orders;
+        if (key.contains("điểm di động")) return R.color.admin_categories;
+        return R.color.admin_users;
+    }
+
+    private static int softAccent(String title) {
+        String key = title.toLowerCase(java.util.Locale.ROOT);
+        if (key.contains("báo cáo") || key.contains("gấp")) return R.color.admin_reports_soft;
+        if (key.contains("đánh giá")) return R.color.admin_reviews_soft;
+        if (key.contains("người bán")) return R.color.admin_seller_soft;
+        if (key.contains("chiến dịch") || key.contains("giải cứu") || key.contains("doanh thu")) return R.color.admin_campaigns_soft;
+        if (key.contains("sản phẩm")) return R.color.admin_products_soft;
+        if (key.contains("đơn hàng")) return R.color.admin_orders_soft;
+        if (key.contains("điểm di động")) return R.color.admin_categories_soft;
+        return R.color.admin_users_soft;
     }
 }

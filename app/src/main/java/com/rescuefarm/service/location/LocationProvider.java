@@ -21,17 +21,24 @@ public interface LocationProvider {
         private final String district;
         private final String ward;
         private final String street;
+        private final String fullAddress;
 
         public GeocodedAddress(String province, String district, String ward, String street) {
+            this(province, district, ward, street, "");
+        }
+
+        public GeocodedAddress(String province, String district, String ward, String street, String fullAddress) {
             this.province = province == null ? "" : province;
             this.district = district == null ? "" : district;
             this.ward = ward == null ? "" : ward;
             this.street = street == null ? "" : street;
+            this.fullAddress = fullAddress == null ? "" : fullAddress;
         }
 
         public String getProvince() { return province; }
         public String getDistrict() { return district; }
         public String getWard() { return ward; }
         public String getStreet() { return street; }
+        public String getFullAddress() { return fullAddress; }
     }
 }

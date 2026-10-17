@@ -23,6 +23,7 @@ public class DiscoveryEngineTest {
                 0D, 0, ProductStatus.ACTIVE);
         Date now = new Date(2_000_000L);
         RescueCampaign critical = campaign("c", UrgencyLevel.CRITICAL, now);
+        critical.setQuantityUnit("kg", "VERIFIED");
         DiscoveryQuery query = new DiscoveryQuery("xoai", "", "", null, null, null,
                 DiscoveryQuery.Sort.RELEVANCE);
         List<DiscoveryResult> onlyProduct = new DiscoveryEngine().search(
@@ -30,7 +31,9 @@ public class DiscoveryEngineTest {
         assertEquals("p", onlyProduct.get(0).getProduct().getId());
 
         List<DiscoveryResult> all = new DiscoveryEngine().search(Collections.singletonList(mango),
-                Collections.singletonList(critical), DiscoveryQuery.empty(), null, null, now);
+                Collections.singletonList(critical), Collections.singletonMap("p", Collections.singletonList(
+                    com.rescuefarm.domain.model.ProductBatch.restore("b", "p", "c", new Date(1), new Date(4_000_000L),
+                    10, 10, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1))), DiscoveryQuery.empty(), null, null, now);
         assertEquals("c", all.get(0).getCampaign().getId());
     }
 

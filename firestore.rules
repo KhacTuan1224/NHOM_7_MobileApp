@@ -95,7 +95,9 @@ service cloud.firestore {
                 ])
               && data.get('customerType', 'INDIVIDUAL') in ['INDIVIDUAL', 'BUSINESS']
               && data.get('companyName', '') is string && data.get('companyName', '').size() <= 160
-              && data.get('taxCode', '') is string && data.get('taxCode', '').size() <= 40))
+              && data.get('taxCode', '') is string && data.get('taxCode', '').size() <= 40
+              && (data.get('customerType', 'INDIVIDUAL') != 'BUSINESS'
+                || (data.get('companyName', '').size() >= 2 && data.get('taxCode', '').size() > 0))))
           && (data.role != 'SELLER'
             || (data.sellerStatus in ['PENDING_APPROVAL', 'APPROVED', 'REJECTED']
               && data.get('representativeName', '') is string
@@ -321,7 +323,9 @@ service cloud.firestore {
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason',
             'lastReservationOrderId', 'lastReservationQuantity',
             'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity',
-            'imageUrls', 'imagePublicIds', 'viewCount'
+            'imageUrls', 'imagePublicIds', 'viewCount',
+            'reservedByBatch', 'rescuedByBatch', 'allocationVersion', 'completedAt', 'expiredAt',
+            'quantityUnit', 'unitStatus', 'unitReviewReason'
           ])
           && data.id is string
           && data.sellerId is string
@@ -337,6 +341,11 @@ service cloud.firestore {
           ]
           && data.urgencyLevel in ['NORMAL', 'HIGH', 'CRITICAL']
           && data.rescueMode in ['FIXED_POINT', 'MOBILE_POINT']
+          && data.get('reservedByBatch', {}) is map
+          && data.get('rescuedByBatch', {}) is map
+          && data.get('allocationVersion', 0) in [0, 1]
+          && data.get('quantityUnit', '') is string && data.get('quantityUnit', '').size() <= 32
+          && data.get('unitStatus', 'UNVERIFIED') in ['UNVERIFIED', 'DECLARED', 'VERIFIED', 'REVIEW_REQUIRED']
           && data.batchTargets is map
           && data.batchTargets.size() > 0
           && data.batchTargets.size() <= 8
@@ -499,6 +508,11 @@ service cloud.firestore {
             'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && validUserProfile(request.resource.data, userId)
+          && request.resource.data.get('customerType', 'INDIVIDUAL') == resource.data.get('customerType', 'INDIVIDUAL')
+          && ((resource.data.role == 'CUSTOMER' && resource.data.get('customerType', 'INDIVIDUAL') == 'BUSINESS'
+                && request.resource.data.companyName.size() >= 2 && request.resource.data.companyName.size() <= 160
+                && request.resource.data.taxCode.size() > 0 && request.resource.data.taxCode.size() <= 40)
+              || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['companyName', 'taxCode']))
           && (resource.data.role != 'SELLER'
               || request.resource.data.sellerStatus == resource.data.sellerStatus)
           && (resource.data.role == 'SELLER'
@@ -755,6 +769,7 @@ service cloud.firestore {
           && resource.data.status != 'HIDDEN'
           && request.resource.data.id == resource.data.id
           && request.resource.data.sellerId == resource.data.sellerId
+          && request.resource.data.unit == resource.data.unit
           && request.resource.data.averageRating == resource.data.averageRating
           && request.resource.data.reviewCount == resource.data.reviewCount
           && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
@@ -766,6 +781,7 @@ service cloud.firestore {
         || (isAdmin()
           && request.resource.data.id == resource.data.id
           && request.resource.data.sellerId == resource.data.sellerId
+          && request.resource.data.unit == resource.data.unit
           && ((resource.data.status in ['ACTIVE', 'INACTIVE', 'SOLD_OUT']
                 && request.resource.data.status == 'HIDDEN'
                 && request.resource.data.moderationPreviousStatus == resource.data.status)
@@ -791,6 +807,7 @@ service cloud.firestore {
           && ownsProduct(request.resource.data.productId)
           && request.resource.data.id == batchId
           && request.resource.data.inventoryVersion == 1
+          && request.resource.data.get('activeCampaignId', '') in ['', null]
           && validBatch(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow update: if (isApprovedSeller(request.auth.uid)
@@ -813,8 +830,6 @@ service cloud.firestore {
               'status', 'inventoryVersion', 'updatedAt'
             ])
             && hasNoCredentialFields(request.resource.data))
-          || (lifecycleBatchMutation(resource.data, request.resource.data, batchId)
-            && validBatch(request.resource.data))
           || (isAdmin()
             && resource.data.activeCampaignId is string
             && resource.data.activeCampaignId.size() > 0
@@ -881,8 +896,8 @@ service cloud.firestore {
       allow list: if orderReadable(resource.data);
       // Trusted HTTP checkout creates the order, items, payment and reservations atomically.
       allow create: if false;
-      allow update: if lifecycleOrderUpdate(resource.data, request.resource.data)
-          || bankConfirmationOrderUpdate(resource.data, request.resource.data);
+      // Order status and inventory allocations are changed only by the trusted lifecycle API.
+      allow update: if bankConfirmationOrderUpdate(resource.data, request.resource.data);
       allow delete: if false;
       match /items/{itemId} {
         allow get, list: if orderReadable(
@@ -969,7 +984,13 @@ service cloud.firestore {
           && request.resource.data.status in ['DRAFT', 'PENDING_APPROVAL']
           && request.resource.data.reservedQuantity == 0
           && request.resource.data.rescuedQuantity == 0
+          && request.resource.data.get('reservedByBatch', {}).size() == 0
+          && request.resource.data.get('rescuedByBatch', {}).size() == 0
+          && request.resource.data.get('allocationVersion', 0) == 0
+          && request.resource.data.get('unitStatus', 'UNVERIFIED') in ['UNVERIFIED', 'DECLARED']
           && request.resource.data.get('viewCount', 0) == 0
+          && request.resource.data.get('imageUrls', []).size() == 0
+          && request.resource.data.get('imagePublicIds', []).size() == 0
           && validCampaign(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow update: if (
@@ -978,7 +999,14 @@ service cloud.firestore {
               && resource.data.status in ['DRAFT', 'REJECTED']
               && request.resource.data.status in ['DRAFT', 'PENDING_APPROVAL']
               && request.resource.data.reservedQuantity == resource.data.reservedQuantity
-              && request.resource.data.rescuedQuantity == resource.data.rescuedQuantity)
+              && request.resource.data.rescuedQuantity == resource.data.rescuedQuantity
+              && request.resource.data.get('reservedByBatch', {}) == resource.data.get('reservedByBatch', {})
+              && request.resource.data.get('rescuedByBatch', {}) == resource.data.get('rescuedByBatch', {})
+              && request.resource.data.get('allocationVersion', 0) == resource.data.get('allocationVersion', 0)
+              && request.resource.data.get('unitStatus', 'UNVERIFIED') in ['UNVERIFIED', 'DECLARED']
+              && request.resource.data.get('imageUrls', []) == resource.data.get('imageUrls', [])
+              && request.resource.data.get('imagePublicIds', []) == resource.data.get('imagePublicIds', [])
+              && (request.resource.data.status != 'PENDING_APPROVAL' || resource.data.get('imageUrls', []).size() == 0))
             || (isApprovedSeller(request.auth.uid)
               && resource.data.sellerId == request.auth.uid
               && resource.data.status == 'ACTIVE'
@@ -989,12 +1017,9 @@ service cloud.firestore {
               ])
               && (request.resource.data.locationSharingEnabled == false
                 || request.resource.data.locationUpdatedAt == request.time))
-            || (lifecycleCampaignMutation(resource.data, request.resource.data))
             || (isAdmin()
-              && ((resource.data.status == 'PENDING_APPROVAL'
-                    && request.resource.data.status in ['ACTIVE', 'REJECTED'])
-                || (resource.data.status == 'ACTIVE'
-                    && request.resource.data.status == 'STOPPED'))
+              && resource.data.status == 'ACTIVE'
+              && request.resource.data.status == 'STOPPED'
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                 'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
               ])
@@ -1140,7 +1165,18 @@ service cloud.firestore {
 
       match /comments/{commentId} {
         allow get, list: if publishedPost(postId) || isAdmin();
-        allow create, update, delete: if false;
+        // Legacy content remains read-only to users; Admin can still enforce reports.
+        allow update: if isAdmin()
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.postId == resource.data.postId
+            && request.resource.data.userId == resource.data.userId
+            && resource.data.status in ['ACTIVE', 'EDITED']
+            && request.resource.data.status == 'HIDDEN'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'])
+            && hasAdminModerationFields(request.resource.data)
+            && validComment(request.resource.data, postId);
+        allow create, delete: if false;
       }
     }
 
@@ -1234,12 +1270,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validReportCommentContext(data) {
+      let collection = data.get('parentType', '') == 'CAMPAIGN' ? 'campaigns' : 'posts';
+      let parentId = data.get('parentId', '');
+      let id = data.targetId;
+      let path = /databases/$(database)/documents/$(collection)/$(parentId)/comments/$(id);
+      return data.get('parentType', '') in ['CAMPAIGN', 'POST']
+          && parentId is string && parentId.size() > 0 && !parentId.matches('.*[/].*')
+          && !id.matches('.*[/].*')
+          && data.get('targetPath', '') == collection + '/' + parentId + '/comments/' + id
+          && exists(path) && get(path).data.status in ['ACTIVE', 'EDITED']
+          && (isAdmin() || (collection == 'campaigns' && activeCampaign(parentId))
+            || (collection == 'posts' && publishedPost(parentId)));
+    }
+
     match /reports/{reportId} {
-      allow get, list: if (isActiveAccount() && resource.data.reporterId == request.auth.uid) || isAdmin();
+      allow get, list: if isAdmin();
       allow create: if isActiveAccount() && request.resource.data.id == reportId
           && request.resource.data.reporterId == request.auth.uid
           && request.resource.data.targetType in ['USER', 'PRODUCT', 'CAMPAIGN', 'POST', 'COMMENT', 'REVIEW']
           && request.resource.data.targetId is string && request.resource.data.targetId.size() > 0
+          && (request.resource.data.targetType != 'COMMENT' || validReportCommentContext(request.resource.data))
           && request.resource.data.reason is string
           && request.resource.data.reason.size() > 0 && request.resource.data.reason.size() <= 120
           && request.resource.data.description is string && request.resource.data.description.size() <= 1000
@@ -1248,7 +1299,7 @@ service cloud.firestore {
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time
           && request.resource.data.keys().hasOnly([
-            'id', 'reporterId', 'targetType', 'targetId', 'reason', 'description',
+            'id', 'reporterId', 'targetType', 'targetId', 'targetPath', 'parentType', 'parentId', 'reason', 'description',
             'status', 'resolvedBy', 'resolutionNote', 'createdAt', 'updatedAt'
           ]);
       allow update: if isAdmin()
@@ -1286,7 +1337,7 @@ service cloud.firestore {
       allow create: if (isAdmin() || orderNotificationAllowed(request.resource.data, notificationId))
           && request.resource.data.id == notificationId
           && request.resource.data.keys().hasOnly([
-            'id', 'userId', 'type', 'title', 'body', 'referenceId', 'orderStatus', 'isRead', 'createdAt'
+            'id', 'userId', 'type', 'title', 'body', 'referenceId', 'orderStatus', 'isRead', 'createdAt', 'resourceType', 'action', 'eventId'
           ])
           && request.resource.data.userId is string
           && request.resource.data.type in ['ORDER', 'CAMPAIGN', 'PROMOTION', 'MODERATION', 'SYSTEM']
@@ -1301,7 +1352,7 @@ service cloud.firestore {
       allow update: if isActiveAccount() && resource.data.userId == request.auth.uid
           && resource.data.isRead == false && request.resource.data.isRead == true
           && request.resource.data.keys().hasOnly([
-            'id', 'userId', 'type', 'title', 'body', 'referenceId', 'orderStatus', 'isRead', 'createdAt', 'readAt'
+            'id', 'userId', 'type', 'title', 'body', 'referenceId', 'orderStatus', 'isRead', 'createdAt', 'readAt', 'resourceType', 'action', 'eventId'
           ])
           && request.resource.data.readAt == request.time
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
@@ -1312,12 +1363,12 @@ service cloud.firestore {
       allow get, list: if isAdmin();
       allow create: if isAdmin()
           && request.resource.data.keys().hasOnly([
-            'adminId', 'resourceType', 'resourceId', 'fromState', 'toState', 'reason', 'createdAt', 'reportId'
+            'adminId', 'resourceType', 'resourceId', 'fromState', 'toState', 'reason', 'createdAt', 'reportId', 'resourcePath'
           ])
           && request.resource.data.adminId == request.auth.uid
           && request.resource.data.resourceType in [
             'SELLER_APPLICATIONS', 'USERS', 'POSTS', 'PRODUCTS', 'CAMPAIGNS',
-            'CATEGORIES', 'BANNERS', 'REVIEWS', 'REPORTS', 'ORDERS', 'PRODUCT_BATCHES', 'SHIPPING_SETTINGS'
+            'CATEGORIES', 'BANNERS', 'REVIEWS', 'REPORTS', 'COMMENTS', 'ORDERS', 'PRODUCT_BATCHES', 'SHIPPING_SETTINGS'
           ]
           && request.resource.data.resourceId is string
           && request.resource.data.resourceId.size() > 0
@@ -1327,13 +1378,57 @@ service cloud.firestore {
           && request.resource.data.reason.size() <= 500
           && request.resource.data.get('reportId', '') is string
           && request.resource.data.get('reportId', '').size() <= 128
+          && request.resource.data.get('resourcePath', '') is string
+          && request.resource.data.get('resourcePath', '').size() <= 1024
           && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
     }
 
+    function validClientNotificationEvent(data) {
+      let collection = data.resourceType == 'ORDER' ? 'orders' : data.resourceType == 'CAMPAIGN' ? 'campaigns'
+          : data.resourceType == 'SELLER_APPLICATION' ? 'sellerApplications'
+          : data.resourceType == 'REPORT' ? 'reports' : 'promotions';
+      let path = /databases/$(database)/documents/$(collection)/$(data.resourceId);
+      let after = getAfter(path).data;
+      return data.keys().hasOnly(['kind', 'resourceType', 'resourceId', 'actorId', 'status', 'retryCount', 'createdAt', 'nextAttemptAt'])
+          && isActiveAccount() && data.actorId == request.auth.uid
+          && data.resourceId is string && data.resourceId.size() > 0 && data.resourceId.size() <= 128
+          && data.status == 'PENDING' && data.retryCount == 0
+          && data.createdAt == request.time && data.nextAttemptAt == request.time
+          && after.updatedAt == request.time
+          && (!exists(path) || get(path).data.get('updatedAt', null) != request.time)
+          && ((data.kind == 'ADMINS' && data.resourceType == 'REPORT'
+                && after.reporterId == request.auth.uid && after.status == 'PENDING')
+            || (data.kind == 'ADMINS' && data.resourceType in ['CAMPAIGN', 'SELLER_APPLICATION']
+                && hasRole(request.auth.uid, 'SELLER') && after.sellerId == request.auth.uid
+                && after.status in ['PENDING', 'PENDING_APPROVAL'])
+            || (data.kind == 'PROMOTION' && data.resourceType == 'PROMOTION'
+                && isApprovedSeller(request.auth.uid) && after.sellerId == request.auth.uid && after.active == true)
+            || (data.kind == 'ORDER_PAYMENT' && data.resourceType == 'ORDER'
+                && (isAdmin() || (isApprovedSeller(request.auth.uid) && after.sellerId == request.auth.uid))
+                && after.paymentStatus == 'PAID' && get(path).data.paymentStatus != 'PAID'));
+    }
+    // Campaign upload/commit/cleanup are trusted backend operations only.
+    match /campaignAssetReferences/{id} { allow read, write: if false; }
+    match /campaignMediaUploads/{id} { allow read, write: if false; }
+    match /campaignMediaDrafts/{id} { allow read, write: if false; }
+
+    match /notificationOutbox/{eventId} {
+      allow create: if validClientNotificationEvent(request.resource.data);
+      allow get, list, update, delete: if false;
+    }
+    match /notificationDeliveries/{deliveryId} { allow read, write: if false; }
+    match /notificationWorkerState/{stateId} { allow read, write: if false; }
+
     match /adminBootstrapAudit/{auditId} {
       allow get, list: if isAdmin();
       allow create, update, delete: if false;
+    }
+
+    // Report moderation searches both Campaign and historical Post comments.
+    // This grants only reads; writes still use the explicit parent rules above.
+    match /{parent=**}/comments/{commentId} {
+      allow get, list: if isAdmin();
     }
 
     match /{document=**} {

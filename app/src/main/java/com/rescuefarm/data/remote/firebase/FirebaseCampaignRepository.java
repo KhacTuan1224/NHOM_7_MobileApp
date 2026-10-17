@@ -13,12 +13,10 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.rescuefarm.data.local.dao.CampaignCacheDao;
 import com.rescuefarm.data.local.dao.BannerCacheDao;
-import com.rescuefarm.data.local.dao.CatalogCacheDao;
 import com.rescuefarm.data.local.database.RescueFarmDatabase;
 import com.rescuefarm.data.local.entity.CampaignCacheEntity;
 import com.rescuefarm.data.local.mapper.CampaignCacheMapper;
 import com.rescuefarm.data.local.mapper.BannerCacheMapper;
-import com.rescuefarm.data.local.mapper.CatalogCacheMapper;
 import com.rescuefarm.data.repository.CampaignRepository;
 import com.rescuefarm.domain.enums.BatchStatus;
 import com.rescuefarm.domain.enums.CampaignStatus;
@@ -28,8 +26,6 @@ import com.rescuefarm.domain.enums.UrgencyLevel;
 import com.rescuefarm.domain.model.ProductBatch;
 import com.rescuefarm.domain.model.RescueCampaign;
 import com.rescuefarm.domain.model.Banner;
-import com.rescuefarm.service.inventory.InventoryService;
-import com.rescuefarm.service.inventory.InventoryVersionPolicy;
 import com.rescuefarm.service.network.NetworkStatusProvider;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,18 +48,16 @@ public class FirebaseCampaignRepository implements CampaignRepository {
     private final RescueFarmDatabase database;
     private final CampaignCacheDao campaignDao;
     private final BannerCacheDao bannerDao;
-    private final CatalogCacheDao catalogDao;
     private final ExecutorService cacheExecutor;
     private final NetworkStatusProvider network;
     private final Map<String, DocumentSnapshot> sellerCampaignCursors = new HashMap<>();
     private final Set<String> sellersWithMoreCampaigns = new HashSet<>();
-    private final InventoryService inventoryService = new InventoryService();
 
     public FirebaseCampaignRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
             NetworkStatusProvider network) {
         this.database = database; this.campaignDao = database.campaignCacheDao();
         this.bannerDao = database.bannerCacheDao();
-        this.catalogDao = database.catalogCacheDao(); this.cacheExecutor = cacheExecutor;
+        this.cacheExecutor = cacheExecutor;
         this.network = network;
     }
 
@@ -196,90 +190,27 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         }));
     }
 
-    @Override public void saveCampaign(RescueCampaign source, boolean submit,
-            CampaignCallback callback) {
+    @Override public void saveCampaign(RescueCampaign source, boolean submit, CampaignCallback callback) {
         if (!online(callback, "Không thể lưu campaign khi offline; thay đổi không được xếp hàng.")) return;
-        String sellerId = currentUserId();
-        if (sellerId == null) { callback.onError(ErrorCode.FORBIDDEN, "Vui lòng đăng nhập seller."); return; }
-        DocumentReference reference = clean(source.getId()).isEmpty()
-                ? firestore.collection(CAMPAIGNS).document()
-                : firestore.collection(CAMPAIGNS).document(source.getId());
-        List<String> previousImages = new ArrayList<>();
-        firestore.runTransaction(transaction -> {
-            DocumentSnapshot existing = transaction.get(reference);
-            previousImages.clear();
-            if (existing.exists()) previousImages.addAll(strings(existing.get("imageUrls")));
-            if (existing.exists() && !sellerId.equals(existing.getString("sellerId"))) {
-                throw new IllegalStateException("FORBIDDEN");
-            }
-            CampaignStatus editableStatus = existing.exists()
-                    ? enumValue(CampaignStatus.class, existing.getString("status"), CampaignStatus.DRAFT)
-                    : CampaignStatus.DRAFT;
-            if (editableStatus != CampaignStatus.DRAFT && editableStatus != CampaignStatus.REJECTED) {
-                throw new IllegalStateException("CAMPAIGN_LOCKED");
-            }
-            RescueCampaign previous = existing.exists() ? mapCampaign(existing) : null;
-            if (existing.exists() && previous == null) throw new IllegalStateException("NOT_FOUND");
-            CampaignStatus savedStatus = submit ? editableStatus : CampaignStatus.DRAFT;
-            RescueCampaign saved = copyCampaign(reference.getId(), sellerId, source,
-                    savedStatus, previous);
-            if (saved.getBatchTargets().size() > MAX_BATCHES) {
-                throw new IllegalArgumentException("Mỗi Campaign hỗ trợ tối đa 200 lô để an toàn với giới hạn ghi Firestore.");
-            }
-            Map<String, Double> previousTargets = existing.exists()
-                    ? targetMap(existing.get("batchTargets")) : new LinkedHashMap<>();
-            Set<String> ids = new HashSet<>();
-            if (submit) { ids.addAll(previousTargets.keySet()); ids.addAll(saved.getBatchTargets().keySet()); }
-            else if (editableStatus == CampaignStatus.REJECTED) ids.addAll(previousTargets.keySet());
-            Map<String, DocumentSnapshot> batchSnapshots = new LinkedHashMap<>();
-            Date earliestExpiry = null;
-            for (String batchId : ids) {
-                DocumentSnapshot batch = transaction.get(firestore.collection(BATCHES).document(batchId));
-                if (!batch.exists()) throw new IllegalStateException("BATCH_NOT_FOUND");
-                batchSnapshots.put(batchId, batch);
-                if (submit && saved.getBatchTargets().containsKey(batchId)) {
-                    String linked = clean(batch.getString("activeCampaignId"));
-                    if (!linked.isEmpty() && !reference.getId().equals(linked)) {
-                        throw new IllegalStateException("BATCH_IN_USE");
-                    }
-                    Date expiry = date(batch, "expiryDate");
-                    if (expiry == null || !expiry.after(new Date())) throw new IllegalStateException("BATCH_EXPIRED");
-                    if (number(batch, "availableQuantity") + 0.000001
-                            < saved.getBatchTargets().get(batchId)) {
-                        throw new IllegalStateException("INSUFFICIENT_BATCH_TARGET");
-                    }
-                    if (earliestExpiry == null || expiry.before(earliestExpiry)) earliestExpiry = expiry;
-                }
-            }
-            if (submit) {
-                if (!saved.getEndDate().after(new Date())) {
-                    throw new IllegalArgumentException("Campaign end date must be in the future");
-                }
-                saved.calculateUrgency(new Date(), earliestExpiry);
-                saved.submitForApproval();
-            }
-            Map<String, Object> data = campaignMap(saved);
-            data.put("updatedAt", FieldValue.serverTimestamp());
-            if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
-            else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
-            transaction.set(reference, data);
-            if (submit || editableStatus == CampaignStatus.REJECTED)
-                    for (Map.Entry<String, DocumentSnapshot> entry : batchSnapshots.entrySet()) {
-                boolean linked = submit && saved.getBatchTargets().containsKey(entry.getKey());
-                transaction.update(entry.getValue().getReference(),
-                        "activeCampaignId", linked ? reference.getId() : null,
-                        "inventoryVersion", longValue(entry.getValue(), "inventoryVersion") + 1L,
-                        "updatedAt", FieldValue.serverTimestamp());
-            }
-            return saved;
-        }).addOnSuccessListener(saved -> {
-            com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages, saved.getImageUrls());
-            if (submit && saved.getStatus() == CampaignStatus.PENDING_APPROVAL)
-                com.rescuefarm.service.notification.AdminNotificationClient.notifyAdmins(
-                        "MODERATION_SUBMISSION", saved.getId(), "CAMPAIGN");
-            cache(saved); callback.onSuccess(saved);
-        })
-                .addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        if (currentUserId() == null) { callback.onError(ErrorCode.FORBIDDEN, "Vui lòng đăng nhập seller."); return; }
+        String id = clean(source.getId()).isEmpty() ? java.util.UUID.randomUUID().toString() : source.getId();
+        try {
+            org.json.JSONObject payload = new org.json.JSONObject(campaignMap(source));
+            payload.put("id",id); payload.put("submit",submit);
+            payload.put("startDate",source.getStartDate().getTime()); payload.put("endDate",source.getEndDate().getTime());
+            com.rescuefarm.service.backend.RenderBackendClient.post("/campaigns/save",payload,
+                    new com.rescuefarm.service.backend.RenderBackendClient.Callback() {
+                        @Override public void onSuccess(org.json.JSONObject response) {
+                            // Read the committed server document; never report success from an older cache entry.
+                            firestore.collection(CAMPAIGNS).document(id).get(com.google.firebase.firestore.Source.SERVER)
+                                    .addOnSuccessListener(document->{RescueCampaign saved=mapCampaign(document);
+                                        if(saved==null) callback.onError(ErrorCode.UNKNOWN,"Đã lưu nhưng chưa tải lại được chiến dịch. Hãy tải lại danh sách.");
+                                        else {cache(saved); callback.onSuccess(saved);}})
+                                    .addOnFailureListener(error->notifyFailure(error,callback::onError));
+                        }
+                        @Override public void onError(String message) { callback.onError(ErrorCode.VALIDATION,message); }
+                    });
+        } catch (Exception error) { callback.onError(ErrorCode.VALIDATION,"Thông tin chiến dịch không hợp lệ: "+error.getMessage()); }
     }
 
     @Override public void updateMobileLocation(String campaignId, double latitude, double longitude,
@@ -311,51 +242,13 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+    /** Reservations must belong to an order; standalone client counter writes are prohibited. */
+    @Deprecated
     @Override public void mutateReservation(String campaignId, String batchId,
             long expectedInventoryVersion, ReservationMutation mutation, double quantity,
             CampaignCallback callback) {
-        if (!online(callback, "Reservation campaign cần kết nối mạng và không được xếp hàng offline.")) return;
-        DocumentReference campaignRef = firestore.collection(CAMPAIGNS).document(campaignId);
-        DocumentReference batchRef = firestore.collection(BATCHES).document(batchId);
-        firestore.runTransaction(transaction -> {
-            DocumentSnapshot campaignSnapshot = transaction.get(campaignRef);
-            DocumentSnapshot batchSnapshot = transaction.get(batchRef);
-            RescueCampaign campaign = requireOwnedCampaign(campaignSnapshot);
-            if (campaign.getStatus() != CampaignStatus.ACTIVE
-                    || !campaign.getBatchTargets().containsKey(batchId)) {
-                throw new IllegalStateException("CAMPAIGN_NOT_ACTIVE");
-            }
-            if (!campaignId.equals(batchSnapshot.getString("activeCampaignId"))) {
-                throw new IllegalStateException("BATCH_NOT_LINKED");
-            }
-            InventoryVersionPolicy.requireExpected(
-                    longValue(batchSnapshot, "inventoryVersion"), expectedInventoryVersion);
-            ProductBatch batch = requireBatch(batchSnapshot);
-            if (mutation == ReservationMutation.RESERVE) {
-                inventoryService.reserveStock(batch, campaign, quantity);
-            } else if (mutation == ReservationMutation.COMMIT) {
-                inventoryService.commitReservedStock(batch, campaign, quantity);
-            } else {
-                inventoryService.releaseReservedStock(batch, campaign, quantity);
-            }
-            ProductBatch savedBatch = copyBatch(batch,
-                    longValue(batchSnapshot, "inventoryVersion") + 1L);
-            Map<String, Object> campaignData = campaignMap(campaign);
-            campaignData.put("updatedAt", FieldValue.serverTimestamp());
-            if (campaignSnapshot.get("createdAt") != null) {
-                campaignData.put("createdAt", campaignSnapshot.get("createdAt"));
-            }
-            Map<String, Object> batchData = batchMap(savedBatch);
-            batchData.put("updatedAt", FieldValue.serverTimestamp());
-            if (batchSnapshot.get("createdAt") != null) batchData.put("createdAt", batchSnapshot.get("createdAt"));
-            transaction.set(campaignRef, campaignData); transaction.set(batchRef, batchData);
-            return new MutationResult(campaign, savedBatch);
-        }).addOnSuccessListener(result -> {
-            cache(result.campaign);
-            cacheExecutor.execute(() -> catalogDao.replaceBatch(CatalogCacheMapper.toEntity(
-                    result.batch, System.currentTimeMillis())));
-            callback.onSuccess(result.campaign);
-        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        callback.onError(ErrorCode.VALIDATION,
+                "Giữ, giao hoặc trả hàng phải được thực hiện qua luồng đặt hàng và xử lý đơn.");
     }
 
     private RescueCampaign requireOwnedCampaign(DocumentSnapshot snapshot) {
@@ -384,6 +277,9 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                     enumValue(CampaignStatus.class, value.getString("status"), CampaignStatus.DRAFT));
             campaign.setStoryMedia(strings(value.get("imageUrls")), strings(value.get("imagePublicIds")));
             campaign.setViewCount(longValue(value, "viewCount"));
+            campaign.setQuantityUnit(value.getString("quantityUnit"), value.getString("unitStatus"));
+            campaign.setAllocationProgress(targetMap(value.get("reservedByBatch")),
+                    targetMap(value.get("rescuedByBatch")), (int)longValue(value, "allocationVersion"));
             return campaign;
         } catch (IllegalArgumentException | IllegalStateException error) { return null; }
     }
@@ -425,14 +321,9 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                         && previous.isLocationSharingEnabled(), source.getLocationName(), status);
         result.setStoryMedia(source.getImageUrls(), source.getImagePublicIds());
         result.setViewCount(previous == null ? 0L : previous.getViewCount());
+        result.setQuantityUnit(source.getQuantityUnit(), source.getUnitStatus());
+        if (previous != null) result.setAllocationProgress(previous.getReservedByBatch(), previous.getRescuedByBatch(), previous.getAllocationVersion());
         return result;
-    }
-
-    private ProductBatch copyBatch(ProductBatch source, long version) {
-        return ProductBatch.restore(source.getId(), source.getProductId(), source.getActiveCampaignId(),
-                source.getHarvestDate(), source.getExpiryDate(), source.getInitialQuantity(),
-                source.getAvailableQuantity(), source.getReservedQuantity(), source.getSoldQuantity(),
-                source.getStatus(), version);
     }
 
     private Map<String, Object> campaignMap(RescueCampaign value) {
@@ -444,21 +335,15 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         data.put("urgencyLevel", value.getUrgencyLevel().name()); data.put("rescueMode", value.getRescueMode().name());
         data.put("batchTargets", value.getBatchTargets()); data.put("targetQuantity", value.getTargetQuantity());
         data.put("reservedQuantity", value.getReservedQuantity()); data.put("rescuedQuantity", value.getRescuedQuantity());
+        data.put("reservedByBatch", value.getReservedByBatch()); data.put("rescuedByBatch", value.getRescuedByBatch());
+        data.put("allocationVersion", value.getAllocationVersion());
+        data.put("quantityUnit", value.getQuantityUnit()); data.put("unitStatus", value.getUnitStatus());
         data.put("startDate", value.getStartDate()); data.put("endDate", value.getEndDate());
         data.put("latitude", value.getLatitude()); data.put("longitude", value.getLongitude());
         data.put("currentLatitude", value.getCurrentLatitude()); data.put("currentLongitude", value.getCurrentLongitude());
         data.put("locationUpdatedAt", value.getLocationUpdatedAt());
         data.put("locationSharingEnabled", value.isLocationSharingEnabled());
         data.put("locationName", value.getLocationName()); data.put("status", value.getStatus().name()); return data;
-    }
-
-    private Map<String, Object> batchMap(ProductBatch value) {
-        Map<String, Object> data = new HashMap<>(); data.put("id", value.getId());
-        data.put("productId", value.getProductId()); data.put("activeCampaignId", value.getActiveCampaignId());
-        data.put("harvestDate", value.getHarvestDate()); data.put("expiryDate", value.getExpiryDate());
-        data.put("initialQuantity", value.getInitialQuantity()); data.put("availableQuantity", value.getAvailableQuantity());
-        data.put("reservedQuantity", value.getReservedQuantity()); data.put("soldQuantity", value.getSoldQuantity());
-        data.put("status", value.getStatus().name()); data.put("inventoryVersion", value.getInventoryVersion()); return data;
     }
 
     private List<String> strings(Object raw) {
@@ -529,12 +414,6 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         catch (IllegalArgumentException error) { return fallback; }
     }
     private interface ErrorConsumer { void accept(ErrorCode error, String message); }
-    private static final class MutationResult {
-        private final RescueCampaign campaign; private final ProductBatch batch;
-        private MutationResult(RescueCampaign campaign, ProductBatch batch) {
-            this.campaign = campaign; this.batch = batch;
-        }
-    }
     @Override public void close() { cacheExecutor.shutdownNow(); }
 
     private boolean online(Object callback, String message) {

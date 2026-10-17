@@ -32,6 +32,40 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Check navigation destinations
+        run: python3 scripts/check_navigation.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Check campaign lifecycle and seller statistics
+        working-directory: functions
+        run: |
+          npm ci
+          npm run check
+          npm run test:unit
+
+      - name: Check trusted API transactions and Firestore Rules
+        id: firestore-tests
+        working-directory: tests/firestore
+        run: |
+          npm ci
+          npm test 2>&1 | tee firestore-test-output.log
+
+      - name: Upload Firestore test diagnostics
+        if: failure() && steps.firestore-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-test-diagnostics
+          path: |
+            tests/firestore/firestore-test-output.log
+            tests/firestore/firestore-debug.log
+          retention-days: 7
+
       - name: Prepare Firebase configuration
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
@@ -72,7 +106,7 @@ jobs:
         run: |
           chmod +x ./gradlew
           test -f ./gradlew
-          ./gradlew --no-daemon :app:assembleDebug \
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug \
             "-PRENDER_BACKEND_URL=$RENDER_BACKEND_URL" \
             "-PCLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME" \
             "-PCLOUDINARY_SIGNING_URL=$CLOUDINARY_SIGNING_URL"

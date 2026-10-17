@@ -17,6 +17,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.rescuefarm.R;
 import com.rescuefarm.service.auth.GoogleCredentialService;
 
+
 public class LoginFragment extends Fragment {
     private AuthViewModel viewModel;
     private ProgressBar progressBar;
@@ -35,7 +36,6 @@ public class LoginFragment extends Fragment {
                 new AuthViewModelFactory(requireContext())
         ).get(AuthViewModel.class);
         progressBar = view.findViewById(R.id.authProgress);
-
         View firebaseSetupNotice = view.findViewById(R.id.firebaseSetupNotice);
         firebaseSetupNotice.setVisibility(viewModel.isFirebaseAvailable() ? View.GONE : View.VISIBLE);
 

@@ -21,6 +21,15 @@ import java.util.Arrays;
 import java.util.Locale;
 
 public final class AdminDashboardFragment extends Fragment {
+    private final android.os.Handler timeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable timeRefresh = new Runnable() {
+        @Override public void run() {
+            if (getView() != null && viewModel != null
+                    && (viewModel.getState().getValue() == null || viewModel.getState().getValue().getStatus() != AdminScreenState.Status.LOADING))
+                viewModel.refreshDashboard();
+            timeHandler.postDelayed(this, 60000L);
+        }
+    };
     private AdminViewModel viewModel;
     private ProgressBar progress;
     private TextView message;
@@ -44,6 +53,8 @@ public final class AdminDashboardFragment extends Fragment {
         view.findViewById(R.id.adminDashboardMenuButton).setOnClickListener(v -> drawer.openDrawer(android.view.Gravity.START));
         view.findViewById(R.id.refreshAdminDashboardButton).setOnClickListener(v -> viewModel.refreshDashboard());
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
+        bind(view, R.id.adminHomeSellersButton, Section.SELLER_APPLICATIONS);
+        bind(view, R.id.adminHomeCampaignsButton, Section.CAMPAIGNS);
         bind(view, R.id.adminUsersButton, Section.USERS);
         bind(view, R.id.adminProductsButton, Section.PRODUCTS);
         bind(view, R.id.adminCampaignsButton, Section.CAMPAIGNS);
@@ -54,7 +65,6 @@ public final class AdminDashboardFragment extends Fragment {
         bind(view, R.id.adminOrdersButton, Section.ORDERS);
         bind(view, R.id.adminAnalyticsButton, Section.ANALYTICS);
         bind(view, R.id.adminShippingSettingsButton, Section.SHIPPING_SETTINGS);
-        viewModel.refreshDashboard();
     }
 
     private void bind(View root, int id, Section section) {
@@ -73,36 +83,44 @@ public final class AdminDashboardFragment extends Fragment {
         if (value == null) { stats.removeAllViews(); return; }
         stats.removeAllViews();
         NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-        AdminDashboardCards.addSectionTitle(requireContext(), stats, "TỔNG QUAN HỆ THỐNG");
+        AdminDashboardCards.addSectionTitle(requireContext(), stats, "Cần xử lý");
         AdminDashboardCards.addGrid(requireContext(), stats, Arrays.asList(
-                metric("Users", String.valueOf(value.total(Section.USERS)), "Tổng tài khoản"),
-                metric("Seller applications", String.valueOf(value.total(Section.SELLER_APPLICATIONS)),
-                        value.getPendingSellers() + " chờ duyệt"),
-                metric("Products", String.valueOf(value.total(Section.PRODUCTS)), "Tổng sản phẩm"),
-                metric("Campaigns", String.valueOf(value.total(Section.CAMPAIGNS)),
-                        value.getPendingCampaigns() + " chờ duyệt"),
-                metric("Orders", String.valueOf(value.total(Section.ORDERS)), "Tổng đơn hàng"),
-                metric("Reports đang mở", String.valueOf(value.getOpenReports()), "Pending + In-review"),
-                metric("Doanh thu DELIVERED", currency.format(value.getDeliveredRevenue()),
-                        "All-time, gồm phí giao hàng")));
+                metric("Người bán chờ duyệt", String.valueOf(value.getPendingSellers()), "Hồ sơ cần xét duyệt"),
+                metric("Chiến dịch chờ duyệt", String.valueOf(value.getPendingCampaigns()), "Nội dung cần xét duyệt"),
+                metric("Báo cáo đang mở", String.valueOf(value.getOpenReports()), "Chờ xử lý hoặc đang xem xét")));
 
-        AdminDashboardCards.addSectionTitle(requireContext(), stats, "RESCUE ANALYTICS");
+        AdminDashboardCards.addSectionTitle(requireContext(), stats, "Hoạt động hệ thống");
         AdminDashboardCards.addGrid(requireContext(), stats, Arrays.asList(
-                metric("Campaign đang hoạt động", String.valueOf(value.getActiveCampaigns()), "Status ACTIVE"),
-                metric("Campaign CRITICAL", String.valueOf(value.getCriticalCampaigns()), "Trong Campaign ACTIVE"),
-                metric("Điểm mobile đang chia sẻ vị trí mới", String.valueOf(value.getLiveMobilePoints()),
+                metric("Người dùng", String.valueOf(value.total(Section.USERS)), "Tổng tài khoản"),
+                metric("Sản phẩm", String.valueOf(value.total(Section.PRODUCTS)), "Tổng sản phẩm"),
+                metric("Chiến dịch", String.valueOf(value.total(Section.CAMPAIGNS)), "Tổng chiến dịch"),
+                metric("Đơn hàng", String.valueOf(value.total(Section.ORDERS)), "Tổng đơn hàng"),
+                metric("Doanh thu đơn đã giao", currency.format(value.getDeliveredRevenue()),
+                        "Toàn thời gian · gồm phí giao hàng")));
+
+        AdminDashboardCards.addSectionTitle(requireContext(), stats, "Hiệu quả giải cứu");
+        AdminDashboardCards.addGrid(requireContext(), stats, Arrays.asList(
+                metric("Chiến dịch đang hoạt động", String.valueOf(value.getActiveCampaigns()), "Đang diễn ra"),
+                metric("Cần giải cứu gấp", String.valueOf(value.getCriticalCampaigns()), "Trong chiến dịch đang hoạt động"),
+                metric("Điểm di động trực tuyến", String.valueOf(value.getLiveMobilePoints()),
                         "Vị trí được cập nhật trong 10 phút"),
-                metric("Tổng lượng đã giải cứu", String.format(Locale.getDefault(), "%.2f kg",
-                        value.getTotalRescuedQuantity()), "Số lượng đã rescued"),
-                metric("Tỷ lệ hoàn thành", String.format(Locale.getDefault(), "%.1f%%",
+                metric("Đã giải cứu (Campaign kg)", String.format(Locale.getDefault(), "%.2f kg",
+                        value.getTotalRescuedQuantity()), "Đã giải cứu (Campaign kg)"),
+                metric("Tỷ lệ hoàn thành (Campaign kg)", String.format(Locale.getDefault(), "%.1f%%",
                         value.getCompletionRate()),
-                        "rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt")));
+                        "Đã giải cứu / mục tiêu của các chiến dịch đã kích hoạt")));
         AdminDashboardCards.addFootnote(requireContext(), stats,
-                "Doanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
+                "Doanh thu tính trên đơn đã giao trong toàn bộ thời gian, gồm phí giao hàng."
                         + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
     }
 
     private AdminDashboardCards.Metric metric(String title, String value, String detail) {
         return new AdminDashboardCards.Metric(title, value, detail);
+    }
+    @Override public void onResume() {
+        super.onResume(); if (viewModel != null) viewModel.refreshDashboard(); timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+    }
+    @Override public void onPause() {
+        timeHandler.removeCallbacks(timeRefresh); super.onPause();
     }
 }

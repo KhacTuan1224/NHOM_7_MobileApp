@@ -338,9 +338,10 @@
     <fragment android:id="@+id/reviewFragment" android:name="com.rescuefarm.ui.engagement.ReviewFragment" android:label="@string/reviews_title" />
     <fragment android:id="@+id/storefrontFragment" android:name="com.rescuefarm.ui.profile.StorefrontFragment" android:label="Cấu hình cửa hàng" />
     <fragment android:id="@+id/publicSellerProfileFragment" android:name="com.rescuefarm.ui.profile.PublicSellerProfileFragment" android:label="Hồ sơ cửa hàng" />
+    <fragment android:id="@+id/reportResultFragment" android:name="com.rescuefarm.ui.engagement.ReportResultFragment" android:label="Kết quả báo cáo" />
     <fragment android:id="@+id/reportFragment" android:name="com.rescuefarm.ui.engagement.ReportFragment" android:label="@string/report_action" />
     <fragment android:id="@+id/notificationFragment" android:name="com.rescuefarm.ui.engagement.NotificationFragment" android:label="@string/notifications_title"><deepLink app:uri="rescuefarm://notifications" /></fragment>
-    <fragment android:id="@+id/adminReportFragment" android:name="com.rescuefarm.ui.engagement.AdminReportFragment" android:label="@string/admin_reports_title"><deepLink app:uri="rescuefarm://reports/{reportId}" /></fragment>
+    <fragment android:id="@+id/adminReportFragment" android:name="com.rescuefarm.ui.engagement.AdminReportFragment" android:label="@string/admin_reports_title"></fragment>
     <fragment android:id="@+id/adminDashboardFragment"
         android:name="com.rescuefarm.ui.admin.AdminDashboardFragment"
         android:label="@string/admin_dashboard_title">

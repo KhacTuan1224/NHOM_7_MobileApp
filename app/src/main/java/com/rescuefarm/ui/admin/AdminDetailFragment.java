@@ -226,7 +226,13 @@ public final class AdminDetailFragment extends Fragment {
         else if ("CAMPAIGN".equals(type)) { destination = R.id.campaignDetailFragment; args.putString("campaignId", targetId); }
         else if ("POST".equals(type)) { destination = R.id.postDetailFragment; args.putString("postId", targetId); }
         else if ("COMMENT".equals(type)) {
-            destination = R.id.postDetailFragment; args.putString("postId", String.valueOf(target.get("postId")));
+            String parentId = String.valueOf(target.get("parentId"));
+            if ("CAMPAIGN".equals(target.get("parentType"))) {
+                destination = R.id.campaignDetailFragment; args.putString("campaignId", parentId);
+            } else if ("POST".equals(target.get("parentType"))) {
+                destination = R.id.postDetailFragment; args.putString("postId", parentId);
+            }
+            args.putString("commentId", String.valueOf(target.get("id")));
         } else if ("REVIEW".equals(type)) {
             destination = R.id.reviewFragment; args.putString("productId", String.valueOf(target.get("productId")));
         }
@@ -273,7 +279,8 @@ public final class AdminDetailFragment extends Fragment {
     private EditText reasonEditor() {
         TextInputLayout box = new TextInputLayout(requireContext(), null,
                 com.google.android.material.R.attr.textInputOutlinedStyle);
-        box.setHint(getString(R.string.admin_reason_hint));
+        box.setHint(section == Section.REPORTS ? "Ghi chú xử lý nội bộ (không gửi người báo cáo)"
+                : "Lý do kiểm duyệt (hiển thị cho chủ nội dung)");
         EditText input = new EditText(requireContext());
         input.setMinLines(2); input.setMaxLines(4);
         input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(500)});

@@ -40,6 +40,15 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
 public final class AdminResourceFragment extends Fragment {
+    private final android.os.Handler timeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable timeRefresh = new Runnable() {
+        @Override public void run() {
+            if (getView() != null && viewModel != null && section == Section.ANALYTICS
+                    && (viewModel.getState().getValue() == null || viewModel.getState().getValue().getStatus() != AdminScreenState.Status.LOADING))
+                viewModel.refreshDashboard();
+            timeHandler.postDelayed(this, 60000L);
+        }
+    };
     private AdminViewModel viewModel;
     private Section section;
     private TextView title, message;
@@ -91,6 +100,13 @@ public final class AdminResourceFragment extends Fragment {
         orderFromButton = view.findViewById(R.id.adminOrderFromDate);
         orderThroughButton = view.findViewById(R.id.adminOrderThroughDate);
         title.setText(getString(R.string.admin_section_title_format, label(section)));
+        styleSectionButton(view.findViewById(R.id.adminResourceBackButton));
+        styleSectionButton(view.findViewById(R.id.adminAddCatalogResourceButton));
+        styleSectionButton(orderFromButton);
+        styleSectionButton(orderThroughButton);
+        styleSectionButton(view.findViewById(R.id.adminOrderClearDates));
+        styleSectionButton(view.findViewById(R.id.refreshAdminResourceButton));
+        styleSectionButton(loadMoreButton);
         View addCatalog = view.findViewById(R.id.adminAddCatalogResourceButton);
         if (section == Section.CATEGORIES || section == Section.BANNERS) {
             addCatalog.setVisibility(View.VISIBLE);
@@ -485,12 +501,12 @@ public final class AdminResourceFragment extends Fragment {
                 new String[]{"Mobile point"}, new double[]{value.getLiveMobilePoints()},
                 new String[]{String.valueOf(value.getLiveMobilePoints())}, 3);
         AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Tổng lượng đã giải cứu", "Số lượng đã rescued",
+                "Đã giải cứu (Campaign kg)", "Số lượng đã rescued",
                 new String[]{"Đã giải cứu"}, new double[]{value.getTotalRescuedQuantity()},
                 new String[]{String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())}, 2);
         AdminDashboardCards.addCompletionChart(requireContext(), container,
-                "Tỷ lệ hoàn thành",
-                "Rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt",
+                "Tỷ lệ hoàn thành (Campaign kg)",
+                "Rescued / target của Campaign kg đã xác minh và được kích hoạt",
                 value.getCompletionRate());
         AdminDashboardCards.addFootnote(requireContext(), container,
                 "Doanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."
@@ -499,23 +515,32 @@ public final class AdminResourceFragment extends Fragment {
 
     private Button button(int label) {
         MaterialButton button = new MaterialButton(requireContext());
-        AdminUiStyles.outlinedButton(requireContext(), button);
+        AdminUiStyles.sectionButton(requireContext(), button, section);
         button.setText(label);
         return button;
     }
     private Button buttonText(String label) {
         MaterialButton button = new MaterialButton(requireContext());
-        AdminUiStyles.outlinedButton(requireContext(), button);
+        AdminUiStyles.sectionButton(requireContext(), button, section);
         button.setText(label);
         return button;
+    }
+    private void styleSectionButton(View view) {
+        if (view instanceof MaterialButton) {
+            AdminUiStyles.sectionButton(requireContext(), (MaterialButton) view, section);
+        }
     }
     private String label(Section value) { return value.name().replace('_', ' '); }
 
     @Override public void onResume() {
         super.onResume();
-        if (resumedOnce && section != Section.ANALYTICS && section != Section.SHIPPING_SETTINGS) {
+        timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+        if (resumedOnce && section != Section.SHIPPING_SETTINGS) {
             viewModel.refreshSection(section);
         }
         resumedOnce = true;
+    }
+    @Override public void onPause() {
+        timeHandler.removeCallbacks(timeRefresh); super.onPause();
     }
 }

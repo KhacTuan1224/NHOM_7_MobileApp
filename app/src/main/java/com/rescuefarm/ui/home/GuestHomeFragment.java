@@ -1,11 +1,15 @@
 package com.rescuefarm.ui.home;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +17,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Space;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -22,6 +27,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.viewpager2.widget.ViewPager2;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.rescuefarm.R;
 import com.rescuefarm.domain.model.Banner;
 import com.rescuefarm.domain.model.Category;
@@ -44,6 +50,8 @@ public class GuestHomeFragment extends Fragment {
     private BannerPagerAdapter bannerAdapter;
     private ViewPager2.OnPageChangeCallback bannerPageCallback;
     private final Handler bannerHandler = new Handler(Looper.getMainLooper());
+    private LinearLayout volumeGroup, volumeSection;
+    private final Runnable promotionTransitionTick=()->{if(viewModel!=null)viewModel.refreshTimeSensitiveContent();};
     private final Runnable freshnessTick = new Runnable() {
         @Override public void run() {
             if (viewModel != null) viewModel.refreshTimeSensitiveContent();
@@ -87,6 +95,12 @@ public class GuestHomeFragment extends Fragment {
         endingSoonSection = view.findViewById(R.id.endingSoonSection);
         nearExpirySection = view.findViewById(R.id.nearExpirySection);
         valueSection = view.findViewById(R.id.valueSection);
+        volumeGroup=new LinearLayout(requireContext()); volumeGroup.setOrientation(LinearLayout.VERTICAL);
+        TextView volumeTitle=new TextView(requireContext()); volumeTitle.setText("Mua nhiều giá tốt"); volumeTitle.setTextSize(18); volumeTitle.setTypeface(null,android.graphics.Typeface.BOLD);
+        volumeGroup.addView(volumeTitle); volumeSection=new LinearLayout(requireContext()); volumeSection.setOrientation(LinearLayout.HORIZONTAL); android.widget.HorizontalScrollView volumeScroll = new android.widget.HorizontalScrollView(requireContext()); volumeScroll.setHorizontalScrollBarEnabled(false); volumeScroll.addView(volumeSection); volumeGroup.addView(volumeScroll);
+        LinearLayout home=(LinearLayout)view.findViewById(R.id.valueHomeGroup).getParent();
+        home.addView(volumeGroup,home.indexOfChild(view.findViewById(R.id.valueHomeGroup))+1);
+        volumeGroup.setPadding(0,dp(24),0,0);
         campaignSection = view.findViewById(R.id.campaignSection);
         categorySection = view.findViewById(R.id.categorySection);
         viewModel = new ViewModelProvider(this, new HomeViewModelFactory(requireContext()))
@@ -105,7 +119,11 @@ public class GuestHomeFragment extends Fragment {
                         ? R.id.action_guestHomeFragment_to_notificationFragment
                         : R.id.action_guestHomeFragment_to_loginFragment));
         view.findViewById(R.id.refreshHomeButton).setOnClickListener(v -> viewModel.refresh());
-        locationLabel.setOnClickListener(v -> requestLocation());
+        View locationContainer = view.findViewById(R.id.homeLocationContainer);
+        if (locationContainer != null) {
+            locationContainer.setOnClickListener(v -> showLocationPicker());
+        }
+        locationLabel.setOnClickListener(v -> showLocationPicker());
         
         // See more buttons
         view.findViewById(R.id.seeMoreCategoriesButton).setOnClickListener(v -> 
@@ -120,48 +138,162 @@ public class GuestHomeFragment extends Fragment {
         viewModel.refresh();
     }
 
-    private void requestLocation() {
+    private void showLocationPicker() {
+        String[] options = new String[] {
+            "📍 Lấy vị trí GPS hiện tại của bạn",
+            "🏙️ TP. Hồ Chí Minh (Trung tâm)",
+            "🏛️ Hà Nội (Trung tâm)",
+            "🌸 Đà Lạt (Lâm Đồng)",
+            "🌾 Cần Thơ (Miền Tây)",
+            "🥭 Tiền Giang (Vựa trái cây)",
+            "☕ Đắk Lắk (Tây Nguyên)"
+        };
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Chọn vị trí xem nông sản")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        requestCurrentGpsLocation();
+                    } else if (which == 1) {
+                        viewModel.setCustomLocation(10.7769, 106.7009, "TP. Hồ Chí Minh");
+                        Toast.makeText(requireContext(), "Đang xem nông sản quanh: TP. Hồ Chí Minh", Toast.LENGTH_SHORT).show();
+                    } else if (which == 2) {
+                        viewModel.setCustomLocation(21.0285, 105.8542, "Hà Nội");
+                        Toast.makeText(requireContext(), "Đang xem nông sản quanh: Hà Nội", Toast.LENGTH_SHORT).show();
+                    } else if (which == 3) {
+                        viewModel.setCustomLocation(11.9404, 108.4583, "Đà Lạt, Lâm Đồng");
+                        Toast.makeText(requireContext(), "Đang xem nông sản quanh: Đà Lạt", Toast.LENGTH_SHORT).show();
+                    } else if (which == 4) {
+                        viewModel.setCustomLocation(10.0452, 105.7469, "Cần Thơ");
+                        Toast.makeText(requireContext(), "Đang xem nông sản quanh: Cần Thơ", Toast.LENGTH_SHORT).show();
+                    } else if (which == 5) {
+                        viewModel.setCustomLocation(10.3600, 106.3600, "Tiền Giang");
+                        Toast.makeText(requireContext(), "Đang xem nông sản quanh: Tiền Giang", Toast.LENGTH_SHORT).show();
+                    } else if (which == 6) {
+                        viewModel.setCustomLocation(12.6667, 108.0383, "Đắk Lắk");
+                        Toast.makeText(requireContext(), "Đang xem nông sản quanh: Đắk Lắk", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Đóng", null)
+                .show();
+    }
+
+    private void requestCurrentGpsLocation() {
+        LocationManager lm = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
+        boolean isGpsEnabled = lm != null && (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+        if (!isGpsEnabled) {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Dịch vụ định vị đang tắt")
+                    .setMessage("Vui lòng bật dịch vụ vị trí (GPS) trên thiết bị để RescueFarm xác định nông sản gần bạn nhất.")
+                    .setPositiveButton("Mở Cài đặt", (d, w) -> {
+                        startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
+            return;
+        }
+
         boolean fine = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED;
         boolean coarse = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED;
-        if (fine || coarse) viewModel.requestNearbyLocation();
-        else permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION});
+        if (fine || coarse) {
+            Toast.makeText(requireContext(), "Đang xác định vị trí hiện tại…", Toast.LENGTH_SHORT).show();
+            viewModel.requestNearbyLocation();
+        } else {
+            permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION});
+        }
     }
+
     private void onPermissions(Map<String, Boolean> values) {
         if (Boolean.TRUE.equals(values.get(Manifest.permission.ACCESS_FINE_LOCATION))
                 || Boolean.TRUE.equals(values.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
+            Toast.makeText(requireContext(), "Đang xác định vị trí hiện tại…", Toast.LENGTH_SHORT).show();
             viewModel.requestNearbyLocation();
-        } else viewModel.onLocationPermissionDenied();
+        } else {
+            Toast.makeText(requireContext(), "Chưa cấp quyền vị trí. Bạn có thể chọn khu vực có sẵn.", Toast.LENGTH_LONG).show();
+            viewModel.onLocationPermissionDenied();
+        }
     }
 
     private void render(HomeViewState state) {
+        bannerHandler.removeCallbacks(promotionTransitionTick);
+        if(getLifecycle().getCurrentState().isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
+            long delay=viewModel.nextPromotionChangeDelay(); if(delay!=Long.MAX_VALUE)bannerHandler.postDelayed(promotionTransitionTick,delay);
+        }
         String prefix = state.getDataFreshness() == HomeViewState.DataFreshness.OFFLINE ? "OFFLINE • "
                 : state.getDataFreshness() == HomeViewState.DataFreshness.STALE ? "CACHE CŨ • " : "";
         message.setText(prefix + state.getMessage()); progress.setVisibility(state.isRefreshing() ? View.VISIBLE : View.GONE);
-        locationLabel.setText(state.getLocationState() == HomeViewState.LocationState.AVAILABLE
-                ? R.string.home_location_active : state.getLocationState() == HomeViewState.LocationState.LOADING
-                ? R.string.home_location_loading : R.string.home_location_default);
+        if (state.getLocationState() == HomeViewState.LocationState.AVAILABLE) {
+            String label = state.getLocationLabel();
+            if (label != null && !label.trim().isEmpty()) {
+                locationLabel.setText(label.trim());
+            } else {
+                locationLabel.setText(R.string.home_location_active);
+            }
+        } else if (state.getLocationState() == HomeViewState.LocationState.LOADING) {
+            locationLabel.setText(R.string.home_location_loading);
+        } else {
+            locationLabel.setText(R.string.home_location_default);
+        }
         renderBanners(state.getBanners());
-        renderCampaigns(criticalSection, state.getCritical(), state, "Chưa có chiến dịch CRITICAL.");
+        renderCampaigns(criticalSection, state.getCritical(), state, "Chưa có chiến dịch cần giải cứu gấp.");
         String locationEmpty = state.getLocationState() == HomeViewState.LocationState.AVAILABLE
                 ? "Chưa có điểm giải cứu gần vị trí của bạn."
                 : "Bật vị trí để xem các điểm giải cứu gần bạn.";
         renderCampaigns(nearbyMobileSection, state.getNearbyMobile(), state, locationEmpty);
         renderCampaigns(nearbyFixedSection, state.getNearbyFixed(), state, locationEmpty);
-        renderCampaigns(endingSoonSection, state.getEndingSoon(), state,
+        java.util.Set<String> highlightedIds = new java.util.HashSet<>();
+        for (RescueCampaign campaign : state.getCritical()) highlightedIds.add(campaign.getId());
+        List<RescueCampaign> endingSoon = new ArrayList<>();
+        for (RescueCampaign campaign : state.getEndingSoon()) {
+            if (highlightedIds.add(campaign.getId())) endingSoon.add(campaign);
+        }
+        renderCampaigns(endingSoonSection, endingSoon, state,
                 "Chưa có chiến dịch sắp kết thúc.");
         renderProducts(state.getValueProducts());
+        volumeSection.removeAllViews(); volumeGroup.setVisibility(state.getVolumeOffers().isEmpty()?View.GONE:View.VISIBLE);
+        addHorizontal(volumeSection,state.getVolumeOffers(),offer->{
+            LinearLayout row=new LinearLayout(requireContext()); row.setOrientation(LinearLayout.VERTICAL);
+            row.addView(renderer.product(offer.product,v->{
+                Bundle args=new Bundle(); args.putString("productId",offer.product.getId()); args.putString("batchId",offer.batchId); args.putString("campaignId",offer.campaignId); args.putDouble("pricingQuantity",offer.threshold);
+                Navigation.findNavController(requireView()).navigate(R.id.action_guestHomeFragment_to_productDetailFragment,args);
+            }));
+            TextView terms=new TextView(requireContext()); terms.setText(String.format(java.util.Locale.forLanguageTag("vi-VN"),
+                "Từ %s %s: giảm thêm %s%%\nGiá tại mức này: %,.0f đ / %s · chưa gồm phí giao hàng",
+                java.math.BigDecimal.valueOf(offer.threshold).stripTrailingZeros().toPlainString().replace('.',','),offer.product.getUnit(),
+                java.math.BigDecimal.valueOf(offer.percent).stripTrailingZeros().toPlainString().replace('.',','),offer.unitPrice,offer.product.getUnit()));
+            row.addView(terms);return row;
+        });
         renderNearExpiry(state.getNearExpiry());
         List<RescueCampaign> otherCampaigns = new ArrayList<>();
         for (RescueCampaign campaign : state.getActiveCampaigns()) {
-            if (campaign.getUrgencyLevel() != com.rescuefarm.domain.enums.UrgencyLevel.CRITICAL) {
+            if (!highlightedIds.contains(campaign.getId())) {
                 otherCampaigns.add(campaign);
             }
         }
         renderCampaigns(campaignSection, otherCampaigns, state, "Chưa có chiến dịch khác đang diễn ra.");
         renderCategories(state.getCategories());
+        View root = requireView();
+        setSectionVisible(root, R.id.categoryHomeGroup, !state.getCategories().isEmpty());
+        setSectionVisible(root, R.id.criticalHomeGroup, !state.getCritical().isEmpty());
+        boolean hasLocation = state.getLocationState() == HomeViewState.LocationState.AVAILABLE;
+        View locationAction = root.findViewById(R.id.homeNearbyLocationButton);
+        locationAction.setVisibility(hasLocation ? View.GONE : View.VISIBLE);
+        locationAction.setEnabled(state.getLocationState() != HomeViewState.LocationState.LOADING);
+        locationAction.setOnClickListener(v -> root.findViewById(R.id.homeLocationContainer).performClick());
+        setSectionVisible(root, R.id.nearbyMobileHomeGroup, hasLocation && !state.getNearbyMobile().isEmpty());
+        setSectionVisible(root, R.id.nearbyFixedHomeGroup, hasLocation && !state.getNearbyFixed().isEmpty());
+        setSectionVisible(root, R.id.endingSoonHomeGroup, !endingSoon.isEmpty());
+        setSectionVisible(root, R.id.nearExpiryHomeGroup, !state.getNearExpiry().isEmpty());
+        setSectionVisible(root, R.id.valueHomeGroup, !state.getValueProducts().isEmpty());
+        setSectionVisible(root, R.id.campaignHomeGroup,
+                !otherCampaigns.isEmpty() || state.getActiveCampaigns().isEmpty());
+    }
+
+    private void setSectionVisible(View root, int id, boolean visible) {
+        root.findViewById(id).setVisibility(visible ? View.VISIBLE : View.GONE);
     }
     private void renderBanners(List<Banner> values) {
         bannerAdapter.submit(values);
@@ -207,25 +339,17 @@ public class GuestHomeFragment extends Fragment {
         categorySection.setClipChildren(false);
         categorySection.setClipToPadding(false);
         if (values.isEmpty()) { categorySection.addView(renderer.message("Chưa có danh mục trong cache.")); return; }
-        for (int index = 0; index < values.size(); index += 2) {
-            LinearLayout column = new LinearLayout(requireContext());
-            column.setOrientation(LinearLayout.VERTICAL);
-            column.setClipChildren(false);
-            column.setClipToPadding(false);
-            LinearLayout.LayoutParams columnParams = new LinearLayout.LayoutParams(dp(76), -2);
-            columnParams.setMargins(0, 0, dp(4), 0);
-            categorySection.addView(column, columnParams);
-            for (int row = 0; row < 2 && index + row < values.size(); row++) {
-                Category category = values.get(index + row);
-                View tile = renderer.category(category, v -> {
-                    Bundle args = new Bundle();
-                    args.putString("categoryId", category.getId());
-                    DiscoveryBottomSheet bottomSheet = new DiscoveryBottomSheet();
-                    bottomSheet.setArguments(args);
-                    bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
-                });
-                column.addView(tile, new LinearLayout.LayoutParams(-1, dp(86)));
-            }
+        for (Category category : values) {
+            View tile = renderer.category(category, v -> {
+                Bundle args = new Bundle();
+                args.putString("categoryId", category.getId());
+                DiscoveryBottomSheet bottomSheet = new DiscoveryBottomSheet();
+                bottomSheet.setArguments(args);
+                bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
+            });
+            LinearLayout.LayoutParams itemParams = new LinearLayout.LayoutParams(dp(76), -2);
+            itemParams.setMargins(0, 0, dp(8), 0);
+            categorySection.addView(tile, itemParams);
         }
     }
 
@@ -304,12 +428,14 @@ public class GuestHomeFragment extends Fragment {
 
     @Override public void onPause() {
         bannerHandler.removeCallbacks(freshnessTick);
+        bannerHandler.removeCallbacks(promotionTransitionTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
         super.onPause();
     }
 
     @Override public void onDestroyView() {
         bannerHandler.removeCallbacks(freshnessTick);
+        bannerHandler.removeCallbacks(promotionTransitionTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
         if (bannerPager != null && bannerPageCallback != null) {
             bannerPager.unregisterOnPageChangeCallback(bannerPageCallback);
