@@ -111,7 +111,12 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "endDate", "order": "ASCENDING" }
       ]
-    }
+    },
+    {"collectionGroup": "notificationOutbox", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "nextAttemptAt", "order": "ASCENDING"}]},
+    {"collectionGroup": "notificationDeliveries", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "nextAttemptAt", "order": "ASCENDING"}]},
+    {"collectionGroup": "reports", "queryScope": "COLLECTION", "fields": [{"fieldPath": "reporterId", "order": "ASCENDING"}, {"fieldPath": "createdAt", "order": "DESCENDING"}]},
+    {"collectionGroup": "notificationOutbox", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "retryCount", "order": "ASCENDING"}]},
+    {"collectionGroup": "notificationDeliveries", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "retryCount", "order": "ASCENDING"}]}
   ],
   "fieldOverrides": [
     {

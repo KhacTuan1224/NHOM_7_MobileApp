@@ -311,12 +311,12 @@ public class FirebaseUserRepository implements UserRepository {
             data.put("submittedAt", FieldValue.serverTimestamp());
             data.put("updatedAt", FieldValue.serverTimestamp());
             transaction.set(reference, data);
+            com.rescuefarm.service.notification.NotificationOutbox.enqueue(transaction, firestore, "ADMINS", "SELLER_APPLICATION", sellerId);
             return null;
         }).addOnSuccessListener(unused -> {
             com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
                     previousProofUrl[0], application.getProofImageUrl());
-            com.rescuefarm.service.notification.AdminNotificationClient.notifyAdmins(
-                    "SELLER_APPLICATION", sellerId, null);
+
             getSellerApplication(sellerId, callback);
         })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));

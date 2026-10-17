@@ -8,6 +8,7 @@ import java.util.List;
 /** Read-only response DTO, not an additional business/domain entity. */
 public final class SellerStatisticsSnapshot {
     public final double revenue, rescueRate;
+    public final int unverifiedCampaigns;
     public final int orders, deliveredOrders, pendingOrders, completedCampaigns, rescueRateCampaigns;
     public final boolean hasData, approximateDates;
     public final long calculatedAt;
@@ -26,7 +27,7 @@ public final class SellerStatisticsSnapshot {
         deliveredOrders = json.optInt("deliveredOrders"); pendingOrders = json.optInt("pendingOrders");
         completedCampaigns = json.optInt("completedCampaigns"); hasData = json.optBoolean("hasData");
         approximateDates = json.optBoolean("approximateDates"); calculatedAt = json.optLong("calculatedAt");
-        timeBasis = json.optString("timeBasis");
+        timeBasis = json.optString("timeBasis"); unverifiedCampaigns = json.optInt("unverifiedCampaigns");
         JSONObject quantities = json.optJSONObject("rescuedByUnit");
         if (quantities != null) {
             java.util.Iterator<String> keys = quantities.keys();

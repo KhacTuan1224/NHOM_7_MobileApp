@@ -31,6 +31,16 @@ public class RescueCampaign {
     private Map<String, Double> reservedByBatch = new LinkedHashMap<>();
     private Map<String, Double> rescuedByBatch = new LinkedHashMap<>();
     private int allocationVersion;
+    private String quantityUnit = "", unitStatus = "UNVERIFIED";
+    public void setQuantityUnit(String unit, String verification) {
+        quantityUnit = com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(unit);
+        if (quantityUnit.length() > 32) throw new IllegalArgumentException("Đơn vị quá dài");
+        unitStatus = verification == null ? "UNVERIFIED" : verification;
+    }
+    public String getQuantityUnit() { return quantityUnit; }
+    public String getUnitStatus() { return unitStatus; }
+    public String getQuantityUnitLabel() { return quantityUnit.isEmpty() || "REVIEW_REQUIRED".equals(unitStatus) ? "đơn vị chưa xác minh" : quantityUnit; }
+    public boolean isVerifiedKilograms() { return "VERIFIED".equals(unitStatus) && "kg".equals(quantityUnit); }
     private double targetQuantity;
     private double reservedQuantity;
     private double rescuedQuantity;

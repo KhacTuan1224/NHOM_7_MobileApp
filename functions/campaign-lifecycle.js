@@ -1,4 +1,6 @@
 const express = require('express');
+const {campaignUnit, normalizeUnit} = require('./quantity-units');
+const {enqueueNotification} = require('./notification-outbox');
 const EPSILON = 0.000001;
 const fail = (status, message) => Object.assign(new Error(message), {status});
 const text = value => typeof value === 'string' ? value.trim() : '';
@@ -81,22 +83,48 @@ function createCampaignLifecycle({db, admin, authenticate}) {
     for (const batch of batches) if (batch.exists && batch.get('activeCampaignId') === id)
       tx.update(batch.ref, {activeCampaignId: null, inventoryVersion: (batch.get('inventoryVersion') || 0) + 1, updatedAt: stamp()});
   };
+  async function verifyUnit(tx, id, campaign, batches) {
+    const products = await Promise.all(batches.map(b => b.exists ? tx.get(db.collection('products').doc(b.get('productId'))) : null));
+    if (products.some(p => !p || !p.exists)) throw fail(409, 'Thiếu sản phẩm để xác minh đơn vị Campaign.');
+    const unit = campaignUnit(products.map(p => p.data()));
+    if (campaign.quantityUnit && normalizeUnit(campaign.quantityUnit) !== unit) throw fail(409, 'Đơn vị Campaign đã thay đổi; cần đối soát.');
+    if (campaign.unitStatus !== 'VERIFIED' && ((campaign.reservedQuantity || 0) + (campaign.rescuedQuantity || 0) > 0)) {
+      const orders = await tx.get(db.collection('orders').where('campaignId', '==', id));
+      if (orders.empty) throw fail(409, 'Thiếu đơn lịch sử để xác minh đơn vị.');
+      for (const order of orders.docs) {
+        if (order.get('status') === 'CANCELLED') continue;
+        const items = await tx.get(order.ref.collection('items'));
+        const relevant = items.docs.filter(item => Object.hasOwn(campaign.batchTargets, item.get('batchId')));
+        if (!relevant.length || relevant.some(item => normalizeUnit(item.get('unitSnapshot')) !== unit))
+          throw fail(409, 'Đơn vị snapshot đơn cũ không khớp; cần đối soát Campaign.');
+      }
+    }
+    return unit;
+  }
 
   async function reconcileCampaign(id) {
     return db.runTransaction(async tx => {
       const ref = db.collection('campaigns').doc(id), snap = await tx.get(ref);
       if (!snap.exists) return {missing: true};
       const campaign = snap.data(), next = nextClosedStatus(campaign, Date.now());
+      const batches = await readBatches(tx, campaign);
+      let unitFields = {};
+      if (campaign.unitStatus !== 'VERIFIED') {
+        try { unitFields = {quantityUnit: await verifyUnit(tx, id, campaign, batches), unitStatus: 'VERIFIED'}; }
+        catch (error) { if (error.status !== 409) throw error; unitFields = {unitStatus: 'REVIEW_REQUIRED', unitReviewReason: error.message}; }
+      }
       if (next === 'ACTIVE') {
+        let progressFields = {};
         if (campaign.allocationVersion !== 1) {
           const progress = await readAllocations(ref => tx.get(ref), db, id, campaign);
-          tx.update(ref, {...allocationFields(progress), updatedAt: stamp()});
+          progressFields = allocationFields(progress);
         }
+        if (Object.keys(unitFields).length || Object.keys(progressFields).length) tx.update(ref, {...unitFields, ...progressFields});
         return {status: next};
       }
-      const batches = await readBatches(tx, campaign);
       // Closing a campaign never releases stock held by orders. Those orders retain their campaignId.
       unlink(tx, id, batches);
+      if (Object.keys(unitFields).length) tx.update(ref, unitFields);
       if (next !== campaign.status) tx.update(ref, {status: next, locationSharingEnabled: false,
         ...(next === 'COMPLETED' ? {completedAt: stamp()} : {expiredAt: stamp()}), updatedAt: stamp()});
       return {status: next};
@@ -152,6 +180,10 @@ function createCampaignLifecycle({db, admin, authenticate}) {
           const linked = text(batch.get('activeCampaignId'));
           return linked && linked !== id ? tx.get(db.collection('campaigns').doc(linked)) : null;
         }));
+        if (products.some(product => !product.exists)) throw fail(409, 'Một sản phẩm không còn tồn tại.');
+        const quantityUnit = campaignUnit(products.map(product => product.data()));
+        if (campaign.quantityUnit && normalizeUnit(campaign.quantityUnit) !== quantityUnit)
+          throw fail(409, 'Đơn vị khai báo của Campaign không khớp đơn vị các lô. Hãy sửa bản gửi duyệt.');
         let earliestExpiry = Infinity;
         batches.forEach((batch, index) => {
           const b = batch.data(), product = products[index];
@@ -170,9 +202,11 @@ function createCampaignLifecycle({db, admin, authenticate}) {
         const urgencyLevel = days(earliestExpiry) <= 2 || days(millis(campaign.endDate)) <= 1 ? 'CRITICAL'
           : days(earliestExpiry) <= 5 || days(millis(campaign.endDate)) <= 3 ? 'HIGH' : 'NORMAL';
         tx.update(ref, {status: 'ACTIVE', moderatedBy: caller.uid, moderatedAt: stamp(), moderationReason: reason,
-          reservedByBatch: {}, rescuedByBatch: {}, allocationVersion: 1, urgencyLevel, updatedAt: stamp()});
+          reservedByBatch: {}, rescuedByBatch: {}, allocationVersion: 1, quantityUnit, unitStatus: 'VERIFIED', urgencyLevel, updatedAt: stamp()});
         for (const batch of batches) tx.update(batch.ref, {activeCampaignId: id,
           inventoryVersion: (batch.get('inventoryVersion') || 0) + 1, updatedAt: stamp()});
+        enqueueNotification(tx, db, admin, 'campaign_active_' + id, {kind: 'CAMPAIGN', resourceType: 'CAMPAIGN', resourceId: id,
+          title: 'Chiến dịch giải cứu đang hoạt động', publicMessage: text(campaign.title)});
       } else {
         unlink(tx, id, batches);
         if (campaign.status === target) return {ok: true, replay: true};
@@ -271,6 +305,8 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       if (order.ownerType === 'CUSTOMER') tx.set(db.collection('notifications').doc(`${id}_${target}`), {
         id: `${id}_${target}`, userId: order.ownerId, type: 'ORDER', referenceId: id, orderStatus: target,
         title: 'Cập nhật đơn hàng', body: `Trạng thái: ${target}`, isRead: false, createdAt: stamp()});
+      if (order.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${id}_${target}`, {
+        kind: 'DIRECT', resourceType: 'ORDER', resourceId: id, recipientUid: order.ownerId, decision: target, inboxId: `${id}_${target}`});
       return {ok: true, replay: false};
     });
   }

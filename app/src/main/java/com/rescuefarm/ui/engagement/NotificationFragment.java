@@ -40,6 +40,17 @@ public class NotificationFragment extends Fragment {
     private LinearLayout container;
     private TextView emptyText;
     private String userId = "";
+    private final FirebaseAuth.AuthStateListener authListener = auth -> {
+        String uid = auth.getCurrentUser() == null ? "" : auth.getCurrentUser().getUid();
+        if (!uid.equals(userId)) {
+            userId = uid;
+            if (container != null) container.removeAllViews();
+            if (emptyText != null) { emptyText.setVisibility(View.VISIBLE); emptyText.setText(uid.isEmpty() ? "Đăng nhập để xem thông báo." : "Đang tải thông báo…"); }
+            if (viewModel != null && !uid.isEmpty()) viewModel.refreshNotifications(uid);
+        }
+    };
+    @Override public void onStart() { super.onStart(); FirebaseAuth.getInstance().addAuthStateListener(authListener); }
+    @Override public void onStop() { FirebaseAuth.getInstance().removeAuthStateListener(authListener); super.onStop(); }
     
     private final ActivityResultLauncher<String> permissionLauncher = 
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -99,6 +110,7 @@ public class NotificationFragment extends Fragment {
     }
 
     private void registerCurrentToken() {
+        com.rescuefarm.service.notification.FcmDeviceSyncWorker.refreshNow(requireContext());
         FirebaseMessaging.getInstance().getToken()
                 .addOnSuccessListener(token -> viewModel.registerToken(userId, token))
                 .addOnFailureListener(e -> Toast.makeText(requireContext(), 
@@ -107,6 +119,11 @@ public class NotificationFragment extends Fragment {
 
     private void renderNotifications(List<Notification> notifications) {
         container.removeAllViews();
+        String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? "" : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        java.util.ArrayList<Notification> owned = new java.util.ArrayList<>();
+        if (notifications != null) for (Notification item : notifications)
+            if (item != null && !uid.isEmpty() && uid.equals(item.getUserId())) owned.add(item);
+        notifications = owned;
         
         if (notifications == null || notifications.isEmpty()) {
             emptyText.setVisibility(View.VISIBLE);
@@ -185,16 +202,8 @@ public class NotificationFragment extends Fragment {
         card.addView(content, new FrameLayout.LayoutParams(-1, -2));
         
         card.setOnClickListener(v -> {
-            viewModel.markRead(notification.getId(), userId);
-            String deepLink = new NotificationDeepLinkService()
-                    .build(notification.getType(), notification.getReferenceId());
-            try {
-                Navigation.findNavController(requireView()).navigate(
-                        NavDeepLinkRequest.Builder.fromUri(Uri.parse(deepLink)).build());
-            } catch (Exception e) {
-                Toast.makeText(requireContext(), 
-                        R.string.deep_link_unavailable, Toast.LENGTH_SHORT).show();
-            }
+            if (requireActivity() instanceof com.rescuefarm.MainActivity)
+                ((com.rescuefarm.MainActivity)requireActivity()).openNotification(notification.getId());
         });
         
         return card;

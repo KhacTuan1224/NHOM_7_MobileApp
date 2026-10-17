@@ -264,7 +264,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     RenderBackendClient.post("/campaigns/moderate", request, new RenderBackendClient.Callback() {
                         @Override public void onSuccess(JSONObject response) {
                             callback.onSuccess();
-                            if ("ACTIVE".equals(target) && !response.optBoolean("replay")) notifyCampaignCustomers(id);
+
                         }
                         @Override public void onError(String message) { callback.onError(ErrorCode.CONFLICT, message); }
                     });
@@ -1023,20 +1023,11 @@ public final class FirebaseAdminRepository implements AdminRepository {
             return true;
         }).addOnSuccessListener(value -> {
             callback.onSuccess();
-            if (section == Section.CAMPAIGNS && "ACTIVE".equals(target)) notifyCampaignCustomers(id);
+
         })
                 .addOnFailureListener(error -> fail(error, callback));
     }
 
-    private void notifyCampaignCustomers(String campaignId) {
-        JSONObject request = new JSONObject();
-        try { request.put("type", "CAMPAIGN"); request.put("referenceId", campaignId); }
-        catch (org.json.JSONException ignored) { return; }
-        RenderBackendClient.post("/send-notification", request, new RenderBackendClient.Callback() {
-            @Override public void onSuccess(JSONObject response) { }
-            @Override public void onError(String message) { }
-        });
-    }
 
     private void ensureAdmin(Runnable action, Object callback) {
         if (auth.getCurrentUser() == null) {

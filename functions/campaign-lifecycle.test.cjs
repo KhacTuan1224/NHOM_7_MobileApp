@@ -183,3 +183,28 @@ test('bank transfer must be confirmed before delivery and paid orders cannot be 
   await f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'DELIVERED'});
   assert.equal(f.db.snapshot('campaigns/campaign').get('rescuedByBatch').a, 10);
 });
+
+test('mixed-unit approval is rejected atomically even when numeric targets fit', async () => {
+  const f = setup(); f.db.documents.set('products/p-b', {...f.db.snapshot('products/p-b').data(), unit: 'bó'});
+  await assert.rejects(() => activate(f), /cùng một đơn vị/);
+  assert.equal(f.db.snapshot('campaigns/campaign').get('status'), 'PENDING_APPROVAL');
+  assert.equal(f.db.snapshot('productBatches/a').get('activeCampaignId'), null);
+});
+test('approval cannot silently relabel an explicitly declared campaign unit', async () => {
+  const f = setup(); f.db.documents.set('campaigns/campaign', {...f.db.snapshot('campaigns/campaign').data(), quantityUnit: 'bó', unitStatus: 'DECLARED'});
+  await assert.rejects(() => activate(f), /Đơn vị khai báo/);
+});
+test('legacy Campaign migration flags mixed units instead of labelling their sums kg', async () => {
+  const f = setup(); f.db.documents.set('products/p-b', {...f.db.snapshot('products/p-b').data(), unit: 'bó'});
+  await f.lifecycle.reconcileCampaign('campaign');
+  assert.equal(f.db.snapshot('campaigns/campaign').get('unitStatus'), 'REVIEW_REQUIRED');
+});
+test('legacy campaign verifies actual order item units before becoming kg analytics data', async () => {
+  const f = setup(); await activate(f); const request = data(); await f.commerce.checkout(request, identity);
+  const campaign = f.db.snapshot('campaigns/campaign').data(); delete campaign.unitStatus; delete campaign.quantityUnit;
+  f.db.documents.set('campaigns/campaign', campaign);
+  f.db.documents.set(`orders/${request.requestId}/items/a`, {...f.db.snapshot(`orders/${request.requestId}/items/a`).data(), unitSnapshot: 'bao'});
+  await f.lifecycle.reconcileCampaign('campaign');
+  assert.equal(f.db.snapshot('campaigns/campaign').get('unitStatus'), 'REVIEW_REQUIRED');
+  await assert.rejects(() => f.commerce.checkout(data(), identity), /xác minh/);
+});

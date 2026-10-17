@@ -69,6 +69,7 @@ public final class SellerDashboardAggregator {
             if (campaign.getStatus() == CampaignStatus.ACTIVE) activeCampaigns++;
             if (campaign.getStatus() == CampaignStatus.COMPLETED) completedCampaigns++;
             if (campaign.getRescueMode() == RescueMode.MOBILE_POINT) mobile++;
+            if (!campaign.isVerifiedKilograms()) continue;
             rescued += campaign.getRescuedQuantity();
             if (campaign.getStatus() == CampaignStatus.ACTIVE
                     || campaign.getStatus() == CampaignStatus.COMPLETED

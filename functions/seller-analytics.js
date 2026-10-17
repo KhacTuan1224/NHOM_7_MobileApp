@@ -1,4 +1,5 @@
 const express = require('express');
+const {normalizeUnit} = require('./quantity-units');
 const {orderAllocations} = require('./campaign-lifecycle');
 const time = value => value && typeof value.toMillis === 'function' ? value.toMillis() : 0;
 const number = value => Number.isFinite(value) ? value : 0;
@@ -37,11 +38,11 @@ function aggregateSellerStatistics({orders, campaigns, itemsByOrder, days, now =
     const allocations = campaign ? orderAllocations(order, campaign.batchTargets || {}) : {};
     if (Object.keys(allocations).length) rescuedOrders++;
     for (const item of itemsByOrder.get(order.id) || []) {
-      const unit = String(item.unitSnapshot || 'đơn vị');
+      const unit = normalizeUnit(item.unitSnapshot) || 'đơn vị chưa xác minh';
       const key = `${item.productId}|${unit}`, existing = products.get(key) || {label: item.productNameSnapshot || item.productId, unit, quantity: 0};
       existing.quantity += number(item.quantity); products.set(key, existing);
       const quantity = number(allocations[item.batchId]);
-      if (quantity > 0) {
+      if (quantity > 0 && campaign.unitStatus === 'VERIFIED' && unit === normalizeUnit(campaign.quantityUnit)) {
         quantities[unit] = (quantities[unit] || 0) + quantity;
         const reason = campaign.rescueReason || 'OTHER', key = `${reason}|${unit}`;
         const entry = reasons.get(key) || {label: reason, unit, quantity: 0};
@@ -52,13 +53,14 @@ function aggregateSellerStatistics({orders, campaigns, itemsByOrder, days, now =
   const completed = campaigns.filter(c => c.status === 'COMPLETED'
     && (time(c.completedAt) || time(c.updatedAt)) >= cutoff && (time(c.completedAt) || time(c.updatedAt)) <= now);
   // Average percentages instead of summing quantities with potentially different units.
-  const overlapping = campaigns.filter(c => ['ACTIVE', 'COMPLETED', 'EXPIRED', 'STOPPED'].includes(c.status)
+  const overlapping = campaigns.filter(c => c.unitStatus === 'VERIFIED' && ['ACTIVE', 'COMPLETED', 'EXPIRED', 'STOPPED'].includes(c.status)
     && number(c.targetQuantity) > 0 && time(c.startDate) <= now && time(c.endDate) >= cutoff);
   const rescueRate = overlapping.length ? overlapping.reduce((total, c) => total
     + Math.min(1, Math.max(0, number(c.rescuedQuantity) / c.targetQuantity)), 0) * 100 / overlapping.length : 0;
   const ranking = entries => [...entries.values()].sort((a, b) => a.unit.localeCompare(b.unit)
     || b.quantity - a.quantity || a.label.localeCompare(b.label));
   return {days, calculatedAt: now, revenue, orders: created.length, deliveredOrders: delivered.length, rescuedOrders,
+    unverifiedCampaigns: campaigns.filter(c => c.unitStatus !== 'VERIFIED' && number(c.rescuedQuantity) > 0).length,
     completedCampaigns: completed.length, rescuedByUnit: quantities, rescueRate, rescueRateCampaigns: overlapping.length,
     pendingOrders: orders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length,
     topProducts: ranking(products), topReasons: ranking(reasons), revenueTrend: buckets,

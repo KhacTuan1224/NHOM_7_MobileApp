@@ -1,4 +1,6 @@
 const express = require("express");
+const {normalizeUnit, campaignUnit} = require('./quantity-units');
+const {enqueueNotification} = require('./notification-outbox');
 const crypto = require("node:crypto");
 const {createCampaignLifecycle, readAllocations} = require('./campaign-lifecycle');
 
@@ -58,7 +60,7 @@ function distanceKm(aLat, aLng, bLat, bLng) {
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyAdmins = null, campaignLifecycle = null}) {
+function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
   const router = express.Router();
   const lifecycle = campaignLifecycle || createCampaignLifecycle({db, admin, authenticate});
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
@@ -107,6 +109,9 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
       if (!c.exists || c.get('sellerId') !== sellerId || c.get('status') !== 'ACTIVE'
           || time(c.get('endDate')) <= now || time(c.get('startDate')) > now) throw error(409, "Chiến dịch chưa bắt đầu hoặc đã kết thúc.");
       campaign = {id: c.id, ...c.data()};
+      const unit = campaignUnit(rows.filter(row => text(row.batch.activeCampaignId)).map(row => row.product));
+      if (campaign.unitStatus !== 'VERIFIED' || normalizeUnit(campaign.quantityUnit) !== unit)
+        throw error(409, 'Đơn vị Campaign chưa được xác minh hoặc không khớp; cần đối soát trước khi đặt hàng.');
       allocation = await readAllocations(read, db, c.id, campaign);
       for (const row of rows) if (text(row.batch.activeCampaignId)) {
         const remaining = number((campaign.batchTargets || {})[row.item.batchId], 0)
@@ -233,7 +238,7 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
         const item = row.item, batch = row.batch, p = row.product;
         tx.create(orderRef.collection('items').doc(item.batchId), {id: item.batchId, orderId: requestId,
           productId: item.productId, batchId: item.batchId, productNameSnapshot: text(p.name),
-          productImageSnapshot: Array.isArray(p.imageUrls) ? text(p.imageUrls[0]) : '', unitSnapshot: text(p.unit),
+          productImageSnapshot: Array.isArray(p.imageUrls) ? text(p.imageUrls[0]) : '', unitSnapshot: normalizeUnit(p.unit),
           originalPriceSnapshot: p.originalPrice, rescuePriceSnapshot: p.rescuePrice, finalPriceSnapshot: row.price.unit,
           quantity: item.quantity, subtotal: row.price.subtotal});
         tx.update(row.batchRef, {availableQuantity: batch.availableQuantity - item.quantity,
@@ -273,28 +278,16 @@ function createCommerce({db, admin, authenticate, notifyNewOrder = null, notifyA
         body: 'Đơn hàng đang chờ cửa hàng xác nhận.', referenceId: requestId, orderStatus: 'PENDING',
         isRead: false, createdAt: stamp()});
       if (identity.ownerType === 'GUEST') tx.create(codeRef, {orderId: requestId, phoneHash: hash(receiverPhone), createdAt: stamp()});
+      enqueueNotification(tx, db, admin, `order_${requestId}_seller`, {kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId,
+        recipientUid: q.sellerId, decision: 'PENDING', title: 'Có đơn hàng mới', publicMessage: 'Có đơn hàng mới đang chờ cửa hàng xác nhận.'});
+      enqueueNotification(tx, db, admin, `order_${requestId}_admins`, {kind: 'ADMINS', resourceType: 'ORDER', resourceId: requestId});
+      if (identity.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${requestId}_PENDING`, {
+        kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId, recipientUid: identity.ownerId, decision: 'PENDING', inboxId: `${requestId}_PENDING`});
       return {order, replay: false};
     });
     // Re-read committed server timestamps; never serialize FieldValue sentinels to Android.
     result.order = (await orderRef.get()).data();
     if (identity.ownerType === 'GUEST') result.accessToken = data.guestToken;
-    if (typeof notifyNewOrder === 'function' && !result.replay) {
-      try {
-        await notifyNewOrder(result.order.sellerId, requestId,
-          `Có đơn hàng mới ${text(result.order.orderCode)}`,
-          "Bạn vừa nhận được đơn hàng mới. Mở RescueFarm để xác nhận.");
-      } catch (notificationError) {
-        console.error("Seller order notification could not be delivered:", notificationError.message || notificationError);
-      }
-    }
-    if (typeof notifyAdmins === 'function' && !result.replay) {
-      try {
-        await notifyAdmins(requestId, `Đơn hàng mới ${text(result.order.orderCode)}`,
-          `Có đơn hàng mới từ ${identity.ownerType === 'CUSTOMER' ? 'Customer' : 'Guest'} cần theo dõi.`);
-      } catch (notificationError) {
-        console.error("Admin order notification could not be delivered:", notificationError.message || notificationError);
-      }
-    }
     return serialize(result);
   }
 

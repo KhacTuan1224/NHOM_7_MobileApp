@@ -255,16 +255,8 @@ public class FirebaseAuthRepository implements AuthRepository {
 
     private void registerUserDevice(User user) {
         if (user == null || !user.isActive()) return;
-        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
-            FirebaseUser current = firebaseAuth.getCurrentUser();
-            if (current == null || !user.getId().equals(current.getUid())) return;
-            if (token == null || token.trim().isEmpty()) return;
-            Map<String, Object> device = new HashMap<>();
-            device.put("userId", user.getId()); device.put("token", token);
-            device.put("platform", "ANDROID"); device.put("updatedAt", FieldValue.serverTimestamp());
-            FirebaseFirestore.getInstance().collection("users").document(user.getId())
-                    .collection("devices").document(hashToken(token)).set(device);
-        });
+        com.rescuefarm.service.notification.FcmDeviceSyncWorker.refreshNow(
+                com.google.firebase.FirebaseApp.getInstance().getApplicationContext());
     }
 
     private String hashToken(String token) {

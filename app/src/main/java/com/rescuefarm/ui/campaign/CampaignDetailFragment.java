@@ -223,7 +223,7 @@ public class CampaignDetailFragment extends Fragment {
             share.setType("text/plain");
             share.putExtra(Intent.EXTRA_SUBJECT, campaign.getTitle());
             share.putExtra(Intent.EXTRA_TEXT, campaign.getTitle() + "\n" + campaign.getDescription()
-                + "\nCòn " + campaign.calculateRemainingQuantity() + " kg cần giải cứu."
+                + "\nCòn " + campaign.calculateRemainingQuantity() + " " + campaign.getQuantityUnitLabel() + " cần giải cứu."
                 + "\nrescuefarm://campaigns/" + Uri.encode(campaignId));
             startActivity(Intent.createChooser(share, "Chia sẻ chiến dịch"));
         });
@@ -294,22 +294,31 @@ public class CampaignDetailFragment extends Fragment {
 
         TextView targetText = view.findViewById(R.id.campaignTargetQuantity);
         if (targetText != null) {
-            targetText.setText(String.format(Locale.getDefault(), "%,.1f kg", value.getTargetQuantity()));
+            targetText.setText(String.format(Locale.getDefault(), "%,.1f %s", value.getTargetQuantity(), value.getQuantityUnitLabel()));
         }
 
         TextView rescuedText = view.findViewById(R.id.campaignRescuedQuantity);
         if (rescuedText != null) {
-            rescuedText.setText(String.format(Locale.getDefault(), "%,.1f kg", value.getRescuedQuantity()));
+            rescuedText.setText(String.format(Locale.getDefault(), "%,.1f %s", value.getRescuedQuantity(), value.getQuantityUnitLabel()));
         }
 
         TextView availableText = view.findViewById(R.id.campaignAvailableQuantity);
         if (availableText != null) {
-            availableText.setText(String.format(Locale.getDefault(), "%,.1f kg", value.calculateRemainingQuantity()));
+            availableText.setText(String.format(Locale.getDefault(), "%,.1f %s", value.calculateRemainingQuantity(), value.getQuantityUnitLabel()));
         }
 
         set(view, R.id.campaignDetailProgress, getString(R.string.campaign_progress_quantities_format,
                 value.calculateProgress(), value.getTargetQuantity(), value.getRescuedQuantity(),
-                value.getReservedQuantity(), value.calculateRemainingQuantity(), "kg"));
+                value.getReservedQuantity(), value.calculateRemainingQuantity(), value.getQuantityUnitLabel()));
+
+        if ("REVIEW_REQUIRED".equals(value.getUnitStatus())) {
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            if (percentText != null) percentText.setText("Cần đối soát");
+            if (targetText != null) targetText.setText("—");
+            if (rescuedText != null) rescuedText.setText("—");
+            if (availableText != null) availableText.setText("—");
+            set(view, R.id.campaignDetailProgress, "Đơn vị của chiến dịch chưa nhất quán. Tạm chưa hiển thị tiến độ; cần người bán và quản trị đối soát.");
+        } else if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
 
         set(view, R.id.campaignDetailSchedule, dateFormat.format(value.getStartDate()) + " – " + dateFormat.format(value.getEndDate()));
         
@@ -587,7 +596,7 @@ public class CampaignDetailFragment extends Fragment {
         for (ProductBatch batch : loadedBatches) {
             Product prod = findProductForBatch(batch);
             String prodName = prod != null ? prod.getName() : "Nông sản";
-            String unit = prod != null ? prod.getUnit() : "kg";
+            String unit = prod != null ? prod.getUnit() : campaign.getQuantityUnitLabel();
             batchLabels.add(prodName + " (Còn " + batch.getAvailableQuantity() + " " + unit + ")");
         }
 
@@ -668,6 +677,9 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private void onAddToCart(boolean isDirectCheckout) {
+        if (campaign != null && "REVIEW_REQUIRED".equals(campaign.getUnitStatus())) {
+            Toast.makeText(requireContext(), "Chiến dịch cần đối soát đơn vị trước khi đặt hàng.", Toast.LENGTH_LONG).show(); return;
+        }
         if (ActorUiPolicy.isSellerReadOnly(this)) {
             Toast.makeText(requireContext(), "Tài khoản người bán không thể đặt hàng giải cứu.", Toast.LENGTH_SHORT).show();
             return;
