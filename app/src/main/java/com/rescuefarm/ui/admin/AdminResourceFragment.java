@@ -279,37 +279,80 @@ public final class AdminResourceFragment extends Fragment {
 
     private void renderItem(AdminListItem item) {
         LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, 16, 0, 16);
-        TextView text = new TextView(requireContext());
-        text.setText(getString(R.string.admin_resource_row_format, item.getTitle(), item.getSubtitle(),
-                AdminDetailFormatter.status(item.getStatus()), item.getId()));
-        row.addView(text);
-        Button detail = button(R.string.admin_view_detail_action);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        int padding = listDp(14);
+        row.setPadding(padding, padding, padding, padding);
+        LinearLayout information = new LinearLayout(requireContext());
+        information.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams informationParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        informationParams.setMarginEnd(listDp(12));
+        row.addView(information, informationParams);
+        addListText(information, item.getTitle(), 18, true);
+        if (!item.getSubtitle().isEmpty()) addListText(information, item.getSubtitle(), 16, false);
+        addListText(information, "Trạng thái: " + AdminDetailFormatter.status(item.getStatus()), 16, false);
+        addListText(information, "ID: " + item.getId(), 14, false);
+        LinearLayout actions = new LinearLayout(requireContext());
+        actions.setOrientation(LinearLayout.VERTICAL);
+        row.addView(actions, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        Button detail = listButton("Chi tiết", getString(R.string.admin_view_detail_action));
         detail.setOnClickListener(v -> openDetail(item));
-        row.addView(detail);
+        actions.addView(detail);
+        android.graphics.drawable.GradientDrawable outline = new android.graphics.drawable.GradientDrawable();
+        outline.setColor(android.graphics.Color.TRANSPARENT);
+        outline.setCornerRadius(listDp(16));
+        outline.setStroke(listDp(1), ((MaterialButton) detail).getStrokeColor().getDefaultColor());
+        row.setBackground(outline);
         if (section == Section.CATEGORIES || section == Section.BANNERS) {
-            Button edit = buttonText("Chỉnh sửa thông tin");
-            edit.setOnClickListener(v -> showCatalogEditor(item)); row.addView(edit);
-            ImageView preview = catalogImage(row, item.getImageUrl());
+            Button edit = listButton("Sửa", "Chỉnh sửa thông tin");
+            edit.setOnClickListener(v -> showCatalogEditor(item)); actions.addView(edit);
+            ImageView preview = catalogImage(information, item.getImageUrl());
             TextView imageStatus = new TextView(requireContext());
             imageStatus.setVisibility(View.GONE);
-            row.addView(imageStatus);
-            Button upload = button(R.string.upload_category_banner_image_action);
+            information.addView(imageStatus);
+            Button upload = listButton("Tải ảnh", getString(R.string.upload_category_banner_image_action));
             upload.setOnClickListener(v -> {
                 selectedAssetId = item.getId(); pendingImageButton = upload; pendingImageStatus = imageStatus; pendingImagePreview = preview;
                 pendingImageResult = null;
                 imagePicker.launch("image/*");
             });
-            row.addView(upload);
-            Button toggle = button(item.isActive() ? R.string.admin_disable_action
-                    : R.string.admin_enable_action);
+            actions.addView(upload);
+            Button toggle = listButton(item.isActive() ? "Ẩn" : "Hiện", getString(item.isActive()
+                    ? R.string.admin_disable_action : R.string.admin_enable_action));
             toggle.setOnClickListener(v -> viewModel.setActive(item.getId(), !item.isActive(),
                     reason.getText().toString().trim()));
-            row.addView(toggle);
+            actions.addView(toggle);
         }
-        container.addView(row);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardParams.topMargin = listDp(6); cardParams.bottomMargin = listDp(6);
+        container.addView(row, cardParams);
     }
+
+    private void addListText(LinearLayout parent, String value, int size, boolean bold) {
+        TextView text = new TextView(requireContext());
+        text.setText(value); text.setTextSize(size);
+        text.setTextColor(requireContext().getColor(bold ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
+        if (bold) text.setTypeface(null, android.graphics.Typeface.BOLD);
+        text.setPadding(0, 0, 0, listDp(5));
+        parent.addView(text, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+    }
+
+    private Button listButton(String label, String description) {
+        MaterialButton button = (MaterialButton) buttonText(label);
+        button.setContentDescription(description);
+        button.setMinWidth(0); button.setMinimumWidth(0);
+        button.setMinHeight(listDp(40)); button.setMinimumHeight(listDp(40));
+        button.setPaddingRelative(listDp(10), listDp(4), listDp(10), listDp(4));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = android.view.Gravity.END; params.topMargin = listDp(3); params.bottomMargin = listDp(3);
+        button.setLayoutParams(params);
+        return button;
+    }
+
+    private int listDp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
     private void showCatalogEditor(AdminListItem item) {
         boolean editing = item != null;
