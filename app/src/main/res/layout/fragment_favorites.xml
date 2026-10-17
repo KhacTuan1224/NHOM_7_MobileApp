@@ -2,13 +2,13 @@
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/rescue_background">
+    android:background="@color/rescue_background" xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/space_md">
+        android:padding="@dimen/space_md" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
 
         <TextView
             style="@style/TextAppearance.Material3.HeadlineMedium"
@@ -36,5 +36,5 @@
             android:orientation="vertical"
             android:clipChildren="false"
             android:clipToPadding="false" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

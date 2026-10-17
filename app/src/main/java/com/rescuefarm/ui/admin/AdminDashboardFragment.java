@@ -50,7 +50,7 @@ public final class AdminDashboardFragment extends Fragment {
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
         view.findViewById(R.id.adminDashboardBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
-        view.findViewById(R.id.adminDashboardMenuButton).setOnClickListener(v -> drawer.openDrawer(android.view.Gravity.START));
+        view.findViewById(R.id.adminDashboardMenuButton).setOnClickListener(v -> drawer.openDrawer(androidx.core.view.GravityCompat.START));
         view.findViewById(R.id.refreshAdminDashboardButton).setOnClickListener(v -> viewModel.refreshDashboard());
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminHomeSellersButton, Section.SELLER_APPLICATIONS);
@@ -69,7 +69,7 @@ public final class AdminDashboardFragment extends Fragment {
 
     private void bind(View root, int id, Section section) {
         root.findViewById(id).setOnClickListener(view -> {
-            if (drawer != null && drawer.isDrawerOpen(android.view.Gravity.START)) drawer.closeDrawer(android.view.Gravity.START);
+            if (drawer != null && drawer.isDrawerOpen(androidx.core.view.GravityCompat.START)) drawer.closeDrawer(androidx.core.view.GravityCompat.START);
             Bundle args = new Bundle(); args.putString("section", section.name());
             Navigation.findNavController(view).navigate(
                     R.id.action_adminDashboardFragment_to_adminResourceFragment, args);

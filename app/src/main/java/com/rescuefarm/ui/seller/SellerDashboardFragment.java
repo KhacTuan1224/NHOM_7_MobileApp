@@ -72,7 +72,7 @@ public class SellerDashboardFragment extends Fragment {
         });
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
         view.findViewById(R.id.sellerDashboardMenuButton).setOnClickListener(unused ->
-                drawer.openDrawer(android.view.Gravity.START));
+                drawer.openDrawer(androidx.core.view.GravityCompat.START));
         view.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(unused -> viewModel.refresh());
         bind(view, R.id.dashboardProductsButton, "products");
         bind(view, R.id.dashboardBatchesButton, "batches");
@@ -95,8 +95,8 @@ public class SellerDashboardFragment extends Fragment {
     }
 
     private void closeDrawer() {
-        if (drawer != null && drawer.isDrawerOpen(android.view.Gravity.START))
-            drawer.closeDrawer(android.view.Gravity.START);
+        if (drawer != null && drawer.isDrawerOpen(androidx.core.view.GravityCompat.START))
+            drawer.closeDrawer(androidx.core.view.GravityCompat.START);
     }
 
     private void navigate(SellerRoutePolicy.Destination destination, String key) {

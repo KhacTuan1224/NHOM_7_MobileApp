@@ -119,7 +119,7 @@ public class CampaignListFragment extends Fragment {
     }
     private TextView text(String value, int size, boolean bold) {
         TextView view = new TextView(requireContext()); view.setText(value); view.setTextSize(size);
-        if (bold) view.setTypeface(view.getTypeface(), 1); return view;
+        if (bold) view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD); return view;
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     @Override public void onDestroyView() { if (locationProvider != null) locationProvider.close(); super.onDestroyView(); }

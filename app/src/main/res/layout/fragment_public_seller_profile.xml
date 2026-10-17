@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="24dp">
+    android:background="@color/rescue_background" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         <ImageView android:id="@+id/publicSellerAvatar" android:layout_width="96dp" android:layout_height="96dp"
             android:layout_gravity="center_horizontal" android:contentDescription="Ảnh cửa hàng"
             android:scaleType="centerCrop" android:src="@drawable/ic_nav_profile" />
@@ -16,5 +16,5 @@
             android:layout_height="wrap_content" android:layout_marginTop="12dp" />
         <TextView android:id="@+id/publicSellerBank" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="20dp" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareScrollView>

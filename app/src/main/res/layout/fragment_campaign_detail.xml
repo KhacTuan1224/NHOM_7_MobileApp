@@ -6,12 +6,12 @@
     android:background="@color/rescue_background"
     android:fillViewport="true">
     
-    <LinearLayout 
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent" 
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingBottom="80dp"
-        android:padding="16dp">
+        android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         
         <!-- Badge text -->
         <TextView 
@@ -254,7 +254,7 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/campaignDirectionsButton"
                     android:layout_width="match_parent"
-                    android:layout_height="@dimen/touch_target_min"
+                    android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                     android:text="Mở chỉ đường trên bản đồ"
                     style="@style/Widget.Material3.Button.OutlinedButton" />
         </LinearLayout>
@@ -344,7 +344,7 @@
                     android:layout_marginBottom="12dp" />
 
                 <!-- Quantity input row -->
-                <LinearLayout
+                <com.rescuefarm.ui.common.ResponsiveActionLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -363,7 +363,7 @@
                         android:id="@+id/campaignQuantityDecreaseButton"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="44dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:padding="0dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
@@ -375,7 +375,7 @@
                     <EditText
                         android:id="@+id/campaignQuantityInput"
                         android:layout_width="60dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:gravity="center"
                         android:inputType="numberDecimal"
                         android:text="1"
@@ -389,7 +389,7 @@
                         android:id="@+id/campaignQuantityIncreaseButton"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="44dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:padding="0dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
@@ -406,10 +406,10 @@
                         android:layout_marginStart="8dp"
                         android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
                         android:textColor="@color/rescue_on_surface_variant" />
-                </LinearLayout>
+                </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
                 <!-- 2 Action Buttons -->
-                <LinearLayout
+                <com.rescuefarm.ui.common.ResponsiveActionLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
@@ -418,7 +418,7 @@
                         android:id="@+id/campaignAddToCartButton"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="0dp"
-                        android:layout_height="@dimen/touch_target_min"
+                        android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
                         android:text="@string/add_to_cart_action" />
@@ -426,10 +426,10 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/campaignRescueNowButton"
                         android:layout_width="0dp"
-                        android:layout_height="@dimen/touch_target_min"
+                        android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:layout_weight="1"
                         android:text="@string/campaign_rescue_now_action" />
-                </LinearLayout>
+                </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         </LinearLayout>
         
@@ -497,7 +497,7 @@
         <com.google.android.material.button.MaterialButton 
             android:id="@+id/viewCampaignProductsButton"
             android:layout_width="match_parent" 
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Xem tất cả sản phẩm trong chiến dịch"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_marginBottom="8dp" />
@@ -505,7 +505,7 @@
         <com.google.android.material.button.MaterialButton 
             android:id="@+id/shareCampaignButton"
             android:layout_width="match_parent" 
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Chia sẻ chiến dịch"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_marginBottom="8dp" />
@@ -513,9 +513,9 @@
         <com.google.android.material.button.MaterialButton 
             android:id="@+id/reportCampaignButton"
             android:layout_width="match_parent" 
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/report_action"
             style="@style/Widget.Material3.Button.TextButton" />
         
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

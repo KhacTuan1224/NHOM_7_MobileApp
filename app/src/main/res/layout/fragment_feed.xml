@@ -6,12 +6,12 @@
     android:background="@color/rescue_background"
     android:fillViewport="true">
     
-    <LinearLayout 
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent" 
         android:layout_height="wrap_content"
         android:orientation="vertical" 
         android:padding="16dp"
-        android:paddingBottom="80dp">
+        android:paddingBottom="80dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         
         <!-- Title -->
         <TextView 
@@ -55,5 +55,5 @@
             android:layout_height="wrap_content" 
             android:orientation="vertical" />
         
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

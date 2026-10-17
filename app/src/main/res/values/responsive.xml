@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="content_max_width">1120dp</dimen>
+    <dimen name="form_max_width">640dp</dimen>
+    <dimen name="reading_max_width">840dp</dimen>
+    <dimen name="bottom_navigation_max_width">560dp</dimen>
+    <dimen name="product_tile_min_width">156dp</dimen>
+    <dimen name="responsive_grid_gap">12dp</dimen>
+    <dimen name="auth_horizontal_margin">24dp</dimen>
+    <dimen name="auth_banner_height">144dp</dimen>
+    <dimen name="home_banner_height">150dp</dimen>
+    <declare-styleable name="ResponsiveContentLayout">
+        <attr name="maxContentWidth" format="dimension" />
+    </declare-styleable>
+    <declare-styleable name="ResponsiveGridLayout">
+        <attr name="minItemWidth" format="dimension" />
+        <attr name="maxColumns" format="integer" />
+    </declare-styleable>
+</resources>

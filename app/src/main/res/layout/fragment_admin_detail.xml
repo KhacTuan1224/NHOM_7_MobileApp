@@ -2,12 +2,12 @@
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@color/rescue_background" android:fillViewport="true"
-    android:clipToPadding="false">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
+    android:clipToPadding="false" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
         <com.google.android.material.button.MaterialButton android:id="@+id/adminDetailBackButton"
             style="@style/Widget.RescueFarm.AdminOutlinedButton"
-            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Quay lại danh sách" android:gravity="start|center_vertical" />
         <TextView android:id="@+id/adminDetailTitle" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md"
@@ -23,11 +23,11 @@
             android:textColor="@color/rescue_on_surface_variant" />
         <com.google.android.material.button.MaterialButton android:id="@+id/adminDetailRetryButton"
             style="@style/Widget.RescueFarm.AdminOutlinedButton"
-            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginTop="@dimen/space_sm" android:text="Tải lại chi tiết"
             android:visibility="gone" />
         <LinearLayout android:id="@+id/adminDetailContent" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical"
             android:layout_marginTop="@dimen/space_md" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

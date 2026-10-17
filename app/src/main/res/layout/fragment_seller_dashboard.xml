@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/sellerDashboardDrawer" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:background="@color/rescue_background">
+    android:layout_height="match_parent" android:background="@color/rescue_background" xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
         android:orientation="vertical">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
+        <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:gravity="center_vertical" android:orientation="horizontal"
             android:paddingStart="16dp" android:paddingEnd="16dp" android:background="@color/rescue_surface">
             <com.google.android.material.button.MaterialButton android:id="@+id/sellerDashboardMenuButton"
                 style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="48dp"
-                android:layout_height="48dp" android:minWidth="0dp" android:padding="0dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:minWidth="0dp" android:padding="0dp"
                 android:text="☰" android:textSize="24sp" android:textColor="@color/rescue_on_surface"
                 android:contentDescription="Mở menu cửa hàng" />
             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
@@ -18,16 +18,16 @@
                 android:textColor="@color/rescue_on_surface" android:paddingStart="8dp" />
             <com.google.android.material.button.MaterialButton android:id="@+id/refreshSellerDashboardButton"
                 style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="48dp"
-                android:layout_height="48dp" android:minWidth="0dp" android:padding="0dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:minWidth="0dp" android:padding="0dp"
                 android:text="↻" android:textSize="24sp" android:textColor="@color/rescue_primary"
                 android:contentDescription="@string/refresh_seller_dashboard" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         <com.rescuefarm.ui.common.NavigationAwareNestedScrollView android:layout_width="match_parent"
             android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true"
             android:clipToPadding="false">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:padding="20dp">
+            <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="TỔNG QUAN CỬA HÀNG" android:textAllCaps="true" android:textSize="12sp"
                     android:textStyle="bold" android:textColor="@color/rescue_primary" />
@@ -61,15 +61,15 @@
                 <LinearLayout android:id="@+id/sellerDashboardAnalytics" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
 
-            </LinearLayout>
+            </com.rescuefarm.ui.common.ResponsiveContentLayout>
         </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
     </LinearLayout>
 
     <com.rescuefarm.ui.common.NavigationAwareScrollView android:layout_width="304dp" android:layout_height="match_parent"
         android:layout_gravity="start" android:background="@color/rescue_surface"
         android:elevation="16dp">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:padding="16dp">
+        <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="RESCUEFARM" android:textSize="12sp" android:textStyle="bold"
                 android:textColor="@color/rescue_primary" android:padding="12dp" />
@@ -81,38 +81,38 @@
                 android:text="KINH DOANH" android:textSize="11sp" android:textStyle="bold"
                 android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
             <Button android:id="@+id/dashboardProductsButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/seller_products_action" />
             <Button android:id="@+id/dashboardBatchesButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/manage_batches_action" />
             <Button android:id="@+id/dashboardPromotionsButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/manage_promotion_action" />
             <Button android:id="@+id/dashboardCampaignsButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/seller_campaigns_action" />
             <Button android:id="@+id/dashboardMobileButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/mobile_rescue_action" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="ĐƠN HÀNG" android:textSize="11sp" android:textStyle="bold"
                 android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
             <Button android:id="@+id/dashboardOrdersButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/seller_orders_action" />
             <Button android:id="@+id/dashboardShipmentsButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/seller_shipments_action" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="PHÂN TÍCH &amp; TÀI KHOẢN" android:textSize="11sp" android:textStyle="bold"
                 android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
             <Button android:id="@+id/dashboardStatisticsButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/seller_statistics_action" />
             <Button android:id="@+id/dashboardProfileButton" android:layout_width="match_parent"
-                android:layout_height="48dp" android:gravity="start|center_vertical"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
                 android:text="@string/nav_seller_storefront" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveContentLayout>
     </com.rescuefarm.ui.common.NavigationAwareScrollView>
 </androidx.drawerlayout.widget.DrawerLayout>

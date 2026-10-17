@@ -41,18 +41,9 @@ final class SellerDashboardCards {
     }
 
     static void addGrid(Context context, LinearLayout parent, List<Metric> metrics) {
-        int gap = dp(context, 8);
-        for (int index = 0; index < metrics.size(); index += 2) {
-            LinearLayout row = new LinearLayout(context);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            if (index > 0) rowParams.topMargin = gap;
-            parent.addView(row, rowParams);
-            addCard(context, row, metrics.get(index), gap);
-            if (index + 1 < metrics.size()) addCard(context, row, metrics.get(index + 1), 0);
-            else row.addView(new View(context), new LinearLayout.LayoutParams(0, 1, 1));
-        }
+        LinearLayout grid = new com.rescuefarm.ui.common.ResponsiveGridLayout(context);
+        parent.addView(grid, new LinearLayout.LayoutParams(-1, -2));
+        for (Metric metric : metrics) addCard(context, grid, metric, 0);
     }
 
     static void addFootnote(Context context, LinearLayout parent, String text) {
@@ -108,8 +99,8 @@ final class SellerDashboardCards {
             card.addView(detail, detailParams);
         }
 
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.MATCH_PARENT, 1);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         cardParams.setMarginEnd(endMargin);
         row.addView(card, cardParams);
     }

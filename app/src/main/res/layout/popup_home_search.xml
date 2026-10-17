@@ -16,7 +16,7 @@
                 android:textColor="@color/rescue_on_surface_variant" android:accessibilityLiveRegion="polite" />
         </LinearLayout>
         <com.google.android.material.button.MaterialButton android:id="@+id/homeSearchClose"
-            style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="48dp"
+            style="@style/Widget.Material3.Button.IconButton" android:layout_width="48dp" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:contentDescription="@string/home_search_close" app:icon="@drawable/ic_close" app:iconSize="18dp" />
     </LinearLayout>
     <View android:layout_width="match_parent" android:layout_height="1dp"

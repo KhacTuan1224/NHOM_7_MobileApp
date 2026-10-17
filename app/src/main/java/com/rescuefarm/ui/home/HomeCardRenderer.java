@@ -96,13 +96,15 @@ public final class HomeCardRenderer {
         MaterialCardView card = card(12);
         LinearLayout content = vertical();
 
-        ImageView image = imageView();
+        ImageView image = new com.rescuefarm.ui.common.ProductTileImageView(fragment.requireContext());
+        image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        image.setContentDescription(product.getName());
         if (!product.getImageUrls().isEmpty()) {
             Glide.with(fragment).load(product.getImageUrls().get(0)).centerCrop().into(image);
         } else {
             image.setImageResource(R.drawable.splash_rescue_garden);
         }
-        FrameLayout imageArea = imageFrame(image, productImageHeight(), 12);
+        FrameLayout imageArea = imageFrame(image, -2, 12);
         TextView badge = text("GIẢI CỨU  ·  -" + Math.round(product.calculateDiscountPercent()) + "%",
                 10, true, android.R.color.white);
         GradientDrawable badgeBackground = new GradientDrawable();
@@ -119,9 +121,10 @@ public final class HomeCardRenderer {
         LinearLayout details = vertical();
         details.setPadding(dp(10), dp(8), dp(10), dp(10));
         TextView name = text(product.getName(), 13, true, R.color.rescue_on_surface);
-        name.setMaxLines(2); name.setMinLines(2); details.addView(name);
+        name.setMaxLines(2); name.setMinLines(2);
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END); details.addView(name);
 
-        LinearLayout priceRow = new LinearLayout(fragment.requireContext());
+        LinearLayout priceRow = vertical();
         priceRow.setGravity(Gravity.CENTER_VERTICAL);
         TextView salePrice = text(money(product.getRescuePrice()), 15, true, R.color.rescue_critical);
         priceRow.addView(salePrice);
@@ -129,7 +132,7 @@ public final class HomeCardRenderer {
                 R.color.rescue_on_surface_variant);
         oldPrice.setPaintFlags(oldPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         LinearLayout.LayoutParams oldPriceParams = new LinearLayout.LayoutParams(-2, -2);
-        oldPriceParams.setMarginStart(dp(7)); priceRow.addView(oldPrice, oldPriceParams);
+        oldPriceParams.topMargin = dp(2); priceRow.addView(oldPrice, oldPriceParams);
         details.addView(priceRow);
 
         String metadata = product.getAverageRating() > 0
@@ -137,7 +140,7 @@ public final class HomeCardRenderer {
                     product.getAverageRating(), product.getReviewCount())
                 : product.getProvince();
         TextView foot = text(metadata, 10, false, R.color.rescue_on_surface_variant);
-        foot.setMaxLines(1); details.addView(foot);
+        foot.setMaxLines(1); foot.setEllipsize(android.text.TextUtils.TruncateAt.END); details.addView(foot);
         content.addView(details);
         card.addView(content, new FrameLayout.LayoutParams(-1, -2));
         card.setOnClickListener(listener);
@@ -159,8 +162,8 @@ public final class HomeCardRenderer {
         imageParams.gravity = Gravity.CENTER_HORIZONTAL;
         imageParams.topMargin = dp(4); tile.addView(image, imageParams);
         TextView name = text(category.getName(), 11, false, R.color.rescue_on_surface);
-        name.setGravity(Gravity.CENTER); name.setMaxLines(2);
-        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(-1, dp(26));
+        name.setGravity(Gravity.CENTER); name.setMinLines(2);
+        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(-1, -2);
         nameParams.setMargins(0, dp(3), 0, 0); tile.addView(name, nameParams);
         tile.setClickable(true); tile.setFocusable(true); tile.setOnClickListener(listener);
         return tile;
@@ -232,12 +235,6 @@ public final class HomeCardRenderer {
         text.setTextSize(size); text.setTextColor(color(colorResource));
         if (bold) text.setTypeface(text.getTypeface(), Typeface.BOLD);
         return text;
-    }
-
-    private int productImageHeight() {
-        float density = fragment.getResources().getDisplayMetrics().density;
-        int widthDp = Math.round(fragment.getResources().getDisplayMetrics().widthPixels / density);
-        return dp(Math.max(132, (widthDp - 58) / 2));
     }
 
     private String money(double value) {

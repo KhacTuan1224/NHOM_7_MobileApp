@@ -27,6 +27,14 @@ public class NotchedNavigationFrameLayout extends FrameLayout {
         setWillNotDraw(false);
     }
 
+    @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int maximum = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_max_width);
+        if (MeasureSpec.getSize(widthMeasureSpec) > maximum) {
+            widthMeasureSpec = MeasureSpec.makeMeasureSpec(maximum, MeasureSpec.EXACTLY);
+        }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);

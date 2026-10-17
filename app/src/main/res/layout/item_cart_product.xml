@@ -73,28 +73,35 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Bottom action row: Total price, Stepper controls, Delete button -->
+    <!-- Total stays readable above quantity controls on narrow screens. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="40dp">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/cartItemTotal"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:textColor="@color/rescue_on_surface"
             android:textSize="14sp"
             android:textStyle="bold" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
         <!-- Quantity Stepper Controls [-] 1.0 kg [+] -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_weight="1"
             android:background="@drawable/bg_quantity_stepper"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -103,17 +110,18 @@
 
             <ImageView
                 android:id="@+id/cartItemDecrease"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Giảm số lượng"
-                android:padding="4dp"
+                android:padding="14dp"
                 android:src="@drawable/ic_minus" />
 
             <TextView
                 android:id="@+id/cartItemQuantity"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:minWidth="36dp"
                 android:gravity="center"
                 android:textColor="@color/rescue_on_surface"
@@ -122,24 +130,25 @@
 
             <ImageView
                 android:id="@+id/cartItemIncrease"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Tăng số lượng"
-                android:padding="4dp"
+                android:padding="14dp"
                 android:src="@drawable/ic_plus" />
         </LinearLayout>
 
         <!-- Delete Item Button -->
         <ImageView
             android:id="@+id/cartItemDelete"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="12dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Xóa khỏi giỏ"
-            android:padding="6dp"
+            android:padding="12dp"
             android:src="@drawable/ic_trash" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Divider between items -->

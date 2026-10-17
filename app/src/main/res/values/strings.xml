@@ -271,7 +271,7 @@
     <string name="promotion_editor_title">Quản lý khuyến mãi</string>
     <string name="promotion_single_source_notice">Giá luôn được tính theo: giá gốc → giá giải cứu → khuyến mãi → giảm theo số lượng.</string>
     <string name="promotion_type_label">Loại khuyến mãi</string>
-    <string name="promotion_value_hint">Giá trị (% hoặc số tiền; giảm theo số lượng nhập 0)</string>
+    <string name="promotion_value_hint" formatted="false">Giá trị (% hoặc số tiền; giảm theo số lượng nhập 0)</string>
     <string name="promotion_tiers_hint">Mỗi dòng: số_lượng=phần_trăm (ví dụ 5=3)</string>
     <string name="promotion_active_label">Đang bật</string>
     <string name="save_promotion_action">Lưu khuyến mãi</string>

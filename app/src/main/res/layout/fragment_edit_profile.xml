@@ -2,8 +2,8 @@
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
     android:layout_height="match_parent" android:background="@color/rescue_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/form_max_width">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/edit_profile_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -29,7 +29,7 @@
                 android:src="@drawable/ic_nav_profile" />
             <com.google.android.material.button.MaterialButton android:id="@+id/uploadAvatarButton"
                 style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
-                android:layout_height="@dimen/touch_target_min" android:layout_marginStart="@dimen/space_md"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginStart="@dimen/space_md"
                 android:layout_weight="1" android:text="@string/upload_avatar_action" />
         </LinearLayout>
         <TextView android:id="@+id/avatarUploadStatus" android:layout_width="match_parent"
@@ -50,7 +50,7 @@
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" />
         <com.google.android.material.button.MaterialButton android:id="@+id/useProfileLocationButton"
             style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:text="@string/use_current_location_action" />
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:text="@string/use_current_location_action" />
         <FrameLayout android:id="@+id/profileMapContainer" android:layout_width="match_parent"
             android:layout_height="220dp" android:layout_marginTop="@dimen/space_sm"
             android:background="@drawable/bg_profile_map" android:clipToOutline="true"
@@ -72,11 +72,11 @@
         </FrameLayout>
         <com.google.android.material.button.MaterialButton android:id="@+id/openGoogleMapsButton"
             style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min" android:layout_marginTop="@dimen/space_sm"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginTop="@dimen/space_sm"
             android:text="⌖  Chuyển sang Google Maps  ↗" android:textColor="#1769FF"
             app:strokeColor="#CED7E5" android:visibility="gone" />
         <com.google.android.material.button.MaterialButton android:id="@+id/saveProfileButton"
-            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginTop="@dimen/space_md" android:text="@string/save_action" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
