@@ -1,11 +1,11 @@
 // Deterministic transaction harness. The separate emulator suite verifies real Firestore/Rules semantics.
 const crypto = require('node:crypto');
 class Timestamp {
-  constructor(value) { this.value = value; }
+  constructor(value, extraNanos = 0) { this.value = value; this.extraNanos = extraNanos; this.seconds = Math.floor(value / 1000); this.nanoseconds = (value % 1000) * 1000000 + extraNanos; }
   toMillis() { return this.value; }
 }
 function copy(value) {
-  if (value instanceof Timestamp) return new Timestamp(value.value);
+  if (value instanceof Timestamp) return new Timestamp(value.value, value.extraNanos);
   if (Array.isArray(value)) return value.map(copy);
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, copy(v)]));
   return value;
@@ -14,27 +14,50 @@ class Reference {
   constructor(db, path) { this.db = db; this.path = path; this.id = path.split('/').pop(); }
   collection(name) { return new Query(this.db, `${this.path}/${name}`); }
   async get() { return this.db.snapshot(this.path); }
+  async delete() { this.db.documents.delete(this.path); }
 }
 class Query {
-  constructor(db, path, filters = [], limit = Infinity, cursor = '', order = '') {
+  constructor(db, path, filters = [], limit = Infinity, cursor = null, order = []) {
     Object.assign(this, {db, path, filters, maximum: limit, cursor, order});
   }
   doc(id = crypto.randomUUID()) { return new Reference(this.db, `${this.path}/${id}`); }
   where(field, operation, value) { return new Query(this.db, this.path, [...this.filters, [field, operation, value]], this.maximum, this.cursor, this.order); }
-  orderBy(order) { return new Query(this.db, this.path, this.filters, this.maximum, this.cursor, order); }
-  startAfter(doc) { return new Query(this.db, this.path, this.filters, this.maximum, doc.id, this.order); }
+  orderBy(field, direction = 'asc') { return new Query(this.db, this.path, this.filters, this.maximum, this.cursor, [...this.order, [field, direction]]); }
+  startAfter(...values) { return new Query(this.db, this.path, this.filters, this.maximum, values, this.order); }
   limit(maximum) { return new Query(this.db, this.path, this.filters, maximum, this.cursor, this.order); }
   async get() {
     const depth = this.path.split('/').length + 1;
     let docs = [...this.db.documents.keys()].filter(path => path.startsWith(this.path + '/') && path.split('/').length === depth)
-      .map(path => this.db.snapshot(path)).filter(doc => doc.id > this.cursor);
+      .map(path => this.db.snapshot(path));
     docs = docs.filter(doc => this.filters.every(([field, op, value]) => {
       const v = doc.get(field), a = v instanceof Timestamp ? v.value : v, b = value instanceof Timestamp ? value.value : value;
       if (op === '==') return a === b;
       if (op === '<=') return a <= b;
+      if (op === '>=') return a >= b;
       if (op === 'in') return b.includes(a);
       throw Error('Unsupported test query: ' + op);
-    })).sort((a, b) => a.id.localeCompare(b.id)).slice(0, this.maximum);
+    }));
+    const orders = this.order.length ? this.order : [['__name__', 'asc']];
+    const value = (doc, key) => key === '__name__' ? doc.id : doc.get(key);
+    const compare = (left, right) => {
+      if (left instanceof Timestamp && right instanceof Timestamp) return left.seconds - right.seconds || left.nanoseconds - right.nanoseconds;
+      const a = left instanceof Timestamp ? left.value : left, b = right instanceof Timestamp ? right.value : right;
+      return a < b ? -1 : a > b ? 1 : 0;
+    };
+    const compareDoc = (a, b) => {
+      for (const [field, direction] of orders) { const result = compare(value(a, field), value(b, field)); if (result) return result * (direction === 'desc' ? -1 : 1); }
+      return a.id.localeCompare(b.id);
+    };
+    docs.sort(compareDoc);
+    if (this.cursor) {
+      const first = this.cursor[0];
+      if (first && first.ref) docs = docs.filter(doc => compareDoc(doc, first) > 0);
+      else docs = docs.filter(doc => {
+        for (let i = 0; i < orders.length; i++) { const result = compare(value(doc, orders[i][0]), this.cursor[i]); if (result) return result * (orders[i][1] === 'desc' ? -1 : 1) > 0; }
+        return false;
+      });
+    }
+    docs = docs.slice(0, this.maximum);
     return {docs, empty: !docs.length, size: docs.length};
   }
 }

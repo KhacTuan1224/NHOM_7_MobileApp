@@ -221,13 +221,20 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                 throw new IllegalArgumentException("Mỗi Campaign hỗ trợ tối đa 200 lô để an toàn với giới hạn ghi Firestore.");
             }
             Set<String> ids = new HashSet<>();
-            if (submit) ids.addAll(saved.getBatchTargets().keySet());
+            ids.addAll(saved.getBatchTargets().keySet());
+            String quantityUnit = null;
             Map<String, DocumentSnapshot> batchSnapshots = new LinkedHashMap<>();
             Date earliestExpiry = null;
             for (String batchId : ids) {
                 DocumentSnapshot batch = transaction.get(firestore.collection(BATCHES).document(batchId));
                 if (!batch.exists()) throw new IllegalStateException("BATCH_NOT_FOUND");
                 batchSnapshots.put(batchId, batch);
+                DocumentSnapshot product = transaction.get(firestore.collection("products").document(batch.getString("productId")));
+                if (!product.exists() || !sellerId.equals(product.getString("sellerId"))) throw new IllegalStateException("FORBIDDEN");
+                String unit = com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(product.getString("unit"));
+                if (unit.isEmpty() || (quantityUnit != null && !quantityUnit.equals(unit)))
+                    throw new IllegalArgumentException("Các lô trong Campaign phải có cùng đơn vị tính, không tự quy đổi bó/bao sang kg.");
+                quantityUnit = unit;
                 if (submit && saved.getBatchTargets().containsKey(batchId)) {
                     String linked = clean(batch.getString("activeCampaignId"));
                     if (!linked.isEmpty() && !reference.getId().equals(linked)) {
@@ -247,6 +254,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                     if (earliestExpiry == null || expiry.before(earliestExpiry)) earliestExpiry = expiry;
                 }
             }
+            saved.setQuantityUnit(quantityUnit, "DECLARED");
             if (submit) {
                 if (!saved.getEndDate().after(new Date())) {
                     throw new IllegalArgumentException("Campaign end date must be in the future");
@@ -259,12 +267,11 @@ public class FirebaseCampaignRepository implements CampaignRepository {
             if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
             else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
             transaction.set(reference, data);
+            if (submit) com.rescuefarm.service.notification.NotificationOutbox.enqueue(transaction, firestore, "ADMINS", "CAMPAIGN", reference.getId());
             return saved;
         }).addOnSuccessListener(saved -> {
             com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(previousImages, saved.getImageUrls());
-            if (submit && saved.getStatus() == CampaignStatus.PENDING_APPROVAL)
-                com.rescuefarm.service.notification.AdminNotificationClient.notifyAdmins(
-                        "MODERATION_SUBMISSION", saved.getId(), "CAMPAIGN");
+
             cache(saved); callback.onSuccess(saved);
         })
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
@@ -334,6 +341,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                     enumValue(CampaignStatus.class, value.getString("status"), CampaignStatus.DRAFT));
             campaign.setStoryMedia(strings(value.get("imageUrls")), strings(value.get("imagePublicIds")));
             campaign.setViewCount(longValue(value, "viewCount"));
+            campaign.setQuantityUnit(value.getString("quantityUnit"), value.getString("unitStatus"));
             campaign.setAllocationProgress(targetMap(value.get("reservedByBatch")),
                     targetMap(value.get("rescuedByBatch")), (int)longValue(value, "allocationVersion"));
             return campaign;
@@ -377,6 +385,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                         && previous.isLocationSharingEnabled(), source.getLocationName(), status);
         result.setStoryMedia(source.getImageUrls(), source.getImagePublicIds());
         result.setViewCount(previous == null ? 0L : previous.getViewCount());
+        result.setQuantityUnit(source.getQuantityUnit(), source.getUnitStatus());
         if (previous != null) result.setAllocationProgress(previous.getReservedByBatch(), previous.getRescuedByBatch(), previous.getAllocationVersion());
         return result;
     }
@@ -392,6 +401,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         data.put("reservedQuantity", value.getReservedQuantity()); data.put("rescuedQuantity", value.getRescuedQuantity());
         data.put("reservedByBatch", value.getReservedByBatch()); data.put("rescuedByBatch", value.getRescuedByBatch());
         data.put("allocationVersion", value.getAllocationVersion());
+        data.put("quantityUnit", value.getQuantityUnit()); data.put("unitStatus", value.getUnitStatus());
         data.put("startDate", value.getStartDate()); data.put("endDate", value.getEndDate());
         data.put("latitude", value.getLatitude()); data.put("longitude", value.getLongitude());
         data.put("currentLatitude", value.getCurrentLatitude()); data.put("currentLongitude", value.getCurrentLongitude());

@@ -81,12 +81,25 @@ app.get("/health", (_, res) => res.json({ok: true}));
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
 app.use(campaignLifecycle.router);
 app.use(require('./seller-analytics').createSellerAnalytics({db, admin, authenticate: auth}).router);
-const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth,
-  campaignLifecycle,
-  notifyNewOrder: (sellerId, orderId, title, message) => notifyCustomer(
-    sellerId, "ORDER", title, message, orderId, `${orderId}_SELLER_PENDING`),
-  notifyAdmins: (orderId, title, message) => notifyAdmins(
-    "ORDER", title, message, orderId, `ORDER_${orderId}`)});
+const worker = require('./notification-outbox').createNotificationWorker({db, admin});
+app.use(require('./notifications-api').createNotificationsApi({db, admin, authenticate: auth}).router);
+app.post('/internal/notifications/run', async (req, res, next) => {
+  try {
+    const secret = process.env.NOTIFICATION_WORKER_SECRET || '';
+    const expected = Buffer.from(secret), actual = Buffer.from(req.get('X-Worker-Secret') || '');
+    if (expected.length < 32 || actual.length !== expected.length || !require('node:crypto').timingSafeEqual(expected, actual))
+      throw httpError(403, 'Worker credentials required');
+    await campaignLifecycle.reconcileExpired();
+    const result = await worker.runOnce();
+    if (result.busy) {
+      const health = await db.collection('notificationWorkerState').doc('health').get();
+      result.attentionRequired = health.exists ? health.get('attentionRequired') === true
+        || Date.now() - millis(health.get('lastSuccessAt')) > 600000 : process.uptime() > 600;
+    }
+    res.json({ok: true, ...result});
+  } catch (error) { next(error); }
+});
+const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth, campaignLifecycle});
 app.use(commerce.router);
 app.post("/admin/dashboard", async (req, res, next) => {
   try {
@@ -105,12 +118,17 @@ app.post("/admin/dashboard", async (req, res, next) => {
     const totals = Object.fromEntries(totalKeys.map((key, index) => [key, totalValues[index]]));
     const activeCampaignsQuery = db.collection("campaigns").where("status", "==", "ACTIVE");
     const approvedCampaigns = db.collection("campaigns").where("status", "in", ["ACTIVE", "COMPLETED", "EXPIRED", "STOPPED"]);
+    const kgProgress = async () => {
+      const campaigns = await require('./seller-analytics').allPages(approvedCampaigns, admin);
+      return campaigns.filter(c => require('./quantity-units').kilograms(c.data())).reduce((total, c) => ({
+        rescued: total.rescued + num(c.get('rescuedQuantity')), target: total.target + num(c.get('targetQuantity'))}), {rescued: 0, target: 0});
+    };
     const recentMobileLocations = db.collection("campaigns")
       .where("locationUpdatedAt", ">=", admin.firestore.Timestamp.fromMillis(now - 10 * 60 * 1000))
       .where("locationUpdatedAt", "<=", admin.firestore.Timestamp.fromMillis(now)).get();
     const [pendingSellers, pendingPosts, pendingCampaigns, pendingReviews, pendingReport,
       inReviewReport, deliveredRevenue, activeCampaigns, criticalCampaigns, recentLocations,
-      totalRescuedQuantity, approvedTargetQuantity] = await Promise.all([
+      kgTotals] = await Promise.all([
       count(db.collection("sellerApplications").where("status", "==", "PENDING")),
       count(db.collection("posts").where("status", "==", "PENDING_APPROVAL")),
       count(db.collection("campaigns").where("status", "==", "PENDING_APPROVAL")),
@@ -121,7 +139,8 @@ app.post("/admin/dashboard", async (req, res, next) => {
       count(activeCampaignsQuery),
       count(activeCampaignsQuery.where("urgencyLevel", "==", "CRITICAL")),
       recentMobileLocations,
-      sum(approvedCampaigns, "rescuedQuantity"), sum(approvedCampaigns, "targetQuantity")]);
+      kgProgress()]);
+    const totalRescuedQuantity = kgTotals.rescued, approvedTargetQuantity = kgTotals.target;
     const liveMobilePoints = recentLocations.docs.filter(campaign =>
       str(campaign.get("status")) === "ACTIVE"
       && str(campaign.get("rescueMode")) === "MOBILE_POINT"
@@ -170,139 +189,6 @@ app.post("/recalculate-rating", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-async function notifyCustomer(userId, type, title, message, referenceId, eventKey) {
-  const notificationId = `${type}_${eventKey}_${userId}`.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 120);
-  const notificationRef = db.collection("notifications").doc(notificationId);
-  const persistInbox = !eventKey.endsWith("_SELLER_PENDING");
-  const created = persistInbox ? await db.runTransaction(async tx => {
-    if ((await tx.get(notificationRef)).exists) return false;
-    tx.create(notificationRef, {id: notificationId, userId, type, title, body: message, referenceId,
-      isRead: false, createdAt: admin.firestore.FieldValue.serverTimestamp()});
-    return true;
-  }) : true;
-  if (!created) return {duplicate: true, sent: 0};
-  const devices = await db.collection("users").doc(userId).collection("devices").get();
-  const tokens = devices.docs.map(d => str(d.get("token"))).filter(Boolean);
-  let sent = 0;
-  for (let i = 0; i < tokens.length; i += 500) {
-    const chunk = tokens.slice(i, i + 500);
-    const result = await admin.messaging().sendEachForMulticast({tokens: chunk,
-      data: {title, body: message, type, referenceId}, android: {priority: "high"}});
-    sent += result.successCount;
-    const stale = result.responses.map((r, j) => !r.success
-      && ["messaging/registration-token-not-registered", "messaging/invalid-registration-token"].includes(r.error && r.error.code)
-      ? chunk[j] : null).filter(Boolean);
-    if (stale.length) await Promise.all(stale.map(token => db.collection("users").doc(userId)
-      .collection("devices").doc(require("crypto").createHash("sha256").update(token).digest("hex")).delete().catch(() => {})));
-  }
-  return {duplicate: false, sent};
-}
-
-async function notifyAdmins(type, title, message, referenceId, eventKey) {
-  const users = await db.collection("users").where("role", "==", "ADMIN").get();
-  const admins = users.docs.filter(user => user.get("status") === "ACTIVE");
-  return Promise.all(admins.map(user => notifyCustomer(user.id, type, title, message,
-    referenceId, `${eventKey}_ADMIN`)));
-}
-
-app.post("/notify-admins", async (req, res, next) => {
-  try {
-    const caller = await auth(req, ["CUSTOMER", "SELLER"]), body = req.body || {};
-    const eventType = str(body.eventType), referenceId = str(body.referenceId);
-    if (!referenceId || referenceId.length > 128) throw httpError(400, "referenceId required");
-    let type, title, message, eventKey;
-    if (eventType === "REPORT") {
-      const report = await db.collection("reports").doc(referenceId).get();
-      if (!report.exists || report.get("reporterId") !== caller.uid || report.get("status") !== "PENDING")
-        throw httpError(403, "Report is not owned by caller or is no longer pending");
-      type = "MODERATION"; title = "Có báo cáo vi phạm mới";
-      message = `Có báo cáo ${str(report.get("targetType"))} đang chờ Admin xem xét.`;
-      eventKey = `REPORT_${referenceId}`;
-    } else if (eventType === "SELLER_APPLICATION") {
-      if (caller.role !== "SELLER" || referenceId !== caller.uid) throw httpError(403, "Invalid seller application");
-      const application = await db.collection("sellerApplications").doc(referenceId).get();
-      if (!application.exists || application.get("status") !== "PENDING") throw httpError(409, "Application is not pending");
-      type = "SYSTEM"; title = "Hồ sơ Seller mới";
-      message = `${str(application.get("shopName")) || "Một cửa hàng"} đã gửi hồ sơ chờ duyệt.`;
-      eventKey = `SELLER_APPLICATION_${referenceId}_${millis(application.get("submittedAt"))}`;
-    } else if (eventType === "MODERATION_SUBMISSION") {
-      if (caller.role !== "SELLER") throw httpError(403, "Seller role required");
-      const resourceType = str(body.resourceType), collections = {POST: "posts", CAMPAIGN: "campaigns"};
-      const collection = collections[resourceType];
-      if (!collection) throw httpError(400, "Unsupported moderation resource");
-      const item = await db.collection(collection).doc(referenceId).get();
-      if (!item.exists || item.get("sellerId") !== caller.uid
-          || !["PENDING_APPROVAL", "PENDING"].includes(str(item.get("status"))))
-        throw httpError(403, "Submitted resource is not owned by caller or is not pending");
-      type = "MODERATION"; title = "Nội dung mới chờ kiểm duyệt";
-      message = `${resourceType === "POST" ? "Bài viết" : "Chiến dịch"}: ${str(item.get("title")) || referenceId}`;
-      eventKey = `${resourceType}_${referenceId}_${millis(item.get("updatedAt")) || Date.now()}`;
-    } else throw httpError(400, "Unsupported admin notification event");
-    const result = await notifyAdmins(type, title, message, referenceId, eventKey);
-    res.json({ok: true, admins: result.length, sent: result.reduce((sum, item) => sum + item.sent, 0)});
-  } catch (error) { next(error); }
-});
-
-app.post("/send-notification", async (req, res, next) => {
-  try {
-    const caller = await auth(req, ["CUSTOMER", "SELLER", "ADMIN"]), body = req.body || {};
-    const type = str(body.type), referenceId = str(body.referenceId);
-    if (!["ORDER", "CAMPAIGN", "PROMOTION", "MODERATION", "SYSTEM"].includes(type)) throw httpError(400, "Invalid notification type");
-    if (!referenceId || referenceId.length > 128) throw httpError(400, "referenceId required");
-    let recipients = [], title = str(body.title), message = str(body.body), eventKey = `${referenceId}_${Date.now()}`;
-    if (type === "ORDER") {
-      const order = await db.collection("orders").doc(referenceId).get();
-      if (!order.exists) throw httpError(404, "Order not found");
-      if (caller.role === "SELLER" && order.get("sellerId") !== caller.uid) throw httpError(403, "Order is not owned by seller");
-      if (caller.role === "CUSTOMER" && order.get("ownerId") !== caller.uid) throw httpError(403, "Order is not owned by customer");
-      if (order.get("ownerType") !== "CUSTOMER") throw httpError(409, "Guest order has no Customer recipient");
-      recipients = [str(order.get("ownerId"))];
-      const status = str(order.get("status")), paymentStatus = str(order.get("paymentStatus"));
-      const messages = {PENDING: ["Đã tiếp nhận đơn hàng", "Đơn hàng đang chờ cửa hàng xác nhận."],
-        CONFIRMED: ["Đơn hàng đã xác nhận", "Cửa hàng đã xác nhận đơn hàng của bạn."],
-        PREPARING: ["Đơn hàng đang chuẩn bị", "Cửa hàng đang chuẩn bị sản phẩm."],
-        SHIPPING: ["Đơn hàng đang giao", "Đơn hàng đã được bàn giao cho vận chuyển."],
-        READY_FOR_PICKUP: ["Đơn hàng sẵn sàng nhận", "Bạn có thể đến điểm nhận hàng."],
-        DELIVERED: ["Đơn hàng hoàn tất", "Đơn hàng đã được giao/nhận thành công."],
-        CANCELLED: ["Đơn hàng đã hủy", "Đơn hàng đã hủy và phần tồn giữ chỗ đã được hoàn trả."]};
-      if (paymentStatus === "PAID") { title = "Thanh toán đã xác nhận"; message = "Cửa hàng đã xác nhận thanh toán đơn hàng."; }
-      else [title, message] = messages[status] || ["Đơn hàng đã cập nhật", `Trạng thái: ${status || "UNKNOWN"}.`];
-      eventKey = `${referenceId}_${status}_${paymentStatus}`;
-    } else if (type === "PROMOTION" && caller.role === "SELLER") {
-      const promo = await db.collection("promotions").doc(referenceId).get();
-      if (!promo.exists || promo.get("sellerId") !== caller.uid) throw httpError(403, "Promotion is not owned by seller");
-      if (promo.get("active") !== true || millis(promo.get("startDate")) > Date.now() || millis(promo.get("endDate")) <= Date.now())
-        return res.json({ok: true, recipients: 0, skipped: true});
-      const favorites = await db.collection("favorites").where("productId", "==", referenceId).get();
-      recipients = [...new Set(favorites.docs.map(d => str(d.get("customerId"))).filter(Boolean))];
-      title = "Sản phẩm yêu thích có ưu đãi"; message = "Một sản phẩm bạn yêu thích đang có chương trình ưu đãi.";
-      eventKey = `${referenceId}_${millis(promo.get("updatedAt")) || Date.now()}`;
-    } else if (type === "CAMPAIGN" && (caller.role === "SELLER" || caller.role === "ADMIN")) {
-      const campaign = await db.collection("campaigns").doc(referenceId).get();
-      if (!campaign.exists || (caller.role === "SELLER" && campaign.get("sellerId") !== caller.uid))
-        throw httpError(403, "Campaign is not available to caller");
-      if (campaign.get("status") !== "ACTIVE") return res.json({ok: true, recipients: 0, skipped: true});
-      const batchIds = Object.keys(campaign.get("batchTargets") || {});
-      const batches = await Promise.all(batchIds.map(id => db.collection("productBatches").doc(id).get()));
-      const productIds = [...new Set(batches.filter(b => b.exists).map(b => str(b.get("productId"))).filter(Boolean))];
-      const favorites = await Promise.all(productIds.map(id => db.collection("favorites").where("productId", "==", id).get()));
-      recipients = [...new Set(favorites.flatMap(s => s.docs.map(d => str(d.get("customerId")))).filter(Boolean))];
-      title = "Campaign giải cứu đang hoạt động"; message = str(campaign.get("title")) || "Một Campaign mới phù hợp với sản phẩm bạn theo dõi.";
-      eventKey = `${referenceId}_${millis(campaign.get("updatedAt")) || Date.now()}`;
-    } else if (caller.role === "ADMIN") recipients = [str(body.userId)].filter(Boolean);
-    else throw httpError(403, "Caller cannot send this notification type");
-    if (!title || title.length > 120 || message.length > 1000) throw httpError(400, "Invalid notification content");
-    const results = await Promise.all(recipients.map(async recipientId => {
-      const target = await db.collection("users").doc(recipientId).get();
-      if (!target.exists || target.get("role") !== "CUSTOMER" || target.get("status") !== "ACTIVE") return null;
-      return notifyCustomer(recipientId, type, title, message, referenceId, eventKey);
-    }));
-    res.json({ok: true, recipients: results.filter(Boolean).length,
-      sent: results.reduce((sum, value) => sum + (value ? value.sent : 0), 0),
-      duplicates: results.filter(value => value && value.duplicate).length});
-  } catch (error) { next(error); }
-});
-
 app.use((error, req, res, __) => {
   const status = error.status || 500;
   if (status >= 500) console.error("[api]", req.method, req.originalUrl,
@@ -315,7 +201,7 @@ migrateSellerPaymentProfiles().then(() => {
   const reconcile = async () => {
     if (reconciling) return;
     reconciling = true;
-    try { await campaignLifecycle.reconcileExpired(); }
+    try { await campaignLifecycle.reconcileExpired(); await worker.runOnce(); }
     catch (error) { console.error('Campaign reconciliation failed:', error.message); }
     finally { reconciling = false; }
   };

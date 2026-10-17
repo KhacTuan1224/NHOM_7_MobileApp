@@ -29,10 +29,13 @@ public class CampaignViewModelTest {
     @Test public void validSubmit_reachesRepositoryAsPending() {
         FakeCampaignRepository repository = new FakeCampaignRepository();
         CampaignViewModel viewModel = new CampaignViewModel(repository, new FakeAuth(), new FakeProducts(), new FakeLocation());
+        androidx.lifecycle.Observer<List<CampaignBatchOption>> observer = ignored -> { };
+        viewModel.getBatchOptions().observeForever(observer);
         viewModel.save("", "Campaign", "Nội dung câu chuyện giải cứu chi tiết", RescueReason.OVER_SUPPLY, RescueMode.MOBILE_POINT,
                 java.util.Collections.singletonMap("batch", 10D), "2027-01-01", "2027-01-03", "10", "106", "A", true);
         assertTrue(repository.saveCalled); assertTrue(repository.submitCalled);
         assertEquals(CampaignScreenState.Status.SAVED, viewModel.getState().getValue().getStatus());
+        viewModel.getBatchOptions().removeObserver(observer);
     }
     private static final class FakeCampaignRepository implements CampaignRepository {
         private boolean saveCalled, submitCalled;
@@ -67,8 +70,12 @@ public class CampaignViewModelTest {
     private static final class FakeProducts implements com.rescuefarm.data.repository.ProductRepository {
         public LiveData<List<com.rescuefarm.domain.model.Category>> observeCategories() { return new MutableLiveData<>(new ArrayList<>()); }
         public LiveData<List<com.rescuefarm.domain.model.Product>> observeProducts() { return new MutableLiveData<>(new ArrayList<>()); }
-        public LiveData<List<com.rescuefarm.domain.model.Product>> observeSellerProducts(String id) { return observeProducts(); }
-        public LiveData<List<com.rescuefarm.domain.model.ProductBatch>> observeBatches(String id) { return new MutableLiveData<>(new ArrayList<>()); }
+        public LiveData<List<com.rescuefarm.domain.model.Product>> observeSellerProducts(String id) {
+            return new MutableLiveData<>(java.util.Collections.singletonList(com.rescuefarm.domain.model.Product.restore("p", "seller", "cat", "Product", "", 10, 5, "kg", "", "", new ArrayList<>(), 0, 0, com.rescuefarm.domain.enums.ProductStatus.ACTIVE)));
+        }
+        public LiveData<List<com.rescuefarm.domain.model.ProductBatch>> observeBatches(String id) {
+            return new MutableLiveData<>(java.util.Collections.singletonList(com.rescuefarm.domain.model.ProductBatch.restore("batch", "p", "", new java.util.Date(1), new java.util.Date(System.currentTimeMillis()+86400000), 100, 100, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1)));
+        }
         public void refreshCatalog(ActionCallback callback) { callback.onSuccess(); }
         public void refreshSellerProducts(String id, ActionCallback callback) { callback.onSuccess(); }
         public void refreshBatches(String id, ActionCallback callback) { callback.onSuccess(); }

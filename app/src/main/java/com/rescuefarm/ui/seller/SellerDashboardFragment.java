@@ -147,12 +147,12 @@ public class SellerDashboardFragment extends Fragment {
         analytics.removeAllViews();
         SellerDashboardCards.addSectionTitle(requireContext(), analytics, "Kết quả kinh doanh và giải cứu");
         SellerDashboardCards.addGrid(requireContext(), analytics, Arrays.asList(
-                metric("Khối lượng đã giải cứu", String.format(Locale.getDefault(), "%.2f kg",
-                        snapshot.getRescuedQuantity()), "Toàn bộ chiến dịch"),
+                metric("Đã giải cứu (Campaign kg)", String.format(Locale.getDefault(), "%.2f kg",
+                        snapshot.getRescuedQuantity()), "Chỉ Campaign kg đã xác minh"),
                 metric("Chiến dịch hoàn thành", String.valueOf(snapshot.getCompletedCampaigns()),
                         "Đã hoàn thành mục tiêu"),
                 metric("Tỷ lệ giải cứu", String.format(Locale.getDefault(), "%.1f%%",
-                        snapshot.getRescueRate()), "Đã giải cứu / mục tiêu chiến dịch đã kích hoạt"),
+                        snapshot.getRescueRate()), "Đã giải cứu / mục tiêu của Campaign kg đã xác minh"),
                 metric("Doanh thu đơn đã giao", currency.format(snapshot.getRevenue()),
                         "Trong kỳ · không gồm phí giao hàng"),
                 metric("Số đơn trong kỳ", String.valueOf(snapshot.getOrders()),
@@ -163,7 +163,7 @@ public class SellerDashboardFragment extends Fragment {
         addRankedCards(analytics, getString(R.string.seller_top_products_title),
                 snapshot.getTopProducts(), "Số lượng đã giao");
         addRankedCards(analytics, getString(R.string.seller_top_rescue_reasons_title),
-                snapshot.getTopReasons(), "Khối lượng đã giải cứu");
+                snapshot.getTopReasons(), "Đã giải cứu (Campaign kg)");
         recent.removeAllViews();
         if (snapshot.getRecentOrders().isEmpty()) {
             SellerDashboardCards.addFootnote(requireContext(), recent, "Chưa có đơn hàng trong kỳ đã chọn.");

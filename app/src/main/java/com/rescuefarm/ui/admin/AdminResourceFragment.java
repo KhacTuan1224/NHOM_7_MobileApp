@@ -485,12 +485,12 @@ public final class AdminResourceFragment extends Fragment {
                 new String[]{"Mobile point"}, new double[]{value.getLiveMobilePoints()},
                 new String[]{String.valueOf(value.getLiveMobilePoints())}, 3);
         AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Tổng lượng đã giải cứu", "Số lượng đã rescued",
+                "Đã giải cứu (Campaign kg)", "Số lượng đã rescued",
                 new String[]{"Đã giải cứu"}, new double[]{value.getTotalRescuedQuantity()},
                 new String[]{String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())}, 2);
         AdminDashboardCards.addCompletionChart(requireContext(), container,
-                "Tỷ lệ hoàn thành",
-                "Rescued / target của Campaign ACTIVE, COMPLETED, EXPIRED, STOPPED đã duyệt",
+                "Tỷ lệ hoàn thành (Campaign kg)",
+                "Rescued / target của Campaign kg đã xác minh và được kích hoạt",
                 value.getCompletionRate());
         AdminDashboardCards.addFootnote(requireContext(), container,
                 "Doanh thu là tổng all-time của đơn DELIVERED, gồm phí giao hàng."

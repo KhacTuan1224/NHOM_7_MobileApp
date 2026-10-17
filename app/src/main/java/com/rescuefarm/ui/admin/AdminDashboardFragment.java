@@ -96,9 +96,9 @@ public final class AdminDashboardFragment extends Fragment {
                 metric("Cần giải cứu gấp", String.valueOf(value.getCriticalCampaigns()), "Trong chiến dịch đang hoạt động"),
                 metric("Điểm di động trực tuyến", String.valueOf(value.getLiveMobilePoints()),
                         "Vị trí được cập nhật trong 10 phút"),
-                metric("Tổng lượng đã giải cứu", String.format(Locale.getDefault(), "%.2f kg",
-                        value.getTotalRescuedQuantity()), "Khối lượng đã giải cứu"),
-                metric("Tỷ lệ hoàn thành", String.format(Locale.getDefault(), "%.1f%%",
+                metric("Đã giải cứu (Campaign kg)", String.format(Locale.getDefault(), "%.2f kg",
+                        value.getTotalRescuedQuantity()), "Đã giải cứu (Campaign kg)"),
+                metric("Tỷ lệ hoàn thành (Campaign kg)", String.format(Locale.getDefault(), "%.1f%%",
                         value.getCompletionRate()),
                         "Đã giải cứu / mục tiêu của các chiến dịch đã kích hoạt")));
         AdminDashboardCards.addFootnote(requireContext(), stats,

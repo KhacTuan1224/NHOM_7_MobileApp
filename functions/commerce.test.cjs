@@ -5,6 +5,8 @@ const express = require('express');
 const admin = require('firebase-admin');
 const {createCommerce, price} = require('./commerce');
 const {createCampaignLifecycle} = require('./campaign-lifecycle');
+const {createNotificationWorker} = require('./notification-outbox');
+const {createNotificationsApi} = require('./notifications-api');
 const rulesRequire = require('node:module').createRequire(require('node:path').resolve(__dirname, '../tests/firestore/package.json'));
 const {initializeTestEnvironment, assertFails} = rulesRequire('@firebase/rules-unit-testing');
 const {doc, runTransaction, serverTimestamp} = rulesRequire('firebase/firestore');
@@ -39,6 +41,7 @@ before(async () => {
     rules: require('node:fs').readFileSync(require('node:path').resolve(__dirname, '../firestore.rules'), 'utf8')
   }});
   const app = express(); app.use(express.json()); app.use(campaignLifecycle.router); app.use(commerce.router);
+  app.use(createNotificationsApi({db, admin, authenticate}).router);
   app.use((error, req, res, next) => res.status(error.status || 500).json({error: error.message}));
   server = await new Promise(resolve => { const value = app.listen(0, '127.0.0.1', () => resolve(value)); });
   base = `http://127.0.0.1:${server.address().port}`;
@@ -292,4 +295,24 @@ test('old client cannot transition an order directly after backend lifecycle cut
     tx.update(ref, {status: 'CONFIRMED', updatedAt: serverTimestamp()});
   }));
   await sellerTransition(data.requestId, 'CONFIRMED');
+});
+
+test('committed checkout delivers inbox/push without opening any Android screen; FCM failure retries once', async () => {
+  await db.doc('users/customer-a/devices/test').set({token: 'test-token'});
+  const data = request(); assert.equal((await post('/checkoutCustomer', data, 'customer-a')).status, 200);
+  let sends = 0;
+  const worker = createNotificationWorker({db, admin, now: () => Date.now() + 1000, messaging: () => ({sendEachForMulticast: async () => {
+    sends++; if (sends === 1) throw Error('Simulated FCM outage'); return {responses: [{success: true}]};
+  }})});
+  await worker.runOnce();
+  const customerInbox = await db.collection('notifications').where('userId', '==', 'customer-a').get();
+  assert.equal(customerInbox.size, 1); assert.equal(customerInbox.docs[0].id, `${data.requestId}_PENDING`);
+  assert.equal((await db.collection('notifications').where('userId', '==', 'seller').get()).size, 1);
+  assert.equal((await db.collection('notifications').where('userId', '==', 'admin').get()).size, 1);
+  const deliveries = await db.collection('notificationDeliveries').where('userId', '==', 'customer-a').get();
+  await deliveries.docs[0].ref.update({nextAttemptAt: past()}); await worker.runOnce(); assert.equal(sends, 2);
+  assert.equal((await db.collection('notifications').where('userId', '==', 'customer-a').get()).size, 1);
+  const opened = await post('/notifications/resolve', {notificationId: customerInbox.docs[0].id}, 'customer-a');
+  assert.equal(opened.status, 200); assert.equal(opened.body.destination, 'orderDetailFragment');
+  assert.equal((await post('/notifications/resolve', {notificationId: customerInbox.docs[0].id}, 'customer-b')).status, 403);
 });

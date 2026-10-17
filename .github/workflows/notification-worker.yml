@@ -1,0 +1,28 @@
+name: Notification worker wakeup
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: notification-worker
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Process due notifications and scheduled promotions
+        env:
+          BACKEND_URL: ${{ vars.RENDER_BACKEND_URL }}
+          WORKER_SECRET: ${{ secrets.NOTIFICATION_WORKER_SECRET }}
+        run: |
+          test -n "$BACKEND_URL" || { echo '::error::Set RENDER_BACKEND_URL repository variable'; exit 1; }
+          test "${#WORKER_SECRET}" -ge 32 || { echo '::error::Set NOTIFICATION_WORKER_SECRET in Render and Actions'; exit 1; }
+          curl --fail-with-body --silent --show-error --max-time 240 --output worker-result.json \
+            --request POST --header "X-Worker-Secret: $WORKER_SECRET" \
+            --header 'Content-Type: application/json' --data '{}' \
+            "${BACKEND_URL%/}/internal/notifications/run"
+          cat worker-result.json
+          python3 -c 'import json; r=json.load(open("worker-result.json")); assert r.get("ok") is True; assert not r.get("attentionRequired"), "Repeated push failures: inspect notificationDeliveries.lastError and nextAttemptAt"'

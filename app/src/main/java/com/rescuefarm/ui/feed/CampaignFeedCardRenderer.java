@@ -83,7 +83,11 @@ final class CampaignFeedCardRenderer {
         progress.setMax(100); progress.setProgress((int) Math.round(campaign.calculateProgress()));
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, dp(7));
         progressParams.topMargin = dp(10); content.addView(progress, progressParams);
-        String unit = products != null && !products.isEmpty() ? products.get(0).getUnit() : "kg";
+        if ("REVIEW_REQUIRED".equals(campaign.getUnitStatus())) {
+            progress.setVisibility(View.GONE);
+            addText(content, "Cần đối soát đơn vị chiến dịch", 13, true, R.color.rescue_on_surface_variant);
+        } else {
+        String unit = campaign.getQuantityUnitLabel();
         addText(content, String.format(Locale.forLanguageTag("vi-VN"),
                 "Đã giải cứu %.2f / %.2f %s (%.0f%%)", campaign.getRescuedQuantity(),
                 campaign.getTargetQuantity(), unit, campaign.calculateProgress()),
@@ -92,6 +96,7 @@ final class CampaignFeedCardRenderer {
                 "Đang giữ %.2f · còn khả dụng %.2f %s", campaign.getReservedQuantity(),
                 campaign.calculateRemainingQuantity(), unit), 12, false,
                 R.color.rescue_on_surface_variant);
+        }
         if (campaign.getRescueMode() == RescueMode.MOBILE_POINT) {
             String location = campaign.isLocationFresh(new java.util.Date())
                     ? "Đang chia sẻ vị trí · " + safe(campaign.getLocationName())

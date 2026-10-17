@@ -56,6 +56,7 @@ public final class SellerStatisticsFragment extends Fragment {
         progress.setVisibility(state.status == SellerStatisticsViewModel.Status.LOADING ? View.VISIBLE : View.GONE);
         SellerStatisticsSnapshot value = state.snapshot; if (value == null) return;
         text(value.timeBasis, 13, false);
+        if (value.unverifiedCampaigns > 0) text(value.unverifiedCampaigns + " chiến dịch cũ chưa xác minh đơn vị; chưa cộng vào lượng giải cứu.", 13, false);
         if (value.approximateDates) text("Một số giao dịch cũ chưa có ngày giao/hoàn thành riêng; thống kê dùng ngày cập nhật gần nhất của bản ghi đó.", 12, false);
         text("Doanh thu: " + NumberFormat.getCurrencyInstance(locale).format(value.revenue), 22, true);
         String[] dates = new String[value.trendDates.size()]; double[] revenue = new double[dates.length];

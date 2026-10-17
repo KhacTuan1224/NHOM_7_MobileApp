@@ -429,7 +429,7 @@ public class FirebaseOrderRepository implements OrderRepository {
                     ||OrderStatus.CANCELLED.name().equals(order.getString("status")))throw new IllegalStateException("PAYMENT_NOT_CONFIRMABLE");
             tx.update(paymentRef,"status",PaymentStatus.PAID.name(),"referenceCode",reference,
                     "paidAt",FieldValue.serverTimestamp(),"updatedAt",FieldValue.serverTimestamp());
-            tx.update(orderRef,"paymentStatus",PaymentStatus.PAID.name(),"updatedAt",FieldValue.serverTimestamp());return false;
+            tx.update(orderRef,"paymentStatus",PaymentStatus.PAID.name(),"updatedAt",FieldValue.serverTimestamp());com.rescuefarm.service.notification.NotificationOutbox.enqueue(tx,db,"ORDER_PAYMENT","ORDER",orderId);return false;
         }).addOnSuccessListener(replay->fetchLifecycle(orderId,replay,callback))
                 .addOnFailureListener(e->failure(e,callback));
     }

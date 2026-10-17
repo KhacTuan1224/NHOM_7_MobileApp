@@ -55,6 +55,7 @@ public final class AdminDetailFormatter {
                 "referenceCode", "Mã tham chiếu", "trackingCode", "Mã vận đơn", "carrierName", "Đơn vị vận chuyển",
                 "shippingAddress", "Địa chỉ giao hàng", "distanceKm", "Khoảng cách giao hàng",
                 "productNameSnapshot", "Tên sản phẩm khi đặt", "productImageSnapshot", "Ảnh sản phẩm khi đặt",
+                "quantityUnit", "Đơn vị chiến dịch", "unitStatus", "Xác minh đơn vị", "unitReviewReason", "Lý do đối soát đơn vị",
                 "unitSnapshot", "Đơn vị tính khi đặt", "startDate", "Ngày bắt đầu", "endDate", "Ngày kết thúc",
                 "harvestDate", "Ngày thu hoạch", "expiryDate", "Hạn sử dụng", "createdAt", "Ngày tạo",
                 "updatedAt", "Cập nhật lần cuối", "submittedAt", "Ngày gửi hồ sơ", "moderatedAt", "Thời điểm xét duyệt",

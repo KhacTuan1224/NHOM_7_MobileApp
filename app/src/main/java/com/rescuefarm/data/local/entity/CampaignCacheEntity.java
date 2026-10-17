@@ -21,6 +21,8 @@ public class CampaignCacheEntity {
     public String batchTargetsSerialized;
     public String reservedByBatchSerialized;
     public String rescuedByBatchSerialized;
+    public String quantityUnit;
+    public String unitStatus;
     @androidx.room.ColumnInfo(defaultValue = "0") public int allocationVersion;
     public double targetQuantity;
     public double reservedQuantity;

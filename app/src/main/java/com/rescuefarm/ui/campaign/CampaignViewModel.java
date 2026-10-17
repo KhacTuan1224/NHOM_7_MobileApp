@@ -97,9 +97,24 @@ public class CampaignViewModel extends ViewModel {
                 latitude, longitude);
         if (validation != null) { state.setValue(CampaignScreenState.error(validation)); return; }
         String sellerId = requireSeller(); if (sellerId == null) return;
+        Map<String, String> units = new HashMap<>();
+        if (batchOptions.getValue() != null) for (CampaignBatchOption option : batchOptions.getValue())
+            units.put(option.getBatch().getId(), com.rescuefarm.service.campaign.QuantityUnitPolicy.normalize(option.getProduct().getUnit()));
+        String quantityUnit = null;
+        for (String batchId : targets.keySet()) {
+            String unit = units.get(batchId);
+            if (unit == null || unit.isEmpty()) {
+                state.setValue(CampaignScreenState.error("Chưa tải đủ thông tin đơn vị của lô. Hãy tải lại trước khi lưu.")); return;
+            }
+            if (quantityUnit != null && !quantityUnit.equals(unit)) {
+                state.setValue(CampaignScreenState.error("Các lô trong Campaign phải có cùng đơn vị tính. Không cộng bó/bao với kg.")); return;
+            }
+            quantityUnit = unit;
+        }
         double target = 0D; for (double quantity : targets.values()) target += quantity;
         try {
             RescueCampaign campaign = new RescueCampaign(id, sellerId, target);
+            campaign.setQuantityUnit(quantityUnit, "DECLARED");
             campaign.defineCampaign(title, description, reason, mode, targets);
             campaign.setStoryMedia(imageUrls, imagePublicIds);
             campaign.schedule(CampaignValidator.parseDate(startDate), CampaignValidator.parseDate(endDate));

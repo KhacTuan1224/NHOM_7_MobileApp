@@ -273,7 +273,8 @@ public final class AdminDetailFragment extends Fragment {
     private EditText reasonEditor() {
         TextInputLayout box = new TextInputLayout(requireContext(), null,
                 com.google.android.material.R.attr.textInputOutlinedStyle);
-        box.setHint(getString(R.string.admin_reason_hint));
+        box.setHint(section == Section.REPORTS ? "Ghi chú xử lý nội bộ (không gửi người báo cáo)"
+                : "Lý do kiểm duyệt (hiển thị cho chủ nội dung)");
         EditText input = new EditText(requireContext());
         input.setMinLines(2); input.setMaxLines(4);
         input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(500)});

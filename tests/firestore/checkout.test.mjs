@@ -568,3 +568,76 @@ test('Guest cannot read order collections or backend capabilities and clients ca
   await assertFails(updateDoc(doc(guest, 'posts/published'), {viewCount: 999}));
   await assertFails(updateDoc(doc(env.authenticatedContext('customer-a').firestore(), 'posts/published'), {viewCount: 999}));
 });
+
+function outboxData(actorId, resourceType, resourceId, kind = 'ADMINS') {
+  return {actorId, resourceType, resourceId, kind, status: 'PENDING', retryCount: 0,
+    nextAttemptAt: serverTimestamp(), createdAt: serverTimestamp()};
+}
+function newReport(id) {
+  return {id, reporterId: 'customer-a', targetType: 'PRODUCT', targetId: 'product-a', reason: 'Cần kiểm tra', description: '',
+    status: 'PENDING', resolvedBy: '', resolutionNote: '', createdAt: serverTimestamp(), updatedAt: serverTimestamp()};
+}
+test('report and outbox event commit atomically; replay, forged recipients and delivery-state edits are denied', async () => {
+  const db = env.authenticatedContext('customer-a').firestore(), batch = writeBatch(db);
+  batch.set(doc(db, 'reports/new'), newReport('new'));
+  batch.set(doc(db, 'notificationOutbox/new'), outboxData('customer-a', 'REPORT', 'new'));
+  await assertSucceeds(batch.commit());
+  await assertFails(setDoc(doc(db, 'notificationOutbox/replay'), outboxData('customer-a', 'REPORT', 'new')));
+  await assertFails(getDoc(doc(db, 'notificationOutbox/new')));
+  await assertFails(updateDoc(doc(db, 'notificationOutbox/new'), {status: 'EXPANDED'}));
+  const forged = writeBatch(db);
+  forged.set(doc(db, 'reports/forged'), newReport('forged'));
+  forged.set(doc(db, 'notificationOutbox/forged'), {...outboxData('customer-a', 'REPORT', 'forged'), recipientUid: 'customer-b'});
+  await assertFails(forged.commit());
+  await env.withSecurityRulesDisabled(async context => {
+    assert.equal((await getDoc(doc(context.firestore(), 'reports/forged'))).exists(), false);
+  });
+  await assertFails(setDoc(doc(db, 'notificationDeliveries/fake'), {userId: 'customer-b', status: 'SENT'}));
+});
+test('reporters cannot read internal resolution notes directly; the public projection uses the backend', async () => {
+  await seed({'reports/result': {...newReport('result'), resolutionNote: 'INTERNAL', status: 'RESOLVED'}});
+  for (const uid of ['customer-a', 'customer-b', 'seller'])
+    await assertFails(getDoc(doc(env.authenticatedContext(uid).firestore(), 'reports/result')));
+  await assertSucceeds(getDoc(doc(env.authenticatedContext('admin').firestore(), 'reports/result')));
+});
+test('Campaign draft declaration and its submission event are allowed; client unit verification is denied', async () => {
+  const db = env.authenticatedContext('seller').firestore();
+  const campaign = {id: 'draft', sellerId: 'seller', title: 'Campaign thử nghiệm', description: 'Nội dung thử nghiệm',
+    rescueReason: 'OVER_SUPPLY', urgencyLevel: 'NORMAL', rescueMode: 'FIXED_POINT', batchTargets: {'batch-a': 5},
+    targetQuantity: 5, reservedQuantity: 0, rescuedQuantity: 0, startDate: past, endDate: future,
+    latitude: 10.8, longitude: 106.7, currentLatitude: 0, currentLongitude: 0, locationUpdatedAt: null,
+    locationSharingEnabled: false, locationName: 'Test', status: 'PENDING_APPROVAL', quantityUnit: 'bó', unitStatus: 'DECLARED',
+    reservedByBatch: {}, rescuedByBatch: {}, allocationVersion: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp()};
+  const batch = writeBatch(db); batch.set(doc(db, 'campaigns/draft'), campaign);
+  batch.set(doc(db, 'notificationOutbox/campaign'), outboxData('seller', 'CAMPAIGN', 'draft'));
+  await assertSucceeds(batch.commit());
+  await assertFails(setDoc(doc(db, 'campaigns/forged-unit'), {...campaign, id: 'forged-unit', unitStatus: 'VERIFIED'}));
+});
+
+test('Seller application submission and its Admin event are committed together', async () => {
+  const db = env.authenticatedContext('seller').firestore(), batch = writeBatch(db);
+  batch.set(doc(db, 'sellerApplications/seller'), {id: 'seller', sellerId: 'seller', representativeName: 'Test Seller',
+    shopName: 'Test shop', address: '', proofImageUrl: '', rejectionReason: '', status: 'PENDING',
+    submittedAt: serverTimestamp(), updatedAt: serverTimestamp()});
+  batch.set(doc(db, 'notificationOutbox/application'), outboxData('seller', 'SELLER_APPLICATION', 'seller'));
+  await assertSucceeds(batch.commit());
+});
+test('future Promotion can persist its scheduled notification event atomically', async () => {
+  const db = env.authenticatedContext('seller').firestore(), batch = writeBatch(db);
+  batch.set(doc(db, 'promotions/product-a'), {id: 'product-a', productId: 'product-a', sellerId: 'seller', type: 'PERCENT',
+    value: 10, quantityDiscountTiers: {}, active: true, startDate: Timestamp.fromMillis(now + 86400000),
+    endDate: future, createdAt: serverTimestamp(), updatedAt: serverTimestamp()});
+  batch.set(doc(db, 'notificationOutbox/promotion'), outboxData('seller', 'PROMOTION', 'product-a', 'PROMOTION'));
+  await assertSucceeds(batch.commit());
+});
+test('confirming bank payment can enqueue an event only with the actual payment change', async () => {
+  await seed({'orders/bank': {id: 'bank', ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller',
+    status: 'PENDING', paymentMethod: 'BANK_TRANSFER', paymentStatus: 'PENDING', updatedAt: past},
+    'payments/bank': {id: 'bank', orderId: 'bank', method: 'BANK_TRANSFER', amount: 1000, status: 'PENDING', referenceCode: '', updatedAt: past}});
+  const db = env.authenticatedContext('seller').firestore(), batch = writeBatch(db);
+  batch.update(doc(db, 'orders/bank'), {paymentStatus: 'PAID', updatedAt: serverTimestamp()});
+  batch.update(doc(db, 'payments/bank'), {status: 'PAID', referenceCode: 'BANK123', paidAt: serverTimestamp(), updatedAt: serverTimestamp()});
+  batch.set(doc(db, 'notificationOutbox/payment'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT'));
+  await assertSucceeds(batch.commit());
+  await assertFails(setDoc(doc(db, 'notificationOutbox/payment-replay'), outboxData('seller', 'ORDER', 'bank', 'ORDER_PAYMENT')));
+});
