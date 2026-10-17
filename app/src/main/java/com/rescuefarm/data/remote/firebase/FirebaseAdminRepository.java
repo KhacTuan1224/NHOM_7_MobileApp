@@ -402,7 +402,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 }
                 if (!com.rescuefarm.service.admin.CatalogImagePolicy.isAllowed(imageUrl,
                         current.exists() ? text(current, "imageUrl") : ""))
-                    throw new IllegalArgumentException("Ảnh thay thế phải là ảnh HTTPS từ Cloudinary. Có thể giữ nguyên ảnh hiện tại.");
+                    throw new IllegalArgumentException("Ảnh phải là đường dẫn HTTPS hợp lệ hoặc ảnh tải lên Cloudinary.");
                 Map<String, Object> changes = new HashMap<>();
                 if (!current.exists() || current.contains("id")) changes.put("id", ref.getId());
                 changes.put(section == Section.CATEGORIES ? "name" : "title", name);
