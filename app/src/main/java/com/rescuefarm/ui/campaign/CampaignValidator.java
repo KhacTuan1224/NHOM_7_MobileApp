@@ -21,8 +21,8 @@ public final class CampaignValidator {
         if (start == null || end == null) return "Ngày phải theo định dạng yyyy-MM-dd.";
         if (!end.after(start)) return "Ngày kết thúc phải sau ngày bắt đầu.";
         Double lat = number(latitude); Double lng = number(longitude);
-        if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            return "Tọa độ điểm bán không hợp lệ.";
+        if (lat == null || lng == null || !com.rescuefarm.service.location.GpsCoordinates.isValid(lat, lng)) {
+            return "Hãy lấy GPS tại điểm giải cứu trước khi lưu.";
         }
         return null;
     }
@@ -42,8 +42,8 @@ public final class CampaignValidator {
         if (start == null || end == null) return "Ngày phải theo định dạng yyyy-MM-dd.";
         if (!end.after(start)) return "Ngày kết thúc phải sau ngày bắt đầu.";
         Double lat = number(latitude); Double lng = number(longitude);
-        if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180)
-            return "Tọa độ điểm bán không hợp lệ.";
+        if (lat == null || lng == null || !com.rescuefarm.service.location.GpsCoordinates.isValid(lat, lng))
+            return "Hãy lấy GPS tại điểm giải cứu trước khi lưu.";
         return null;
     }
 

@@ -128,10 +128,12 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
       }
     }
     let profile = null, paymentProfile = null, shippingFee = 0, distance = 0;
-    if (data.fulfillmentType === 'DELIVERY') {
-      const p = await read(db.collection('sellerPublicProfiles').doc(sellerId));
-      if (!p.exists) throw error(409, "Cửa hàng chưa khai báo thông tin nhận hàng/thanh toán.");
-      profile = p.data();
+    // Store pickup/shipping always comes from the public business profile,
+    // never from the seller's personal GPS or caller-supplied origin fields.
+    const store = await read(db.collection('sellerPublicProfiles').doc(sellerId));
+    if (store.exists) profile = store.data();
+    if (data.fulfillmentType === 'DELIVERY' && !profile) {
+      throw error(409, "Người bán chưa lưu địa chỉ và GPS cửa hàng trong Hồ sơ người bán.");
     }
     if (data.paymentMethod === 'BANK_TRANSFER') {
       const p = await read(db.collection('sellerPaymentProfiles').doc(sellerId));
@@ -140,9 +142,11 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
     }
     if (data.fulfillmentType === 'DELIVERY') {
       const c = await read(db.collection('appConfig').doc('shipping'));
-      if (!c.exists || !coordinates(data.latitude, data.longitude) || !coordinates(profile.latitude, profile.longitude)) {
-        throw error(409, "Thiếu tọa độ địa chỉ/cửa hàng hoặc biểu phí giao hàng.");
-      }
+      if (!c.exists) throw error(409, "Admin chưa cấu hình biểu phí giao hàng.");
+      if (!coordinates(data.latitude, data.longitude))
+        throw error(409, "Địa chỉ nhận hàng chưa có GPS. Hãy lấy GPS tại nơi nhận hàng.");
+      if (!coordinates(profile.latitude, profile.longitude))
+        throw error(409, "Người bán cần lấy GPS cửa hàng và lưu trong Hồ sơ người bán.");
       const config = c.data();
       if (!(number(config.baseFeeVnd) >= 0 && config.baseFeeVnd <= 1000000
           && number(config.perKmFeeVnd) >= 0 && config.perKmFeeVnd <= 1000000
@@ -160,6 +164,9 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
     return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
       public: {lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
+        sellerName: text(seller.get('fullName')), sellerAddress: profile ? text(profile.address) : '',
+        sellerLatitude: profile ? number(profile.latitude, 0) : 0,
+        sellerLongitude: profile ? number(profile.longitude, 0) : 0,
         distanceKm: distance, total: subtotal + shippingFee, campaignId: campaign ? campaign.id : '',
         campaignTitle: campaign ? text(campaign.title) : '', campaignLocationName: campaign ? text(campaign.locationName) : '',
         rescueMode: campaign ? campaign.rescueMode : '',
@@ -262,6 +269,9 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
         qrUrl: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.qrUrl) : '', paidAt: null, createdAt: stamp(), updatedAt: stamp()});
       if (normalized.fulfillmentType === 'DELIVERY') tx.create(db.collection('shipments').doc(requestId), {
         id: requestId, orderId: requestId, carrierName: '', trackingCode: '', status: 'PENDING',
+        pickupAddress: q.public.sellerAddress, pickupLatitude: q.public.sellerLatitude,
+        pickupLongitude: q.public.sellerLongitude, receiverAddress: normalized.receiverAddress,
+        receiverLatitude: normalized.latitude, receiverLongitude: normalized.longitude,
         distanceKm: q.public.distanceKm, shippingFee: q.public.shippingFee, createdAt: stamp(), updatedAt: stamp()});
       if (cart && cart.exists) {
         const quantities = new Map(items.map(item => [`${item.productId}::${item.batchId}`, item.quantity]));

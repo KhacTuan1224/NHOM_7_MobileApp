@@ -34,7 +34,10 @@ import com.rescuefarm.service.media.CloudinaryUploadUi;
 
 public class SellerProfileFragment extends Fragment {
     private TextInputEditText representativeInput, shopNameInput, descriptionInput, avatarInput,
-            bankCodeInput, bankAccountNameInput, bankAccountNumberInput, latitudeInput, longitudeInput;
+            bankCodeInput, bankAccountNameInput, bankAccountNumberInput;
+    private double storeLatitude, storeLongitude;
+    private int storeAddressVersion, gpsRequestVersion;
+    private com.rescuefarm.data.repository.SellerStorefront publicStorefront;
     private VietnamAddressView addressInput;
     private ImageView sellerAvatarView;
     private ProfileViewModel viewModel;
@@ -69,8 +72,7 @@ public class SellerProfileFragment extends Fragment {
         bankCodeInput = view.findViewById(R.id.sellerBankCodeInput);
         bankAccountNameInput = view.findViewById(R.id.sellerBankAccountNameInput);
         bankAccountNumberInput = view.findViewById(R.id.sellerBankAccountNumberInput);
-        latitudeInput = view.findViewById(R.id.sellerLatitudeInput);
-        longitudeInput = view.findViewById(R.id.sellerLongitudeInput);
+
         sellerAvatarView = view.findViewById(R.id.sellerProfileAvatar);
         avatarUploadStatus = view.findViewById(R.id.sellerAvatarUploadStatus);
         uploadAvatarButton = view.findViewById(R.id.uploadSellerAvatarButton);
@@ -98,14 +100,14 @@ public class SellerProfileFragment extends Fragment {
                 viewModel.updateSellerProfile(text(representativeInput), text(shopNameInput),
                         text(descriptionInput), text(avatarInput), addressInput.formattedAddress(),
                         text(bankCodeInput), text(bankAccountNameInput), text(bankAccountNumberInput),
-                        coordinate(latitudeInput, true), coordinate(longitudeInput, false));
+                        storeLatitude, storeLongitude);
             } catch (IllegalArgumentException error) {
                 Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
         android.view.ViewGroup parent = (android.view.ViewGroup)view.findViewById(R.id.saveSellerProfileButton).getParent();
         com.google.android.material.button.MaterialButton settings = new com.google.android.material.button.MaterialButton(requireContext());
-        settings.setText("Phí giao hàng cố định và ảnh QR");
+        settings.setText("Ảnh QR thanh toán");
         settings.setOnClickListener(v -> { Bundle args = new Bundle(); args.putBoolean("edit",true);
             Navigation.findNavController(view).navigate(R.id.storefrontFragment,args); });
         parent.addView(settings, parent.indexOfChild(view.findViewById(R.id.saveSellerProfileButton))+1);
@@ -126,7 +128,8 @@ public class SellerProfileFragment extends Fragment {
             if (value.getStatus() == ProfileScreenState.Status.ERROR) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
             } else if (value.getStatus() == ProfileScreenState.Status.LOCATION) {
-                renderSellerLocation(value);
+                if (gpsRequestVersion == storeAddressVersion) renderSellerLocation(value);
+                viewModel.clearTransientState();
             } else if (value.getStatus() == ProfileScreenState.Status.PROFILE
                     && value.getUser() instanceof Seller) {
                 Seller seller = (Seller) value.getUser();
@@ -156,21 +159,25 @@ public class SellerProfileFragment extends Fragment {
         descriptionInput.addTextChangedListener(watcher);
         avatarInput.addTextChangedListener(watcher);
         addressInput.setOnAddressChangedListener(() -> {
-            if (!binding) { dirty = true; latitudeInput.setText(""); longitudeInput.setText(""); }
+            if (!binding) { dirty = true; storeAddressVersion++; storeLatitude = 0; storeLongitude = 0; locationStatus.setText(R.string.gps_not_selected); }
         });
         bankCodeInput.addTextChangedListener(watcher); bankAccountNameInput.addTextChangedListener(watcher);
-        bankAccountNumberInput.addTextChangedListener(watcher); latitudeInput.addTextChangedListener(watcher);
-        longitudeInput.addTextChangedListener(watcher);
+        bankAccountNumberInput.addTextChangedListener(watcher);
         viewModel.observeProfile().observe(getViewLifecycleOwner(), user -> {
             if (user instanceof Seller) {
                 if (!dirty) populate((Seller) user);
                 renderAvatar(((Seller) user).getShopAvatarUrl());
             }
         });
+        viewModel.observeStorefront().observe(getViewLifecycleOwner(), profile -> {
+            publicStorefront = profile;
+            if (!dirty) { binding = true; applyPublicStorefront(); binding = false; showStoreGps(); }
+        });
         viewModel.loadProfile();
     }
 
     private void requestSellerLocation() {
+        gpsRequestVersion = storeAddressVersion;
         boolean hasFine = ContextCompat.checkSelfPermission(requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         boolean hasCoarse = ContextCompat.checkSelfPermission(requireContext(),
@@ -185,21 +192,10 @@ public class SellerProfileFragment extends Fragment {
 
     private void renderSellerLocation(ProfileScreenState value) {
         binding = true;
-        latitudeInput.setText(String.valueOf(value.getLatitude()));
-        longitudeInput.setText(String.valueOf(value.getLongitude()));
+        storeLatitude = value.getLatitude();
+        storeLongitude = value.getLongitude();
         if (value.getGeocodedAddress() != null) {
-            String street = value.getGeocodedAddress().getStreet();
-            String ward = value.getGeocodedAddress().getWard();
-            String district = value.getGeocodedAddress().getDistrict();
-            String province = value.getGeocodedAddress().getProvince();
-            StringBuilder address = new StringBuilder();
-            for (String part : new String[]{street, ward, district, province}) {
-                if (part != null && !part.trim().isEmpty()) {
-                    if (address.length() > 0) address.append(", ");
-                    address.append(part.trim());
-                }
-            }
-            if (address.length() > 0) addressInput.setAddress(province, district, ward, street);
+            addressInput.applyGeocodedAddress(value.getGeocodedAddress());
         }
         binding = false;
         dirty = true;
@@ -225,9 +221,36 @@ public class SellerProfileFragment extends Fragment {
         addressInput.setFormattedAddress(seller.getAddress());
         bankCodeInput.setText(seller.getBankCode()); bankAccountNameInput.setText(seller.getBankAccountName());
         bankAccountNumberInput.setText(seller.getBankAccountNumber());
-        latitudeInput.setText(seller.getLatitude() == 0D ? "" : String.valueOf(seller.getLatitude()));
-        longitudeInput.setText(seller.getLongitude() == 0D ? "" : String.valueOf(seller.getLongitude()));
+        // Existing private fields are only a legacy fallback until the public profile loads.
+        storeLatitude = seller.getLatitude(); storeLongitude = seller.getLongitude();
+        applyPublicStorefront();
+        showStoreGps();
         binding = false;
+    }
+
+    private void applyPublicStorefront() {
+        if (publicStorefront == null || !publicStorefront.configured) return;
+        shopNameInput.setText(publicStorefront.shopName);
+        descriptionInput.setText(publicStorefront.description);
+        addressInput.setFormattedAddress(publicStorefront.address);
+        storeLatitude = publicStorefront.latitude; storeLongitude = publicStorefront.longitude;
+    }
+    private void showStoreGps() {
+        locationStatus.setText(com.rescuefarm.service.location.GpsCoordinates.isValid(storeLatitude, storeLongitude)
+                ? "Đã có GPS cửa hàng. Điểm này được dùng làm điểm gửi hàng và tính phí giao hàng."
+                : getString(R.string.gps_not_selected));
+    }
+    @Override public void onViewStateRestored(@Nullable Bundle state) {
+        super.onViewStateRestored(state);
+        if (state != null) {
+            storeLatitude = state.getDouble("storeLatitude"); storeLongitude = state.getDouble("storeLongitude");
+            dirty = state.getBoolean("sellerDirty"); showStoreGps();
+        }
+    }
+    @Override public void onSaveInstanceState(@NonNull Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putDouble("storeLatitude", storeLatitude); state.putDouble("storeLongitude", storeLongitude);
+        state.putBoolean("sellerDirty", dirty);
     }
 
     private void renderAvatar(String shopAvatarUrl) {
@@ -259,16 +282,5 @@ public class SellerProfileFragment extends Fragment {
 
     private static String text(TextInputEditText input) {
         return input.getText() == null ? "" : input.getText().toString();
-    }
-    private double coordinate(TextInputEditText input, boolean latitude) {
-        String value = text(input).trim(); if (value.isEmpty()) return 0D;
-        try {
-            double parsed = Double.parseDouble(value.replace(',', '.'));
-            if (!Double.isFinite(parsed) || (latitude ? parsed < -90D || parsed > 90D
-                    : parsed < -180D || parsed > 180D)) throw new NumberFormatException();
-            return parsed;
-        } catch (NumberFormatException error) {
-            throw new IllegalArgumentException(latitude ? "Vĩ độ không hợp lệ." : "Kinh độ không hợp lệ.");
-        }
     }
 }

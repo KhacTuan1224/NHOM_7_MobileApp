@@ -101,7 +101,7 @@ public class AndroidLocationProvider implements LocationProvider {
             android.location.Location best = null;
             for (String provider : lm.getProviders(true)) {
                 android.location.Location loc = lm.getLastKnownLocation(provider);
-                if (loc != null && isValidCoordinate(loc.getLatitude(), loc.getLongitude())) {
+                if (loc != null && isRecentLocation(loc) && isValidCoordinate(loc.getLatitude(), loc.getLongitude())) {
                     if (!isEmulatorDefaultLocation(loc.getLatitude(), loc.getLongitude())) {
                         if (best == null || loc.getTime() > best.getTime()) {
                             best = loc;
@@ -129,7 +129,7 @@ public class AndroidLocationProvider implements LocationProvider {
         try {
             fusedClient.getLastLocation()
                     .addOnSuccessListener(lastLoc -> {
-                        if (lastLoc != null && isValidCoordinate(lastLoc.getLatitude(), lastLoc.getLongitude())
+                        if (lastLoc != null && isRecentLocation(lastLoc) && isValidCoordinate(lastLoc.getLatitude(), lastLoc.getLongitude())
                                 && !isEmulatorDefaultLocation(lastLoc.getLatitude(), lastLoc.getLongitude())) {
                             deliverValidLocation(lastLoc, callback);
                         } else if (hardwareLoc != null && isValidCoordinate(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())
@@ -137,7 +137,7 @@ public class AndroidLocationProvider implements LocationProvider {
                             deliverValidLocation(hardwareLoc, callback);
                         } else {
                             if (isEmulatorEnvironment()) {
-                                callback.onLocationAvailable(10.7769D, 106.7009D);
+                                callback.onLocationUnavailable("Chưa có GPS thật. Hãy đặt vị trí trong Extended Controls của máy ảo rồi lấy GPS lại.");
                             } else {
                                 callback.onLocationUnavailable("Không lấy được vị trí GPS. Hãy kiểm tra cài đặt vị trí.");
                             }
@@ -147,7 +147,7 @@ public class AndroidLocationProvider implements LocationProvider {
                         if (hardwareLoc != null && !isEmulatorDefaultLocation(hardwareLoc.getLatitude(), hardwareLoc.getLongitude())) {
                             deliverValidLocation(hardwareLoc, callback);
                         } else if (isEmulatorEnvironment()) {
-                            callback.onLocationAvailable(10.7769D, 106.7009D);
+                            callback.onLocationUnavailable("Chưa có GPS thật. Hãy đặt vị trí trong Extended Controls của máy ảo rồi lấy GPS lại.");
                         } else {
                             callback.onLocationUnavailable("Dịch vụ vị trí tạm thời không khả dụng.");
                         }
@@ -158,7 +158,7 @@ public class AndroidLocationProvider implements LocationProvider {
     }
 
     private void deliverValidLocation(android.location.Location location, LocationCallback callback) {
-        if (!isValidCoordinate(location.getLatitude(), location.getLongitude())) {
+        if (!isRecentLocation(location) || !isValidCoordinate(location.getLatitude(), location.getLongitude())) {
             callback.onLocationUnavailable("Thiết bị trả về tọa độ không hợp lệ. Hãy thử lại.");
             return;
         }
@@ -172,10 +172,15 @@ public class AndroidLocationProvider implements LocationProvider {
                 callback.onLocationAvailable(hardwareLoc.getLatitude(), hardwareLoc.getLongitude());
                 return;
             }
-            callback.onLocationAvailable(10.7769D, 106.7009D);
+            callback.onLocationUnavailable("Chưa có GPS thật. Hãy đặt vị trí trong Extended Controls của máy ảo rồi lấy GPS lại.");
             return;
         }
         callback.onLocationAvailable(location.getLatitude(), location.getLongitude());
+    }
+
+    private static boolean isRecentLocation(android.location.Location location) {
+        long age = android.os.SystemClock.elapsedRealtimeNanos() - location.getElapsedRealtimeNanos();
+        return age >= 0 && age <= 120_000_000_000L;
     }
 
     private static boolean isEmulatorEnvironment() {

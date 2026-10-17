@@ -20,6 +20,8 @@ public void submit(String name,String phone,String address,String latText,String
     try{
         CheckoutPolicy.requireSingleSeller(selected);
         double lat=parseCoordinate(latText),lng=parseCoordinate(lngText);
+        if(fulfillment==FulfillmentType.DELIVERY&&!com.rescuefarm.service.location.GpsCoordinates.isValid(lat,lng))
+            throw new IllegalArgumentException("Hãy lấy GPS tại nơi nhận hàng hoặc chọn địa chỉ đã lưu có GPS.");
         if(clean(name).length()<2||clean(phone).length()<9)
             throw new IllegalArgumentException("Tên người nhận và số điện thoại chưa hợp lệ.");
         if(fulfillment==FulfillmentType.DELIVERY&&clean(address).isEmpty())
