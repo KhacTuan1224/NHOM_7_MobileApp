@@ -236,7 +236,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       delete order.items; order.receiverLatitude = normalized.latitude; order.receiverLongitude = normalized.longitude;
       delete order.latitude; delete order.longitude;
       tx.create(orderRef, order);
-      if (bankTransfer.verificationProvider === 'SEPAY') tx.create(
+      if (bankTransfer.transferContent) tx.create(
         db.collection('bankTransferReferences').doc(bankTransfer.transferContent), {
           orderId: requestId, sellerId: q.sellerId, createdAt: stamp()
         });

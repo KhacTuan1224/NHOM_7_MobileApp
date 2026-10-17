@@ -52,6 +52,16 @@ test('checkout creates a unique short SEVQR reference bound to its seller and co
   assert.equal(f.db.snapshot('bankTransferReferences/' + f.payment.transferContent).get('sellerId'), 'seller');
 });
 
+test('customer and guest get mapped SEVQR content even before seller enables automatic verification', async () => {
+  for (const ownerType of ['CUSTOMER', 'GUEST']) {
+    const f = await fixture(ownerType, {});
+    assert.equal(f.payment.verificationProvider, 'MANUAL');
+    assert.match(f.payment.transferContent, /^SEVQR[A-F0-9]{20}$/);
+    assert.equal(f.db.snapshot('bankTransferReferences/' + f.payment.transferContent).get('orderId'), f.id);
+    assert.equal(f.db.snapshot('bankTransferReferences/' + f.payment.transferContent).get('sellerId'), 'seller');
+  }
+});
+
 test('HMAC webhook atomically confirms order and money without finalizing goods; both parties get Vietnamese notifications', async () => {
   const f = await fixture();
   assert.deepEqual(await f.api.receive(request(f.payload)), {success: true});
@@ -163,7 +173,9 @@ test('manual confirmation cannot bypass SePay, even for the owning seller', asyn
 });
 
 test('configuration requires strong per-merchant secrets and unique bank accounts; bank edits cannot redirect payment', async () => {
-  assert.deepEqual(paymentDetails('seller', bank, {}), {verificationProvider: 'MANUAL', transferContent: ''});
+  const unconfigured = paymentDetails('seller', bank, {});
+  assert.equal(unconfigured.verificationProvider, 'MANUAL');
+  assert.match(unconfigured.transferContent, /^SEVQR[A-F0-9]{20}$/);
   assert.throws(() => merchants(environment({...merchant, webhookSecret: 'weak'})), error => error.status === 503);
   assert.throws(() => merchants({SEPAY_MERCHANTS_JSON: '{'}), error => error.status === 503);
   assert.throws(() => merchants({SEPAY_MERCHANTS_JSON: JSON.stringify({seller: merchant, other: merchant})}), /nhiều seller/);

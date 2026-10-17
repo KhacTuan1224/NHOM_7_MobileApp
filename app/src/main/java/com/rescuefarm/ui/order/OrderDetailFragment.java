@@ -440,7 +440,7 @@ public class OrderDetailFragment extends Fragment {
         }
         String transferContent = payment.resolveQrTransferContent(order.getOrderCode());
         if (transferContent.isEmpty()) {
-            bankInfo.setText("Chưa có mã chuyển khoản hợp lệ cho đơn này. Vui lòng tải lại đơn hoặc liên hệ hỗ trợ trước khi thanh toán.");
+            bankInfo.setText("Đơn chưa có mã chuyển khoản SEVQR hợp lệ. Vui lòng tải lại đơn hoặc liên hệ hỗ trợ trước khi thanh toán. Nếu đã chuyển tiền, không thanh toán lại.");
             return;
         }
         bankInfo.setText("Chuyển khoản đến " + name + " · " + code + " · " + account

@@ -29,6 +29,8 @@ public class SePayPaymentTest {
             assertEquals("", payment.resolveQrTransferContent("RF77B4506"));
         }
         payment.setVerificationDetails("MANUAL", "");
-        assertEquals("RF77B4506", payment.resolveQrTransferContent("RF77B4506"));
+        assertEquals("", payment.resolveQrTransferContent("RF77B4506"));
+        payment.setVerificationDetails("MANUAL", "SEVQR0123456789ABCDEF0123");
+        assertEquals("SEVQR0123456789ABCDEF0123", payment.resolveQrTransferContent("RF77B4506"));
     }
 }
