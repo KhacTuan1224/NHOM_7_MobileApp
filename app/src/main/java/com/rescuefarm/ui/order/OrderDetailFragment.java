@@ -257,7 +257,7 @@ public class OrderDetailFragment extends Fragment {
     private void renderTimeline(Order order) {
         timeline.removeAllViews();
         if (order.getStatus() == OrderStatus.CANCELLED) {
-            addTimelineRow("Đơn hàng đã hủy · phần tồn giữ chỗ đã được hoàn trả.", true, false);
+            addTimelineRow("Đơn hàng đã hủy", OrderStatus.CANCELLED, false, true, true);
             return;
         }
         List<OrderStatus> steps;
@@ -277,18 +277,95 @@ public class OrderDetailFragment extends Fragment {
         for (int i = 0; i < steps.size(); i++) {
             boolean complete = current >= 0 && i < current;
             boolean active = i == current;
-            addTimelineRow((complete ? "✓ " : active ? "● " : "○ ")
-                    + statusLabel(steps.get(i), order.getFulfillmentType()), complete || active, active);
+            addTimelineRow(statusLabel(steps.get(i), order.getFulfillmentType()),
+                    steps.get(i), complete, active, i == steps.size() - 1);
         }
     }
 
-    private void addTimelineRow(String label, boolean emphasized, boolean current) {
-        TextView row = new TextView(requireContext());
-        row.setText(label); row.setTextSize(14);
-        row.setTextColor(requireContext().getColor(current ? R.color.rescue_primary
-                : emphasized ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
-        if (current) row.setTypeface(null, android.graphics.Typeface.BOLD);
-        row.setPadding(0, 6, 0, 6); timeline.addView(row);
+    private void addTimelineRow(String label, OrderStatus status, boolean complete,
+            boolean current, boolean last) {
+        int colorRes, softRes, iconRes;
+        switch (status) {
+            case PENDING:
+                colorRes = R.color.order_step_amber; softRes = R.color.order_step_amber_soft;
+                iconRes = R.drawable.ic_nav_orders; break;
+            case CONFIRMED:
+                colorRes = R.color.order_step_blue; softRes = R.color.order_step_blue_soft;
+                iconRes = R.drawable.ic_order_step_check; break;
+            case PREPARING:
+                colorRes = R.color.order_step_teal; softRes = R.color.order_step_teal_soft;
+                iconRes = R.drawable.ic_splash_leaf; break;
+            case SHIPPING:
+                colorRes = R.color.order_step_purple; softRes = R.color.order_step_purple_soft;
+                iconRes = R.drawable.ic_admin_shipping; break;
+            case READY_FOR_PICKUP:
+                colorRes = R.color.order_step_purple; softRes = R.color.order_step_purple_soft;
+                iconRes = R.drawable.ic_store; break;
+            case CANCELLED:
+                colorRes = R.color.order_step_red; softRes = R.color.order_step_red_soft;
+                iconRes = R.drawable.ic_close; break;
+            default:
+                colorRes = R.color.order_step_green; softRes = R.color.order_step_green_soft;
+                iconRes = R.drawable.ic_order_step_check; break;
+        }
+        int color = requireContext().getColor(colorRes);
+        LinearLayout row = new LinearLayout(requireContext());
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setMinimumHeight(timelineDp(last ? 48 : 64));
+
+        android.widget.FrameLayout rail = new android.widget.FrameLayout(requireContext());
+        LinearLayout.LayoutParams railParams = new LinearLayout.LayoutParams(timelineDp(40),
+                ViewGroup.LayoutParams.MATCH_PARENT);
+        railParams.setMarginEnd(timelineDp(14));
+        row.addView(rail, railParams);
+        if (!last) {
+            View connector = new View(requireContext());
+            connector.setBackgroundColor(requireContext().getColor(
+                    complete ? softRes : R.color.rescue_outline));
+            android.widget.FrameLayout.LayoutParams lineParams = new android.widget.FrameLayout.LayoutParams(
+                    timelineDp(2), ViewGroup.LayoutParams.MATCH_PARENT, android.view.Gravity.CENTER_HORIZONTAL);
+            lineParams.topMargin = timelineDp(40);
+            lineParams.bottomMargin = timelineDp(2);
+            rail.addView(connector, lineParams);
+        }
+        ImageView icon = new ImageView(requireContext());
+        icon.setImageResource(iconRes);
+        icon.setImageTintList(android.content.res.ColorStateList.valueOf(color));
+        icon.setPadding(timelineDp(9), timelineDp(9), timelineDp(9), timelineDp(9));
+        icon.setAlpha(complete || current ? 1f : .45f);
+        icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        rail.addView(icon, new android.widget.FrameLayout.LayoutParams(timelineDp(40), timelineDp(40),
+                android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL));
+
+        LinearLayout text = new LinearLayout(requireContext());
+        text.setOrientation(LinearLayout.VERTICAL);
+        text.setPadding(0, timelineDp(3), 0, timelineDp(last ? 3 : 15));
+        TextView title = new TextView(requireContext());
+        title.setText(label);
+        title.setTextSize(14);
+        title.setTextColor(requireContext().getColor(current ? colorRes
+                : complete ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
+        if (current) title.setTypeface(null, android.graphics.Typeface.BOLD);
+        text.addView(title);
+        TextView caption = new TextView(requireContext());
+        caption.setText(status == OrderStatus.CANCELLED ? R.string.order_timeline_cancelled
+                : current ? (status == OrderStatus.DELIVERED ? R.string.order_timeline_finished
+                : R.string.order_timeline_current) : complete ? R.string.order_timeline_complete
+                : R.string.order_timeline_upcoming);
+        caption.setTextSize(12);
+        caption.setTextColor(requireContext().getColor(R.color.rescue_on_surface_variant));
+        text.addView(caption);
+        row.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        row.setContentDescription(label + ". " + caption.getText());
+        text.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        timeline.addView(row, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+    }
+
+    private int timelineDp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private String statusLabel(OrderStatus status, com.rescuefarm.domain.enums.FulfillmentType fulfillment) {

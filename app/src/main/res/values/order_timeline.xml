@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="order_step_amber">#996000</color>
+    <color name="order_step_amber_soft">#FFF2D8</color>
+    <color name="order_step_blue">#2466AB</color>
+    <color name="order_step_blue_soft">#E8F1FD</color>
+    <color name="order_step_teal">#087970</color>
+    <color name="order_step_teal_soft">#E2F4EF</color>
+    <color name="order_step_purple">#7552B0</color>
+    <color name="order_step_purple_soft">#F0EAFB</color>
+    <color name="order_step_green">#267342</color>
+    <color name="order_step_green_soft">#E6F4E8</color>
+    <color name="order_step_red">#B53636</color>
+    <color name="order_step_red_soft">#FCEAEA</color>
+    <string name="order_timeline_current">Bước hiện tại</string>
+    <string name="order_timeline_complete">Đã hoàn tất</string>
+    <string name="order_timeline_upcoming">Chưa đến bước này</string>
+    <string name="order_timeline_finished">Hoàn tất đơn hàng</string>
+    <string name="order_timeline_cancelled">Phần tồn giữ chỗ đã được hoàn trả.</string>
+</resources>

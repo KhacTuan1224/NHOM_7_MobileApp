@@ -20,6 +20,7 @@
             android:paddingBottom="8dp">
 
             <TextView
+                android:id="@+id/discoverySheetTitle"
                 style="@style/TextAppearance.Material3.HeadlineMedium"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -37,6 +38,7 @@
         </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/discoveryKeywordLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/discovery_keyword">
@@ -73,7 +75,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Reason"
+            android:text="Lý do giải cứu"
             android:textStyle="bold"
             android:layout_marginTop="8dp" />
 
@@ -85,7 +87,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Urgency"
+            android:text="Mức độ khẩn cấp"
             android:textStyle="bold"
             android:layout_marginTop="8dp" />
 
@@ -97,7 +99,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Mode"
+            android:text="Hình thức giải cứu"
             android:textStyle="bold"
             android:layout_marginTop="8dp" />
 
