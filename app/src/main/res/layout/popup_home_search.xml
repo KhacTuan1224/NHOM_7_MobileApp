@@ -8,9 +8,7 @@
         android:paddingStart="16dp" android:paddingEnd="4dp" android:gravity="center_vertical">
         <LinearLayout android:layout_width="0dp" android:layout_weight="1"
             android:layout_height="wrap_content" android:orientation="vertical">
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="@string/home_search_suggestions" android:textSize="13sp" android:textStyle="bold"
-                android:textColor="@color/rescue_on_surface" />
+
             <TextView android:id="@+id/homeSearchCount" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:textSize="11sp"
                 android:textColor="@color/rescue_on_surface_variant" android:accessibilityLiveRegion="polite" />

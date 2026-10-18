@@ -1,5 +1,4 @@
 package com.rescuefarm.ui.order;
-import com.rescuefarm.ui.common.EnumLabels;
 import com.rescuefarm.ui.seller.SellerUiStyles;
 
 import android.os.Bundle;
@@ -11,7 +10,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -71,21 +69,13 @@ public class SellerOrderListFragment extends Fragment {
     private void renderPage(List<Order> visible) {
         container.removeAllViews();
         for (Order order : visible) {
-            SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), deliveryOnly
-                    ? SellerUiStyles.Section.SHIPMENTS : SellerUiStyles.Section.ORDERS);
-            row.title(order.getOrderCode());
-            row.body(deliveryOnly
-                    ? "Giao hàng: " + com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus())
-                    : com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus()));
-            row.body(java.text.NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("vi-VN")).format(order.getTotalAmount()));
             View.OnClickListener open = unused -> {
                 Bundle args = new Bundle(); args.putString("orderId", order.getId());
                 Navigation.findNavController(requireView()).navigate(
                         R.id.action_sellerOrderListFragment_to_orderDetailFragment, args);
             };
-            row.action("Chi tiết", "Xem và xử lý đơn hàng", open);
-            row.root.setOnClickListener(open);
-            container.addView(row.root);
+            container.addView(OrderListRow.create(container, order, true,
+                    deliveryOnly ? R.color.admin_shipping : R.color.admin_orders, open));
         }
 
     }

@@ -47,7 +47,7 @@ public class GuestHomeFragment extends Fragment {
     private HomeViewModel viewModel;
     private final com.rescuefarm.ui.common.ListPagination suggestionPages = new com.rescuefarm.ui.common.ListPagination(6);
     private final Map<String, com.rescuefarm.ui.common.ListPagination> sectionPages = new java.util.HashMap<>();
-    private com.google.android.material.button.MaterialButton loadMoreHome;
+    private com.rescuefarm.ui.common.HomeLoadMoreButton loadMoreHome;
     private HomeCardRenderer renderer;
     private TextView message;
     private TextView greeting, locationLabel;
@@ -117,9 +117,11 @@ public class GuestHomeFragment extends Fragment {
         volumeGroup.addView(volumeTitle); volumeSection=new LinearLayout(requireContext()); volumeSection.setOrientation(LinearLayout.HORIZONTAL); android.widget.HorizontalScrollView volumeScroll = new android.widget.HorizontalScrollView(requireContext()); volumeScroll.setHorizontalScrollBarEnabled(false); volumeScroll.addView(volumeSection); volumeGroup.addView(volumeScroll);
         LinearLayout home=(LinearLayout)view.findViewById(R.id.valueHomeGroup).getParent();
         home.addView(volumeGroup,home.indexOfChild(view.findViewById(R.id.valueHomeGroup))+1);
-        loadMoreHome = new com.google.android.material.button.MaterialButton(requireContext());
-        loadMoreHome.setText(R.string.pagination_more); loadMoreHome.setTextSize(16);
-        home.addView(loadMoreHome, new LinearLayout.LayoutParams(-1, -2));
+        loadMoreHome = new com.rescuefarm.ui.common.HomeLoadMoreButton(requireContext());
+        LinearLayout.LayoutParams moreParams = new LinearLayout.LayoutParams(-2, -2);
+        moreParams.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        moreParams.topMargin = dp(12);
+        home.addView(loadMoreHome, moreParams);
         loadMoreHome.setOnClickListener(v -> {
             if (viewModel.isPageLoading()) return;
             for (com.rescuefarm.ui.common.ListPagination page : sectionPages.values()) page.advance();
@@ -502,8 +504,7 @@ public class GuestHomeFragment extends Fragment {
         });
     }
     private void renderCategories(List<Category> values) {
-        sectionPages.computeIfAbsent("categories", key -> new com.rescuefarm.ui.common.ListPagination(6))
-                .render(categorySection, values, this::renderCategoryPage);
+        renderCategoryPage(values == null ? java.util.Collections.emptyList() : values);
     }
     private void renderCategoryPage(List<Category> values) {
         categorySection.removeAllViews();
@@ -567,6 +568,7 @@ public class GuestHomeFragment extends Fragment {
         boolean campaigns = !products || container == volumeSection;
         String key = container == volumeSection ? "volume" : String.valueOf(container.getId());
         return sectionPages.computeIfAbsent(key, unused -> new com.rescuefarm.ui.common.ListPagination(6))
+                .compactHomeAction()
                 .remote(() -> products && viewModel.hasMoreProducts() || campaigns && viewModel.hasMoreCampaigns(),
                         viewModel::isPageLoading, () -> viewModel.loadNextPage(products, campaigns));
     }

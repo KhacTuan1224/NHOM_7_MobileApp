@@ -3,7 +3,9 @@
     <string name="customer_orders_title">Đơn hàng của tôi</string>
     <string name="customer_orders_empty">Bạn chưa có đơn hàng nào được lưu trên thiết bị. Nhấn làm mới để tải lịch sử đơn hàng.</string>
     <string name="customer_orders_login_required">Đăng nhập để xem lịch sử đơn hàng của bạn.</string>
-    <string name="customer_order_row_format">%1$s\n%2$s • %3$s\nXem chi tiết</string>
+    <string name="order_view_detail_action">Xem chi tiết</string>
+    <string name="order_view_detail_description">Xem chi tiết đơn %1$s</string>
+    <string name="order_row_payment_status">Thanh toán: %1$s</string>
     <string-array name="customer_order_status_labels">
         <item>Chờ xác nhận</item>
         <item>Đã xác nhận</item>

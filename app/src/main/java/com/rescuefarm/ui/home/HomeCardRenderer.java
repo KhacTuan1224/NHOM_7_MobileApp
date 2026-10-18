@@ -103,7 +103,7 @@ public final class HomeCardRenderer {
             image.setImageResource(R.drawable.splash_rescue_garden);
         }
         FrameLayout imageArea = imageFrame(image, -2, 12);
-        TextView badge = text("GIẢI CỨU  ·  -" + Math.round(product.calculateDiscountPercent()) + "%",
+        TextView badge = text("-" + Math.round(product.calculateDiscountPercent()) + "%",
                 10, true, android.R.color.white);
         GradientDrawable badgeBackground = new GradientDrawable();
         badgeBackground.setColor(color(R.color.rescue_critical));
