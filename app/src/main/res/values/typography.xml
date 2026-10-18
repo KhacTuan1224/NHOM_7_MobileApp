@@ -1,0 +1,56 @@
+<resources>
+    <style name="Theme.RescueFarm.Foundation" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:fontFamily">@font/barlow</item>
+        <item name="fontFamily">@font/barlow</item>
+        <item name="textAppearanceButton">@style/TextAppearance.RescueFarm.LabelLarge</item>
+        <item name="textAppearanceBody1">@style/TextAppearance.RescueFarm.Body</item>
+        <item name="textAppearanceBody2">@style/TextAppearance.RescueFarm.BodyMedium</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.RescueFarm.BodySmall</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.RescueFarm.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.RescueFarm.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.RescueFarm.Display</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.RescueFarm.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.RescueFarm.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.RescueFarm.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.RescueFarm.SectionTitle</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.RescueFarm.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.RescueFarm.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.RescueFarm.Body</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.RescueFarm.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.RescueFarm.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.RescueFarm.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.RescueFarm.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.RescueFarm.LabelSmall</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:fontFamily">@font/ibm_plex_sans</item>
+        <item name="fontFamily">@font/ibm_plex_sans</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:fontFamily">@font/ibm_plex_sans</item>
+        <item name="fontFamily">@font/ibm_plex_sans</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:fontFamily">@font/ibm_plex_sans</item>
+        <item name="fontFamily">@font/ibm_plex_sans</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/ibm_plex_sans</item>
+        <item name="fontFamily">@font/ibm_plex_sans</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">@font/barlow</item>
+        <item name="fontFamily">@font/barlow</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/barlow</item>
+        <item name="fontFamily">@font/barlow</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">@font/barlow</item>
+        <item name="fontFamily">@font/barlow</item>
+    </style>
+</resources>

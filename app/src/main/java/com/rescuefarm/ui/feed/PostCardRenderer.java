@@ -30,7 +30,7 @@ public final class PostCardRenderer {
             Glide.with(fragment).load(post.getImageUrls().get(0)).centerCrop().into(image);
         }
         body.addView(text(EnumLabels.label(post.getUrgencyLevel()), 12, true));
-        body.addView(text(post.getTitle(), 19, true));
+        body.addView(com.rescuefarm.ui.common.AppTypography.title(text(post.getTitle(), 19, true)));
         String excerpt = post.getContent().length() > 180 ? post.getContent().substring(0, 180) + "…" : post.getContent();
         body.addView(text(excerpt, 14, false));
         if (showModerationStatus) body.addView(text("Trạng thái: " + EnumLabels.label(post.getStatus()), 13, true));
@@ -60,9 +60,10 @@ public final class PostCardRenderer {
             body.addView(imageFrame);
             Glide.with(fragment).load(post.getImageUrls().get(0)).centerCrop().into(image);
         }
-        TextView title = text(post.getTitle(), 13, true); title.setMaxLines(2);
+        TextView title = text(post.getTitle(), 15, true); title.setMaxLines(2);
+        com.rescuefarm.ui.common.AppTypography.title(title);
         body.addView(title);
-        TextView excerpt = text(post.getContent(), 11, false); excerpt.setMaxLines(2);
+        TextView excerpt = text(post.getContent(), 13, false); excerpt.setMaxLines(2);
         body.addView(excerpt);
         card.addView(body, new FrameLayout.LayoutParams(-1, -2)); card.setOnClickListener(listener); return card;
     }

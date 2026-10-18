@@ -46,7 +46,7 @@
             android:src="@drawable/logo" />
     </FrameLayout>
 
-    <TextView
+    <TextView android:fontFamily="@font/ibm_plex_sans"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"

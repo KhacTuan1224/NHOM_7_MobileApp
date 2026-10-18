@@ -103,6 +103,7 @@ public class CampaignListFragment extends Fragment {
         card.setLayoutParams(params); card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14),dp(14),dp(14),dp(14));
         TextView title = text(campaign.getTitle(), 18, true);
+        com.rescuefarm.ui.common.AppTypography.title(title);
         TextView badge = text(campaign.getHighlightLabel(), 14, true);
         TextView progress = text(getString(R.string.campaign_progress_format,
                 campaign.calculateProgress(), campaign.getRescuedQuantity(), campaign.getTargetQuantity()), 15, false);

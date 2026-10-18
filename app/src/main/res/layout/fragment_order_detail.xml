@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/order_detail_title"
@@ -88,7 +88,7 @@
             android:padding="@dimen/space_md"
             android:textColor="@color/rescue_on_primary_container" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/orderItemsTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -121,7 +121,7 @@
             android:scaleType="fitCenter"
             android:visibility="gone" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/shipmentManagementTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -154,7 +154,7 @@
             android:text="@string/save_shipment_details_action"
             android:visibility="gone" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/orderStatusActionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -176,7 +176,7 @@
             android:text="@string/update_order_status_action"
             android:visibility="gone" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/bankTransferActionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

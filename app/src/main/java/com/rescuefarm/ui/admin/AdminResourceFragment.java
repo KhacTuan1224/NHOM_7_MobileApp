@@ -333,7 +333,8 @@ public final class AdminResourceFragment extends Fragment {
         TextView text = new TextView(requireContext());
         text.setText(value); text.setTextSize(size);
         text.setTextColor(requireContext().getColor(bold ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
-        if (bold) text.setTypeface(null, android.graphics.Typeface.BOLD);
+        if (bold) text.setTypeface(text.getTypeface(), android.graphics.Typeface.BOLD);
+        if (bold) com.rescuefarm.ui.common.AppTypography.title(text);
         text.setPadding(0, 0, 0, listDp(5));
         parent.addView(text, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));

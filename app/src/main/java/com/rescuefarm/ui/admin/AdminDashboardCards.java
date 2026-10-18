@@ -29,7 +29,7 @@ final class AdminDashboardCards {
 
     static void addSectionTitle(Context context, LinearLayout parent, String title) {
         TextView heading = new TextView(context);
-        heading.setText(title); heading.setTextSize(18); heading.setTypeface(null, Typeface.BOLD);
+        heading.setText(title); heading.setTextSize(18); heading.setTypeface(heading.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(heading);
         heading.setTextColor(ContextCompat.getColor(context, R.color.rescue_on_surface));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -72,7 +72,7 @@ final class AdminDashboardCards {
         TextView caption = new TextView(context);
         caption.setText(title);
         caption.setTextSize(14);
-        caption.setTypeface(null, Typeface.BOLD);
+        caption.setTypeface(caption.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(caption);
         caption.setTextColor(ContextCompat.getColor(context, R.color.rescue_on_surface));
         parent.addView(caption, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -148,12 +148,12 @@ final class AdminDashboardCards {
 
                 paint.setColor(text);
                 paint.setTextAlign(Paint.Align.CENTER);
-                paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+                paint.setTypeface(Typeface.create(com.rescuefarm.ui.common.AppTypography.bodyTypeface(getContext()), Typeface.BOLD));
                 paint.setTextSize(11 * density);
                 canvas.drawText(valueLabels[i], center, Math.max(13 * density, base - barHeight - 6 * density), paint);
 
                 paint.setColor(muted);
-                paint.setTypeface(Typeface.DEFAULT);
+                paint.setTypeface(com.rescuefarm.ui.common.AppTypography.bodyTypeface(getContext()));
                 paint.setTextSize(9 * density);
                 canvas.drawText(ellipsize(labels[i], paint, slot - 2 * density), center,
                         getHeight() - 10 * density, paint);
@@ -203,7 +203,7 @@ final class AdminDashboardCards {
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(text);
             paint.setTextAlign(Paint.Align.CENTER);
-            paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            paint.setTypeface(Typeface.create(com.rescuefarm.ui.common.AppTypography.bodyTypeface(getContext()), Typeface.BOLD));
             paint.setTextSize(20 * density);
             canvas.drawText(String.format(java.util.Locale.getDefault(), "%.1f%%", percentage),
                     cx, cy + 7 * density, paint);
@@ -224,13 +224,13 @@ final class AdminDashboardCards {
         card.setStateListAnimator(null);
 
         TextView title = new TextView(context);
-        title.setText(metric.title); title.setTextSize(11); title.setTypeface(null, Typeface.BOLD);
+        title.setText(metric.title); title.setTextSize(11); title.setTypeface(title.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(title);
         title.setTextColor(ContextCompat.getColor(context, R.color.rescue_on_surface_variant));
         card.addView(title, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         TextView value = new TextView(context);
-        value.setText(metric.value); value.setTextSize(20); value.setTypeface(null, Typeface.BOLD);
+        value.setText(metric.value); value.setTextSize(20); value.setTypeface(value.getTypeface(), Typeface.BOLD);
         value.setTextColor(ContextCompat.getColor(context, accent));
         LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);

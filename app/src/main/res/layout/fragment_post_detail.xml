@@ -8,7 +8,7 @@
             android:contentDescription="@string/post_image_description" />
         <TextView android:id="@+id/postDetailUrgency" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:textStyle="bold" />
-        <TextView android:id="@+id/postDetailTitle" android:layout_width="match_parent"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/postDetailTitle" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <TextView android:id="@+id/postDetailContent" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textSize="16sp" />
@@ -39,7 +39,7 @@
         <com.google.android.material.button.MaterialButton android:id="@+id/reportPostButton"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="@string/report_action" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginTop="16dp" android:text="@string/comments_title"
             android:textAppearance="@style/TextAppearance.RescueFarm.SectionTitle" />
         <LinearLayout android:id="@+id/commentContainer" android:layout_width="match_parent"

@@ -7,7 +7,7 @@
     android:fillViewport="true">
     <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="@dimen/space_md" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/customer_orders_title"
             android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
         <com.google.android.material.button.MaterialButton

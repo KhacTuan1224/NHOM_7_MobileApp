@@ -14,7 +14,7 @@
                 android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:minWidth="0dp" android:padding="0dp"
                 android:text="☰" android:textSize="24sp" android:textColor="@color/rescue_on_surface"
                 android:contentDescription="Mở menu quản trị" />
-            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                 android:text="RescueFarm · Quản trị" android:textStyle="bold" android:textSize="16sp"
                 android:textColor="@color/rescue_on_surface" android:paddingStart="8dp" />
             <com.google.android.material.button.MaterialButton android:id="@+id/refreshAdminDashboardButton"
@@ -64,10 +64,10 @@
     <LinearLayout android:layout_width="304dp" android:layout_height="match_parent"
         android:layout_gravity="start" android:orientation="vertical" android:background="@color/rescue_surface"
         android:elevation="16dp" android:padding="16dp">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="RESCUEFARM" android:textSize="12sp" android:textStyle="bold"
             android:textColor="@color/rescue_primary" android:padding="12dp" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Quản trị hệ thống" android:textSize="20sp" android:textStyle="bold"
             android:textColor="@color/rescue_on_surface" android:paddingStart="12dp" android:paddingBottom="16dp" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"

@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" 
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/rescue_background"
     android:fillViewport="true">
-    
+
     <com.rescuefarm.ui.common.ResponsiveContentLayout
-        android:layout_width="match_parent" 
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingBottom="80dp"
         android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
-        
+
         <!-- Badge text -->
-        <TextView 
-            android:id="@+id/campaignDetailBadge" 
+        <TextView
+            android:id="@+id/campaignDetailBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
@@ -23,12 +23,12 @@
             android:textStyle="bold"
             android:textAllCaps="true"
             android:layout_marginBottom="8dp" />
-        
+
         <!-- Title -->
-        <TextView 
-            android:id="@+id/campaignDetailTitle" 
+        <TextView android:fontFamily="@font/ibm_plex_sans"
+            android:id="@+id/campaignDetailTitle"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" 
+            android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium"
             android:textColor="@color/rescue_on_surface"
             android:layout_marginBottom="8dp" />
@@ -38,10 +38,10 @@
             <LinearLayout android:id="@+id/campaignStoryGallery" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:orientation="horizontal" />
         </HorizontalScrollView>
-        
+
         <!-- Reason -->
-        <TextView 
-            android:id="@+id/campaignDetailReason" 
+        <TextView
+            android:id="@+id/campaignDetailReason"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
@@ -50,7 +50,7 @@
         <TextView android:id="@+id/campaignViewCount" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginBottom="12dp"
             android:textColor="@color/rescue_on_surface_variant" />
-        
+
         <!-- Progress and metrics, directly on the page background -->
         <LinearLayout
             android:id="@+id/campaignProgressCard"
@@ -59,7 +59,7 @@
             android:layout_marginBottom="16dp"
             android:orientation="vertical"
             android:padding="16dp">
-                
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -189,8 +189,8 @@
                 </LinearLayout>
 
                 <!-- Compatibility Progress Text -->
-                <TextView 
-                    android:id="@+id/campaignDetailProgress" 
+                <TextView
+                    android:id="@+id/campaignDetailProgress"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
@@ -232,8 +232,8 @@
                     android:layout_marginBottom="8dp" />
 
                 <!-- Location Address -->
-                <TextView 
-                    android:id="@+id/campaignDetailLocation" 
+                <TextView
+                    android:id="@+id/campaignDetailLocation"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
@@ -268,7 +268,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-                <TextView
+                <TextView android:fontFamily="@font/ibm_plex_sans"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/campaign_product_section_title"
@@ -432,7 +432,7 @@
                 </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         </LinearLayout>
-        
+
         <!-- Schedule -->
         <TextView
             android:layout_width="match_parent"
@@ -441,15 +441,15 @@
             android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
             android:textColor="@color/rescue_on_surface_variant"
             android:layout_marginBottom="4dp" />
-        
-        <TextView 
-            android:id="@+id/campaignDetailSchedule" 
+
+        <TextView
+            android:id="@+id/campaignDetailSchedule"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
             android:textColor="@color/rescue_on_surface"
             android:layout_marginBottom="16dp" />
-        
+
         <!-- Description -->
         <TextView
             android:layout_width="match_parent"
@@ -458,9 +458,9 @@
             android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
             android:textColor="@color/rescue_on_surface"
             android:layout_marginBottom="8dp" />
-        
-        <TextView 
-            android:id="@+id/campaignDetailDescription" 
+
+        <TextView
+            android:id="@+id/campaignDetailDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
@@ -492,30 +492,30 @@
                 <LinearLayout android:id="@+id/campaignCommentContainer" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
         </LinearLayout>
-        
+
         <!-- Secondary Buttons -->
-        <com.google.android.material.button.MaterialButton 
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/viewCampaignProductsButton"
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Xem tất cả sản phẩm trong chiến dịch"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_marginBottom="8dp" />
-        
-        <com.google.android.material.button.MaterialButton 
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/shareCampaignButton"
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Chia sẻ chiến dịch"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_marginBottom="8dp" />
-        
-        <com.google.android.material.button.MaterialButton 
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/reportCampaignButton"
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/report_action"
             style="@style/Widget.Material3.Button.TextButton" />
-        
+
     </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

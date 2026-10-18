@@ -3,7 +3,7 @@
     <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center_horizontal" android:orientation="horizontal" android:padding="@dimen/space_lg">
         <com.rescuefarm.ui.common.NavigationAwareNestedScrollView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                <TextView style="@style/TextAppearance.Material3.HeadlineMedium" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/discovery_title" />
+                <TextView android:fontFamily="@font/ibm_plex_sans" style="@style/TextAppearance.Material3.HeadlineMedium" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/discovery_title" />
                 <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/discovery_keyword">
                     <com.google.android.material.textfield.TextInputEditText android:id="@+id/searchInput" android:layout_width="match_parent" android:layout_height="wrap_content" />
                 </com.google.android.material.textfield.TextInputLayout>

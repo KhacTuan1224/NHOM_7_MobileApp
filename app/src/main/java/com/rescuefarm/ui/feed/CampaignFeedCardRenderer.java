@@ -124,6 +124,7 @@ final class CampaignFeedCardRenderer {
         text.setTextSize(size); text.setTextColor(fragment.getResources().getColor(color,
                 fragment.requireContext().getTheme()));
         if (bold) text.setTypeface(text.getTypeface(), Typeface.BOLD);
+        if (bold && size >= 18) com.rescuefarm.ui.common.AppTypography.title(text);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
         params.topMargin = dp(5); parent.addView(text, params); return text;
     }

@@ -9,10 +9,10 @@
             style="@style/Widget.RescueFarm.AdminOutlinedButton"
             android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Quay lại danh sách" android:gravity="start|center_vertical" />
-        <TextView android:id="@+id/adminDetailTitle" android:layout_width="match_parent"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/adminDetailTitle" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md"
             android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
-        <TextView android:id="@+id/adminDetailSubtitle" android:layout_width="match_parent"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/adminDetailSubtitle" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xs"
             android:textColor="@color/rescue_on_surface_variant" />
         <ProgressBar android:id="@+id/adminDetailProgress" android:layout_width="wrap_content"

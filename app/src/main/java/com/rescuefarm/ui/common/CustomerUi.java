@@ -28,6 +28,7 @@ public final class CustomerUi {
     }
     public static TextView text(LinearLayout parent, String value) {
         TextView text = new TextView(parent.getContext()); text.setText(value); text.setTextSize(16);
+        AppTypography.body(text);
         text.setTextColor(parent.getContext().getColor(R.color.rescue_on_surface));
         text.setPadding(0,dp(parent.getContext(),8),0,dp(parent.getContext(),8));
         parent.addView(text,new LinearLayout.LayoutParams(-1,-2)); return text;

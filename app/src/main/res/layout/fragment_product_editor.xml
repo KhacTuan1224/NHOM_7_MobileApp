@@ -4,7 +4,7 @@
     android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/rescue_background">
     <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/form_max_width">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/product_editor_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <TextView android:id="@+id/availableCategoriesText" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
