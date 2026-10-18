@@ -16,6 +16,7 @@ import com.rescuefarm.domain.model.Product;
 import java.util.List;
 
 public class AllValueProductsFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private HomeViewModel viewModel;
     private HomeCardRenderer renderer;
     private LinearLayout productContainer;
@@ -38,12 +39,16 @@ public class AllValueProductsFragment extends Fragment {
 
         viewModel = new ViewModelProvider(requireActivity(), new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
+        viewModel.ensureLoaded();
         
         viewModel.getHomeState().observe(getViewLifecycleOwner(), state -> 
                 renderProducts(state.getValueProducts()));
     }
 
     private void renderProducts(List<Product> products) {
+        pagination.remote(viewModel::hasMoreProducts, viewModel::isPageLoading, () -> viewModel.loadNextPage(true, false)).render(productContainer, products, this::renderProductsPage);
+    }
+    private void renderProductsPage(List<Product> products) {
         productContainer.removeAllViews();
         
         if (products == null || products.isEmpty()) {

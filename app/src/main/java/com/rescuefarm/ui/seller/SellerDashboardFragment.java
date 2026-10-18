@@ -197,7 +197,9 @@ public class SellerDashboardFragment extends Fragment {
             recent.addView(row.root);
         }
         if (snapshot.hasMoreOrders()) {
-            TextView more = new TextView(requireContext()); more.setText(R.string.seller_more_orders_notice);
+            Button more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.ORDERS,
+                    getString(R.string.pagination_more), "Xem thêm đơn hàng");
+            more.setOnClickListener(v -> navigate(SellerRoutePolicy.Destination.ORDERS, "orders"));
             recent.addView(more);
         }
     }

@@ -18,17 +18,26 @@ public class CustomerOrderHistoryTest {
     private String observedOwner;
     private String refreshedOwner;
     private OrderRepository.ActionCallback refreshCallback;
+    private int refreshCalls;
+    private boolean lastReset;
+    private String completeHistoryOwner;
     private final OrderRepository repository = (OrderRepository) Proxy.newProxyInstance(
             OrderRepository.class.getClassLoader(), new Class<?>[]{OrderRepository.class},
             (proxy, method, args) -> {
-                if (method.getName().equals("observeOrders")) {
+                if (method.getName().equals("observeCustomerOrderPage")) {
                     observedOwner = (String) args[0];
                     return cached;
                 }
-                if (method.getName().equals("refreshOrders")) {
+                if (method.getName().equals("refreshCustomerOrderPage")) {
+                    refreshCalls++;
+                    lastReset = (Boolean) args[1];
                     refreshedOwner = (String) args[0];
-                    refreshCallback = (OrderRepository.ActionCallback) args[1];
+                    refreshCallback = (OrderRepository.ActionCallback) args[2];
                     return null;
+                }
+                if (method.getName().equals("observeOrders")) {
+                    completeHistoryOwner = (String) args[0];
+                    return cached;
                 }
                 throw new AssertionError("Unexpected repository call: " + method.getName());
             });
@@ -59,5 +68,25 @@ public class CustomerOrderHistoryTest {
         vm.refreshCustomerOrders("");
         assertNull(observedOwner);
         assertNull(refreshedOwner);
+    }
+    @Test public void repeatedTapsCannotAdvanceWhileLoadingAndFailureAllowsRetry() {
+        OrderViewModel vm = new OrderViewModel(repository);
+        vm.refreshCustomerOrders("customer-1");
+        vm.loadCustomerPage("customer-1", false);
+        assertEquals(1, refreshCalls); assertTrue(lastReset);
+        refreshCallback.onSuccess();
+        vm.loadCustomerPage("customer-1", false);
+        assertEquals(2, refreshCalls); assertFalse(lastReset);
+        refreshCallback.onError(OrderRepository.ErrorCode.NETWORK, "Offline");
+        vm.loadCustomerPage("customer-1", false);
+        assertEquals(3, refreshCalls);
+    }
+    @Test public void reviewEligibilityKeepsTheCompleteOwnerHistorySeparate() {
+        OrderViewModel vm = new OrderViewModel(repository);
+        assertSame(cached, vm.observeReviewOrders("customer-1"));
+        assertEquals("customer-1", completeHistoryOwner);
+        assertNull(observedOwner);
+        assertSame(cached, vm.observeCustomerOrders("customer-1"));
+        assertEquals("customer-1", observedOwner);
     }
 }

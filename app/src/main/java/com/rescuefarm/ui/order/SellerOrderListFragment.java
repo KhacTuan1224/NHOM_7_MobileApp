@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SellerOrderListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
+    private List<Order> currentOrders;
     private LinearLayout container;
     private TextView empty, title;
     private OrderViewModel viewModel;
@@ -46,6 +48,7 @@ public class SellerOrderListFragment extends Fragment {
                 .get(OrderViewModel.class);
         viewModel.observeSellerOrders(sellerId).observe(getViewLifecycleOwner(), this::render);
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (currentOrders != null) render(currentOrders);
             if (value.getStatus() == OrderLifecycleState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
         });
@@ -54,12 +57,19 @@ public class SellerOrderListFragment extends Fragment {
         if (!sellerId.isEmpty()) viewModel.refreshSellerOrders(sellerId);
     }
     private void render(List<Order> orders) {
+        currentOrders = orders;
         container.removeAllViews();
         List<Order> visible = new ArrayList<>();
         if (orders != null) for (Order order : orders)
             if (!deliveryOnly || order.getFulfillmentType() == FulfillmentType.DELIVERY) visible.add(order);
         empty.setText(deliveryOnly ? R.string.seller_shipments_empty : R.string.seller_orders_empty);
         empty.setVisibility(visible.isEmpty() ? View.VISIBLE : View.GONE);
+        pagination.remote(() -> viewModel.hasMoreSellerOrders(sellerId),
+                () -> viewModel.getState().getValue() != null && viewModel.getState().getValue().getStatus() == OrderLifecycleState.Status.LOADING,
+                () -> viewModel.loadMoreSellerOrders(sellerId)).render(container, visible, this::renderPage);
+    }
+    private void renderPage(List<Order> visible) {
+        container.removeAllViews();
         for (Order order : visible) {
             SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), deliveryOnly
                     ? SellerUiStyles.Section.SHIPMENTS : SellerUiStyles.Section.ORDERS);
@@ -77,12 +87,6 @@ public class SellerOrderListFragment extends Fragment {
             row.root.setOnClickListener(open);
             container.addView(row.root);
         }
-        if (viewModel.hasMoreSellerOrders(sellerId)) {
-            com.google.android.material.button.MaterialButton more = SellerUiStyles.button(requireContext(),
-                    deliveryOnly ? SellerUiStyles.Section.SHIPMENTS : SellerUiStyles.Section.ORDERS,
-                    "Tải thêm", deliveryOnly ? "Tải thêm đơn giao hàng" : "Tải đơn cũ hơn");
-            more.setOnClickListener(unused -> viewModel.loadMoreSellerOrders(sellerId));
-            container.addView(more);
-        }
+
     }
 }

@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ReviewFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private EngagementViewModel vm;
     private OrderViewModel orderViewModel;
     private EditText order, item, content, images;
@@ -143,7 +144,7 @@ public class ReviewFragment extends Fragment {
                 "★ %.1f · %d đánh giá", product.getAverageRating(),product.getReviewCount()));
         });
         vm.refreshReviews(productId);
-        if (!uid.isEmpty()) orderViewModel.observeCustomerOrders(uid).observe(
+        if (!uid.isEmpty()) orderViewModel.observeReviewOrders(uid).observe(
                 getViewLifecycleOwner(), orders -> renderEligibleItems(orders, orderIdArg, orderItemArg));
         else saveButton.setEnabled(false);
     }
@@ -325,6 +326,9 @@ public class ReviewFragment extends Fragment {
     }
 
     private void renderReviews(List<Review> reviews) {
+        pagination.render(list, reviews, this::renderReviewsPage);
+    }
+    private void renderReviewsPage(List<Review> reviews) {
         list.removeAllViews(); reviewsByTarget.clear();
         updateReviewStatus(reviews);
         if (reviews == null || reviews.isEmpty()) return;

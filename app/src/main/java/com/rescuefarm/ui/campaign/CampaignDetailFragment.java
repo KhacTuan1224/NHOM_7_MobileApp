@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class CampaignDetailFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination commentPages = new com.rescuefarm.ui.common.ListPagination();
     
     private final android.os.Handler clock = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable timeTick = new Runnable() {
@@ -482,9 +483,10 @@ public class CampaignDetailFragment extends Fragment {
         careSelected = value.getCurrentUserReaction() == ReactionType.CARE;
         updateCareButton();
         engagementSummary.setText("Quan tâm " + counts.getOrDefault(ReactionType.CARE, 0));
+        commentPages.render(commentContainer, value.getComments(), page -> {
         commentContainer.removeAllViews();
-        if (value.getComments().isEmpty()) { commentContainer.addView(commentText("Chưa có bình luận.")); return; }
-        for (Comment comment : value.getComments()) {
+        if (page.isEmpty()) { commentContainer.addView(commentText("Chưa có bình luận.")); return; }
+        for (Comment comment : page) {
             LinearLayout row = new LinearLayout(requireContext()); row.setOrientation(LinearLayout.VERTICAL);
             row.addView(commentText(comment.getContent()
                     + (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED ? " · đã chỉnh sửa" : "")));
@@ -512,6 +514,7 @@ public class CampaignDetailFragment extends Fragment {
             }
             commentContainer.addView(row);
         }
+        });
     }
 
     private void editCampaignComment(Comment comment) {

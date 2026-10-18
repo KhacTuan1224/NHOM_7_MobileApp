@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FavoriteFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private EngagementViewModel engagementViewModel;
     private ProductViewModel productViewModel;
     private HomeCardRenderer renderer;
@@ -120,8 +121,10 @@ public class FavoriteFragment extends Fragment {
             return;
         }
         
+        pagination.render(container, favoriteProducts, page -> {
+            container.removeAllViews();
         // Render in 2 columns like AllValueProductsFragment
-        for (int index = 0; index < favoriteProducts.size(); index += 2) {
+        for (int index = 0; index < page.size(); index += 2) {
             LinearLayout row = new LinearLayout(requireContext());
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setClipChildren(false);
@@ -130,15 +133,15 @@ public class FavoriteFragment extends Fragment {
             rowParams.setMargins(0, dp(2), 0, dp(5));
             container.addView(row, rowParams);
 
-            Product firstProduct = favoriteProducts.get(index);
+            Product firstProduct = page.get(index);
             View first = renderer.product(firstProduct, 
                     v -> openProduct(firstProduct.getId()));
             LinearLayout.LayoutParams firstParams = new LinearLayout.LayoutParams(0, -2, 1f);
             firstParams.setMargins(0, 0, dp(6), 0);
             row.addView(first, firstParams);
             
-            if (index + 1 < favoriteProducts.size()) {
-                Product secondProduct = favoriteProducts.get(index + 1);
+            if (index + 1 < page.size()) {
+                Product secondProduct = page.get(index + 1);
                 View second = renderer.product(secondProduct, 
                         v -> openProduct(secondProduct.getId()));
                 row.addView(second, new LinearLayout.LayoutParams(0, -2, 1f));
@@ -147,6 +150,7 @@ public class FavoriteFragment extends Fragment {
                         new LinearLayout.LayoutParams(0, 1, 1f));
             }
         }
+        });
     }
 
     private void openProduct(String productId) {

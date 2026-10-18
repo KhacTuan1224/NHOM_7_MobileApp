@@ -55,6 +55,36 @@ async function seed(values) {
   });
 }
 
+test('Favorite state query handles first use, add and remove without leaking another customer', async () => {
+  const db = env.authenticatedContext('customer-a').firestore();
+  const stateQuery = query(collection(db, 'favorites'),
+    where('customerId', '==', 'customer-a'), where('productId', '==', 'product-a'));
+  await seed({'favorites/customer-b_product-a': {
+    id: 'customer-b_product-a', customerId: 'customer-b', productId: 'product-a', createdAt: past
+  }});
+  assert.equal((await assertSucceeds(getDocs(stateQuery))).size, 0);
+  const ref = doc(db, 'favorites/customer-a_product-a');
+  await assertSucceeds(runTransaction(db, async tx => {
+    assert.equal((await tx.get(ref)).exists(), false);
+    tx.set(ref, {id: 'customer-a_product-a', customerId: 'customer-a',
+      productId: 'product-a', createdAt: serverTimestamp()});
+  }));
+  assert.equal((await assertSucceeds(getDocs(stateQuery))).size, 1);
+  await assertSucceeds(deleteDoc(ref));
+  assert.equal((await assertSucceeds(getDocs(stateQuery))).size, 0);
+});
+
+test('Favorite state stays private to active customers', async () => {
+  for (const uid of ['seller', 'admin', 'blocked', 'customer-b']) {
+    const db = env.authenticatedContext(uid).firestore();
+    await assertFails(getDocs(query(collection(db, 'favorites'),
+      where('customerId', '==', 'customer-a'), where('productId', '==', 'product-a'))));
+  }
+  const db = env.unauthenticatedContext().firestore();
+  await assertFails(getDocs(query(collection(db, 'favorites'),
+    where('customerId', '==', 'customer-a'), where('productId', '==', 'product-a'))));
+});
+
 function addressData(owner, id = 'home', isDefault = false) {
   return { id, customerId: owner, receiverName: 'Người nhận', receiverPhone: '0912345678',
     province: 'Thành phố Hà Nội', district: 'Quận Ba Đình', ward: 'Phường Phúc Xá',

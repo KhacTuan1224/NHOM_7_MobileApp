@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class BatchManagerFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private ProductViewModel viewModel; private String productId, editingId = ""; private long editingVersion;
     private LinearLayout container; private TextInputEditText harvest, expiry, quantity;
     private final InventoryAlertEvaluator alertEvaluator = new InventoryAlertEvaluator();
@@ -78,8 +79,12 @@ public class BatchManagerFragment extends Fragment {
     private void render(List<ProductBatch> values) {
         batches = values == null ? new ArrayList<>() : new ArrayList<>(values);
         container.removeAllViews(); Date now = new Date();
-        for (ProductBatch batch : batches) if (alertEvaluator.matches(batch, alertFilter, now))
-            container.addView(card(batch, now));
+        List<ProductBatch> matching = new ArrayList<>();
+        for (ProductBatch batch : batches) if (alertEvaluator.matches(batch, alertFilter, now)) matching.add(batch);
+        pagination.render(container, matching, page -> {
+            container.removeAllViews();
+            for (ProductBatch batch : page) container.addView(card(batch, now));
+        });
         if (!dirty && !editingId.isEmpty()) for (ProductBatch batch : batches) {
             if (editingId.equals(batch.getId())) { edit(batch); break; }
         }
@@ -120,6 +125,7 @@ public class BatchManagerFragment extends Fragment {
         return row.root;
     }
     private void cycleAlertFilter() {
+        pagination.reset();
         if (alertFilter == InventoryAlertEvaluator.Filter.ALL) {
             alertFilter = InventoryAlertEvaluator.Filter.LOW_STOCK;
             alertFilterButton.setText(R.string.batch_filter_low_stock);

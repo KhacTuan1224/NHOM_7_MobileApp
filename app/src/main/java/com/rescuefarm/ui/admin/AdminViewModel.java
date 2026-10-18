@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Date;
 
 public final class AdminViewModel extends ViewModel {
-    private static final int PAGE_SIZE = 40;
+    private static final int PAGE_SIZE = 12;
     private final AdminRepository repository;
     private final MutableLiveData<AdminScreenState> state = new MutableLiveData<>(
             AdminScreenState.dashboard(AdminScreenState.Status.IDLE, null, ""));
@@ -118,6 +118,7 @@ public final class AdminViewModel extends ViewModel {
     public boolean hasMore() { return hasMore; }
 
     public void loadNextPage() {
+        if (state.getValue() != null && state.getValue().getStatus() == AdminScreenState.Status.LOADING) return;
         if (!hasMore || currentSection == Section.ANALYTICS) return;
         loadSectionPage(true);
     }
@@ -137,7 +138,10 @@ public final class AdminViewModel extends ViewModel {
                 if (version != pageRequestVersion || requestedSection != currentSection) return;
                 List<AdminListItem> merged = new java.util.ArrayList<>();
                 if (append) merged.addAll(currentItems());
-                if (items != null) merged.addAll(items);
+                java.util.LinkedHashMap<String, AdminListItem> unique = new java.util.LinkedHashMap<>();
+                for (AdminListItem item : merged) unique.put(item.getId(), item);
+                if (items != null) for (AdminListItem item : items) unique.put(item.getId(), item);
+                merged = new java.util.ArrayList<>(unique.values());
                 cursor = nextCursor; hasMore = more;
                 boolean empty = merged.isEmpty();
                 state.postValue(AdminScreenState.list(empty ? AdminScreenState.Status.EMPTY

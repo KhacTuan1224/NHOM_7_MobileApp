@@ -17,6 +17,7 @@ import com.rescuefarm.ui.common.ResponsiveGridLayout;
 import java.util.List;
 
 public class AllCategoriesFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private HomeViewModel viewModel;
     private HomeCardRenderer renderer;
     private ResponsiveGridLayout categoryGrid;
@@ -39,12 +40,16 @@ public class AllCategoriesFragment extends Fragment {
 
         viewModel = new ViewModelProvider(requireActivity(), new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
+        viewModel.ensureLoaded();
         
         viewModel.getHomeState().observe(getViewLifecycleOwner(), state -> 
                 renderCategories(state.getCategories()));
     }
 
     private void renderCategories(List<Category> categories) {
+        pagination.render(categoryGrid, categories, this::renderCategoriesPage);
+    }
+    private void renderCategoriesPage(List<Category> categories) {
         categoryGrid.removeAllViews();
         
         if (categories == null || categories.isEmpty()) {

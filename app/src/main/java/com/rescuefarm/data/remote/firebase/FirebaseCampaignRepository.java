@@ -52,6 +52,63 @@ public class FirebaseCampaignRepository implements CampaignRepository {
     private final NetworkStatusProvider network;
     private final Map<String, DocumentSnapshot> sellerCampaignCursors = new HashMap<>();
     private final Set<String> sellersWithMoreCampaigns = new HashSet<>();
+    private DocumentSnapshot publicCursor;
+    private volatile Set<String> publicIds;
+    private volatile boolean publicHasMore = true;
+    private volatile boolean publicLoading;
+
+    private final androidx.lifecycle.MutableLiveData<Object> publicRevision = new androidx.lifecycle.MutableLiveData<>();
+    @Override public LiveData<List<RescueCampaign>> observePublicCampaignPage() {
+        androidx.lifecycle.MediatorLiveData<List<RescueCampaign>> result = new androidx.lifecycle.MediatorLiveData<>();
+        java.util.concurrent.atomic.AtomicReference<List<RescueCampaign>> cached =
+                new java.util.concurrent.atomic.AtomicReference<>(new ArrayList<>());
+        Runnable publish = () -> {
+            List<RescueCampaign> values = cached.get();
+            Set<String> ids = publicIds;
+            if (ids == null) { result.setValue(new ArrayList<>(values.subList(0, Math.min(12, values.size())))); return; }
+            Map<String, RescueCampaign> byId = new HashMap<>();
+            for (RescueCampaign value : values) byId.put(value.getId(), value);
+            List<RescueCampaign> visible = new ArrayList<>();
+            for (String id : ids) if (byId.containsKey(id)) visible.add(byId.get(id));
+            result.setValue(visible);
+        };
+        result.addSource(campaignDao.observeActiveCampaigns(), entities -> { cached.set(CampaignCacheMapper.campaigns(entities)); publish.run(); });
+        result.addSource(publicRevision, ignored -> publish.run());
+        return result;
+    }
+
+    @Override public boolean hasMorePublicCampaigns() { return publicHasMore; }
+
+    @Override public void refreshPublicCampaignPage(boolean reset, ActionCallback callback) {
+        if (publicLoading) { callback.onError(ErrorCode.CONFLICT, "Đang tải chiến dịch, vui lòng đợi."); return; }
+        if (!online(callback, "Không có kết nối; đang giữ chiến dịch đã tải.")) return;
+        if (!reset && !publicHasMore) { callback.onSuccess(); return; }
+        publicLoading = true;
+        Query page = firestore.collection(CAMPAIGNS).whereEqualTo("status", CampaignStatus.ACTIVE.name())
+                .orderBy("urgencyLevel").orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(13);
+        if (!reset && publicCursor != null) page = page.startAfter(publicCursor);
+        page.get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(snapshot -> {
+            List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(12, snapshot.size()));
+            Set<String> ids = reset || publicIds == null ? new java.util.LinkedHashSet<>() : new java.util.LinkedHashSet<>(publicIds);
+            List<CampaignCacheEntity> entities = new ArrayList<>();
+            for (DocumentSnapshot doc : docs) {
+                RescueCampaign campaign = mapCampaign(doc);
+                if (campaign != null) { ids.add(campaign.getId()); entities.add(CampaignCacheMapper.toEntity(campaign, System.currentTimeMillis())); }
+            }
+            cacheExecutor.execute(() -> {
+                try {
+                campaignDao.replaceCampaigns(entities);
+                publicIds = ids;
+                publicCursor = docs.isEmpty() ? (reset ? null : publicCursor) : docs.get(docs.size()-1);
+                publicHasMore = snapshot.size() > 12;
+                publicRevision.postValue(new Object());
+                publicLoading = false; callback.onSuccess();
+                } catch (RuntimeException error) {
+                    publicLoading = false; callback.onError(ErrorCode.UNKNOWN, "Không thể lưu trang chiến dịch trên thiết bị. Vui lòng thử lại.");
+                }
+            });
+        }).addOnFailureListener(error -> { publicLoading = false; notifyFailure(error, callback::onError); });
+    }
 
     public FirebaseCampaignRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
             NetworkStatusProvider network) {
@@ -131,7 +188,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
     @Override public void refreshSellerCampaignPage(String sellerId, boolean reset, ActionCallback callback) {
         if (!online(callback, "Đang offline; campaign seller tiếp tục dùng Room cache.")) return;
         Query query = firestore.collection(CAMPAIGNS).whereEqualTo("sellerId", sellerId)
-                .orderBy("createdAt", Query.Direction.DESCENDING).limit(50);
+                .orderBy("createdAt", Query.Direction.DESCENDING).limit(12);
         DocumentSnapshot cursor = sellerCampaignCursors.get(sellerId);
         if (!reset && cursor != null) query = query.startAfter(cursor);
         query.get().addOnSuccessListener(snapshot -> {
@@ -143,7 +200,7 @@ public class FirebaseCampaignRepository implements CampaignRepository {
             if (reset) sellerCampaignCursors.remove(sellerId);
             if (!snapshot.isEmpty()) sellerCampaignCursors.put(sellerId,
                     snapshot.getDocuments().get(snapshot.size() - 1));
-            if (snapshot.size() == 50) sellersWithMoreCampaigns.add(sellerId);
+            if (snapshot.size() == 12) sellersWithMoreCampaigns.add(sellerId);
             else sellersWithMoreCampaigns.remove(sellerId);
             cacheExecutor.execute(() -> {
                 database.runInTransaction(() -> {

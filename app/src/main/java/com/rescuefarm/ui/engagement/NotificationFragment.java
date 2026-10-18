@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class NotificationFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private EngagementViewModel viewModel;
     private LinearLayout container;
     private TextView emptyText;
@@ -118,6 +119,9 @@ public class NotificationFragment extends Fragment {
     }
 
     private void renderNotifications(List<Notification> notifications) {
+        pagination.render(container, notifications, this::renderNotificationsPage);
+    }
+    private void renderNotificationsPage(List<Notification> notifications) {
         container.removeAllViews();
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? "" : FirebaseAuth.getInstance().getCurrentUser().getUid();
         java.util.ArrayList<Notification> owned = new java.util.ArrayList<>();

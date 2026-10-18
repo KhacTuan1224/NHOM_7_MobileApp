@@ -27,6 +27,7 @@ import com.rescuefarm.domain.model.Post;
 import java.util.Map;
 
 public class PostDetailFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination commentPages = new com.rescuefarm.ui.common.ListPagination();
     private PostViewModel viewModel; private TextInputEditText commentInput;
     private LinearLayout comments; private TextView reactionSummary;
     private boolean engagementRequested;
@@ -99,9 +100,10 @@ public class PostDetailFragment extends Fragment {
                 + " • Ủng hộ " + counts.getOrDefault(ReactionType.SUPPORT, 0)
                 + " • Quan tâm " + counts.getOrDefault(ReactionType.CARE, 0)
                 + (value.getCurrentUserReaction() == null ? "" : " • Bạn: " + EnumLabels.label(value.getCurrentUserReaction())));
+        commentPages.render(comments, value.getComments(), page -> {
         comments.removeAllViews();
-        if (value.getComments().isEmpty()) { comments.addView(textView("Chưa có bình luận.")); return; }
-        for (Comment comment : value.getComments()) {
+        if (page.isEmpty()) { comments.addView(textView("Chưa có bình luận.")); return; }
+        for (Comment comment : page) {
             if (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.HIDDEN) continue;
             LinearLayout row = new LinearLayout(requireContext()); row.setOrientation(LinearLayout.VERTICAL);
             boolean deleted = comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.DELETED;
@@ -109,6 +111,7 @@ public class PostDetailFragment extends Fragment {
                     + (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED ? " · đã chỉnh sửa" : "")));
             comments.addView(row);
         }
+        });
     }
     private void editComment(Comment comment) {
         android.widget.EditText input = new android.widget.EditText(requireContext());

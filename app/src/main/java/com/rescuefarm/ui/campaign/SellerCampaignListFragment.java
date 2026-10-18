@@ -23,6 +23,7 @@ import com.rescuefarm.domain.model.RescueCampaign;
 import java.util.List;
 
 public class SellerCampaignListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private CampaignViewModel viewModel; private LinearLayout container; private List<RescueCampaign> currentCampaigns;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
@@ -40,6 +41,7 @@ public class SellerCampaignListFragment extends Fragment {
             if (currentCampaigns != null) render(currentCampaigns);
         });
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (currentCampaigns != null) render(currentCampaigns);
             if (value.getStatus() == CampaignScreenState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
         });
@@ -47,12 +49,14 @@ public class SellerCampaignListFragment extends Fragment {
     @Override public void onResume() { super.onResume(); if (viewModel != null) viewModel.refreshSellerPage(true); }
     private void render(List<RescueCampaign> values) {
         currentCampaigns = values;
+        pagination.remote(() -> Boolean.TRUE.equals(viewModel.getSellerCampaignsHaveMore().getValue()),
+                viewModel::isSellerPageLoading, () -> viewModel.refreshSellerPage(false))
+                .render(container, values, this::renderPage);
+    }
+    private void renderPage(List<RescueCampaign> values) {
         container.removeAllViews(); if (values == null) return;
         for (RescueCampaign campaign : values) container.addView(card(campaign));
-        if (viewModel != null && Boolean.TRUE.equals(viewModel.getSellerCampaignsHaveMore().getValue())) {
-            Button more = button(R.string.load_more_action);
-            more.setOnClickListener(v -> viewModel.refreshSellerPage(false)); container.addView(more);
-        }
+
     }
     private View card(RescueCampaign value) {
         SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), SellerUiStyles.Section.CAMPAIGNS);

@@ -195,6 +195,9 @@ public final class AdminResourceFragment extends Fragment {
         container.removeAllViews();
         renderItems(state.getItems());
         loadMoreButton.setVisibility(viewModel.hasMore() ? View.VISIBLE : View.GONE);
+        loadMoreButton.setEnabled(state.getStatus() != AdminScreenState.Status.LOADING);
+        ((TextView) loadMoreButton).setText(state.getStatus() == AdminScreenState.Status.LOADING
+                ? R.string.pagination_loading : R.string.pagination_more);
     }
 
     private void renderShippingSettings() {

@@ -18,6 +18,7 @@ import com.rescuefarm.domain.model.Post;
 import java.util.List;
 
 public class SellerPostListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private PostViewModel viewModel; private PostCardRenderer renderer; private LinearLayout container; private List<Post> currentPosts;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
@@ -32,6 +33,7 @@ public class SellerPostListFragment extends Fragment {
             if (currentPosts != null) render(currentPosts);
         });
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (currentPosts != null) render(currentPosts);
             if (value.getStatus() == PostScreenState.Status.ERROR) Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
         });
         view.findViewById(R.id.addPostButton).setOnClickListener(v -> Navigation.findNavController(view)
@@ -41,6 +43,11 @@ public class SellerPostListFragment extends Fragment {
     @Override public void onResume() { super.onResume(); if (viewModel != null) viewModel.refreshSellerPostPage(true); }
     private void render(List<Post> posts) {
         currentPosts = posts;
+        pagination.remote(() -> Boolean.TRUE.equals(viewModel.getSellerPostsHaveMore().getValue()),
+                viewModel::isSellerPageLoading, () -> viewModel.refreshSellerPostPage(false))
+                .render(container, posts, this::renderPage);
+    }
+    private void renderPage(List<Post> posts) {
         container.removeAllViews();
         if (posts == null || posts.isEmpty()) { container.addView(renderer.message("Bạn chưa có post nào.")); return; }
         for (Post post : posts) {
@@ -64,11 +71,7 @@ public class SellerPostListFragment extends Fragment {
             row.root.setOnClickListener(v -> open(post));
             container.addView(row.root);
         }
-        if (viewModel != null && Boolean.TRUE.equals(viewModel.getSellerPostsHaveMore().getValue())) {
-            android.widget.Button more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.POSTS,
-                    "Tải thêm", "Tải thêm bài đăng");
-            more.setOnClickListener(v -> viewModel.refreshSellerPostPage(false)); container.addView(more);
-        }
+
     }
     private void open(Post post) {
         Bundle args = new Bundle(); args.putString("postId", post.getId());

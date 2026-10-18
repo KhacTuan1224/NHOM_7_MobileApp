@@ -39,6 +39,31 @@ public class ProductViewModel extends ViewModel {
     public LiveData<List<Promotion>> getSellerPromotionsState() { return sellerPromotions; }
     public LiveData<List<Category>> getCategories() { return repository.observeCategories(); }
     public LiveData<List<Product>> getProducts() { return repository.observeProducts(); }
+    private final androidx.lifecycle.MediatorLiveData<List<Product>> publicProducts = new androidx.lifecycle.MediatorLiveData<>();
+    private boolean publicSourceBound;
+    private boolean publicPageLoading;
+    public LiveData<List<Product>> getPublicProducts() {
+        if (!publicSourceBound) {
+            publicSourceBound = true;
+            publicProducts.addSource(repository.observePublicProductPage(), publicProducts::setValue);
+        }
+        return publicProducts;
+    }
+    public List<Product> getPublicProductsSnapshot() {
+        return publicProducts.getValue() == null ? java.util.Collections.emptyList() : publicProducts.getValue();
+    }
+    public boolean hasMorePublicProducts() { return repository.hasMorePublicProducts(); }
+    public boolean isPublicPageLoading() { return publicPageLoading; }
+    public void refreshPublicPage(boolean reset) {
+        if (publicPageLoading) return;
+        publicPageLoading = true; state.setValue(ProductScreenState.loading());
+        repository.refreshPublicProductPage(reset, new ProductRepository.ActionCallback() {
+            public void onSuccess() { publicPageLoading = false; state.postValue(ProductScreenState.idle()); }
+            public void onError(ProductRepository.ErrorCode error, String message) {
+                publicPageLoading = false; state.postValue(ProductScreenState.error(message));
+            }
+        });
+    }
     public LiveData<List<Product>> getSellerProducts() {
         return repository.observeSellerProducts(currentUserId());
     }
@@ -60,11 +85,16 @@ public class ProductViewModel extends ViewModel {
     public void refreshSellerProducts() {
         String sellerId = requireUserId(); if (sellerId != null) repository.refreshSellerProducts(sellerId, actionCallback(null));
     }
+    private boolean sellerPageLoading;
+    public boolean isSellerPageLoading() { return sellerPageLoading; }
     public void refreshSellerProductPage(boolean reset) {
+        if (sellerPageLoading) return;
         String sellerId = requireUserId(); if (sellerId == null) return;
+        sellerPageLoading = true;
+        state.setValue(ProductScreenState.loading());
         repository.refreshSellerProductPage(sellerId, reset, new ProductRepository.ActionCallback() {
-            @Override public void onSuccess() { sellerProductsHaveMore.postValue(repository.hasMoreSellerProducts(sellerId)); }
-            @Override public void onError(ProductRepository.ErrorCode error, String message) { state.postValue(ProductScreenState.error(message)); }
+            @Override public void onSuccess() { sellerPageLoading = false; sellerProductsHaveMore.postValue(repository.hasMoreSellerProducts(sellerId)); state.postValue(ProductScreenState.idle()); }
+            @Override public void onError(ProductRepository.ErrorCode error, String message) { sellerPageLoading = false; state.postValue(ProductScreenState.error(message)); }
         });
     }
     public void refreshBatches(String productId) { repository.refreshBatches(productId, actionCallback(null)); }

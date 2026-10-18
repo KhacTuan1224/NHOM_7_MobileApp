@@ -18,6 +18,7 @@ import java.util.*;
 
 /** Dedicated promotion overview; edits reuse the ownership-checked promotion repository. */
 public final class SellerPromotionListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private ProductViewModel viewModel;
     private LinearLayout list, chooser, choices;
     private TextView message;
@@ -88,14 +89,17 @@ public final class SellerPromotionListFragment extends Fragment {
         }
         if (choices.getChildCount() == 0) CustomerUi.text(choices, "Chưa tìm thấy sản phẩm phù hợp trong danh sách đã tải.");
         if (viewModel != null && Boolean.TRUE.equals(viewModel.getSellerProductsHaveMore().getValue())) {
-            com.google.android.material.button.MaterialButton more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PROMOTIONS, "Tải thêm", "Tải thêm sản phẩm để chọn");
+            com.google.android.material.button.MaterialButton more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PROMOTIONS, "Xem thêm", "Tải thêm sản phẩm để chọn");
             more.setOnClickListener(v -> viewModel.refreshSellerProductPage(false)); choices.addView(more);
         }
     }
     private void render() {
+        pagination.render(list, promotions, this::renderPage);
+        message.setText(promotions.isEmpty() ? "Chưa có ưu đãi. Chọn Tạo ưu đãi để bắt đầu." : promotions.size() + " ưu đãi đã cấu hình");
+    }
+    private void renderPage(List<Promotion> promotions) {
         if (list == null) return;
         list.removeAllViews();
-        message.setText(promotions.isEmpty() ? "Chưa có ưu đãi. Chọn Tạo ưu đãi để bắt đầu." : promotions.size() + " ưu đãi đã cấu hình");
         Date now = new Date(); SimpleDateFormat date = new SimpleDateFormat("dd/MM/yyyy", locale);
         for (Promotion promotion : promotions) {
             Product product = knownProducts.get(promotion.getProductId());

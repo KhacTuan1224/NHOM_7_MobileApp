@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class ProductListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private ProductViewModel viewModel; private LinearLayout container; private TextView empty;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
@@ -31,16 +32,20 @@ public class ProductListFragment extends Fragment {
         container = view.findViewById(R.id.productContainer); empty = view.findViewById(R.id.emptyProductText);
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);
-        viewModel.getProducts().observe(getViewLifecycleOwner(), this::renderProducts);
+        viewModel.getPublicProducts().observe(getViewLifecycleOwner(), this::renderProducts);
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            renderProducts(viewModel.getPublicProductsSnapshot());
             if (value.getStatus() == ProductScreenState.Status.ERROR) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
-        view.findViewById(R.id.refreshCatalogButton).setOnClickListener(v -> viewModel.refreshCatalog());
-        viewModel.refreshCatalog();
+        view.findViewById(R.id.refreshCatalogButton).setOnClickListener(v -> { pagination.reset(); viewModel.refreshPublicPage(true); });
+        viewModel.refreshPublicPage(true);
     }
     private void renderProducts(List<Product> products) {
+        pagination.remote(viewModel::hasMorePublicProducts, viewModel::isPublicPageLoading, () -> viewModel.refreshPublicPage(false)).render(container, products, this::renderProductsPage);
+    }
+    private void renderProductsPage(List<Product> products) {
         container.removeAllViews(); boolean isEmpty = products == null || products.isEmpty();
         empty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         if (isEmpty) return;
@@ -57,7 +62,7 @@ public class ProductListFragment extends Fragment {
         LinearLayout text = new LinearLayout(requireContext()); text.setOrientation(LinearLayout.VERTICAL); text.setPadding(dp(12), 0, 0, 0);
         TextView name = new TextView(requireContext()); name.setText(product.getName()); name.setTextSize(18); name.setTypeface(name.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(name);
         TextView price = new TextView(requireContext()); price.setText(money(product.getRescuePrice()) + " / " + product.getUnit());
-        TextView origin = new TextView(requireContext()); origin.setText(product.getOrigin() + " • " + product.getProvince());
+        TextView origin = new TextView(requireContext()); origin.setText(product.getOrigin() + " â€¢ " + product.getProvince());
         text.addView(name); text.addView(price); text.addView(origin); row.addView(text, new LinearLayout.LayoutParams(0, -2, 1)); card.addView(row);
         card.setOnClickListener(v -> {
             Bundle args = new Bundle(); args.putString("productId", product.getId());

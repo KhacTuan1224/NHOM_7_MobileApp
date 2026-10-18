@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Locale;
 
 public class CustomerOrderListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
+    private OrderViewModel pageModel;
+    private String pageOwner = "";
+    private List<Order> currentOrders = java.util.Collections.emptyList();
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_customer_order_list, parent, false);
@@ -43,6 +47,7 @@ public class CustomerOrderListFragment extends Fragment {
 
         OrderViewModel vm = new ViewModelProvider(this,
                 new OrderViewModelFactory(requireContext())).get(OrderViewModel.class);
+        pageModel = vm; pageOwner = ownerId;
 
         login.setVisibility(signedIn ? View.GONE : View.VISIBLE);
         guestLookupCard.setVisibility(signedIn ? View.GONE : View.VISIBLE);
@@ -83,21 +88,28 @@ public class CustomerOrderListFragment extends Fragment {
             return;
         }
         vm.observeCustomerOrders(ownerId).observe(getViewLifecycleOwner(), orders -> {
+            currentOrders = orders == null ? java.util.Collections.emptyList() : orders;
             renderOrders(view, orders);
             empty.setVisibility(orders == null || orders.isEmpty() ? View.VISIBLE : View.GONE);
         });
         vm.getState().observe(getViewLifecycleOwner(), state -> {
+            renderOrders(view, currentOrders);
             boolean loading = state.getStatus() == OrderLifecycleState.Status.LOADING;
             view.findViewById(R.id.customerOrdersProgress).setVisibility(loading ? View.VISIBLE : View.GONE);
             refresh.setEnabled(!loading);
             message.setText(state.getMessage());
             message.setVisibility(state.getMessage().isEmpty() ? View.GONE : View.VISIBLE);
         });
-        refresh.setOnClickListener(v -> vm.refreshCustomerOrders(ownerId));
+        refresh.setOnClickListener(v -> { pagination.reset(); vm.refreshCustomerOrders(ownerId); });
         vm.refreshCustomerOrders(ownerId);
     }
 
     private void renderOrders(View view, List<Order> orders) {
+        pagination.remote(() -> pageModel.hasMoreCustomerOrders(pageOwner), pageModel::isCustomerPageLoading,
+                () -> pageModel.loadCustomerPage(pageOwner, false))
+                .render(view.findViewById(R.id.customerOrdersContainer), orders, page -> renderOrderPage(view, page));
+    }
+    private void renderOrderPage(View view, List<Order> orders) {
         LinearLayout container = view.findViewById(R.id.customerOrdersContainer);
         container.removeAllViews();
         if (orders == null) return;

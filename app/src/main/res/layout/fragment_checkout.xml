@@ -165,11 +165,7 @@
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
                     android:textColor="@color/rescue_on_primary_container" />
-                <TextView android:id="@+id/checkoutShippingEstimate" android:layout_width="match_parent"
-                    android:layout_height="wrap_content" android:layout_marginTop="8dp"
-                    android:text="Phí giao hàng sẽ được tính theo khoảng cách từ cửa hàng."
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
-                    android:textColor="@color/rescue_on_primary_container" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

@@ -45,6 +45,9 @@ import java.util.function.Function;
 
 public class GuestHomeFragment extends Fragment {
     private HomeViewModel viewModel;
+    private final com.rescuefarm.ui.common.ListPagination suggestionPages = new com.rescuefarm.ui.common.ListPagination(6);
+    private final Map<String, com.rescuefarm.ui.common.ListPagination> sectionPages = new java.util.HashMap<>();
+    private com.google.android.material.button.MaterialButton loadMoreHome;
     private HomeCardRenderer renderer;
     private TextView message;
     private TextView greeting, locationLabel;
@@ -114,6 +117,14 @@ public class GuestHomeFragment extends Fragment {
         volumeGroup.addView(volumeTitle); volumeSection=new LinearLayout(requireContext()); volumeSection.setOrientation(LinearLayout.HORIZONTAL); android.widget.HorizontalScrollView volumeScroll = new android.widget.HorizontalScrollView(requireContext()); volumeScroll.setHorizontalScrollBarEnabled(false); volumeScroll.addView(volumeSection); volumeGroup.addView(volumeScroll);
         LinearLayout home=(LinearLayout)view.findViewById(R.id.valueHomeGroup).getParent();
         home.addView(volumeGroup,home.indexOfChild(view.findViewById(R.id.valueHomeGroup))+1);
+        loadMoreHome = new com.google.android.material.button.MaterialButton(requireContext());
+        loadMoreHome.setText(R.string.pagination_more); loadMoreHome.setTextSize(16);
+        home.addView(loadMoreHome, new LinearLayout.LayoutParams(-1, -2));
+        loadMoreHome.setOnClickListener(v -> {
+            if (viewModel.isPageLoading()) return;
+            for (com.rescuefarm.ui.common.ListPagination page : sectionPages.values()) page.advance();
+            viewModel.loadNextPage(true, true);
+        });
         volumeGroup.setPadding(0,dp(24),0,0);
         campaignSection = view.findViewById(R.id.campaignSection);
         categorySection = view.findViewById(R.id.categorySection);
@@ -131,7 +142,10 @@ public class GuestHomeFragment extends Fragment {
                 Navigation.findNavController(view).navigate(viewModel.isAuthenticated()
                         ? R.id.action_guestHomeFragment_to_notificationFragment
                         : R.id.action_guestHomeFragment_to_loginFragment));
-        view.findViewById(R.id.refreshHomeButton).setOnClickListener(v -> viewModel.refresh());
+        view.findViewById(R.id.refreshHomeButton).setOnClickListener(v -> {
+            for (com.rescuefarm.ui.common.ListPagination page : sectionPages.values()) page.reset();
+            viewModel.refresh();
+        });
         View locationContainer = view.findViewById(R.id.homeLocationContainer);
         if (locationContainer != null) {
             locationContainer.setOnClickListener(v -> showLocationPicker());
@@ -181,6 +195,7 @@ public class GuestHomeFragment extends Fragment {
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                suggestionPages.reset();
                 viewModel.setQuery(viewModel.getQuery().withText(s.toString()));
                 showSearchSuggestions();
             }
@@ -206,7 +221,7 @@ public class GuestHomeFragment extends Fragment {
             sheet.show(getChildFragmentManager(), "HomeFilters");
         });
         getChildFragmentManager().setFragmentResultListener("home.filtersApplied", getViewLifecycleOwner(),
-                (key, result) -> showSearchSuggestions());
+                (key, result) -> { suggestionPages.reset(); showSearchSuggestions(); });
         viewModel.getSearchResults().observe(getViewLifecycleOwner(), this::renderSearchSuggestions);
     }
 
@@ -246,6 +261,11 @@ public class GuestHomeFragment extends Fragment {
     }
 
     private void renderSearchSuggestions(List<DiscoveryResult> values) {
+        suggestionPages.remote(() -> viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns(),
+                viewModel::isPageLoading, () -> viewModel.loadNextPage(true, true))
+                .render(searchSuggestions, values, this::renderSuggestionPage);
+    }
+    private void renderSuggestionPage(List<DiscoveryResult> values) {
         searchSuggestions.removeAllViews();
         searchResultCount = values.size();
         searchCount.setText(getString(R.string.home_search_count, values.size()));
@@ -362,6 +382,9 @@ public class GuestHomeFragment extends Fragment {
     }
 
     private void render(HomeViewState state) {
+        loadMoreHome.setVisibility(viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns() ? View.VISIBLE : View.GONE);
+        loadMoreHome.setEnabled(!viewModel.isPageLoading());
+        loadMoreHome.setText(viewModel.isPageLoading() ? R.string.pagination_loading : R.string.pagination_more);
         bannerHandler.removeCallbacks(promotionTransitionTick);
         if(getLifecycle().getCurrentState().isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
             long delay=viewModel.nextPromotionChangeDelay(); if(delay!=Long.MAX_VALUE)bannerHandler.postDelayed(promotionTransitionTick,delay);
@@ -479,6 +502,10 @@ public class GuestHomeFragment extends Fragment {
         });
     }
     private void renderCategories(List<Category> values) {
+        sectionPages.computeIfAbsent("categories", key -> new com.rescuefarm.ui.common.ListPagination(6))
+                .render(categorySection, values, this::renderCategoryPage);
+    }
+    private void renderCategoryPage(List<Category> values) {
         categorySection.removeAllViews();
         categorySection.setClipChildren(false);
         categorySection.setClipToPadding(false);
@@ -517,17 +544,31 @@ public class GuestHomeFragment extends Fragment {
 
     private <T> void addHorizontal(LinearLayout container, List<T> values,
                                    Function<T, View> createView) {
-        for (T value : values) {
+        homePagination(container).render(container, values, page -> {
+        container.removeAllViews();
+        for (T value : page) {
             View item = createView.apply(value);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(248), -2);
             params.setMargins(0, dp(3), dp(10), dp(5));
             container.addView(item, params);
         }
+        });
     }
 
     private <T> void addGrid(LinearLayout container, List<T> values, Function<T, View> createView) {
-        for (T value : values) container.addView(createView.apply(value),
+        homePagination(container).render(container, values, page -> {
+        container.removeAllViews();
+        for (T value : page) container.addView(createView.apply(value),
                 new LinearLayout.LayoutParams(-1, -2));
+        });
+    }
+    private com.rescuefarm.ui.common.ListPagination homePagination(LinearLayout container) {
+        boolean products = container == valueSection || container == nearExpirySection || container == volumeSection;
+        boolean campaigns = !products || container == volumeSection;
+        String key = container == volumeSection ? "volume" : String.valueOf(container.getId());
+        return sectionPages.computeIfAbsent(key, unused -> new com.rescuefarm.ui.common.ListPagination(6))
+                .remote(() -> products && viewModel.hasMoreProducts() || campaigns && viewModel.hasMoreCampaigns(),
+                        viewModel::isPageLoading, () -> viewModel.loadNextPage(products, campaigns));
     }
     private void openCampaign(String id) {
         Bundle args = new Bundle(); args.putString("campaignId", id);
@@ -558,6 +599,7 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        loadMoreHome = null;
         bannerHandler.removeCallbacks(freshnessTick);
         bannerHandler.removeCallbacks(promotionTransitionTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);

@@ -44,6 +44,20 @@ public class CampaignViewModel extends ViewModel {
     }
     public LiveData<CampaignScreenState> getState() { return state; }
     public LiveData<List<RescueCampaign>> getActiveCampaigns() { return repository.observeActiveCampaigns(); }
+    public LiveData<List<RescueCampaign>> getPublicCampaigns() { return repository.observePublicCampaignPage(); }
+    private boolean publicPageLoading;
+    public boolean hasMorePublicCampaigns() { return repository.hasMorePublicCampaigns(); }
+    public boolean isPublicPageLoading() { return publicPageLoading; }
+    public void refreshPublicPage(boolean reset) {
+        if (publicPageLoading) return;
+        publicPageLoading = true; state.setValue(CampaignScreenState.loading());
+        repository.refreshPublicCampaignPage(reset, new CampaignRepository.ActionCallback() {
+            public void onSuccess() { publicPageLoading = false; state.postValue(CampaignScreenState.idle()); }
+            public void onError(CampaignRepository.ErrorCode error, String message) {
+                publicPageLoading = false; state.postValue(CampaignScreenState.error(message));
+            }
+        });
+    }
     public LiveData<List<RescueCampaign>> getSellerCampaigns() {
         return repository.observeSellerCampaigns(currentUserId());
     }
@@ -68,12 +82,17 @@ public class CampaignViewModel extends ViewModel {
         String id = requireSeller(); if (id != null) repository.refreshSellerCampaigns(id, action(null));
     }
     public void refreshSellerPage(boolean reset) {
+        if (sellerPageLoading) return;
         String id = requireSeller(); if (id == null) return;
+        sellerPageLoading = true;
+        state.setValue(CampaignScreenState.loading());
         repository.refreshSellerCampaignPage(id, reset, new CampaignRepository.ActionCallback() {
-            @Override public void onSuccess() { sellerCampaignsHaveMore.postValue(repository.hasMoreSellerCampaigns(id)); }
-            @Override public void onError(CampaignRepository.ErrorCode error, String message) { state.postValue(CampaignScreenState.error(message)); }
+            @Override public void onSuccess() { sellerPageLoading = false; sellerCampaignsHaveMore.postValue(repository.hasMoreSellerCampaigns(id)); state.postValue(CampaignScreenState.idle()); }
+            @Override public void onError(CampaignRepository.ErrorCode error, String message) { sellerPageLoading = false; state.postValue(CampaignScreenState.error(message)); }
         });
     }
+    private boolean sellerPageLoading;
+    public boolean isSellerPageLoading() { return sellerPageLoading; }
     public void load(String campaignId) {
         state.setValue(CampaignScreenState.loading());
         repository.getCampaign(campaignId, callback(false, null));

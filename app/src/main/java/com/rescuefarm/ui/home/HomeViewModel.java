@@ -54,6 +54,7 @@ public class HomeViewModel extends ViewModel {
     private String customLocationLabel = "";
     private HomeViewState.LocationState locationState = HomeViewState.LocationState.PERMISSION_REQUIRED;
     private boolean refreshing;
+    private boolean initialPageRequested;
     private int pendingRefreshes;
     private boolean refreshHadError;
     private String message = "Đang hiển thị dữ liệu đã lưu trên thiết bị.";
@@ -81,13 +82,13 @@ public class HomeViewModel extends ViewModel {
         this.savedState = savedState;
         this.query = DiscoveryQueryState.restore(savedState);
         loadGreetingName();
-        homeState.addSource(productRepository.observeProducts(), values -> {
+        homeState.addSource(productRepository.observePublicProductPage(), values -> {
             products = safe(values); syncPromotionSources(); syncBatchSources(); syncSellerLocationSources(); publish();
         });
         homeState.addSource(productRepository.observeCategories(), values -> {
             categories = safe(values); publish();
         });
-        homeState.addSource(campaignRepository.observeActiveCampaigns(), values -> {
+        homeState.addSource(campaignRepository.observePublicCampaignPage(), values -> {
             campaigns = safe(values); syncBatchSources(); publish();
         });
         homeState.addSource(campaignRepository.observeActiveBanners(), values -> {
@@ -118,16 +119,36 @@ public class HomeViewModel extends ViewModel {
 
     public void refresh() {
         if (refreshing) return;
+        initialPageRequested = true;
         refreshing = true; pendingRefreshes = 3; refreshHadError = false;
         message = "Đang đồng bộ dữ liệu mới…"; publish();
-        productRepository.refreshCatalog(new ProductRepository.ActionCallback() {
+        productRepository.refreshPublicProductPage(true, new ProductRepository.ActionCallback() {
             @Override public void onSuccess() { finishRefresh(null); }
             @Override public void onError(ProductRepository.ErrorCode error, String value) {
                 finishRefresh(value);
             }
         });
-        campaignRepository.refreshActiveCampaigns(callback());
+        campaignRepository.refreshPublicCampaignPage(true, callback());
         campaignRepository.refreshBanners(callback());
+    }
+
+    public boolean hasMoreProducts() { return productRepository.hasMorePublicProducts(); }
+    public void ensureLoaded() { if (!initialPageRequested) refresh(); }
+    public boolean hasMoreCampaigns() { return campaignRepository.hasMorePublicCampaigns(); }
+    public boolean isPageLoading() { return refreshing; }
+    public void loadNextPage(boolean includeProducts, boolean includeCampaigns) {
+        if (refreshing) return;
+        boolean productPage = includeProducts && hasMoreProducts();
+        boolean campaignPage = includeCampaigns && hasMoreCampaigns();
+        pendingRefreshes = (productPage ? 1 : 0) + (campaignPage ? 1 : 0);
+        if (pendingRefreshes == 0) return;
+        refreshing = true; refreshHadError = false;
+        message = "Đang tải thêm nội dung…"; publish();
+        if (productPage) productRepository.refreshPublicProductPage(false, new ProductRepository.ActionCallback() {
+            public void onSuccess() { finishRefresh(null); }
+            public void onError(ProductRepository.ErrorCode error, String value) { finishRefresh(value); }
+        });
+        if (campaignPage) campaignRepository.refreshPublicCampaignPage(false, callback());
     }
 
     public void requestNearbyLocation() {
