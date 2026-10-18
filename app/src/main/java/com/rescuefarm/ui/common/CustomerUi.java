@@ -18,10 +18,17 @@ public final class CustomerUi {
         Context c = fragment.requireContext(); NavigationAwareNestedScrollView scroll = new NavigationAwareNestedScrollView(c);
         scroll.setBackgroundColor(c.getColor(R.color.rescue_background)); scroll.setFillViewport(true);
         content.setPadding(dp(c,16), dp(c,16), dp(c,16), dp(c,16));
-        scroll.addView(content, new ViewGroup.LayoutParams(-1,-2)); return scroll;
+        ResponsiveContentLayout wrapper = new ResponsiveContentLayout(c);
+        wrapper.setOrientation(LinearLayout.VERTICAL);
+        wrapper.setMaxContentWidth(c.getResources().getDimensionPixelSize(R.dimen.form_max_width));
+        wrapper.addView(content, new LinearLayout.LayoutParams(-1, -2));
+        android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(-1, -2);
+        params.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        scroll.addView(wrapper, params); return scroll;
     }
     public static TextView text(LinearLayout parent, String value) {
         TextView text = new TextView(parent.getContext()); text.setText(value); text.setTextSize(16);
+        AppTypography.body(text);
         text.setTextColor(parent.getContext().getColor(R.color.rescue_on_surface));
         text.setPadding(0,dp(parent.getContext(),8),0,dp(parent.getContext(),8));
         parent.addView(text,new LinearLayout.LayoutParams(-1,-2)); return text;

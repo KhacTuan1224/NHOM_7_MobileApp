@@ -1,59 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" 
-    android:layout_height="match_parent" 
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/rescue_background"
     android:fillViewport="true">
-    
-    <LinearLayout 
-        android:layout_width="match_parent" 
+
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical" 
+        android:orientation="vertical"
         android:padding="16dp"
-        android:paddingBottom="80dp">
-        
+        android:paddingBottom="80dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+
         <!-- Title -->
-        <TextView 
-            android:layout_width="match_parent" 
+        <TextView android:fontFamily="@font/ibm_plex_sans"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/feed_title" 
+            android:text="@string/feed_title"
             android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium"
             android:layout_marginBottom="4dp" />
-        
+
         <!-- Subtitle -->
-        <TextView 
-            android:layout_width="match_parent" 
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/feed_subtitle" 
+            android:text="@string/feed_subtitle"
             android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
             android:textColor="@color/rescue_on_surface_variant"
             android:layout_marginBottom="16dp" />
-        
+
         <!-- Refresh button -->
-        <com.google.android.material.button.MaterialButton 
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/refreshFeedButton"
-            style="@style/Widget.Material3.Button.OutlinedButton" 
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" 
+            android:layout_height="wrap_content"
             android:text="@string/refresh_action"
             android:layout_marginBottom="16dp" />
-        
+
         <!-- Progress bar -->
-        <ProgressBar 
-            android:id="@+id/feedProgress" 
+        <ProgressBar
+            android:id="@+id/feedProgress"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" 
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="gone"
             android:layout_marginBottom="16dp" />
-        
+
         <!-- Campaigns container -->
-        <LinearLayout 
-            android:id="@+id/feedContainer" 
+        <LinearLayout
+            android:id="@+id/feedContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" 
+            android:layout_height="wrap_content"
             android:orientation="vertical" />
-        
-    </LinearLayout>
+
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

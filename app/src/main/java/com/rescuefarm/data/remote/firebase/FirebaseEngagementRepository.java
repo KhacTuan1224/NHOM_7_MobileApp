@@ -16,7 +16,22 @@ public class FirebaseEngagementRepository implements EngagementRepository{
   }
   protected void onInactive(){if(listener!=null)listener.remove();listener=null;}
  };}
- public LiveData<Boolean> observeFavorite(String customerId,String productId){return new LiveData<Boolean>(){private ListenerRegistration registration;@Override protected void onActive(){if(clean(customerId).isEmpty()||clean(productId).isEmpty()){postValue(false);return;}String id=Favorite.key(customerId,productId);registration=db.collection(FAVORITES).document(id).addSnapshotListener((snapshot,error)->{if(error!=null||snapshot==null){postValue(null);return;}postValue(snapshot.exists()&&customerId.equals(snapshot.getString("customerId")));});}@Override protected void onInactive(){if(registration!=null){registration.remove();registration=null;}}};}
+ public LiveData<Boolean> observeFavorite(String customerId,String productId){return new LiveData<Boolean>(){
+  private ListenerRegistration registration;
+  @Override protected void onActive(){
+   if(clean(customerId).isEmpty()||clean(productId).isEmpty()){postValue(false);return;}
+   // An owner-scoped query also succeeds before the first favorite exists.
+   registration=db.collection(FAVORITES).whereEqualTo("customerId",customerId)
+    .whereEqualTo("productId",productId).addSnapshotListener((snapshot,error)->{
+     if(error!=null||snapshot==null){
+      android.util.Log.w("FavoriteState","Unable to load favorite state",error);
+      postValue(null);return;
+     }
+     postValue(!snapshot.isEmpty());
+    });
+  }
+  @Override protected void onInactive(){if(registration!=null){registration.remove();registration=null;}}
+ };}
  public void refreshFavorites(String uid,ActionCallback cb){query(FAVORITES,"customerId",uid,s->{List<Favorite> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapFavorite(d));favorites.setValue(out);cb.onSuccess();},cb);}
  public void toggleFavorite(String uid,String productId,FavoriteCallback cb){if(!online(cb)||!session(uid,cb))return;Favorite f;try{f=Favorite.create(uid,productId,new Date());}catch(Exception e){cb.onError(ErrorCode.VALIDATION,e.getMessage());return;}DocumentReference ref=db.collection(FAVORITES).document(f.getId());db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(d.exists()){tx.delete(ref);return false;}tx.set(ref,favoriteMap(f));return true;}).addOnSuccessListener(cb::onSuccess).addOnFailureListener(e->fail(e,cb));}
  public void refreshProductReviews(String productId,ActionCallback cb){if(!online(cb))return;db.collection(REVIEWS).whereEqualTo("productId",productId).whereEqualTo("status",ReviewStatus.PUBLISHED.name()).get().addOnSuccessListener(s->{List<Review> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReview(d));reviews.setValue(out);cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}
@@ -67,7 +82,7 @@ public class FirebaseEngagementRepository implements EngagementRepository{
   }).addOnFailureListener(e->fail(e,cb));
  }
  public void createReport(String uid,ReportTargetType type,String targetId,String reason,String description,ReportCallback cb){if(!online(cb)||!session(uid,cb))return;DocumentReference ref=db.collection(REPORTS).document();try{String path="",parentType="",parentId="",canonicalId=targetId;
-if(type==ReportTargetType.COMMENT){String[] parts=targetId.split("/",-1);if(parts.length!=4||!(parts[0].equals("campaigns")||parts[0].equals("posts"))||!parts[2].equals("comments")||parts[1].isEmpty()||parts[3].isEmpty())throw new IllegalArgumentException("Cần đường dẫn campaigns/{id}/comments/{id} hoặc posts/{id}/comments/{id}.");path=targetId;parentType=parts[0].equals("campaigns")?"CAMPAIGN":"POST";parentId=parts[1];canonicalId=parts[3];}
+if(type==ReportTargetType.COMMENT){String[] parts=targetId.split("/",-1);if(parts.length!=4||!parts[0].equals("campaigns")||!parts[2].equals("comments")||parts[1].isEmpty()||parts[3].isEmpty())throw new IllegalArgumentException("Cần đường dẫn campaigns/{id}/comments/{id}.");path=targetId;parentType="CAMPAIGN";parentId=parts[1];canonicalId=parts[3];}
 Report r=Report.create(ref.getId(),uid,type,canonicalId,reason,description,new Date());Map<String,Object> data=reportMap(r);if(type==ReportTargetType.COMMENT){data.put("targetPath",path);data.put("parentType",parentType);data.put("parentId",parentId);}com.google.firebase.firestore.WriteBatch batch=db.batch();batch.set(ref,data);com.rescuefarm.service.notification.NotificationOutbox.enqueue(batch,db,"ADMINS","REPORT",r.getId());batch.commit().addOnSuccessListener(v->{cb.onSuccess(r);}).addOnFailureListener(e->fail(e,cb));}catch(Exception e){cb.onError(ErrorCode.VALIDATION,e.getMessage());}}
  public void refreshReports(ActionCallback cb){if(!online(cb))return;db.collection(REPORTS).get().addOnSuccessListener(s->{List<Report> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReport(d));reports.setValue(out);cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}
  public void transitionReport(String id,ReportStatus target,String note,ReportCallback cb){if(!online(cb))return;if(target==null){cb.onError(ErrorCode.VALIDATION,"Trạng thái report không hợp lệ.");return;}String admin=auth.getCurrentUser()==null?"":auth.getCurrentUser().getUid();DocumentReference ref=db.collection(REPORTS).document(id);db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(!d.exists())throw new IllegalStateException("REPORT_NOT_FOUND");Report r=mapReport(d);if(target==ReportStatus.IN_REVIEW)r.startReview(admin);else if(target==ReportStatus.RESOLVED)r.resolve(admin,note);else if(target==ReportStatus.REJECTED)r.reject(admin,note);else throw new IllegalStateException("REPORT_TRANSITION_INVALID");tx.update(ref,"status",r.getStatus().name(),"resolvedBy",r.getResolvedBy(),"resolutionNote",clean(r.getResolutionNote()),"updatedAt",FieldValue.serverTimestamp());java.util.Map<String,Object> audit=new java.util.HashMap<>();audit.put("adminId",admin);audit.put("resourceType","REPORTS");audit.put("resourceId",id);audit.put("fromState",d.getString("status"));audit.put("toState",r.getStatus().name());audit.put("reason",clean(note));audit.put("createdAt",FieldValue.serverTimestamp());tx.set(db.collection("adminAuditLogs").document(),audit);return r;}).addOnSuccessListener(cb::onSuccess).addOnFailureListener(e->fail(e,cb));}

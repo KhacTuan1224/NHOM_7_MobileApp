@@ -6,13 +6,13 @@
     android:background="@color/rescue_background"
     android:fillViewport="true">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/space_lg">
+        android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/order_detail_title"
@@ -40,6 +40,26 @@
             android:textColor="@color/rescue_primary"
             android:textStyle="bold" />
 
+        <LinearLayout android:id="@+id/orderPaymentVerificationPanel"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:orientation="vertical"
+            android:background="@drawable/bg_quantity_stepper" android:padding="16dp"
+            android:visibility="gone">
+            <TextView android:id="@+id/orderPaymentVerificationTitle"
+                style="@style/TextAppearance.RescueFarm.TitleMedium"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/rescue_primary" android:accessibilityHeading="true" />
+            <TextView android:id="@+id/orderPaymentVerificationMessage"
+                style="@style/TextAppearance.RescueFarm.BodyMedium"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
+            <ProgressBar android:id="@+id/orderPaymentVerificationProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent" android:layout_height="4dp"
+                android:layout_marginTop="12dp" android:indeterminate="true"
+                android:visibility="gone" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -47,23 +67,12 @@
             android:text="Thông tin đơn hàng"
             android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
+            android:id="@+id/orderDetailInfoContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_sm"
-            app:cardBackgroundColor="@color/rescue_surface"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/rescue_outline"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:id="@+id/orderDetailInfoContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/space_md" />
-        </com.google.android.material.card.MaterialCardView>
+            android:orientation="vertical" />
 
         <TextView
             android:layout_width="match_parent"
@@ -88,7 +97,7 @@
             android:padding="@dimen/space_md"
             android:textColor="@color/rescue_on_primary_container" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/orderItemsTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -121,7 +130,7 @@
             android:scaleType="fitCenter"
             android:visibility="gone" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/shipmentManagementTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -130,12 +139,11 @@
             android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
             android:visibility="gone" />
 
-        <EditText
+        <Spinner
             android:id="@+id/shipmentCarrierInput"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/shipment_carrier_hint"
-            android:maxLength="120"
+            android:layout_height="@dimen/touch_target_min"
+            android:contentDescription="@string/shipment_carrier_hint"
             android:visibility="gone" />
 
         <EditText
@@ -149,12 +157,12 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/saveShipmentDetailsButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginTop="@dimen/space_xs"
             android:text="@string/save_shipment_details_action"
             android:visibility="gone" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/orderStatusActionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -172,11 +180,11 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/transitionOrderButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/update_order_status_action"
             android:visibility="gone" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/bankTransferActionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -195,7 +203,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/confirmBankTransferButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/confirm_bank_transfer_action"
             android:visibility="gone" />
 
@@ -212,5 +220,5 @@
             android:layout_marginTop="@dimen/space_md"
             android:accessibilityLiveRegion="polite"
             android:textColor="@color/rescue_on_surface_variant" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareScrollView>

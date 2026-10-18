@@ -47,8 +47,8 @@ public final class BannerPagerAdapter extends RecyclerView.Adapter<BannerPagerAd
 
         TextView title = new TextView(parent.getContext());
         title.setTextColor(Color.WHITE);
-        title.setTextSize(14);
-        title.setTypeface(title.getTypeface(), Typeface.BOLD);
+        title.setTextSize(16);
+        title.setTypeface(title.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(title);
         title.setMaxLines(2);
         title.setPadding(dp(parent, 12), dp(parent, 8), dp(parent, 12), dp(parent, 8));
         title.setBackground(new ColorDrawable(0xB31A3424));

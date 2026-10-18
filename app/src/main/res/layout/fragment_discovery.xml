@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_md">
-        <TextView style="@style/TextAppearance.Material3.HeadlineMedium" android:layout_width="wrap_content"
+    android:background="@color/rescue_background" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_md" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+        <TextView android:fontFamily="@font/ibm_plex_sans" style="@style/TextAppearance.Material3.HeadlineMedium" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:text="@string/discovery_title" />
         <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent"
             android:layout_height="wrap_content" android:hint="@string/discovery_keyword">
@@ -56,7 +56,7 @@
             android:text="Sắp xếp" android:textStyle="bold" />
         <Spinner android:id="@+id/sortSpinner" android:layout_width="match_parent"
             android:layout_height="48dp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal">
             <com.google.android.material.button.MaterialButton android:id="@+id/applyFilterButton"
                 android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
@@ -65,7 +65,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:layout_marginStart="8dp"
                 android:text="@string/clear_action" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
         <com.google.android.material.button.MaterialButton android:id="@+id/discoveryLocationButton"
             style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:text="@string/home_use_location" />
@@ -74,5 +74,5 @@
         <LinearLayout android:id="@+id/searchResultContainer" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="8dp"
             android:orientation="vertical" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

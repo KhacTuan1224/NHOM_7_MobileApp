@@ -2,14 +2,14 @@
 <com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
         <TextView android:id="@+id/sellerReviewReadOnlyNotice" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:visibility="gone" android:paddingTop="@dimen/space_md"
             android:text="Seller đang ở chế độ xem. Chỉ Customer đủ điều kiện mới có thể gửi đánh giá." />
         <LinearLayout android:id="@+id/reviewComposer" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/reviews_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <TextView android:id="@+id/reviewProductSummary" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:paddingTop="@dimen/space_xs" />
@@ -33,7 +33,7 @@
             android:layout_height="wrap_content" android:hint="@string/review_content_hint" />
         <com.google.android.material.button.MaterialButton android:id="@+id/uploadReviewImagesButton"
             style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/upload_review_images_action"
             android:textColor="@color/rescue_on_surface"
             app:backgroundTint="@android:color/transparent"
@@ -48,7 +48,7 @@
             android:layout_height="0dp" android:visibility="gone" />
         <com.google.android.material.button.MaterialButton android:id="@+id/saveReviewButton"
             style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/save_review_action"
             android:textColor="@color/rescue_on_surface"
             app:backgroundTint="@android:color/transparent"
@@ -57,5 +57,5 @@
         </LinearLayout>
         <LinearLayout android:id="@+id/reviewContainer" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareScrollView>

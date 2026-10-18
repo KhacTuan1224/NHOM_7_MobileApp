@@ -42,6 +42,7 @@ public class ProductEditorFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_product_editor, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.seller.SellerUiStyles.styleActions(view, com.rescuefarm.ui.seller.SellerUiStyles.Section.PRODUCTS);
         category = view.findViewById(R.id.productCategoryInput); name = view.findViewById(R.id.productNameInput);
         description = view.findViewById(R.id.productDescriptionInput); originalPrice = view.findViewById(R.id.originalPriceInput);
         rescuePrice = view.findViewById(R.id.rescuePriceInput); unit = view.findViewById(R.id.productUnitInput);

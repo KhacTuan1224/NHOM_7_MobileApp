@@ -1,65 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" 
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/rescue_background"
     android:fillViewport="true">
-    
-    <LinearLayout 
-        android:layout_width="match_parent" 
+
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingBottom="80dp"
-        android:padding="16dp">
-        
+        android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+
         <!-- Badge text -->
-        <TextView 
-            android:id="@+id/campaignDetailBadge" 
+        <TextView
+            android:id="@+id/campaignDetailBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
             android:textColor="@color/rescue_primary"
             android:textStyle="bold"
             android:textAllCaps="true"
             android:layout_marginBottom="8dp" />
-        
+
         <!-- Title -->
-        <TextView 
-            android:id="@+id/campaignDetailTitle" 
+        <TextView android:fontFamily="@font/ibm_plex_sans"
+            android:id="@+id/campaignDetailTitle" android:textSize="28sp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" 
+            android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium"
             android:textColor="@color/rescue_on_surface"
             android:layout_marginBottom="8dp" />
 
         <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:fillViewport="true"
             android:layout_marginBottom="12dp" android:scrollbars="none">
             <LinearLayout android:id="@+id/campaignStoryGallery" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:orientation="horizontal" />
+                android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" />
         </HorizontalScrollView>
-        
+
         <!-- Reason -->
-        <TextView 
-            android:id="@+id/campaignDetailReason" 
+        <TextView
+            android:id="@+id/campaignDetailReason"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
             android:textColor="@color/rescue_on_surface_variant"
             android:layout_marginBottom="16dp" />
-        <TextView android:id="@+id/campaignViewCount" android:layout_width="match_parent"
+        <TextView android:textSize="16sp" android:id="@+id/campaignViewCount" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginBottom="12dp"
             android:textColor="@color/rescue_on_surface_variant" />
-        
+
         <!-- Progress and metrics, directly on the page background -->
         <LinearLayout
-            android:id="@+id/campaignProgressCard"
+            android:id="@+id/campaignProgressCard" android:layout_marginTop="8dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:orientation="vertical"
-            android:padding="16dp">
-                
+            android:padding="0dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -72,7 +73,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Tiến độ giải cứu"
-                        android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall"
+                        android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section"
                         android:textColor="@color/rescue_primary"
                         android:textStyle="bold" />
 
@@ -80,7 +81,7 @@
                         android:id="@+id/campaignProgressPercent"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall"
+                        android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section"
                         android:textColor="@color/rescue_primary"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -115,7 +116,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/campaign_target_quantity_label"
-                            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                             android:textColor="@color/rescue_on_surface_variant" />
 
                         <TextView
@@ -123,7 +124,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textStyle="bold"
-                            android:textSize="15sp"
+                            android:textSize="18sp"
                             android:textColor="@color/rescue_on_surface" />
                     </LinearLayout>
 
@@ -145,7 +146,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/campaign_rescued_quantity_label"
-                            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                             android:textColor="@color/rescue_primary" />
 
                         <TextView
@@ -153,7 +154,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textStyle="bold"
-                            android:textSize="15sp"
+                            android:textSize="18sp"
                             android:textColor="@color/rescue_primary" />
                     </LinearLayout>
 
@@ -175,7 +176,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/campaign_available_quantity_label"
-                            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                             android:textColor="@color/rescue_critical" />
 
                         <TextView
@@ -183,35 +184,70 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textStyle="bold"
-                            android:textSize="15sp"
+                            android:textSize="18sp"
                             android:textColor="@color/rescue_critical" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <!-- Compatibility Progress Text -->
-                <TextView 
-                    android:id="@+id/campaignDetailProgress" 
+                <TextView
+                    android:id="@+id/campaignDetailProgress"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                     android:textColor="@color/rescue_on_surface_variant"
                     android:visibility="gone" />
         </LinearLayout>
 
+        <!-- Schedule -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Thời gian chiến dịch"
+            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/campaignDetailSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Body"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Description -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chi tiết chiến dịch"
+            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section"
+            android:textColor="@color/rescue_on_surface"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/campaignDetailDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Body"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="16dp" />
+
         <!-- Location and rescue mode, directly on the page background -->
         <LinearLayout
-            android:id="@+id/campaignLocationCard"
+            android:id="@+id/campaignLocationCard" android:layout_marginTop="8dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="0dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Điểm cứu trợ và Vị trí"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section"
                     android:textColor="@color/rescue_on_surface"
                     android:textStyle="bold"
                     android:layout_marginBottom="8dp" />
@@ -226,17 +262,17 @@
                     android:paddingTop="6dp"
                     android:paddingBottom="6dp"
                     android:background="@drawable/bg_fixed_badge"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                     android:textColor="@color/rescue_on_primary_container"
                     android:textStyle="bold"
                     android:layout_marginBottom="8dp" />
 
                 <!-- Location Address -->
-                <TextView 
-                    android:id="@+id/campaignDetailLocation" 
+                <TextView
+                    android:id="@+id/campaignDetailLocation"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Body"
                     android:textColor="@color/rescue_on_surface"
                     android:layout_marginBottom="6dp" />
 
@@ -245,34 +281,34 @@
                     android:id="@+id/campaignDistanceText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                     android:textColor="@color/rescue_secondary"
                     android:textStyle="bold"
                     android:layout_marginBottom="12dp"
                     android:visibility="gone" />
 
-                <com.google.android.material.button.MaterialButton
+                <com.google.android.material.button.MaterialButton android:textSize="16sp"
                     android:id="@+id/campaignDirectionsButton"
                     android:layout_width="match_parent"
-                    android:layout_height="@dimen/touch_target_min"
+                    android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                     android:text="Mở chỉ đường trên bản đồ"
                     style="@style/Widget.Material3.Button.OutlinedButton" />
         </LinearLayout>
 
         <!-- Product and purchase actions, directly on the page background -->
         <LinearLayout
-            android:id="@+id/campaignProductActionCard"
+            android:id="@+id/campaignProductActionCard" android:layout_marginTop="12dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="0dp">
 
-                <TextView
+                <TextView android:fontFamily="@font/ibm_plex_sans"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/campaign_product_section_title"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.TitleSmall"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section"
                     android:textColor="@color/rescue_on_surface"
                     android:textStyle="bold"
                     android:layout_marginBottom="8dp" />
@@ -304,7 +340,7 @@
                             android:id="@+id/campaignProductName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
+                            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section"
                             android:textColor="@color/rescue_on_surface"
                             android:textStyle="bold" />
 
@@ -312,7 +348,7 @@
                             android:id="@+id/campaignProductPrice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
+                            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section"
                             android:textColor="@color/rescue_primary"
                             android:textStyle="bold"
                             android:layout_marginTop="2dp" />
@@ -321,7 +357,7 @@
                             android:id="@+id/campaignBatchHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                            android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                             android:textColor="@color/rescue_on_surface_variant"
                             android:layout_marginTop="4dp" />
                     </LinearLayout>
@@ -333,189 +369,125 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Lô nông sản giải cứu:"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Meta"
                     android:textColor="@color/rescue_on_surface_variant"
                     android:layout_marginBottom="4dp" />
 
-                <Spinner
+                <Spinner android:textSize="16sp"
                     android:id="@+id/campaignBatchSpinner"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/touch_target_min"
                     android:layout_marginBottom="12dp" />
 
-                <!-- Quantity input row -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/campaign_quantity_label"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Body"
+                    android:layout_marginBottom="8dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
                     android:layout_marginBottom="16dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/campaign_quantity_label"
-                        android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
-                        android:textColor="@color/rescue_on_surface" />
-
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/campaignQuantityDecreaseButton"
                         style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:padding="0dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:insetLeft="0dp"
-                        android:insetRight="0dp"
-                        android:text="-"
-                        android:textSize="18sp" />
-
-                    <EditText
-                        android:id="@+id/campaignQuantityInput"
-                        android:layout_width="60dp"
-                        android:layout_height="44dp"
-                        android:gravity="center"
-                        android:inputType="numberDecimal"
-                        android:text="1"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:background="@drawable/bg_quantity_stepper"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginEnd="4dp" />
-
+                        android:layout_width="48dp" android:layout_height="48dp"
+                        android:minWidth="48dp" android:padding="0dp"
+                        android:insetTop="0dp" android:insetBottom="0dp"
+                        android:contentDescription="@string/campaign_decrease_quantity"
+                        android:text="−" android:textSize="22sp" />
+                    <EditText android:id="@+id/campaignQuantityInput"
+                        android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="48dp" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"
+                        android:gravity="center" android:inputType="numberDecimal"
+                        android:contentDescription="@string/campaign_quantity_label"
+                        android:singleLine="true" android:text="1" android:textSize="18sp"
+                        android:textStyle="bold" android:background="@drawable/bg_quantity_stepper" />
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/campaignQuantityIncreaseButton"
                         style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:padding="0dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:insetLeft="0dp"
-                        android:insetRight="0dp"
-                        android:text="+"
-                        android:textSize="18sp" />
-
-                    <TextView
-                        android:id="@+id/campaignQuantityUnit"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="kg"
-                        android:layout_marginStart="8dp"
-                        android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
-                        android:textColor="@color/rescue_on_surface_variant" />
+                        android:layout_width="48dp" android:layout_height="48dp"
+                        android:minWidth="48dp" android:padding="0dp"
+                        android:insetTop="0dp" android:insetBottom="0dp"
+                        android:contentDescription="@string/campaign_increase_quantity"
+                        android:text="+" android:textSize="22sp" />
+                    <TextView android:id="@+id/campaignQuantityUnit"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp" android:text="kg"
+                        android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Body" />
                 </LinearLayout>
 
                 <!-- 2 Action Buttons -->
-                <LinearLayout
+                <com.rescuefarm.ui.common.ResponsiveActionLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <com.google.android.material.button.MaterialButton
+                    <com.google.android.material.button.MaterialButton android:textSize="16sp"
                         android:id="@+id/campaignAddToCartButton"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="0dp"
-                        android:layout_height="@dimen/touch_target_min"
+                        android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
                         android:text="@string/add_to_cart_action" />
 
-                    <com.google.android.material.button.MaterialButton
+                    <com.google.android.material.button.MaterialButton android:textSize="16sp"
                         android:id="@+id/campaignRescueNowButton"
                         android:layout_width="0dp"
-                        android:layout_height="@dimen/touch_target_min"
+                        android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:layout_weight="1"
                         android:text="@string/campaign_rescue_now_action" />
-                </LinearLayout>
+                </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
         </LinearLayout>
-        
-        <!-- Schedule -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Thời gian chiến dịch"
-            android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
-            android:textColor="@color/rescue_on_surface_variant"
-            android:layout_marginBottom="4dp" />
-        
-        <TextView 
-            android:id="@+id/campaignDetailSchedule" 
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
-            android:textColor="@color/rescue_on_surface"
-            android:layout_marginBottom="16dp" />
-        
-        <!-- Description -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Chi tiết chiến dịch"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
-            android:textColor="@color/rescue_on_surface"
-            android:layout_marginBottom="8dp" />
-        
-        <TextView 
-            android:id="@+id/campaignDetailDescription" 
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
-            android:textColor="@color/rescue_on_surface_variant"
-            android:lineSpacingExtra="4dp"
-            android:layout_marginBottom="16dp" />
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" android:orientation="vertical" android:padding="14dp">
+            android:layout_marginBottom="16dp" android:orientation="vertical" android:padding="0dp">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Cộng đồng đồng hành" android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
-                <TextView android:id="@+id/campaignEngagementSummary" android:layout_width="match_parent"
+                    android:text="Cộng đồng đồng hành" android:textAppearance="@style/TextAppearance.RescueFarm.CampaignDetail.Section" />
+                <TextView android:textSize="16sp" android:id="@+id/campaignEngagementSummary" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:layout_marginTop="6dp" />
                 <FrameLayout android:id="@+id/campaignCareButtonFrame"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="8dp">
-                    <com.google.android.material.button.MaterialButton android:id="@+id/campaignCareButton"
+                    <com.google.android.material.button.MaterialButton android:textSize="16sp" android:id="@+id/campaignCareButton"
                         style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
                         android:layout_height="wrap_content" android:text="Quan tâm"
                         app:icon="@drawable/ic_heart" app:iconGravity="textStart"
                         app:iconTint="@color/rescue_primary" />
                 </FrameLayout>
-                <com.google.android.material.textfield.TextInputEditText android:id="@+id/campaignCommentInput"
+                <com.google.android.material.textfield.TextInputEditText android:textSize="16sp" android:id="@+id/campaignCommentInput"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:hint="Viết bình luận về chiến dịch" android:minLines="1" android:maxLines="4" />
-                <com.google.android.material.button.MaterialButton android:id="@+id/campaignSendCommentButton"
+                <com.google.android.material.button.MaterialButton android:textSize="16sp" android:id="@+id/campaignSendCommentButton"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="Gửi bình luận" />
                 <LinearLayout android:id="@+id/campaignCommentContainer" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
         </LinearLayout>
-        
+
         <!-- Secondary Buttons -->
-        <com.google.android.material.button.MaterialButton 
+        <com.google.android.material.button.MaterialButton android:textSize="16sp"
             android:id="@+id/viewCampaignProductsButton"
-            android:layout_width="match_parent" 
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Xem tất cả sản phẩm trong chiến dịch"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_marginBottom="8dp" />
-        
-        <com.google.android.material.button.MaterialButton 
+
+        <com.google.android.material.button.MaterialButton android:textSize="16sp"
             android:id="@+id/shareCampaignButton"
-            android:layout_width="match_parent" 
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="Chia sẻ chiến dịch"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_marginBottom="8dp" />
-        
-        <com.google.android.material.button.MaterialButton 
+
+        <com.google.android.material.button.MaterialButton android:textSize="16sp"
             android:id="@+id/reportCampaignButton"
-            android:layout_width="match_parent" 
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/report_action"
             style="@style/Widget.Material3.Button.TextButton" />
-        
-    </LinearLayout>
+
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

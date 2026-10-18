@@ -2,8 +2,8 @@ const express = require('express');
 const {enqueueNotification, digest} = require('./notification-outbox');
 const text = v => typeof v === 'string' ? v.trim() : '';
 const fail = (status, message) => Object.assign(Error(message), {status});
-const collections = {ORDER: 'orders', SELLER_APPLICATION: 'sellerApplications', CAMPAIGN: 'campaigns', REPORT: 'reports', PRODUCT: 'products', PROMOTION: 'products', REVIEW: 'reviews', POST: 'posts', USER: 'users'};
-const sections = {ORDER: 'ORDERS', SELLER_APPLICATION: 'SELLER_APPLICATIONS', CAMPAIGN: 'CAMPAIGNS', REPORT: 'REPORTS', PRODUCT: 'PRODUCTS', REVIEW: 'REVIEWS', POST: 'POSTS', USER: 'USERS'};
+const collections = {ORDER: 'orders', SELLER_APPLICATION: 'sellerApplications', CAMPAIGN: 'campaigns', REPORT: 'reports', PRODUCT: 'products', PROMOTION: 'products', REVIEW: 'reviews', USER: 'users'};
+const sections = {ORDER: 'ORDERS', SELLER_APPLICATION: 'SELLER_APPLICATIONS', CAMPAIGN: 'CAMPAIGNS', REPORT: 'REPORTS', PRODUCT: 'PRODUCTS', REVIEW: 'REVIEWS', USER: 'USERS'};
 function createNotificationsApi({db, admin, authenticate}) {
   const router = express.Router();
   async function resolve(caller, id) {
@@ -19,7 +19,7 @@ function createNotificationsApi({db, admin, authenticate}) {
       if (found.length === 1) type = found[0].type;
     }
     if (!type || !referenceId) return {destination: 'notificationFragment', args: {}, message: 'Thông báo cũ chưa có thông tin điều hướng cụ thể.'};
-    if (!Object.hasOwn(collections, type)) throw fail(409, 'Loại nội dung thông báo chưa được hỗ trợ.');
+    if (!Object.hasOwn(collections, type)) return {destination: 'notificationFragment', args: {}, message: 'Nội dung thông báo không còn khả dụng.'};
     const source = await db.collection(collections[type]).doc(referenceId).get();
     if (!source.exists && type === 'SELLER_APPLICATION' && caller.role === 'SELLER' && referenceId === caller.uid)
       return {destination: 'sellerProfileFragment', args: {}, message: 'Kết quả được cập nhật trên hồ sơ tài khoản người bán.'};
@@ -45,7 +45,6 @@ function createNotificationsApi({db, admin, authenticate}) {
     if (['PRODUCT', 'PROMOTION'].includes(type) && (owner || source.get('status') === 'ACTIVE')) return {destination: 'productDetailFragment', args: {productId: referenceId}};
     if (type === 'USER' && referenceId === caller.uid) return {destination: 'profileFragment', args: {}};
     if (type === 'REVIEW' && source.get('customerId') === caller.uid) return {destination: 'reviewFragment', args: {productId: source.get('productId')}};
-    if (type === 'POST' && (owner || source.get('status') === 'PUBLISHED')) return {destination: 'postDetailFragment', args: {postId: referenceId}};
     throw fail(403, 'Nội dung không khả dụng với tài khoản hiện tại.');
   }
   router.post('/notifications/resolve', async (req, res, next) => {
@@ -92,7 +91,7 @@ function createNotificationsApi({db, admin, authenticate}) {
     try {
       const caller = await authenticate(req, ['SELLER', 'CUSTOMER']), id = text(req.body.referenceId);
       const type = req.body.eventType === 'REPORT' ? 'REPORT' : req.body.eventType === 'SELLER_APPLICATION' ? 'SELLER_APPLICATION' : text(req.body.resourceType);
-      if (!['REPORT', 'SELLER_APPLICATION', 'CAMPAIGN', 'POST'].includes(type)) throw fail(400, 'Loại nội dung không hợp lệ.');
+      if (!['REPORT', 'SELLER_APPLICATION', 'CAMPAIGN'].includes(type)) throw fail(400, 'Loại nội dung không hợp lệ.');
       const source = await db.collection(collections[type]).doc(id).get();
       if (!source.exists || (source.get('sellerId') || source.get('reporterId') || source.id) !== caller.uid
           || !['PENDING', 'PENDING_APPROVAL'].includes(source.get('status'))) throw fail(403, 'Nội dung không thuộc người gửi hoặc không chờ duyệt.');

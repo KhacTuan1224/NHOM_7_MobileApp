@@ -161,7 +161,7 @@ public class CartFragment extends Fragment {
             empty.setText(R.string.cart_empty);
             empty.setPadding(dp(16), dp(32), dp(16), dp(32));
             empty.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            empty.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge);
+            empty.setTextAppearance(R.style.TextAppearance_RescueFarm_Body);
             empty.setTextColor(requireContext().getColor(R.color.rescue_on_surface_variant));
             groups.addView(empty);
             summary.setText(getString(R.string.cart_summary_format, 0, 0, money.format(0)));
@@ -224,7 +224,6 @@ public class CartFragment extends Fragment {
         CheckBox check = row.findViewById(R.id.cartItemCheck);
         ShapeableImageView image = row.findViewById(R.id.cartItemImage);
         TextView title = row.findViewById(R.id.cartItemTitle);
-        TextView batch = row.findViewById(R.id.cartItemBatch);
         TextView unitPrice = row.findViewById(R.id.cartItemUnitPrice);
         TextView total = row.findViewById(R.id.cartItemTotal);
         TextView quantity = row.findViewById(R.id.cartItemQuantity);
@@ -255,9 +254,6 @@ public class CartFragment extends Fragment {
         } else {
             image.setImageResource(R.drawable.ic_placeholder_food);
         }
-
-        // Lô hàng
-        batch.setText(String.format("Lô: %s", item.getBatchId()));
 
         // Đơn giá & Thành tiền
         unitPrice.setText(String.format("%s / %s", money.format(item.getUnitPrice()), unit));

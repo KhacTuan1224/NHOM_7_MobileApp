@@ -23,6 +23,9 @@ public interface CampaignRepository {
     }
 
     LiveData<List<RescueCampaign>> observeActiveCampaigns();
+    default LiveData<List<RescueCampaign>> observePublicCampaignPage() { return observeActiveCampaigns(); }
+    default void refreshPublicCampaignPage(boolean reset, ActionCallback callback) { refreshActiveCampaigns(callback); }
+    default boolean hasMorePublicCampaigns() { return false; }
     default LiveData<List<Banner>> observeActiveBanners() {
         return new MutableLiveData<>(Collections.emptyList());
     }

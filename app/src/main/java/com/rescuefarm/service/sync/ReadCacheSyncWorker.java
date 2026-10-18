@@ -14,8 +14,6 @@ import com.rescuefarm.data.repository.CampaignRepository;
 import com.rescuefarm.data.repository.CampaignRepositoryFactory;
 import com.rescuefarm.data.repository.OrderRepository;
 import com.rescuefarm.data.repository.OrderRepositoryFactory;
-import com.rescuefarm.data.repository.PostRepository;
-import com.rescuefarm.data.repository.PostRepositoryFactory;
 import com.rescuefarm.data.repository.ProductRepository;
 import com.rescuefarm.data.repository.ProductRepositoryFactory;
 import com.rescuefarm.data.remote.firebase.FirebaseConfiguration;
@@ -39,19 +37,17 @@ public final class ReadCacheSyncWorker extends Worker {
         boolean force = getInputData().getBoolean("force", false);
         ProductRepository product = ProductRepositoryFactory.create(context);
         CampaignRepository campaign = CampaignRepositoryFactory.create(context);
-        PostRepository post = PostRepositoryFactory.create(context);
         OrderRepository order = OrderRepositoryFactory.create(context);
         try {
             boolean success = syncCatalog(product, force)
                     & syncCampaigns(campaign, force)
                     & syncBanners(campaign, force)
-                    & syncFeed(post, force)
                     & syncOrders(order, force);
             RescueFarmDatabase.getInstance(context).orderCacheDao().deleteOlderThan(
                     System.currentTimeMillis() - CacheSyncPolicy.HARD_EXPIRY_MILLIS);
             return success ? Result.success() : Result.retry();
         } finally {
-            product.close(); campaign.close(); post.close(); order.close();
+            product.close(); campaign.close(); order.close();
         }
     }
 
@@ -82,14 +78,7 @@ public final class ReadCacheSyncWorker extends Worker {
         }); return finish(scope, latch, ok);
     }
 
-    private boolean syncFeed(PostRepository repository, boolean force) {
-        String scope = CacheSyncPolicy.FEED; if (!begin(scope, force)) return true;
-        CountDownLatch latch = new CountDownLatch(1); AtomicBoolean ok = new AtomicBoolean();
-        repository.refreshFeed(true, 30, new PostRepository.PageCallback() {
-            public void onSuccess(boolean more){ok.set(true);latch.countDown();}
-            public void onError(PostRepository.ErrorCode error,String message){latch.countDown();}
-        }); return finish(scope, latch, ok);
-    }
+
 
     private boolean syncOrders(OrderRepository repository, boolean force) {
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""

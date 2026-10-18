@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class CampaignDetailFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination commentPages = new com.rescuefarm.ui.common.ListPagination();
     
     private final android.os.Handler clock = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable timeTick = new Runnable() {
@@ -361,16 +362,18 @@ public class CampaignDetailFragment extends Fragment {
     private void renderStoryImages(View root, RescueCampaign value) {
         LinearLayout gallery = root.findViewById(R.id.campaignStoryGallery);
         if (gallery == null) return;
+        if (value.getImageUrls().equals(gallery.getTag())) return;
+        gallery.setTag(new java.util.ArrayList<>(value.getImageUrls()));
         gallery.removeAllViews();
         for (String url : value.getImageUrls()) {
             ImageView image = new ImageView(requireContext());
             int width = Math.round(280 * getResources().getDisplayMetrics().density);
-            int height = Math.round(180 * getResources().getDisplayMetrics().density);
+            int height = Math.round(210 * getResources().getDisplayMetrics().density);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
-            params.rightMargin = Math.round(8 * getResources().getDisplayMetrics().density);
-            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            params.leftMargin = params.rightMargin = Math.round(4 * getResources().getDisplayMetrics().density);
+            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
             image.setContentDescription("Ảnh nội dung chiến dịch");
-            Glide.with(this).load(url).centerCrop().into(image); gallery.addView(image, params);
+            Glide.with(this).load(url).fitCenter().dontAnimate().into(image); gallery.addView(image, params);
         }
         gallery.setVisibility(value.getImageUrls().isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -480,9 +483,10 @@ public class CampaignDetailFragment extends Fragment {
         careSelected = value.getCurrentUserReaction() == ReactionType.CARE;
         updateCareButton();
         engagementSummary.setText("Quan tâm " + counts.getOrDefault(ReactionType.CARE, 0));
+        commentPages.render(commentContainer, value.getComments(), page -> {
         commentContainer.removeAllViews();
-        if (value.getComments().isEmpty()) { commentContainer.addView(commentText("Chưa có bình luận.")); return; }
-        for (Comment comment : value.getComments()) {
+        if (page.isEmpty()) { commentContainer.addView(commentText("Chưa có bình luận.")); return; }
+        for (Comment comment : page) {
             LinearLayout row = new LinearLayout(requireContext()); row.setOrientation(LinearLayout.VERTICAL);
             row.addView(commentText(comment.getContent()
                     + (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED ? " · đã chỉnh sửa" : "")));
@@ -510,6 +514,7 @@ public class CampaignDetailFragment extends Fragment {
             }
             commentContainer.addView(row);
         }
+        });
     }
 
     private void editCampaignComment(Comment comment) {
@@ -522,7 +527,7 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private TextView commentText(String value) {
-        TextView text = new TextView(requireContext()); text.setText(value); text.setPadding(8, 10, 8, 10); return text;
+        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(16); text.setPadding(8, 10, 8, 10); return text;
     }
 
     @Override public void onDestroy() {

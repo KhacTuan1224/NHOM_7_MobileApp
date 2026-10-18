@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class CampaignListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private CampaignViewModel viewModel; private LinearLayout container; private TextView empty;
     private final CampaignLocationService distanceService = new CampaignLocationService();
     private LocationProvider locationProvider; private List<RescueCampaign> campaigns = new ArrayList<>();
@@ -46,19 +47,20 @@ public class CampaignListFragment extends Fragment {
         locationProvider = LocationProviderFactory.create(requireContext());
         viewModel = new ViewModelProvider(this, new CampaignViewModelFactory(requireContext()))
                 .get(CampaignViewModel.class);
-        viewModel.getActiveCampaigns().observe(getViewLifecycleOwner(), values -> {
+        viewModel.getPublicCampaigns().observe(getViewLifecycleOwner(), values -> {
             campaigns = values == null ? new ArrayList<>() : values; render();
         });
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            render();
             if (value.getStatus() == CampaignScreenState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
         });
-        view.findViewById(R.id.refreshCampaignButton).setOnClickListener(v -> viewModel.refreshActive());
+        view.findViewById(R.id.refreshCampaignButton).setOnClickListener(v -> { pagination.reset(); viewModel.refreshPublicPage(true); });
         view.findViewById(R.id.nearbyCampaignButton).setOnClickListener(v -> requestNearby());
         view.findViewById(R.id.allCampaignButton).setOnClickListener(v -> {
             nearbyLatitude = null; nearbyLongitude = null; render();
         });
-        viewModel.refreshActive();
+        viewModel.refreshPublicPage(true);
     }
     private void requestNearby() {
         boolean fine = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
@@ -95,7 +97,11 @@ public class CampaignListFragment extends Fragment {
         if (nearbyLatitude != null) shown.sort(Comparator.comparingDouble(value ->
                 distanceService.distanceToCampaign(nearbyLatitude, nearbyLongitude, value, now)));
         empty.setVisibility(shown.isEmpty() ? View.VISIBLE : View.GONE);
-        for (RescueCampaign campaign : shown) container.addView(card(campaign, now));
+        pagination.remote(viewModel::hasMorePublicCampaigns, viewModel::isPublicPageLoading,
+                () -> viewModel.refreshPublicPage(false)).render(container, shown, page -> {
+            container.removeAllViews();
+            for (RescueCampaign campaign : page) container.addView(card(campaign, now));
+        });
     }
     private View card(RescueCampaign campaign, Date now) {
         MaterialCardView card = new MaterialCardView(requireContext());
@@ -103,6 +109,7 @@ public class CampaignListFragment extends Fragment {
         card.setLayoutParams(params); card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
         LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14),dp(14),dp(14),dp(14));
         TextView title = text(campaign.getTitle(), 18, true);
+        com.rescuefarm.ui.common.AppTypography.title(title);
         TextView badge = text(campaign.getHighlightLabel(), 14, true);
         TextView progress = text(getString(R.string.campaign_progress_format,
                 campaign.calculateProgress(), campaign.getRescuedQuantity(), campaign.getTargetQuantity()), 15, false);
@@ -119,7 +126,7 @@ public class CampaignListFragment extends Fragment {
     }
     private TextView text(String value, int size, boolean bold) {
         TextView view = new TextView(requireContext()); view.setText(value); view.setTextSize(size);
-        if (bold) view.setTypeface(view.getTypeface(), 1); return view;
+        if (bold) view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD); return view;
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     @Override public void onDestroyView() { if (locationProvider != null) locationProvider.close(); super.onDestroyView(); }

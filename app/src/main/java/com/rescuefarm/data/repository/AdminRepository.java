@@ -8,7 +8,7 @@ import java.util.Date;
 
 public interface AdminRepository {
     enum Section {
-        SELLER_APPLICATIONS("sellerApplications"), USERS("users"), POSTS("posts"),
+        SELLER_APPLICATIONS("sellerApplications"), USERS("users"),
         PRODUCTS("products"), CAMPAIGNS("campaigns"), CATEGORIES("categories"),
         BANNERS("banners"), REVIEWS("reviews"), REPORTS("reports"), ORDERS("orders"),
         SHIPPING_SETTINGS(""),

@@ -1,5 +1,7 @@
 # Đối chiếu Customer với final.md — sau khi hoàn thiện 7 mục
 
+> Báo cáo tại thời điểm kiểm tra trước. Phần Post đã được ngừng sử dụng sau đó; xem [kết quả rà soát và dọn Post](post-retirement-2026-10-18.md).
+
 Cập nhật: 14/10/2026 (Asia/Saigon).
 
 **Cả 7 mục trước đó “Chưa đạt” đã được hoàn thiện trong source và kiểm tra bằng unit tests/Firestore Emulator.** Các mục “Một phần” ngoài phạm vi 7 yêu cầu vẫn được ghi rõ bên dưới. Backend và Firestore rules mới cần được triển khai cùng APK mới để các thay đổi hoạt động trên môi trường thật.

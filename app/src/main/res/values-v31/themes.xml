@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.RescueFarm" parent="Base.Theme.RescueFarm">
+        <item name="android:windowBackground">@drawable/bg_launch_logo</item>
+        <item name="android:windowSplashScreenBackground">@android:color/white</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/white</item>
+    </style>
+</resources>

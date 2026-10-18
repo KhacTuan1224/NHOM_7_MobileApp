@@ -71,13 +71,25 @@ public final class AdminResourceFragment extends Fragment {
     private String selectedAssetId = "";
     private View pendingImageButton;
     private TextView pendingImageStatus;
+    private ImageView pendingImagePreview;
+    private CloudinaryUploadUi.Result pendingImageResult;
     private final ActivityResultLauncher<String> imagePicker = registerForActivityResult(
             new ActivityResultContracts.GetContent(), uri -> {
                 if (selectedAssetId.isEmpty()) return;
                 String targetId = selectedAssetId;
                 String assetType = section == Section.CATEGORIES ? "category" : "banner";
-                CloudinaryUploadUi.upload(this, uri, assetType, targetId, 0, pendingImageButton, pendingImageStatus,
-                        null, url -> viewModel.setResourceImage(targetId, url));
+                if (uri == null) return;
+                ImageView preview = pendingImagePreview;
+                TextView status = pendingImageStatus;
+                CloudinaryUploadUi.Result result = pendingImageResult;
+                pendingImageResult = null;
+                status.setVisibility(View.VISIBLE);
+                CloudinaryUploadUi.upload(this, uri, assetType, targetId, 0, pendingImageButton, status,
+                        preview, url -> {
+                            if (result != null) { result.onUploaded(url); return; }
+                            preview.setVisibility(View.VISIBLE); status.setVisibility(View.GONE);
+                            viewModel.setResourceImage(targetId, url);
+                        });
             });
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -183,6 +195,9 @@ public final class AdminResourceFragment extends Fragment {
         container.removeAllViews();
         renderItems(state.getItems());
         loadMoreButton.setVisibility(viewModel.hasMore() ? View.VISIBLE : View.GONE);
+        loadMoreButton.setEnabled(state.getStatus() != AdminScreenState.Status.LOADING);
+        ((TextView) loadMoreButton).setText(state.getStatus() == AdminScreenState.Status.LOADING
+                ? R.string.pagination_loading : R.string.pagination_more);
     }
 
     private void renderShippingSettings() {
@@ -267,36 +282,81 @@ public final class AdminResourceFragment extends Fragment {
 
     private void renderItem(AdminListItem item) {
         LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, 16, 0, 16);
-        TextView text = new TextView(requireContext());
-        text.setText(getString(R.string.admin_resource_row_format, item.getTitle(), item.getSubtitle(),
-                AdminDetailFormatter.status(item.getStatus()), item.getId()));
-        row.addView(text);
-        Button detail = button(R.string.admin_view_detail_action);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        int padding = listDp(14);
+        row.setPadding(padding, padding, padding, padding);
+        LinearLayout information = new LinearLayout(requireContext());
+        information.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams informationParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        informationParams.setMarginEnd(listDp(12));
+        row.addView(information, informationParams);
+        addListText(information, item.getTitle(), 18, true);
+        if (!item.getSubtitle().isEmpty()) addListText(information, item.getSubtitle(), 16, false);
+        addListText(information, "Trạng thái: " + AdminDetailFormatter.status(item.getStatus()), 16, false);
+        addListText(information, "ID: " + item.getId(), 14, false);
+        LinearLayout actions = new LinearLayout(requireContext());
+        actions.setOrientation(LinearLayout.VERTICAL);
+        row.addView(actions, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        Button detail = listButton("Chi tiết", getString(R.string.admin_view_detail_action));
         detail.setOnClickListener(v -> openDetail(item));
-        row.addView(detail);
+        actions.addView(detail);
+        android.graphics.drawable.GradientDrawable outline = new android.graphics.drawable.GradientDrawable();
+        outline.setColor(android.graphics.Color.TRANSPARENT);
+        outline.setCornerRadius(listDp(16));
+        outline.setStroke(listDp(1), ((MaterialButton) detail).getStrokeColor().getDefaultColor());
+        row.setBackground(outline);
         if (section == Section.CATEGORIES || section == Section.BANNERS) {
-            Button edit = buttonText("Chỉnh sửa thông tin");
-            edit.setOnClickListener(v -> showCatalogEditor(item)); row.addView(edit);
+            Button edit = listButton("Sửa", "Chỉnh sửa thông tin");
+            edit.setOnClickListener(v -> showCatalogEditor(item)); actions.addView(edit);
+            ImageView preview = catalogImage(information, item.getImageUrl());
             TextView imageStatus = new TextView(requireContext());
-            imageStatus.setText(item.getImageUrl().isEmpty() ? R.string.no_image_selected
-                    : R.string.category_banner_image_exists);
-            row.addView(imageStatus);
-            Button upload = button(R.string.upload_category_banner_image_action);
+            imageStatus.setVisibility(View.GONE);
+            information.addView(imageStatus);
+            Button upload = listButton("Tải ảnh", getString(R.string.upload_category_banner_image_action));
             upload.setOnClickListener(v -> {
-                selectedAssetId = item.getId(); pendingImageButton = upload; pendingImageStatus = imageStatus;
+                selectedAssetId = item.getId(); pendingImageButton = upload; pendingImageStatus = imageStatus; pendingImagePreview = preview;
+                pendingImageResult = null;
                 imagePicker.launch("image/*");
             });
-            row.addView(upload);
-            Button toggle = button(item.isActive() ? R.string.admin_disable_action
-                    : R.string.admin_enable_action);
+            actions.addView(upload);
+            Button toggle = listButton(item.isActive() ? "Ẩn" : "Hiện", getString(item.isActive()
+                    ? R.string.admin_disable_action : R.string.admin_enable_action));
             toggle.setOnClickListener(v -> viewModel.setActive(item.getId(), !item.isActive(),
                     reason.getText().toString().trim()));
-            row.addView(toggle);
+            actions.addView(toggle);
         }
-        container.addView(row);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardParams.topMargin = listDp(6); cardParams.bottomMargin = listDp(6);
+        container.addView(row, cardParams);
     }
+
+    private void addListText(LinearLayout parent, String value, int size, boolean bold) {
+        TextView text = new TextView(requireContext());
+        text.setText(value); text.setTextSize(size);
+        text.setTextColor(requireContext().getColor(bold ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
+        if (bold) text.setTypeface(text.getTypeface(), android.graphics.Typeface.BOLD);
+        if (bold) com.rescuefarm.ui.common.AppTypography.title(text);
+        text.setPadding(0, 0, 0, listDp(5));
+        parent.addView(text, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+    }
+
+    private Button listButton(String label, String description) {
+        MaterialButton button = (MaterialButton) buttonText(label);
+        button.setContentDescription(description);
+        button.setMinWidth(0); button.setMinimumWidth(0);
+        button.setMinHeight(listDp(40)); button.setMinimumHeight(listDp(40));
+        button.setPaddingRelative(listDp(10), listDp(4), listDp(10), listDp(4));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = android.view.Gravity.END; params.topMargin = listDp(3); params.bottomMargin = listDp(3);
+        button.setLayoutParams(params);
+        return button;
+    }
+
+    private int listDp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
     private void showCatalogEditor(AdminListItem item) {
         boolean editing = item != null;
@@ -316,34 +376,63 @@ public final class AdminResourceFragment extends Fragment {
             fields.addView(description);
         }
         final EditText descriptionField = description;
-        EditText image = editor("Cloudinary image URL (có thể tải ảnh sau khi tạo)"); fields.addView(image);
+        Button upload = buttonText("Tải ảnh từ thiết bị"); fields.addView(upload);
+        TextView uploadStatus = new TextView(requireContext()); uploadStatus.setVisibility(View.GONE); fields.addView(uploadStatus);
+        final String[] originalImageUrl = {editing ? item.getImageUrl() : ""};
+        ImageView imagePreview = catalogImage(fields, originalImageUrl[0]);
+        Button externalImage = buttonText("Dán link ảnh ngoài (HTTPS)"); fields.addView(externalImage);
+        EditText image = editor("Dán đường dẫn ảnh HTTPS");
+        image.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        image.setVisibility(View.GONE); fields.addView(image);
+        externalImage.setOnClickListener(v -> {
+            image.setVisibility(image.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+            if (image.getVisibility() == View.VISIBLE) image.requestFocus();
+        });
+        image.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence value, int start, int count, int after) { }
+            public void onTextChanged(CharSequence value, int start, int before, int count) {
+                showCatalogImage(imagePreview, value.toString().trim());
+            }
+            public void afterTextChanged(android.text.Editable value) { }
+        });
         EditText order = editor("Thứ tự hiển thị (0–10000)"); order.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); fields.addView(order);
-        EditText campaign = null, start = null, end = null;
+        Button campaign = null;
+        final String[] selectedCampaignId = {""};
+        EditText start = null, end = null;
         if (!category) {
-            campaign = editor("Campaign ID (không bắt buộc)"); fields.addView(campaign);
+            addDetailText(fields, "Chiến dịch liên kết (không bắt buộc)");
+            campaign = buttonText("Không liên kết chiến dịch"); fields.addView(campaign);
             start = dateEditor("Ngày bắt đầu (YYYY-MM-DD)"); fields.addView(start);
             end = dateEditor("Ngày kết thúc (YYYY-MM-DD)"); fields.addView(end);
             Calendar defaults = Calendar.getInstance();
             start.setText(formatDay(defaults.getTime())); defaults.add(Calendar.DAY_OF_YEAR, 7);
             end.setText(formatDay(defaults.getTime()));
         }
-        final EditText campaignField = campaign, startField = start, endField = end;
-        CheckBox active = new CheckBox(requireContext()); active.setText("Đang hiển thị"); fields.addView(active);
+        final Button campaignField = campaign;
+        if (campaignField != null) campaignField.setOnClickListener(v ->
+                chooseBannerCampaign(campaignField, selectedCampaignId));
+        final EditText startField = start, endField = end;
+        CheckBox active = new CheckBox(requireContext()); active.setText("Đang hiển thị"); active.setChecked(true); fields.addView(active);
         EditText note = editor("Lý do quản trị (bắt buộc khi tắt) "); note.setMinLines(2); fields.addView(note);
+        final boolean[] detailLoaded = {!editing};
+        upload.setEnabled(!editing);
         if (editing) {
             viewModel.loadDetail(section, item.getId(), new AdminRepository.DetailCallback() {
                 @Override public void onSuccess(Map<String, Object> data) {
                     if (!isAdded()) return;
+                    detailLoaded[0] = true; upload.setEnabled(true);
                     name.setText(String.valueOf(data.get(category ? "name" : "title")));
                     if (category) descriptionField.setText(data.get("description") == null
                             ? "" : String.valueOf(data.get("description")));
-                    image.setText(String.valueOf(data.getOrDefault("imageUrl", "")));
+                    originalImageUrl[0] = data.get("imageUrl") == null ? "" : String.valueOf(data.get("imageUrl"));
+                    image.setText(originalImageUrl[0]);
                     order.setText(String.valueOf(data.getOrDefault("displayOrder", 0)));
                     active.setChecked(Boolean.TRUE.equals(data.get("active")));
                     note.setText("");
                     if (!category) {
                         Object campaignValue = data.get("campaignId");
-                        campaignField.setText(campaignValue == null ? "" : String.valueOf(campaignValue));
+                        selectedCampaignId[0] = campaignValue == null ? "" : String.valueOf(campaignValue);
+                        showSelectedCampaign(campaignField, selectedCampaignId);
                         startField.setText(formatDay(asDate(data.get("startDate"))));
                         endField.setText(formatDay(asDate(data.get("endDate"))));
                     }
@@ -354,17 +443,48 @@ public final class AdminResourceFragment extends Fragment {
             });
         }
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setTitle(editing ? "Chỉnh sửa " + (category ? "Category" : "Banner")
-                        : "Tạo " + (category ? "Category" : "Banner"))
-                .setView(fields).setNegativeButton("Hủy", null).setPositiveButton("Lưu", null).create();
+                .setTitle(editing ? "Chỉnh sửa " + (category ? "danh mục" : "ảnh quảng bá")
+                        : "Tạo " + (category ? "danh mục" : "ảnh quảng bá"))
+                .setView(scrollEditor(fields)).setNegativeButton("Hủy", null).setPositiveButton("Lưu", null).create();
+        upload.setOnClickListener(v -> {
+            String assetId = id.getText().toString().trim();
+            if (assetId.isEmpty() && !category) {
+                assetId = java.util.UUID.randomUUID().toString(); id.setText(assetId);
+            }
+            if (!assetId.matches("[A-Za-z0-9_-]{2,128}")) {
+                id.setError("Nhập ID gồm 2–128 chữ, số, dấu gạch ngang hoặc gạch dưới trước khi tải ảnh.");
+                id.requestFocus(); return;
+            }
+            id.setEnabled(false);
+            selectedAssetId = assetId; pendingImageButton = upload; pendingImageStatus = uploadStatus;
+            pendingImagePreview = imagePreview;
+            pendingImageResult = url -> {
+                if (!dialog.isShowing()) return;
+                image.setText(url); image.setError(null); imagePreview.setVisibility(View.VISIBLE);
+            };
+            imagePicker.launch("image/*");
+        });
         dialog.setOnShowListener(unused -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if (!detailLoaded[0] || !upload.isEnabled()) {
+                Toast.makeText(requireContext(), "Vui lòng chờ tải dữ liệu hoặc tải ảnh hoàn tất.", Toast.LENGTH_SHORT).show(); return;
+            }
             String resourceId = id.getText().toString().trim();
             String resourceName = name.getText().toString().trim();
             String displayImage = image.getText().toString().trim();
             String reasonText = note.getText().toString().trim();
+            if (!com.rescuefarm.service.admin.CatalogImagePolicy.isAllowed(displayImage, originalImageUrl[0])) {
+                image.setVisibility(View.VISIBLE); image.setError("Nhập đường dẫn ảnh HTTPS hợp lệ."); return;
+            }
+            if (resourceName.length() < (category ? 2 : 3) || resourceName.length() > 120) {
+                name.setError(category ? "Tên danh mục phải có từ 2 đến 120 ký tự." : "Tiêu đề phải có từ 3 đến 120 ký tự."); return;
+            }
+            if (!active.isChecked() && reasonText.length() < 3) {
+                note.setError("Nhập lý do tắt hiển thị (ít nhất 3 ký tự)."); return;
+            }
             int displayOrder;
             try { displayOrder = Integer.parseInt(order.getText().toString().trim()); }
             catch (NumberFormatException error) { order.setError("Nhập số thứ tự hợp lệ."); return; }
+            if (displayOrder < 0 || displayOrder > 10000) { order.setError("Thứ tự phải từ 0 đến 10000."); return; }
             Map<String, Object> values = new java.util.HashMap<>();
             values.put(category ? "name" : "title", resourceName);
             if (category) values.put("description", descriptionField.getText().toString().trim());
@@ -376,7 +496,7 @@ public final class AdminResourceFragment extends Fragment {
                 if (startDate == null || endDate == null || !endDate.after(startDate)) {
                     endField.setError("Nhập ngày hợp lệ; ngày kết thúc phải sau ngày bắt đầu."); return;
                 }
-                values.put("campaignId", campaignField.getText().toString().trim());
+                values.put("campaignId", selectedCampaignId[0]);
                 values.put("startDate", startDate); values.put("endDate", endDate);
             }
             viewModel.saveCatalogResource(resourceId, values, new AdminRepository.ActionCallback() {
@@ -390,6 +510,95 @@ public final class AdminResourceFragment extends Fragment {
             });
         }));
         dialog.show();
+    }
+
+    private void showSelectedCampaign(Button button, String[] selectedId) {
+        if (selectedId[0].isEmpty()) { button.setText("Không liên kết chiến dịch"); return; }
+        String requestedId = selectedId[0];
+        button.setText("Đang tải tên chiến dịch…");
+        viewModel.loadDetail(Section.CAMPAIGNS, requestedId, new AdminRepository.DetailCallback() {
+            @Override public void onSuccess(Map<String, Object> data) {
+                if (!isAdded() || !requestedId.equals(selectedId[0])) return;
+                Object title = data.get("title") == null ? data.get("name") : data.get("title");
+                button.setText(title == null ? "Chọn lại chiến dịch liên kết" : String.valueOf(title));
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                if (isAdded() && requestedId.equals(selectedId[0])) button.setText("Không tải được chiến dịch – nhấn chọn lại");
+            }
+        });
+    }
+
+    private void chooseBannerCampaign(Button button, String[] selectedId) {
+        button.setEnabled(false);
+        viewModel.loadBannerCampaigns(new AdminRepository.ListCallback() {
+            @Override public void onSuccess(List<AdminListItem> campaigns) {
+                button.setEnabled(true);
+                if (!isAdded() || !button.isAttachedToWindow()) return;
+                LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL);
+                int pad = (int) (20 * getResources().getDisplayMetrics().density); body.setPadding(pad, 0, pad, 0);
+                EditText search = editor("Tìm theo tên chiến dịch"); body.addView(search);
+                TextView empty = new TextView(requireContext()); empty.setText("Không có chiến dịch đang hoạt động phù hợp."); body.addView(empty);
+                android.widget.ListView list = new android.widget.ListView(requireContext());
+                body.addView(list, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        (int) (300 * getResources().getDisplayMetrics().density)));
+                list.setEmptyView(empty);
+                List<AdminListItem> visible = new java.util.ArrayList<>();
+                List<String> names = new java.util.ArrayList<>();
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, names);
+                list.setAdapter(adapter);
+                Runnable filter = () -> {
+                    String term = search.getText().toString().trim().toLowerCase(Locale.ROOT);
+                    visible.clear(); names.clear();
+                    for (AdminListItem campaign : campaigns) if (campaign.getTitle().toLowerCase(Locale.ROOT).contains(term)) {
+                        visible.add(campaign); names.add(campaign.getTitle());
+                    }
+                    adapter.notifyDataSetChanged();
+                };
+                search.addTextChangedListener(new android.text.TextWatcher() {
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+                    public void onTextChanged(CharSequence s, int start, int before, int count) { filter.run(); }
+                    public void afterTextChanged(android.text.Editable s) { }
+                });
+                filter.run();
+                AlertDialog picker = new AlertDialog.Builder(requireContext()).setTitle("Chọn chiến dịch")
+                        .setView(body).setNegativeButton("Hủy", null).setNeutralButton("Không liên kết", (dialog, which) -> {
+                            selectedId[0] = ""; button.setText("Không liên kết chiến dịch");
+                        }).create();
+                list.setOnItemClickListener((parent, row, position, itemId) -> {
+                    AdminListItem choice = visible.get(position); selectedId[0] = choice.getId();
+                    button.setText(choice.getTitle()); picker.dismiss();
+                });
+                picker.show();
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                button.setEnabled(true);
+                if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private View scrollEditor(View fields) {
+        android.widget.ScrollView scroll = new android.widget.ScrollView(requireContext());
+        scroll.addView(fields); return scroll;
+    }
+
+    private ImageView catalogImage(LinearLayout parent, String url) {
+        com.google.android.material.imageview.ShapeableImageView image =
+                new com.google.android.material.imageview.ShapeableImageView(requireContext());
+        float density = getResources().getDisplayMetrics().density;
+        image.setShapeAppearanceModel(image.getShapeAppearanceModel().toBuilder().setAllCornerSizes(12 * density).build());
+        image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        image.setContentDescription(section == Section.CATEGORIES ? "Ảnh danh mục" : "Ảnh quảng bá");
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (156 * density));
+        params.topMargin = (int) (8 * density); params.bottomMargin = (int) (8 * density);
+        parent.addView(image, params); showCatalogImage(image, url); return image;
+    }
+
+    private void showCatalogImage(ImageView image, String url) {
+        image.setVisibility(url.isEmpty() ? View.GONE : View.VISIBLE);
+        if (url.isEmpty()) { Glide.with(image).clear(image); return; }
+        Glide.with(image).load(url).placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_menu_gallery).centerCrop().into(image);
     }
 
     private EditText editor(String hint) {

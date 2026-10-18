@@ -13,14 +13,12 @@ import com.rescuefarm.data.local.dao.CampaignCacheDao;
 import com.rescuefarm.data.local.dao.BannerCacheDao;
 import com.rescuefarm.data.local.dao.CatalogCacheDao;
 import com.rescuefarm.data.local.dao.GuestCartDao;
-import com.rescuefarm.data.local.dao.PostCacheDao;
 import com.rescuefarm.data.local.dao.CacheMetadataDao;
 import com.rescuefarm.data.local.dao.OrderCacheDao;
 import com.rescuefarm.data.local.entity.CampaignCacheEntity;
 import com.rescuefarm.data.local.entity.BannerCacheEntity;
 import com.rescuefarm.data.local.entity.CategoryCacheEntity;
 import com.rescuefarm.data.local.entity.GuestCartItemEntity;
-import com.rescuefarm.data.local.entity.PostCacheEntity;
 import com.rescuefarm.data.local.entity.ProductBatchCacheEntity;
 import com.rescuefarm.data.local.entity.ProductCacheEntity;
 import com.rescuefarm.data.local.entity.CacheMetadataEntity;
@@ -32,13 +30,12 @@ import com.rescuefarm.data.local.entity.OrderCacheEntity;
                 ProductCacheEntity.class,
                 ProductBatchCacheEntity.class,
                 CampaignCacheEntity.class,
-                PostCacheEntity.class,
                 GuestCartItemEntity.class,
                 BannerCacheEntity.class,
                 CacheMetadataEntity.class,
                 OrderCacheEntity.class
         },
-        version = 9,
+        version = 10,
         exportSchema = true
 )
 public abstract class RescueFarmDatabase extends RoomDatabase {
@@ -105,6 +102,13 @@ public abstract class RescueFarmDatabase extends RoomDatabase {
         }
     };
 
+    public static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("DROP TABLE IF EXISTS post_cache");
+            database.execSQL("DELETE FROM cache_metadata WHERE scopeKey = 'feed' OR scopeKey LIKE 'feed:%'");
+        }
+    };
+
     public static RescueFarmDatabase getInstance(Context context) {
         if (instance == null) {
             synchronized (RescueFarmDatabase.class) {
@@ -114,7 +118,7 @@ public abstract class RescueFarmDatabase extends RoomDatabase {
                             RescueFarmDatabase.class,
                             DATABASE_NAME
                     ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
-                            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).build();
+                            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build();
                 }
             }
         }
@@ -124,7 +128,6 @@ public abstract class RescueFarmDatabase extends RoomDatabase {
     public abstract CatalogCacheDao catalogCacheDao();
     public abstract CampaignCacheDao campaignCacheDao();
     public abstract BannerCacheDao bannerCacheDao();
-    public abstract PostCacheDao postCacheDao();
     public abstract GuestCartDao guestCartDao();
     public abstract CacheMetadataDao cacheMetadataDao();
     public abstract OrderCacheDao orderCacheDao();

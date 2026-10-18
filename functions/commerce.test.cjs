@@ -7,6 +7,7 @@ const {createCommerce, price} = require('./commerce');
 const {createCampaignLifecycle} = require('./campaign-lifecycle');
 const {createNotificationWorker} = require('./notification-outbox');
 const {createNotificationsApi} = require('./notifications-api');
+const {createSePayApi} = require('./sepay');
 const rulesRequire = require('node:module').createRequire(require('node:path').resolve(__dirname, '../tests/firestore/package.json'));
 const {initializeTestEnvironment, assertFails} = rulesRequire('@firebase/rules-unit-testing');
 const {doc, runTransaction, serverTimestamp} = rulesRequire('firebase/firestore');
@@ -25,7 +26,8 @@ const authenticate = async (req, roles) => {
   return {uid, role: user.get('role')};
 };
 const campaignLifecycle = createCampaignLifecycle({db, admin, authenticate});
-const commerce = createCommerce({db, admin, authenticate, campaignLifecycle});
+const testEnv = {SEPAY_MERCHANTS_JSON: JSON.stringify({seller: {enabled: true, bankCode: 'VCB', accountNumber: '123456', webhookSecret: 'emulator-only-webhook-secret-at-least-32-characters'}})};
+const commerce = createCommerce({db, admin, authenticate, campaignLifecycle, env: testEnv});
 let server, base, rulesEnv;
 const future = () => admin.firestore.Timestamp.fromMillis(Date.now() + 7 * 86400000);
 const past = () => admin.firestore.Timestamp.fromMillis(Date.now() - 86400000);
@@ -40,7 +42,9 @@ before(async () => {
     host: emulator.split(':')[0], port: Number(emulator.split(':')[1]),
     rules: require('node:fs').readFileSync(require('node:path').resolve(__dirname, '../firestore.rules'), 'utf8')
   }});
-  const app = express(); app.use(express.json()); app.use(campaignLifecycle.router); app.use(commerce.router);
+  const app = express(); app.use(express.json({verify: (req, res, bytes) => { req.rawBody = Buffer.from(bytes); }}));
+  app.use(createSePayApi({db, admin, env: testEnv}).router);
+  app.use(campaignLifecycle.router); app.use(commerce.router);
   app.use(createNotificationsApi({db, admin, authenticate}).router);
   app.use((error, req, res, next) => res.status(error.status || 500).json({error: error.message}));
   server = await new Promise(resolve => { const value = app.listen(0, '127.0.0.1', () => resolve(value)); });
@@ -66,8 +70,6 @@ beforeEach(async () => {
     'customerCarts/customer-a': {items: [
       {id: 'product-a::batch-a', productId: 'product-a', batchId: 'batch-a', quantity: 4, selected: true},
       {id: 'keep', productId: 'other', batchId: 'other', quantity: 2, selected: false}]},
-    'posts/published': {status: 'PUBLISHED', viewCount: 0},
-    'posts/hidden': {status: 'HIDDEN', viewCount: 0}
   };
   for (const [path, data] of Object.entries(documents)) batch.set(db.doc(path), data);
   await batch.commit();
@@ -213,13 +215,11 @@ test('Guest lookup is persistently rate limited; Customer orders cannot be looke
   assert.equal((await post('/lookupGuestOrder', {})).status, 429);
 });
 
-test('post views increment atomically once per device/day, including Guest; hidden posts stay unchanged', async () => {
-  const viewerId = guest().guestId, data = {postId: 'published', viewerId};
-  const results = await Promise.all([post('/recordPostView', data), post('/recordPostView', data)]);
-  assert.equal(results.every(result => result.status === 200), true);
-  assert.equal((await db.doc('posts/published').get()).get('viewCount'), 1);
-  assert.equal((await post('/recordPostView', {postId: 'hidden', viewerId})).status, 404);
-  assert.equal((await db.doc('posts/hidden').get()).get('viewCount'), 0);
+test('retired Post endpoint is unavailable and cannot write any receipts', async () => {
+  const response = await fetch(base + '/recordPostView', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({postId: 'retired', viewerId: guest().guestId})});
+  assert.equal(response.status, 404);
+  assert.equal((await db.collection('postViewReceipts').get()).size, 0);
 });
 
 test('invalid duplicate batches and incompatible payment cannot reach inventory writes', async () => {
@@ -234,6 +234,32 @@ async function sellerTransition(orderId, target) {
   assert.equal(result.status, 200, JSON.stringify(result.body));
 }
 
+for (const legacy of [false, true]) test(`real Firestore SePay webhook confirms ${legacy ? 'legacy pending' : 'new automatic'} payment once and notifies both parties`, async () => {
+  const data = request({paymentMethod: 'BANK_TRANSFER'});
+  assert.equal((await post('/checkoutCustomer', data, 'customer-a')).status, 200);
+  const ref = db.doc('payments/' + data.requestId);
+  if (legacy) await ref.update({verificationProvider: 'MANUAL'});
+  const payment = (await ref.get()).data();
+  const payload = {id: 92704, gateway: 'Vietcombank', transactionDate: new Date(Date.now() + 7 * 3600000).toISOString().slice(0,19).replace('T',' '),
+    accountNumber: '123456', code: payment.transferContent, content: 'BANK-' + payment.transferContent,
+    transferType: 'in', transferAmount: payment.amount, referenceCode: 'TEST-TRANSACTION-92704'};
+  const raw = JSON.stringify(payload), timestamp = String(Math.floor(Date.now()/1000));
+  const signature = 'sha256=' + crypto.createHmac('sha256', JSON.parse(testEnv.SEPAY_MERCHANTS_JSON).seller.webhookSecret)
+    .update(timestamp + '.').update(raw).digest('hex');
+  const send = (authenticated = true) => fetch(base + '/webhooks/sepay/seller', {method:'POST',
+    headers:{'Content-Type':'application/json', ...(authenticated ? {'x-sepay-timestamp':timestamp,'x-sepay-signature':signature} : {})},body:raw});
+  assert.equal((await send(false)).status,401);
+  assert.equal((await ref.get()).get('status'),'PENDING');
+  const results=await Promise.all([send(),send()]);assert(results.every(r=>r.status===200));
+  const order=(await db.doc('orders/'+data.requestId).get()).data(), paid=(await ref.get()).data();
+  assert.equal(order.status,'CONFIRMED');assert.equal(order.paymentStatus,'PAID');assert.equal(order.inventoryFinalized,false);
+  assert.equal(paid.verificationProvider,'SEPAY');assert.equal(paid.verificationSource,'SEPAY_WEBHOOK');
+  assert.equal(paid.transferContent,payment.transferContent);
+  assert.equal((await db.collection('sepayBankTransactions').get()).size,1);
+  for(const uid of ['seller','customer-a'])assert.equal((await db.doc(`notifications/${data.requestId}_SEPAY_PAID_${uid}`).get()).get('isRead'),false);
+  const stock=(await db.doc('productBatches/batch-a').get()).data();assert.equal(stock.reservedQuantity,3);assert.equal(stock.soldQuantity,0);
+});
+
 test('Seller can cancel a backend-created Guest order through the trusted backend; Guest sees released stock/status', async () => {
   const data = request({...guest()}); assert.equal((await post('/checkoutGuest', data)).status, 200);
   await sellerTransition(data.requestId, 'CANCELLED');
@@ -243,10 +269,12 @@ test('Seller can cancel a backend-created Guest order through the trusted backen
   assert.equal(batch.availableQuantity, 10); assert.equal(batch.reservedQuantity, 0); assert.equal(batch.everOrdered, true);
 });
 
-test('Seller can complete a backend-created Guest pickup through the trusted backend; Guest sees PAID/DELIVERED', async () => {
+test('only Guest buyer can complete receipt after seller prepares pickup; Guest sees PAID/DELIVERED', async () => {
   const data = request({...guest()}); assert.equal((await post('/checkoutGuest', data)).status, 200);
   await sellerTransition(data.requestId, 'CONFIRMED'); await sellerTransition(data.requestId, 'PREPARING');
-  await sellerTransition(data.requestId, 'READY_FOR_PICKUP'); await sellerTransition(data.requestId, 'DELIVERED');
+  await sellerTransition(data.requestId, 'READY_FOR_PICKUP');
+  assert.equal((await post('/orders/transition', {orderId: data.requestId, targetStatus: 'DELIVERED'}, 'seller')).status, 403);
+  assert.equal((await post('/orders/confirm-guest-receipt', {orderId: data.requestId, accessToken: data.guestToken})).status, 200);
   const result = await post('/guestOrderDetails', {orderId: data.requestId, accessToken: data.guestToken});
   assert.equal(result.body.order.status, 'DELIVERED'); assert.equal(result.body.payment.status, 'PAID');
   const batch = (await db.doc('productBatches/batch-a').get()).data();

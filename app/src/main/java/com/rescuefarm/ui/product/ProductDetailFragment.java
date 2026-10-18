@@ -50,6 +50,9 @@ public class ProductDetailFragment extends Fragment {
     private Set<String> campaignBatchIds = new HashSet<>();
     private boolean bindingBatches;
     private EngagementViewModel engagementViewModel;
+    private androidx.lifecycle.LiveData<Boolean> favoriteSource;
+    private Boolean favoriteState;
+    private String favoriteOwnerId = "";
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup parent, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_product_detail, parent, false);
@@ -75,36 +78,12 @@ public class ProductDetailFragment extends Fragment {
         engagementViewModel = new ViewModelProvider(this, new EngagementViewModelFactory(requireContext()))
                 .get(EngagementViewModel.class);
         MaterialButton favoriteButton = view.findViewById(R.id.favoriteProductButton);
-        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
-                : FirebaseAuth.getInstance().getCurrentUser().getUid();
-        Boolean[] favoriteState = {null};
         engagementViewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == EngagementState.Status.SUCCESS || value.getStatus() == EngagementState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show();
-            favoriteButton.setEnabled(currentUserId.isEmpty()
-                    || (value.getStatus() != EngagementState.Status.LOADING && favoriteState[0] != null));
+            favoriteButton.setEnabled(FirebaseAuth.getInstance().getCurrentUser() == null
+                    || (value.getStatus() != EngagementState.Status.LOADING && favoriteState != null));
         });
-        if (currentUserId.isEmpty()) {
-            favoriteButton.setText(R.string.sign_in_to_favorite_action);
-            favoriteButton.setOnClickListener(v -> Toast.makeText(requireContext(),
-                    R.string.sign_in_to_favorite_action, Toast.LENGTH_SHORT).show());
-        } else {
-            favoriteButton.setEnabled(false);
-            engagementViewModel.observeFavorite(currentUserId, productId).observe(
-                    getViewLifecycleOwner(), isFavorite -> {
-                        favoriteState[0] = isFavorite;
-                        EngagementState currentState = engagementViewModel.getState().getValue();
-                        boolean busy = currentState != null
-                                && currentState.getStatus() == EngagementState.Status.LOADING;
-                        favoriteButton.setEnabled(isFavorite != null && !busy);
-                        favoriteButton.setText(isFavorite == null
-                                ? R.string.favorite_state_unavailable
-                                : Boolean.TRUE.equals(isFavorite)
-                                        ? R.string.remove_favorite_action : R.string.add_favorite_action);
-                    });
-            favoriteButton.setOnClickListener(v -> engagementViewModel.toggleFavorite(
-                    currentUserId, productId));
-        }
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == ProductScreenState.Status.PRODUCT) render(view, value.getProduct());
             else if (value.getStatus() == ProductScreenState.Status.ERROR)
@@ -158,11 +137,58 @@ public class ProductDetailFragment extends Fragment {
         int visibility = readOnly ? View.GONE : View.VISIBLE;
         root.findViewById(R.id.addToCartButton).setVisibility(visibility);
         root.findViewById(R.id.openCartButton).setVisibility(visibility);
-        root.findViewById(R.id.favoriteProductButton).setVisibility(visibility);
+        bindFavorite(root);
         root.findViewById(R.id.reportProductButton).setVisibility(visibility);
         root.findViewById(R.id.pricingQuantityInput).setVisibility(visibility);
         root.findViewById(R.id.recalculatePriceButton).setVisibility(visibility);
         root.findViewById(R.id.priceBreakdownText).setVisibility(visibility);
+    }
+
+    private void bindFavorite(View root) {
+        MaterialButton button = root.findViewById(R.id.favoriteProductButton);
+        String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
+                : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        boolean customer = requireActivity() instanceof MainActivity
+                && ((MainActivity) requireActivity()).getResolvedActorRole()
+                        == com.rescuefarm.domain.enums.UserRole.CUSTOMER;
+        if (!customer || !uid.equals(favoriteOwnerId)) {
+            if (favoriteSource != null) favoriteSource.removeObservers(getViewLifecycleOwner());
+            favoriteSource = null;
+            favoriteState = null;
+            favoriteOwnerId = "";
+        }
+        // Seller/Admin and unresolved accounts must not start a Customer-only listener.
+        button.setVisibility(uid.isEmpty() || customer ? View.VISIBLE : View.GONE);
+        if (uid.isEmpty()) {
+            button.setEnabled(true);
+            button.setText(R.string.sign_in_to_favorite_action);
+            button.setOnClickListener(v -> Toast.makeText(requireContext(),
+                    R.string.sign_in_to_favorite_action, Toast.LENGTH_SHORT).show());
+            return;
+        }
+        if (!customer || favoriteSource != null) return;
+        favoriteOwnerId = uid;
+        button.setEnabled(false);
+        button.setText(R.string.add_favorite_action);
+        favoriteSource = engagementViewModel.observeFavorite(uid, productId);
+        favoriteSource.observe(getViewLifecycleOwner(), isFavorite -> {
+            favoriteState = isFavorite;
+            EngagementState currentState = engagementViewModel.getState().getValue();
+            boolean busy = currentState != null
+                    && currentState.getStatus() == EngagementState.Status.LOADING;
+            button.setEnabled(isFavorite != null && !busy);
+            button.setText(isFavorite == null ? R.string.favorite_state_unavailable
+                    : Boolean.TRUE.equals(isFavorite)
+                            ? R.string.remove_favorite_action : R.string.add_favorite_action);
+        });
+        button.setOnClickListener(v -> engagementViewModel.toggleFavorite(uid, productId));
+    }
+
+    @Override public void onDestroyView() {
+        favoriteSource = null;
+        favoriteState = null;
+        favoriteOwnerId = "";
+        super.onDestroyView();
     }
     private void render(View view, Product product) {
         currentProduct = product;

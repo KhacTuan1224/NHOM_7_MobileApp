@@ -8,7 +8,7 @@ import com.rescuefarm.service.feed.ReactionPolicy;
 import org.junit.Test;
 
 public class ReactionPolicyTest {
-    @Test public void documentId_isUserId_soEachUserHasOnlyOneReactionPerPost() {
+    @Test public void documentId_isUserId_soEachUserHasOnlyOneReactionPerCampaign() {
         assertEquals("user-1", ReactionPolicy.documentIdForUser(" user-1 "));
     }
     @Test public void sameTypeTogglesOff_differentTypeReplaces() {

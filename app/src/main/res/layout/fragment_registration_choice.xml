@@ -6,25 +6,25 @@
     android:background="@color/rescue_surface"
     android:fillViewport="true">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="24dp">
+        android:paddingBottom="24dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/form_max_width">
 
         <ImageView
             android:layout_width="match_parent"
-            android:layout_height="170dp"
+            android:layout_height="@dimen/auth_banner_height"
             android:contentDescription="@string/login_banner_description"
             android:scaleType="centerCrop"
             android:src="@drawable/login_leaf_banner" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="20dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:gravity="center"
             android:text="@string/registration_choice_title"
             android:textColor="@color/rescue_on_surface"
@@ -35,9 +35,9 @@
             android:id="@+id/customerRegistrationCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginTop="20dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:clickable="true"
             android:contentDescription="@string/customer_registration_description"
             android:focusable="true"
@@ -98,8 +98,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="40dp"
-            android:layout_marginStart="28dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:gravity="center_vertical"
             android:orientation="horizontal">
             <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="@color/rescue_outline" />
@@ -111,8 +111,8 @@
             android:id="@+id/sellerRegistrationCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginEnd="28dp"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
             android:clickable="true"
             android:contentDescription="@string/seller_registration_description"
             android:focusable="true"
@@ -174,10 +174,10 @@
             android:id="@+id/registrationChoiceBackButton"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
             android:text="@string/login_action"
             android:textColor="@color/rescue_splash_text" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

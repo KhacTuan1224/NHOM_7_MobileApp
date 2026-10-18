@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="campaign_gps_wait">Đang lấy GPS điểm giải cứu. Hãy chờ kết quả trước khi gửi duyệt.</string>
+    <string name="campaign_gps_permission_required">Cần cấp quyền vị trí để lấy GPS điểm giải cứu. Hãy cho phép vị trí khi ứng dụng hỏi, hoặc bật quyền Vị trí trong cài đặt ứng dụng.</string>
+    <string name="campaign_gps_required">Chưa có GPS điểm giải cứu. Đứng tại điểm bán và bấm “Lấy GPS điểm giải cứu” trước khi gửi duyệt.</string>
+    <string name="campaign_gps_selected">Đã lấy GPS: %1$.5f, %2$.5f. Bạn có thể bổ sung địa chỉ bên dưới.</string>
+    <string name="campaign_gps_address_hint">GPS và địa chỉ đều cần cho điểm giải cứu. GPS tự điền gợi ý khi địa chỉ còn trống; địa chỉ bạn đã nhập sẽ được giữ lại. Nếu đổi sang điểm bán khác, hãy lấy GPS lại tại điểm mới.</string>
+    <string name="campaign_address_completion_hint">Đã giữ GPS. Hãy chọn đủ tỉnh/thành phố, quận/huyện, phường/xã và nhập số nhà, tên đường bên dưới; không cần lấy GPS lại khi bổ sung địa chỉ.</string>
+    <string name="campaign_address_required">Chưa đủ địa chỉ điểm giải cứu. Hãy hoàn thiện các mục địa chỉ đang báo thiếu rồi gửi duyệt lại.</string>
+    <string name="campaign_address_and_gps_required">Chưa thể gửi duyệt: hãy hoàn thiện địa chỉ điểm giải cứu và lấy GPS tại điểm bán.</string>
+</resources>

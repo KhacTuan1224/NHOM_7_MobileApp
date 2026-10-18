@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background" android:fillViewport="true">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:background="@color/rescue_background" android:fillViewport="true" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/profile_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"
             android:textColor="@color/rescue_on_surface" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -33,36 +33,43 @@
         </LinearLayout>
         <com.google.android.material.button.MaterialButton android:id="@+id/editProfileButton"
             style="@style/Widget.RescueFarm.ProfilePrimaryButton"
-            android:layout_width="match_parent" android:layout_height="42dp"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginStart="4dp" android:layout_marginTop="@dimen/space_lg"
             android:layout_marginEnd="4dp" android:text="@string/edit_profile_action" />
         <com.google.android.material.button.MaterialButton android:id="@+id/addressesButton"
             style="@style/Widget.RescueFarm.ProfileOutlinedButton" android:layout_width="match_parent"
-            android:layout_height="42dp" android:layout_marginStart="4dp" android:layout_marginTop="@dimen/space_sm"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginStart="4dp" android:layout_marginTop="@dimen/space_sm"
             android:layout_marginEnd="4dp"
             android:text="@string/manage_addresses_action" />
         <com.google.android.material.button.MaterialButton android:id="@+id/sellerProfileButton"
             style="@style/Widget.RescueFarm.ProfileOutlinedButton" android:layout_width="match_parent"
-            android:layout_height="42dp" android:layout_marginStart="4dp" android:layout_marginTop="@dimen/space_sm"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginStart="4dp" android:layout_marginTop="@dimen/space_sm"
             android:layout_marginEnd="4dp"
             android:text="@string/seller_profile_action" />
         <com.google.android.material.button.MaterialButton android:id="@+id/favoritesButton"
             style="@style/Widget.RescueFarm.ProfileOutlinedButton" android:layout_width="match_parent"
-            android:layout_height="42dp" android:layout_marginStart="4dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginStart="4dp"
             android:layout_marginTop="@dimen/space_sm" android:layout_marginEnd="4dp"
             android:text="@string/favorites_title" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/notificationsButton"
-            style="@style/Widget.RescueFarm.ProfileOutlinedButton" android:layout_width="match_parent"
-            android:layout_height="42dp" android:layout_marginStart="4dp"
-            android:layout_marginTop="@dimen/space_sm" android:layout_marginEnd="4dp"
-            android:text="@string/notifications_title" />
+        <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="4dp" android:layout_marginEnd="4dp"
+            android:layout_marginTop="@dimen/space_sm">
+            <com.google.android.material.button.MaterialButton android:id="@+id/notificationsButton"
+                style="@style/Widget.RescueFarm.ProfileOutlinedButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+                android:text="@string/notifications_title" />
+            <TextView android:id="@+id/profileNotificationBadge"
+                style="@style/Widget.RescueFarm.NotificationBadge"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical" android:layout_marginEnd="16dp" />
+        </FrameLayout>
         <com.google.android.material.button.MaterialButton android:id="@+id/logoutButton"
             style="@style/Widget.RescueFarm.ProfileLogoutButton" android:layout_width="match_parent"
-            android:layout_height="42dp" android:layout_marginStart="4dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginStart="4dp"
             android:layout_marginTop="@dimen/space_md" android:layout_marginEnd="4dp"
             android:text="@string/logout_action" />
         <ProgressBar android:id="@+id/profileProgress" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:layout_gravity="center_horizontal"
             android:layout_marginTop="@dimen/space_md" android:visibility="gone" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

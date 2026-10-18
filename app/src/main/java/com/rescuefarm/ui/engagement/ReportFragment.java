@@ -20,8 +20,8 @@ public class ReportFragment extends Fragment {
         description.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(1000)});
         LinearLayout form=(LinearLayout)id.getParent();
         Spinner parentType=new Spinner(requireContext());
-        parentType.setAdapter(new ArrayAdapter<>(requireContext(),android.R.layout.simple_spinner_dropdown_item,new String[]{"Bình luận trong chiến dịch","Bình luận trong bài viết cũ"}));
-        EditText parentId=new EditText(requireContext()); parentId.setHint("Mã chiến dịch hoặc bài viết chứa bình luận");
+        parentType.setAdapter(new ArrayAdapter<>(requireContext(),android.R.layout.simple_spinner_dropdown_item,new String[]{"Bình luận trong chiến dịch"}));
+        EditText parentId=new EditText(requireContext()); parentId.setHint("Mã chiến dịch chứa bình luận");
         form.addView(parentType,form.indexOfChild(id)); form.addView(parentId,form.indexOfChild(id));
         type.setAdapter(new EnumLabelAdapter<>(requireContext(), ReportTargetType.values()));
         type.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -38,8 +38,8 @@ public class ReportFragment extends Fragment {
             try { type.setSelection(ReportTargetType.valueOf(args.getString("targetType","PRODUCT")).ordinal()); } catch(IllegalArgumentException ignored) { }
             String[] parts=target.split("/",-1);
             if("COMMENT".equals(args.getString("targetType")) && parts.length==4 && parts[2].equals("comments")
-                    && (parts[0].equals("campaigns")||parts[0].equals("posts"))) {
-                parentType.setSelection(parts[0].equals("campaigns")?0:1); parentId.setText(parts[1]); id.setText(parts[3]);
+                    && parts[0].equals("campaigns")) {
+                parentType.setSelection(0); parentId.setText(parts[1]); id.setText(parts[3]);
                 type.setEnabled(false); parentType.setEnabled(false); parentId.setEnabled(false); id.setEnabled(false);
             }
         }
@@ -61,7 +61,7 @@ public class ReportFragment extends Fragment {
         view.findViewById(R.id.submitReportButton).setOnClickListener(v -> {
             String uid=FirebaseAuth.getInstance().getCurrentUser()==null?"":FirebaseAuth.getInstance().getCurrentUser().getUid();
             String target=id.getText().toString().trim(); ReportTargetType selected=(ReportTargetType)type.getSelectedItem();
-            if(selected==ReportTargetType.COMMENT) target=(parentType.getSelectedItemPosition()==0?"campaigns/":"posts/")
+            if(selected==ReportTargetType.COMMENT) target="campaigns/"
                     +parentId.getText().toString().trim()+"/comments/"+target;
             vm.report(uid,selected,target,reason.getText().toString().trim(),description.getText().toString().trim());
         });

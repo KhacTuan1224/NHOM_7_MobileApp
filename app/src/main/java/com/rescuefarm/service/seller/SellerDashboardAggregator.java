@@ -3,13 +3,11 @@ package com.rescuefarm.service.seller;
 import com.rescuefarm.domain.enums.CampaignStatus;
 import com.rescuefarm.domain.enums.FulfillmentType;
 import com.rescuefarm.domain.enums.OrderStatus;
-import com.rescuefarm.domain.enums.PostStatus;
 import com.rescuefarm.domain.enums.ProductStatus;
 import com.rescuefarm.domain.enums.RescueMode;
 import com.rescuefarm.domain.enums.RescueReason;
 import com.rescuefarm.domain.model.Order;
 import com.rescuefarm.domain.model.OrderItem;
-import com.rescuefarm.domain.model.Post;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.RescueCampaign;
 import java.util.ArrayList;
@@ -26,24 +24,23 @@ import java.util.Locale;
 public final class SellerDashboardAggregator {
     /** Compatibility overload for callers that only have the pre-analytics dashboard inputs. */
     public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
-            List<RescueCampaign> campaigns, List<Post> posts, List<Order> orders, int promotions) {
-        return aggregate(sellerId, products, campaigns, posts, orders,
+            List<RescueCampaign> campaigns, List<Order> orders, int promotions) {
+        return aggregate(sellerId, products, campaigns, orders,
                 Collections.emptyList(), promotions);
     }
 
     public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
-            List<RescueCampaign> campaigns, List<Post> posts, List<Order> orders,
+            List<RescueCampaign> campaigns, List<Order> orders,
             List<OrderItem> deliveredItems, int promotions) {
-        return aggregate(sellerId, products, campaigns, posts, orders, deliveredItems, promotions, 30);
+        return aggregate(sellerId, products, campaigns, orders, deliveredItems, promotions, 30);
     }
 
     public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
-            List<RescueCampaign> campaigns, List<Post> posts, List<Order> orders,
+            List<RescueCampaign> campaigns, List<Order> orders,
             List<OrderItem> deliveredItems, int promotions, int periodDays) {
         String seller = required(sellerId);
         List<Product> ps = filterProducts(seller, products);
         List<RescueCampaign> cs = filterCampaigns(seller, campaigns);
-        List<Post> xs = filterPosts(seller, posts);
         List<Order> os = filterOrders(seller, orders);
         long cutoff = periodDays <= 0 ? Long.MIN_VALUE
                 : System.currentTimeMillis() - periodDays * 24L * 60L * 60L * 1000L;
@@ -53,7 +50,7 @@ public final class SellerDashboardAggregator {
         for (Product product : ps) productNames.put(product.getId(), product.getName());
 
         int activeProducts = 0, activeCampaigns = 0, completedCampaigns = 0;
-        int mobile = 0, pendingPosts = 0, pendingOrders = 0, delivery = 0;
+        int mobile = 0, pendingOrders = 0, delivery = 0;
         double revenue = 0, rescued = 0, target = 0;
         double[] trendValues = new double[7];
         long trendEnd = System.currentTimeMillis();
@@ -81,7 +78,6 @@ public final class SellerDashboardAggregator {
                         + campaign.getRescuedQuantity());
             }
         }
-        for (Post post : xs) if (post.getStatus() == PostStatus.PENDING_APPROVAL) pendingPosts++;
         for (Order order : periodOrders) {
             if (order.getStatus() != OrderStatus.DELIVERED && order.getStatus() != OrderStatus.CANCELLED)
                 pendingOrders++;
@@ -121,7 +117,7 @@ public final class SellerDashboardAggregator {
         List<Order> recent = new ArrayList<>(periodOrders.subList(0, Math.min(5, periodOrders.size())));
         double rescueRate = target <= 0D ? 0D : Math.min(100D, rescued / target * 100D);
         return new SellerDashboardSnapshot(ps.size(), activeProducts, cs.size(), activeCampaigns,
-                completedCampaigns, mobile, xs.size(), pendingPosts, os.size(), pendingOrders,
+                completedCampaigns, mobile, os.size(), pendingOrders,
                 delivery, Math.max(0, promotions), revenue, rescued, rescueRate, topProducts,
                 topReasons, recent, revenueTrend);
     }
@@ -157,11 +153,6 @@ public final class SellerDashboardAggregator {
     private List<RescueCampaign> filterCampaigns(String seller, List<RescueCampaign> input) {
         List<RescueCampaign> result = new ArrayList<>();
         if (input != null) for (RescueCampaign value : input) if (seller.equals(value.getSellerId())) result.add(value);
-        return result;
-    }
-    private List<Post> filterPosts(String seller, List<Post> input) {
-        List<Post> result = new ArrayList<>();
-        if (input != null) for (Post value : input) if (seller.equals(value.getSellerId())) result.add(value);
         return result;
     }
     private List<Order> filterOrders(String seller, List<Order> input) {

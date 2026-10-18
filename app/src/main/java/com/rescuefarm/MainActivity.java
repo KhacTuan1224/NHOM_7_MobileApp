@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
     private boolean openingNotification;
     private int actorRequest;
     private boolean bottomNavigationHidden;
+    private boolean bottomNavigationAvailable;
+    private boolean keyboardVisible;
     private int scrollDirectionDistance;
 
     @Override
@@ -54,8 +56,13 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
             getWindow().setNavigationBarContrastEnforced(false);
         View navigationBackground = findViewById(R.id.systemNavigationBackground);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainRoot), (view, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars()
+                    | WindowInsetsCompat.Type.displayCutout());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            keyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+            View navigation = findViewById(R.id.customerBottomNavigationContainer);
+            navigation.setVisibility(bottomNavigationAvailable && !keyboardVisible
+                    ? View.VISIBLE : View.GONE);
             int bottomInset = Math.max(systemBars.bottom, ime.bottom);
             view.setPadding(systemBars.left, systemBars.top, systemBars.right,
                     bottomInset);
@@ -115,10 +122,14 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
 
     @Override protected void onStart() {
         super.onStart();
+        new androidx.lifecycle.ViewModelProvider(this)
+                .get(com.rescuefarm.ui.engagement.UnreadNotificationsViewModel.class).start();
         if (authStateListener != null) FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
     }
 
     @Override protected void onStop() {
+        new androidx.lifecycle.ViewModelProvider(this)
+                .get(com.rescuefarm.ui.engagement.UnreadNotificationsViewModel.class).stop();
         if (authStateListener != null) FirebaseAuth.getInstance().removeAuthStateListener(authStateListener);
         super.onStop();
     }
@@ -240,7 +251,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
             case "campaignDetailFragment": return R.id.campaignDetailFragment;
             case "productDetailFragment": return R.id.productDetailFragment;
             case "reviewFragment": return R.id.reviewFragment;
-            case "postDetailFragment": return R.id.postDetailFragment;
             case "profileFragment": return R.id.profileFragment;
             case "notificationFragment": return R.id.notificationFragment;
             default: return 0;
@@ -334,11 +344,11 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.favoriteFragment
                 // Product/Campaign
                 || destinationId == R.id.productDetailFragment
+                || destinationId == R.id.publicSellerProfileFragment
                 || destinationId == R.id.campaignDetailFragment
                 || destinationId == R.id.productListFragment
                 || destinationId == R.id.campaignListFragment
                 // Feed related
-                || destinationId == R.id.postDetailFragment
                 // Engagement
                 || destinationId == R.id.reviewFragment
                 || destinationId == R.id.reportFragment
@@ -359,7 +369,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         }
         View bottomNavigation = findViewById(R.id.customerBottomNavigationContainer);
         bottomNavigation.animate().cancel();
-        bottomNavigation.setVisibility(show ? View.VISIBLE : View.GONE);
+        bottomNavigationAvailable = show;
+        bottomNavigation.setVisibility(show && !keyboardVisible ? View.VISIBLE : View.GONE);
         bottomNavigation.setTranslationY(0f);
         bottomNavigation.setAlpha(1f);
         bottomNavigationHidden = false;
@@ -378,20 +389,19 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment
-                || destinationId == R.id.sellerPostListFragment
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment
                 || destinationId == R.id.discoveryFragment
                 || destinationId == R.id.productDetailFragment
+                || destinationId == R.id.publicSellerProfileFragment
                 || destinationId == R.id.campaignDetailFragment
                 || destinationId == R.id.productListFragment
                 || destinationId == R.id.campaignListFragment;
         
         // Highlight community button for feed related
-        boolean isCommunityActive = destinationId == R.id.feedFragment
-                || destinationId == R.id.postDetailFragment;
+        boolean isCommunityActive = destinationId == R.id.feedFragment;
         
         // Highlight orders button for order related
         boolean isOrdersActive = destinationId == R.id.orderConfirmationFragment
@@ -433,8 +443,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment
-                || destinationId == R.id.sellerPostListFragment
-                || destinationId == R.id.postEditorFragment
                 || destinationId == R.id.sellerOrderListFragment
                 || destinationId == R.id.storefrontFragment;
     }

@@ -1,4 +1,5 @@
 const express = require("express");
+const {paymentDetails, bankTransferCapability} = require('./sepay');
 const {availablePaymentMethods} = require('./seller-payment-options');
 const {normalizeUnit, campaignUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
@@ -61,7 +62,7 @@ function distanceKm(aLat, aLng, bLat, bLng) {
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
+function createCommerce({db, admin, authenticate, campaignLifecycle = null, env = process.env}) {
   const router = express.Router();
   const lifecycle = campaignLifecycle || createCampaignLifecycle({db, admin, authenticate});
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
@@ -138,6 +139,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
     }
     const paymentSnapshot = await read(db.collection('sellerPaymentProfiles').doc(sellerId));
     if (paymentSnapshot.exists) paymentProfile = paymentSnapshot.data();
+    const verification = bankTransferCapability(sellerId, paymentProfile, env);
     if (data.paymentMethod === 'BANK_TRANSFER' && !paymentProfile)
       throw error(409, "Cửa hàng chưa khai báo thông tin nhận thanh toán.");
     if (data.fulfillmentType === 'DELIVERY') {
@@ -164,7 +166,8 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
     return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
       public: {lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
-        availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, paymentProfile),
+        availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, verification.available ? paymentProfile : null),
+        bankTransferVerification: verification,
         sellerName: text(seller.get('fullName')), sellerAddress: profile ? text(profile.address) : '',
         sellerLatitude: profile ? number(profile.latitude, 0) : 0,
         sellerLongitude: profile ? number(profile.longitude, 0) : 0,
@@ -222,6 +225,10 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
         throw error(409, "QUOTE_CHANGED: Giá hoặc phí giao hàng đã thay đổi. Hãy kiểm tra báo giá mới.");
       }
       const paymentStatus = normalized.paymentMethod === 'BANK_TRANSFER' ? 'PENDING' : 'UNPAID';
+      const bankTransfer = normalized.paymentMethod === 'BANK_TRANSFER'
+        ? paymentDetails(q.sellerId, q.paymentProfile, env) : {verificationProvider: '', transferContent: ''};
+      if (normalized.paymentMethod === 'BANK_TRANSFER' && bankTransfer.verificationProvider !== 'SEPAY')
+        throw error(409, 'Cửa hàng chưa kết nối xác minh chuyển khoản SePay. Vui lòng chọn thanh toán khi nhận hàng hoặc chờ cửa hàng hoàn tất kết nối; chưa chuyển tiền.');
       const order = {id: requestId, requestId, ownerType: identity.ownerType, ownerId: identity.ownerId,
         orderCode: `RF-${requestId.replace(/-/g, '').toUpperCase()}`, sellerId: q.sellerId, campaignId: q.public.campaignId,
         ...normalized, subtotal: q.public.subtotal, quantityDiscount: 0, shippingFee: q.public.shippingFee,
@@ -233,6 +240,10 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
       delete order.items; order.receiverLatitude = normalized.latitude; order.receiverLongitude = normalized.longitude;
       delete order.latitude; delete order.longitude;
       tx.create(orderRef, order);
+      if (bankTransfer.transferContent) tx.create(
+        db.collection('bankTransferReferences').doc(bankTransfer.transferContent), {
+          orderId: requestId, sellerId: q.sellerId, createdAt: stamp()
+        });
       tx.create(receiptRef, {ownerId: identity.ownerId, ownerType: identity.ownerType, fingerprint,
         tokenHash: identity.tokenHash || '', createdAt: stamp()});
       const sellerNotificationId = `${requestId}_SELLER_PENDING`;
@@ -263,7 +274,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
       }
       const bank = q.paymentProfile || {};
       tx.create(db.collection('payments').doc(requestId), {id: requestId, orderId: requestId,
-        method: normalized.paymentMethod, status: paymentStatus, amount: order.totalAmount, referenceCode: '',
+        ...bankTransfer, method: normalized.paymentMethod, status: paymentStatus, amount: order.totalAmount, referenceCode: '',
         bankCode: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.bankCode) : '',
         bankAccountName: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.bankAccountName) : '',
         bankAccountNumber: normalized.paymentMethod === 'BANK_TRANSFER' ? text(bank.bankAccountNumber) : '',
@@ -290,7 +301,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
         isRead: false, createdAt: stamp()});
       if (identity.ownerType === 'GUEST') tx.create(codeRef, {orderId: requestId, phoneHash: hash(receiverPhone), createdAt: stamp()});
       enqueueNotification(tx, db, admin, `order_${requestId}_seller`, {kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId,
-        recipientUid: q.sellerId, decision: 'PENDING', title: 'Có đơn hàng mới', publicMessage: 'Có đơn hàng mới đang chờ cửa hàng xác nhận.'});
+        recipientUid: q.sellerId, inboxId: sellerNotificationId, decision: 'PENDING', title: 'Có đơn hàng mới', publicMessage: 'Có đơn hàng mới đang chờ cửa hàng xác nhận.'});
       enqueueNotification(tx, db, admin, `order_${requestId}_admins`, {kind: 'ADMINS', resourceType: 'ORDER', resourceId: requestId});
       if (identity.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${requestId}_PENDING`, {
         kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId, recipientUid: identity.ownerId, decision: 'PENDING', inboxId: `${requestId}_PENDING`});
@@ -349,21 +360,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null}) {
     const lookupAccess = grant.exists && grant.get('orderId') === orderId && time(grant.get('expiresAt')) > Date.now();
     if (!ownerAccess && !lookupAccess) throw error(403, "Hãy tra cứu lại bằng mã đơn và số điện thoại.");
     return details(orderId);
-  });
-  route('/recordPostView', async req => {
-    await limit(req, 'postViews', 120);
-    const data = req.body || {};
-    if (!identifier(data.postId) || !/^guest_[a-f0-9-]{36}$/i.test(text(data.viewerId))) throw error(400, "Thông tin lượt xem không hợp lệ.");
-    const postRef = db.collection('posts').doc(data.postId);
-    const viewRef = db.collection('postViewReceipts').doc(hash(`${data.postId}|${data.viewerId}|${Math.floor(Date.now() / 86400000)}`));
-    return db.runTransaction(async tx => {
-      const post = await tx.get(postRef), receipt = await tx.get(viewRef);
-      if (!post.exists || post.get('status') !== 'PUBLISHED') throw error(404, "Bài viết không còn công khai.");
-      if (receipt.exists) return {counted: false, viewCount: number(post.get('viewCount'), 0)};
-      const viewCount = number(post.get('viewCount'), 0) + 1;
-      tx.create(viewRef, {postId: data.postId, createdAt: stamp(), expiresAt: timestamp(Date.now() + 172800000)});
-      tx.update(postRef, {viewCount}); return {counted: true, viewCount};
-    });
   });
   route('/recordCampaignView', async req => {
     await limit(req, 'campaignViews', 120);

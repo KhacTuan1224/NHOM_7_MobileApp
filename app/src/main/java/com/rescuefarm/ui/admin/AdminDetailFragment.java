@@ -201,7 +201,6 @@ public final class AdminDetailFragment extends Fragment {
         Object status = ((Map<?, ?>) raw).get("status");
         String current = status == null ? "" : String.valueOf(status);
         return ("PRODUCT".equals(type) && Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(current))
-                || ("POST".equals(type) && "PUBLISHED".equals(current))
                 || ("CAMPAIGN".equals(type) && "ACTIVE".equals(current))
                 || ("REVIEW".equals(type) && "PUBLISHED".equals(current))
                 || ("COMMENT".equals(type) && Arrays.asList("ACTIVE", "EDITED").contains(current));
@@ -224,13 +223,10 @@ public final class AdminDetailFragment extends Fragment {
         int destination = 0;
         if ("PRODUCT".equals(type)) { destination = R.id.productDetailFragment; args.putString("productId", targetId); }
         else if ("CAMPAIGN".equals(type)) { destination = R.id.campaignDetailFragment; args.putString("campaignId", targetId); }
-        else if ("POST".equals(type)) { destination = R.id.postDetailFragment; args.putString("postId", targetId); }
         else if ("COMMENT".equals(type)) {
             String parentId = String.valueOf(target.get("parentId"));
             if ("CAMPAIGN".equals(target.get("parentType"))) {
                 destination = R.id.campaignDetailFragment; args.putString("campaignId", parentId);
-            } else if ("POST".equals(target.get("parentType"))) {
-                destination = R.id.postDetailFragment; args.putString("postId", parentId);
             }
             args.putString("commentId", String.valueOf(target.get("id")));
         } else if ("REVIEW".equals(type)) {
@@ -297,7 +293,7 @@ public final class AdminDetailFragment extends Fragment {
 
     private void addActionHeading(String text) {
         TextView heading = new TextView(requireContext());
-        heading.setText(text); heading.setTextSize(18); heading.setTypeface(null, android.graphics.Typeface.BOLD);
+        heading.setText(text); heading.setTextSize(18); heading.setTypeface(heading.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(heading);
         heading.setTextColor(requireContext().getColor(R.color.rescue_primary));
         heading.setPadding(0, Math.round(12 * getResources().getDisplayMetrics().density), 0,
                 Math.round(8 * getResources().getDisplayMetrics().density));

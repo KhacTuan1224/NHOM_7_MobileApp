@@ -72,7 +72,7 @@ public class SellerDashboardFragment extends Fragment {
         });
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
         view.findViewById(R.id.sellerDashboardMenuButton).setOnClickListener(unused ->
-                drawer.openDrawer(android.view.Gravity.START));
+                drawer.openDrawer(androidx.core.view.GravityCompat.START));
         view.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(unused -> viewModel.refresh());
         bind(view, R.id.dashboardProductsButton, "products");
         bind(view, R.id.dashboardBatchesButton, "batches");
@@ -83,11 +83,14 @@ public class SellerDashboardFragment extends Fragment {
         bind(view, R.id.dashboardShipmentsButton, "shipments");
         bind(view, R.id.dashboardStatisticsButton, "statistics");
         bind(view, R.id.dashboardProfileButton, "profile");
+        SellerUiStyles.styleButton(view.findViewById(R.id.sellerHomeOrdersButton), SellerUiStyles.Section.ORDERS);
         view.findViewById(R.id.sellerHomeOrdersButton).setOnClickListener(unused ->
                 navigate(SellerRoutePolicy.Destination.ORDERS, "orders"));
     }
 
     private void bind(View root, int id, String key) {
+        SellerUiStyles.Section section = SellerUiStyles.forRoute(key);
+        SellerUiStyles.drawerButton(root.findViewById(id), section, SellerUiStyles.icon(section));
         root.findViewById(id).setOnClickListener(unused -> {
             closeDrawer();
             navigate(routes.destinationFor(key), key);
@@ -95,8 +98,8 @@ public class SellerDashboardFragment extends Fragment {
     }
 
     private void closeDrawer() {
-        if (drawer != null && drawer.isDrawerOpen(android.view.Gravity.START))
-            drawer.closeDrawer(android.view.Gravity.START);
+        if (drawer != null && drawer.isDrawerOpen(androidx.core.view.GravityCompat.START))
+            drawer.closeDrawer(androidx.core.view.GravityCompat.START);
     }
 
     private void navigate(SellerRoutePolicy.Destination destination, String key) {
@@ -108,6 +111,10 @@ public class SellerDashboardFragment extends Fragment {
         int action;
         if (destination == SellerRoutePolicy.Destination.PRODUCTS)
             action = R.id.action_sellerDashboardFragment_to_sellerProductListFragment;
+        else if (destination == SellerRoutePolicy.Destination.PROMOTIONS)
+            action = R.id.action_sellerDashboardFragment_to_sellerPromotionListFragment;
+        else if (destination == SellerRoutePolicy.Destination.MOBILE)
+            action = R.id.action_sellerDashboardFragment_to_mobileRescueFragment;
         else if (destination == SellerRoutePolicy.Destination.BATCHES) {
             Bundle args = new Bundle(); args.putBoolean("batchSelectionMode", true);
             Navigation.findNavController(requireView()).navigate(
@@ -178,18 +185,17 @@ public class SellerDashboardFragment extends Fragment {
             SellerDashboardCards.addFootnote(requireContext(), recent, "Chưa có đơn hàng.");
         }
         for (Order order : snapshot.getRecentOrders()) {
-            Button row = new Button(requireContext()); row.setAllCaps(false);
-            row.setText(getString(R.string.seller_recent_order_format, order.getOrderCode(),
-                    EnumLabels.label(order.getStatus()), order.getTotalAmount()));
-            row.setOnClickListener(unused -> {
+            recent.addView(com.rescuefarm.ui.order.OrderListRow.create(recent, order, false,
+                    R.color.admin_orders, unused -> {
                 Bundle args = new Bundle(); args.putString("orderId", order.getId());
                 Navigation.findNavController(requireView()).navigate(
                         R.id.action_sellerDashboardFragment_to_orderDetailFragment, args);
-            });
-            recent.addView(row);
+            }));
         }
         if (snapshot.hasMoreOrders()) {
-            TextView more = new TextView(requireContext()); more.setText(R.string.seller_more_orders_notice);
+            Button more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.ORDERS,
+                    getString(R.string.pagination_more), "Xem thêm đơn hàng");
+            more.setOnClickListener(v -> navigate(SellerRoutePolicy.Destination.ORDERS, "orders"));
             recent.addView(more);
         }
     }

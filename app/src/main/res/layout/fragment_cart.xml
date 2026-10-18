@@ -6,22 +6,22 @@
     android:background="@color/rescue_background"
     android:fillViewport="true">
 
-    <LinearLayout
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
-        android:paddingBottom="96dp">
+        android:paddingBottom="96dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
 
         <!-- Top Header: Title and Clear Cart Action -->
-        <LinearLayout
+        <com.rescuefarm.ui.common.ResponsiveActionLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:layout_marginBottom="4dp">
 
-            <TextView
+            <TextView android:fontFamily="@font/ibm_plex_sans"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -35,7 +35,7 @@
                 android:layout_height="wrap_content"
                 android:text="Xóa tất cả"
                 android:textColor="@color/rescue_critical" />
-        </LinearLayout>
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
 
 
         <!-- Dynamic Notice / Warning Banner (Visible only when prices change or inventory issue arises) -->
@@ -67,50 +67,25 @@
             android:orientation="vertical"
             android:layout_marginBottom="16dp" />
 
-        <!-- Summary card -->
-        <com.google.android.material.card.MaterialCardView
+        <TextView
+            android:id="@+id/cartSummaryText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="1dp"
-            app:strokeColor="@color/rescue_outline"
-            app:strokeWidth="1dp"
-            app:cardBackgroundColor="@color/rescue_surface">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/cartSummaryText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textStyle="bold"
-                    android:textSize="17sp"
-                    android:textColor="@color/rescue_on_surface"
-                    android:layout_marginBottom="6dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/cart_no_reservation_notice"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
-                    android:textColor="@color/rescue_on_surface_variant" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            android:lineSpacingExtra="6dp"
+            android:textStyle="bold"
+            android:textSize="17sp"
+            android:textColor="@color/rescue_on_surface" />
 
         <!-- Checkout button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cartCheckoutButton"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target_min"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:backgroundTint="@color/rescue_primary"
             android:text="@string/checkout_action"
             android:textAllCaps="false"
             android:textSize="16sp"
             app:cornerRadius="12dp" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

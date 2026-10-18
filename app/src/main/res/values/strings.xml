@@ -113,11 +113,9 @@
     <string name="no_image_selected">Chưa chọn ảnh</string>
     <string name="image_uploaded_status">Đã tải ảnh lên</string>
     <string name="upload_product_images_action">Thêm ảnh sản phẩm</string>
-    <string name="upload_post_images_action">Thêm ảnh bài viết</string>
     <string name="no_images_selected">Chưa chọn ảnh nào</string>
     <string name="clear_uploaded_images_action">Xóa danh sách ảnh</string>
     <string name="uploaded_images_count_format">%1$d ảnh đã sẵn sàng</string>
-    <string name="post_image_limit_message">Bài viết chỉ hỗ trợ tối đa 6 ảnh.</string>
     <string name="upload_review_images_action">Thêm ảnh đánh giá</string>
     <string name="review_image_limit_message">Đánh giá chỉ hỗ trợ tối đa 5 ảnh.</string>
     <string name="upload_category_banner_image_action">Tải ảnh danh mục / banner lên</string>
@@ -183,7 +181,7 @@
     <string name="seller_products_title">Sản phẩm của cửa hàng</string>
     <string name="seller_approval_catalog_notice">Chỉ seller đã được phê duyệt mới có thể tạo hoặc sửa sản phẩm và batch.</string>
     <string name="add_product_action">Thêm sản phẩm</string>
-    <string name="manage_batches_action">Batch</string>
+    <string name="manage_batches_action">Quản lý lô hàng</string>
     <string name="seller_batch_products_title">Chọn sản phẩm để quản lý batch</string>
     <string name="seller_batch_products_notice">Batch là các lô hàng của một sản phẩm. Chọn sản phẩm để xem, tạo hoặc cập nhật lô và tồn kho.</string>
     <string name="open_product_batches_action">Quản lý batch và tồn kho</string>
@@ -236,9 +234,9 @@
     <string name="campaign_progress_format">Tiến độ %1$.1f%% • %2$.2f / %3$.2f</string>
     <string name="campaign_reason_format">%1$s • Mức độ %2$s</string>
     <string name="detail_action">Chi tiết</string>
-    <string name="mobile_rescue_action">Mobile</string>
+    <string name="mobile_rescue_action">Điểm giải cứu di động</string>
     <string name="mobile_rescue_title">Điểm giải cứu di động</string>
-    <string name="mobile_rescue_foreground_notice">Vị trí chỉ được lấy khi bạn bấm cập nhật. Ứng dụng không theo dõi nền.</string>
+    <string name="mobile_rescue_foreground_notice">Quản lý GPS của điểm bán di động trong các chiến dịch đã duyệt. Bấm Lấy GPS khi điểm bán đổi vị trí hoặc Dừng để ngừng chia sẻ. Vị trí chỉ cập nhật khi bạn bấm, không theo dõi nền.</string>
     <string name="mobile_location_fresh">Vị trí đang hoạt động (cập nhật trong 10 phút).</string>
     <string name="mobile_location_stale">Vị trí đã cũ hoặc đang tắt; điểm này bị loại khỏi danh sách gần bạn.</string>
     <string name="update_mobile_location_action">Cập nhật vị trí hiện tại</string>
@@ -253,25 +251,14 @@
     <string name="feed_subtitle">Các chiến dịch giải cứu đang hoạt động đã được kiểm duyệt.</string>
     <string name="load_more_action">Tải thêm</string>
     <string name="open_feed_action">Xem tất cả chiến dịch</string>
-    <string name="post_image_description">Ảnh bài viết giải cứu</string>
     <string name="comment_hint">Viết bình luận (tối đa 500 ký tự)</string>
     <string name="send_comment_action">Gửi bình luận</string>
     <string name="comments_title">Bình luận</string>
-    <string name="seller_posts_action">Quản lý post</string>
-    <string name="seller_posts_title">Post của cửa hàng</string>
-    <string name="post_moderation_notice">Post của seller phải được Admin duyệt trước khi xuất hiện trên feed.</string>
-    <string name="add_post_action">Tạo post</string>
-    <string name="post_editor_title">Nội dung post giải cứu</string>
-    <string name="post_title_hint">Tiêu đề</string>
-    <string name="post_content_hint">Nội dung</string>
-    <string name="post_campaign_hint">Campaign ID liên kết (không bắt buộc)</string>
-    <string name="post_images_hint">URL ảnh, mỗi dòng hoặc phân cách dấu phẩy</string>
-    <string name="post_products_hint">Product ID liên kết, mỗi dòng hoặc phân cách dấu phẩy</string>
     <string name="manage_promotion_action">Khuyến mãi &amp; giá sỉ</string>
     <string name="promotion_editor_title">Quản lý khuyến mãi</string>
     <string name="promotion_single_source_notice">Giá luôn được tính theo: giá gốc → giá giải cứu → khuyến mãi → giảm theo số lượng.</string>
     <string name="promotion_type_label">Loại khuyến mãi</string>
-    <string name="promotion_value_hint">Giá trị (% hoặc số tiền; giảm theo số lượng nhập 0)</string>
+    <string name="promotion_value_hint" formatted="false">Giá trị (% hoặc số tiền; giảm theo số lượng nhập 0)</string>
     <string name="promotion_tiers_hint">Mỗi dòng: số_lượng=phần_trăm (ví dụ 5=3)</string>
     <string name="promotion_active_label">Đang bật</string>
     <string name="save_promotion_action">Lưu khuyến mãi</string>
@@ -280,7 +267,7 @@
     <string name="invalid_pricing_quantity">Số lượng phải là số dương.</string>
     <string name="price_breakdown_format">Giá gốc: %1$s\nGiá giải cứu: %2$s\nGiảm promotion: %3$s\nGiảm số lượng: %4$.2f%%\nĐơn giá cuối: %5$s\nThành tiền: %6$s</string>
     <string name="promotion_preview_title">Xem trước giá (số lượng 1)</string>
-    <string name="cart_title">Giỏ nông sản giải cứu</string>
+    <string name="cart_title">Giỏ nông sản</string>
     <string name="open_cart_action">Giỏ hàng</string>
     <string name="add_to_cart_action">Thêm vào giỏ</string>
     <string name="cart_revalidate_action">Đồng bộ &amp; kiểm tra giá/tồn</string>
@@ -290,23 +277,22 @@
     <string name="cart_empty">Giỏ hiện đang trống.</string>
     <string name="guest_cart_storage_notice">Guest cart • lưu Room trên thiết bị và giữ lại sau khi mở lại app.</string>
     <string name="customer_cart_storage_notice">Customer cart • đồng bộ với Firestore theo tài khoản hiện tại.</string>
-    <string name="cart_no_reservation_notice">Giỏ chỉ kiểm tra giá và tồn kho; hàng chưa được giữ chỗ cho đến checkout.</string>
-    <string name="cart_summary_format">Đã chọn %1$d item từ %2$d seller • Tạm tính %3$s</string>
-    <string name="cart_seller_format">Seller: %1$s</string>
+    <string name="cart_summary_format">Đã chọn %1$d sản phẩm từ %2$d người bán\nTạm tính: %3$s</string>
+    <string name="cart_seller_format">Người bán: %1$s</string>
     <string name="cart_item_price_format">Đơn giá %1$s • Thành tiền %2$s</string>
     <string name="cart_no_sellable_batch">Không có batch còn hạn và đủ số lượng.</string>
-    <string name="checkout_action">Checkout theo seller</string><string name="checkout_title">Checkout giải cứu</string>
+    <string name="checkout_action">Tiến hành thanh toán</string><string name="checkout_title">Thanh toán</string>
     <string name="checkout_use_gps_action">Lấy vị trí GPS hiện tại</string>
     <string name="checkout_gps_fetching">Đang lấy vị trí GPS hiện tại…</string>
     <string name="checkout_gps_success">Đã tự động điền địa chỉ từ vị trí hiện tại.</string>
-    <string name="guest_checkout_notice">Guest checkout: giữ lại mã đơn và số điện thoại để tra cứu.</string><string name="customer_checkout_notice">Customer checkout: đơn gắn với tài khoản hiện tại.</string>
     <string name="receiver_name_hint">Tên người nhận</string><string name="receiver_phone_hint">Số điện thoại người nhận</string><string name="receiver_address_hint">Địa chỉ nhận hàng</string>
     <string name="fulfillment_label">Hình thức nhận hàng</string><string name="payment_method_label">Phương thức thanh toán</string><string name="order_note_hint">Ghi chú đơn hàng</string>
-    <string name="place_order_action">Đặt hàng và giữ tồn kho</string><string name="checkout_summary_format">%1$d item • %2$d seller • Giá cart hiện tại %3$s</string>
+    <string name="place_order_action">Đặt hàng</string><string name="checkout_summary_format">%1$d sản phẩm • %2$d người bán\nTổng tiền: %3$s</string>
     <string name="order_confirmation_title">Xác nhận đơn hàng</string><string name="guest_tracking_title">Tra cứu bằng mã đơn + số điện thoại</string><string name="order_code_hint">Mã đơn RF-…</string><string name="track_order_action">Tra cứu đơn</string>
     <string name="order_created_format">Đã tạo đơn %1$s • %2$s. Hàng đã được giữ; số lượng giải cứu được ghi nhận khi hoàn tất đơn.</string>
     <string name="order_tracking_format">Đơn %1$s\nTrạng thái: %2$s\nThanh toán: %3$s\nTổng: %4$.0f ₫</string>
     <string name="open_order_detail_action">Thanh toán &amp; trạng thái giao nhận</string>
+
     <string name="order_detail_title">Thanh toán &amp; giao nhận</string>
     <string name="order_detail_format">Đơn %1$s\nTrạng thái đơn: %2$s\nNhận hàng: %3$s\nPhương thức: %4$s\nThanh toán: %5$s\nShipment: %6$s\nTổng: %7$s</string>
     <string name="shipment_not_required">Không tạo shipment (nhận tại điểm)</string>
@@ -357,13 +343,12 @@
     <string name="seller_dashboard_stats_format">Sản phẩm: %1$d (%2$d đang bán)\nCampaign: %3$d (%4$d đang hoạt động, %5$d di động)\nĐơn mới nhất đã tải (tối đa 50): %6$d (%7$d đang xử lý, %8$d giao tận nơi)\nPromotion: %9$d\nDoanh thu đơn đã giao trong kỳ: %10$s\nKhối lượng giải cứu toàn bộ campaign: %11$.2f kg</string>
     <string name="seller_recent_order_format">%1$s • %2$s • %3$.0f ₫</string>
     <string name="admin_dashboard_title">Dashboard quản trị</string>
-    <string name="admin_access_message">Tài khoản quản trị — mọi thao tác moderation đều được ghi audit.</string>
+    <string name="admin_access_message">Tài khoản quản trị.</string>
     <string name="admin_refresh_action">Làm mới dữ liệu quản trị</string>
     <string name="admin_view_detail_action">Xem chi tiết và xử lý</string>
     <string name="admin_back_action">Quay lại</string>
     <string name="admin_sellers_title">Duyệt seller</string>
     <string name="admin_users_title">Quản lý người dùng</string>
-    <string name="admin_posts_title">Kiểm duyệt bài viết</string>
     <string name="admin_products_title">Kiểm soát sản phẩm</string>
     <string name="admin_campaigns_title">Duyệt chiến dịch</string>
     <string name="admin_categories_title">Quản lý danh mục</string>
@@ -383,11 +368,14 @@
     <string name="admin_add_catalog_resource">Thêm mới danh mục / banner</string>
     <string name="admin_section_title_format">Quản trị: %1$s</string>
     <string name="admin_resource_row_format">%1$s\n%2$s\nTrạng thái: %3$s\nID: %4$s</string>
-    <string name="admin_dashboard_stats_format">Users: %1$d\nSeller applications: %2$d (%3$d chờ duyệt)\nProducts: %4$d\nCampaigns: %5$d (%6$d chờ duyệt)\nPosts: %7$d (%8$d chờ duyệt)\nOrders: %9$d\nReports đang mở: %10$d\nDoanh thu đơn đã giao (all-time, gồm phí giao hàng): %11$s</string>
     <string name="admin_analytics_format">Tổng hàng đợi moderation: %1$d\nUsers: %2$d\nProducts: %3$d\nCampaigns: %4$d\nOrders: %5$d\nDoanh thu đơn đã giao (all-time, gồm phí giao hàng): %6$s</string>
     <string name="see_more_action">Xem thêm</string>
     <string name="all_categories_title">Tất cả danh mục</string>
     <string name="all_critical_campaigns_title">Chiến dịch cần giải cứu gấp</string>
     <string name="all_value_products_title">Sản phẩm giá tốt</string>
     <string name="all_active_campaigns_title">Chiến dịch đang diễn ra</string>
+    <string name="notification_unread_description">Thông báo, %1$d chưa đọc</string>
+    <string name="campaign_decrease_quantity">Giảm số lượng</string>
+    <string name="campaign_increase_quantity">Tăng số lượng</string>
+    <string name="checkout_sender_title">Thông tin người gửi</string>
 </resources>

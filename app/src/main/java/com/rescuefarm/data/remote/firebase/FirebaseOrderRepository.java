@@ -62,7 +62,88 @@ public class FirebaseOrderRepository implements OrderRepository {
     private final Map<String, DocumentSnapshot> sellerOrderCursors = new HashMap<>();
     private final Map<String, Boolean> sellerOrderHasMore = new HashMap<>();
     private final Map<String, ListenerRegistration> sellerOrderListeners = new HashMap<>();
-    private static final int SELLER_ORDER_PAGE_SIZE = 50;
+    private static final int SELLER_ORDER_PAGE_SIZE = 12;
+    private final Map<String, DocumentSnapshot> customerOrderCursors = new HashMap<>();
+    private final Map<String, Boolean> customerOrderHasMore = new HashMap<>();
+    private final Map<String, androidx.lifecycle.MutableLiveData<List<Order>>> customerPages = new HashMap<>();
+    private final java.util.Set<String> customerPagesLoading = new java.util.HashSet<>();
+
+    private androidx.lifecycle.MutableLiveData<List<Order>> customerPage(String ownerId) {
+        return customerPages.computeIfAbsent(ownerId, key -> new androidx.lifecycle.MutableLiveData<>());
+    }
+    @Override public LiveData<List<Order>> observeCustomerOrderPage(String ownerId) {
+        MediatorLiveData<List<Order>> result = new MediatorLiveData<>();
+        androidx.lifecycle.MutableLiveData<List<Order>> page = customerPage(ownerId);
+        result.addSource(orderDao.observeOwnerOrders(ownerId), entities -> {
+            List<Order> cached = OrderCacheMapper.orders(entities);
+            List<Order> loaded = page.getValue();
+            if (loaded == null) { result.setValue(new ArrayList<>(cached.subList(0, Math.min(12, cached.size())))); return; }
+            Map<String, Order> byId = new HashMap<>();
+            for (Order value : cached) byId.put(value.getId(), value);
+            List<Order> visible = new ArrayList<>();
+            for (Order value : loaded) visible.add(byId.containsKey(value.getId()) ? byId.get(value.getId()) : value);
+            result.setValue(visible);
+        });
+        result.addSource(page, result::setValue);
+        // Keep statuses live only for the requested window, not the complete history.
+        LiveData<Boolean> updates = Transformations.switchMap(page, loaded -> new LiveData<Boolean>() {
+            private ListenerRegistration listener;
+            @Override protected void onActive() {
+                if (loaded == null || loaded.isEmpty()) return;
+                listener = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
+                        .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
+                        .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(loaded.size())
+                        .addSnapshotListener((snapshot, error) -> {
+                            if (error != null || snapshot == null) return;
+                            List<Order> values = new ArrayList<>();
+                            for (DocumentSnapshot doc : snapshot.getDocuments()) values.add(mapOrder(doc, new ArrayList<>()));
+                            cacheExecutor.execute(() -> orderDao.replaceOrders(toEntities(values)));
+                        });
+            }
+            @Override protected void onInactive() { if (listener != null) listener.remove(); listener = null; }
+        });
+        result.addSource(updates, ignored -> { });
+        return result;
+    }
+    @Override public boolean hasMoreCustomerOrders(String ownerId) {
+        return customerOrderHasMore.getOrDefault(ownerId, true);
+    }
+    @Override public void refreshCustomerOrderPage(String ownerId, boolean reset, ActionCallback callback) {
+        if (customerPagesLoading.contains(ownerId)) return;
+        if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Không thể tải thêm đơn hàng khi offline."); return; }
+        if (!reset && !hasMoreCustomerOrders(ownerId)) { callback.onSuccess(); return; }
+        customerPagesLoading.add(ownerId);
+        Query query = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
+                .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
+                .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(13);
+        DocumentSnapshot cursor = customerOrderCursors.get(ownerId);
+        if (!reset && cursor != null) query = query.startAfter(cursor);
+        query.get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(snapshot -> {
+            List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(12, snapshot.size()));
+            java.util.LinkedHashMap<String, Order> merged = new java.util.LinkedHashMap<>();
+            List<Order> previous = customerPage(ownerId).getValue();
+            if (!reset && previous != null) for (Order value : previous) merged.put(value.getId(), value);
+            for (DocumentSnapshot doc : docs) { Order value = mapOrder(doc, new ArrayList<>()); merged.put(value.getId(), value); }
+            List<Order> values = new ArrayList<>(merged.values());
+            cacheExecutor.execute(() -> {
+                try {
+                orderDao.replaceOrders(toEntities(values));
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (reset) customerOrderCursors.remove(ownerId);
+                    if (!docs.isEmpty()) customerOrderCursors.put(ownerId, docs.get(docs.size()-1));
+                    customerOrderHasMore.put(ownerId, snapshot.size() > 12);
+                    customerPagesLoading.remove(ownerId);
+                    customerPage(ownerId).setValue(values); callback.onSuccess();
+                });
+                } catch (RuntimeException error) {
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        customerPagesLoading.remove(ownerId);
+                        callback.onError(ErrorCode.UNKNOWN, "Không thể lưu trang đơn hàng trên thiết bị. Vui lòng thử lại.");
+                    });
+                }
+            });
+        }).addOnFailureListener(error -> { customerPagesLoading.remove(ownerId); failure(error, callback); });
+    }
     private final SharedPreferencesGuestSessionRepository guestSession;
     private final Handler guestHandler = new Handler(Looper.getMainLooper());
     private final Map<String, Runnable> guestPolls = new HashMap<>();
@@ -296,7 +377,10 @@ public class FirebaseOrderRepository implements OrderRepository {
                     getGuestOrder(id, new LifecycleCallback() {
                         public void onSuccess(Order order, Payment p, Shipment s, boolean replay) {
                             if (guestPolls.get(id) != currentPoll) return;
-                            callback.onSuccess(order, p, s, replay); guestHandler.postDelayed(currentPoll, 15000L);
+                            callback.onSuccess(order, p, s, replay);
+                            boolean waitingForTransfer = p.getMethod() == PaymentMethod.BANK_TRANSFER
+                                    && p.getStatus() == PaymentStatus.PENDING && order.getStatus() != OrderStatus.CANCELLED;
+                            guestHandler.postDelayed(currentPoll, waitingForTransfer ? 3000L : 15000L);
                         }
                         public void onError(ErrorCode error, String message) {
                             if (guestPolls.get(id) != currentPoll) return;
@@ -481,7 +565,7 @@ public class FirebaseOrderRepository implements OrderRepository {
             d.getString("productId"),d.getString("batchId"),d.getString("productNameSnapshot"),
             d.getString("productImageSnapshot"),d.getString("unitSnapshot"),number(d,"originalPriceSnapshot"),
             number(d,"rescuePriceSnapshot"),number(d,"finalPriceSnapshot"),number(d,"quantity"));}
-    private Payment mapPayment(DocumentSnapshot d){Payment value=Payment.restore(d.getId(),d.getString("orderId"),enumValue(PaymentMethod.class,d.getString("method"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("status"),PaymentStatus.UNPAID),number(d,"amount"),d.getString("referenceCode"),date(d,"paidAt"));value.setBankDetails(d.getString("bankCode"),d.getString("bankAccountName"),d.getString("bankAccountNumber"));value.setQrUrl(d.getString("qrUrl"));return value;}
+    private Payment mapPayment(DocumentSnapshot d){Payment value=Payment.restore(d.getId(),d.getString("orderId"),enumValue(PaymentMethod.class,d.getString("method"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("status"),PaymentStatus.UNPAID),number(d,"amount"),d.getString("referenceCode"),date(d,"paidAt"));value.setBankDetails(d.getString("bankCode"),d.getString("bankAccountName"),d.getString("bankAccountNumber"));value.setQrUrl(d.getString("qrUrl"));value.setVerificationDetails(d.getString("verificationProvider"),d.getString("transferContent"));return value;}
     private Shipment mapShipment(DocumentSnapshot d){return Shipment.restore(d.getId(),d.getString("orderId"),d.getString("carrierName"),d.getString("trackingCode"),enumValue(ShipmentStatus.class,d.getString("status"),ShipmentStatus.PENDING),number(d,"distanceKm"),number(d,"shippingFee"));}
     private Map<String,Double> reservationMap(Object raw){Map<String,Double> result=new HashMap<>();if(raw instanceof Map<?,?>)for(Map.Entry<?,?> e:((Map<?,?>)raw).entrySet())if(e.getKey() instanceof String&&e.getValue() instanceof Number){double quantity=((Number)e.getValue()).doubleValue();if(quantity>0D)result.put((String)e.getKey(),quantity);}if(result.isEmpty())throw new IllegalStateException("RESERVATIONS_MISSING");return result;}
     private Order mapOrder(DocumentSnapshot d,List<OrderItem> items){return Order.restore(d.getId(),enumValue(OrderOwnerType.class,d.getString("ownerType"),OrderOwnerType.GUEST),d.getString("ownerId"),d.getString("orderCode"),d.getString("sellerId"),d.getString("campaignId"),enumValue(FulfillmentType.class,d.getString("fulfillmentType"),FulfillmentType.PICKUP),d.getString("receiverName"),d.getString("receiverPhone"),d.getString("receiverAddress"),number(d,"receiverLatitude"),number(d,"receiverLongitude"),number(d,"subtotal"),number(d,"quantityDiscount"),number(d,"shippingFee"),number(d,"totalAmount"),enumValue(PaymentMethod.class,d.getString("paymentMethod"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("paymentStatus"),PaymentStatus.UNPAID),enumValue(OrderStatus.class,d.getString("status"),OrderStatus.PENDING),d.getString("note"),date(d,"createdAt"),date(d,"updatedAt"),items);}

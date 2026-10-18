@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/rescue_background">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center_horizontal" android:orientation="horizontal" android:padding="@dimen/space_lg">
+        <com.rescuefarm.ui.common.NavigationAwareNestedScrollView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                <TextView android:fontFamily="@font/ibm_plex_sans" style="@style/TextAppearance.Material3.HeadlineMedium" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/discovery_title" />
+                <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/discovery_keyword">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/searchInput" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/province_label">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/provinceInput" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Danh mục" android:textStyle="bold" />
+                <Spinner android:id="@+id/categorySpinner" android:layout_width="match_parent" android:layout_height="48dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Reason" android:textStyle="bold" />
+                <Spinner android:id="@+id/reasonSpinner" android:layout_width="match_parent" android:layout_height="48dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Urgency" android:textStyle="bold" />
+                <Spinner android:id="@+id/urgencySpinner" android:layout_width="match_parent" android:layout_height="48dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Mode" android:textStyle="bold" />
+                <Spinner android:id="@+id/modeSpinner" android:layout_width="match_parent" android:layout_height="48dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Khoảng giá (₫)" android:textStyle="bold" android:layout_marginTop="8dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/minPriceInput" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Từ" android:inputType="numberDecimal" />
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/maxPriceInput" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Đến" android:inputType="numberDecimal" />
+                </LinearLayout>
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/radiusInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Bán kính từ vị trí hiện tại (km)" android:inputType="numberDecimal" />
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/expiryDaysInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Chỉ lấy lô hết hạn trong N ngày" android:inputType="number" />
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/minStockInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Tồn kho tối thiểu" android:inputType="numberDecimal" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sắp xếp" android:textStyle="bold" />
+                <Spinner android:id="@+id/sortSpinner" android:layout_width="match_parent" android:layout_height="48dp" />
+                <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/applyFilterButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/apply_filter_action" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/clearFilterButton" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="@string/clear_action" />
+                </com.rescuefarm.ui.common.ResponsiveActionLayout>
+                <com.google.android.material.button.MaterialButton android:id="@+id/discoveryLocationButton" style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_use_location" />
+            </LinearLayout>
+        </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.6" android:orientation="vertical" android:layout_marginStart="24dp">
+            <TextView android:id="@+id/searchCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textStyle="bold" />
+            <com.rescuefarm.ui.common.NavigationAwareNestedScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+                <LinearLayout android:id="@+id/searchResultContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="vertical" />
+            </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
+        </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
+</FrameLayout>

@@ -10,7 +10,7 @@ public final class SellerStatisticsSnapshot {
     public final SellerDashboardSnapshot dashboard;
     public final double revenue, rescueRate;
     public final int unverifiedCampaigns;
-    public final int orders, deliveredOrders, pendingOrders, completedCampaigns, rescueRateCampaigns;
+    public final int orders, deliveredOrders, pendingOrders, completedCampaigns, rescueRateCampaigns, rescuedOrders;
     public final boolean hasData, approximateDates;
     public final long calculatedAt;
     public final String timeBasis;
@@ -26,6 +26,7 @@ public final class SellerStatisticsSnapshot {
         revenue = finite(json.optDouble("revenue", 0)); orders = json.optInt("orders");
         rescueRate = finite(json.optDouble("rescueRate", 0)); rescueRateCampaigns = json.optInt("rescueRateCampaigns");
         deliveredOrders = json.optInt("deliveredOrders"); pendingOrders = json.optInt("pendingOrders");
+        rescuedOrders = Math.max(0, Math.min(deliveredOrders, json.optInt("rescuedOrders")));
         completedCampaigns = json.optInt("completedCampaigns"); hasData = json.optBoolean("hasData");
         approximateDates = json.optBoolean("approximateDates"); calculatedAt = json.optLong("calculatedAt");
         timeBasis = json.optString("timeBasis"); unverifiedCampaigns = json.optInt("unverifiedCampaigns");
@@ -69,7 +70,7 @@ public final class SellerStatisticsSnapshot {
         }
         return new SellerDashboardSnapshot(inventory.optInt("products"), inventory.optInt("activeProducts"),
                 inventory.optInt("campaigns"), inventory.optInt("activeCampaigns"), completedCampaigns,
-                inventory.optInt("mobileCampaigns"), inventory.optInt("posts"), inventory.optInt("pendingPosts"), orders,
+                inventory.optInt("mobileCampaigns"), orders,
                 pendingOrders, inventory.optInt("deliveryOrders"), inventory.optInt("promotions"), revenue, kg, rescueRate,
                 top, why, recent, trend).withTotalOrders(json.optInt("totalOrders"));
     }

@@ -1,20 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="24dp">
-        <ImageView android:id="@+id/publicSellerAvatar" android:layout_width="96dp" android:layout_height="96dp"
+    android:background="@color/rescue_background" android:clipToPadding="false" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center_vertical" android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton android:id="@+id/publicSellerBackButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:minHeight="48dp" android:paddingStart="0dp" android:paddingEnd="12dp"
+                android:text="@string/public_seller_back" android:textSize="16sp"
+                android:textColor="@color/rescue_primary" android:textAllCaps="false"
+                app:icon="@drawable/ic_arrow_back" app:iconTint="@color/rescue_primary" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="end"
+                android:text="@string/public_seller_page_title"
+                android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
+        </LinearLayout>
+        <TextView android:id="@+id/publicSellerMessage" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="24dp" android:gravity="center"
+            android:text="@string/public_seller_loading" android:textAppearance="@style/TextAppearance.RescueFarm.Body" />
+        <LinearLayout android:id="@+id/publicSellerContent" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+        <ImageView android:id="@+id/publicSellerAvatar" android:layout_width="112dp" android:layout_height="112dp"
+            android:layout_marginTop="20dp"
             android:layout_gravity="center_horizontal" android:contentDescription="Ảnh cửa hàng"
-            android:scaleType="centerCrop" android:src="@drawable/ic_nav_profile" />
+            android:scaleType="centerCrop" android:src="@drawable/ic_store" />
         <TextView android:id="@+id/publicSellerName" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="16dp"
+            android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="24dp"
+            android:gravity="center" android:textSize="26sp" android:textColor="@color/rescue_on_surface"
             android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
+        <com.google.android.material.card.MaterialCardView style="@style/Widget.RescueFarm.PublicSellerSection"
+            android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="18dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/public_seller_about_title" android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
         <TextView android:id="@+id/publicSellerDescription" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="12dp" />
+            android:layout_height="wrap_content" android:layout_marginTop="10dp" android:lineSpacingExtra="4dp"
+            android:textSize="17sp" android:textColor="@color/rescue_on_surface_variant" />
+        </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView style="@style/Widget.RescueFarm.PublicSellerSection"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="18dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/public_seller_address_title" android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
         <TextView android:id="@+id/publicSellerAddress" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="12dp" />
-        <TextView android:id="@+id/publicSellerBank" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="20dp" />
-    </LinearLayout>
+            android:layout_height="wrap_content" android:layout_marginTop="10dp" android:lineSpacingExtra="4dp"
+            android:textSize="17sp" android:textIsSelectable="true" android:textColor="@color/rescue_on_surface" />
+
+        </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <LinearLayout android:id="@+id/publicSellerReportActions" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="20dp" android:orientation="vertical" />
+        </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareScrollView>

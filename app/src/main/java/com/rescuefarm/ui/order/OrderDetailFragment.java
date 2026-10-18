@@ -46,12 +46,17 @@ public class OrderDetailFragment extends Fragment {
     private LinearLayout timeline;
     private Spinner target;
     private EditText reference;
-    private EditText shipmentCarrier, shipmentTracking;
+    private Spinner shipmentCarrier;
+    private EditText shipmentTracking;
+    private ArrayAdapter<String> carrierOptions;
+    private String boundCarrier;
     private View shipmentTitle, saveShipment;
     private View statusActionTitle, bankTransferActionTitle;
     private View transitionButton, confirmButton;
     private com.google.android.material.button.MaterialButton receiptButton;
     private String orderId = "";
+    private PaymentStatus lastPaymentStatus;
+    private boolean paymentSuccessShown;
     private final OrderLifecycleService lifecycleService = new OrderLifecycleService();
     private List<OrderStatus> displayedTargets = Collections.emptyList();
 
@@ -61,6 +66,12 @@ public class OrderDetailFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        if (state != null) {
+            paymentSuccessShown = state.getBoolean("paymentSuccessShown");
+            String previous = state.getString("previousPaymentStatus", "");
+            if (!previous.isEmpty()) try { lastPaymentStatus = PaymentStatus.valueOf(previous); }
+            catch (IllegalArgumentException ignored) { }
+        }
         orderCodeView = view.findViewById(R.id.orderDetailCode);
         orderStatusView = view.findViewById(R.id.orderDetailStatus);
         orderInfo = view.findViewById(R.id.orderDetailInfoContainer);
@@ -79,6 +90,11 @@ public class OrderDetailFragment extends Fragment {
                 .setPositiveButton("Xác nhận", (dialog, which) -> vm.transition(orderId, OrderStatus.DELIVERED)).show());
         shipmentTitle = view.findViewById(R.id.shipmentManagementTitle);
         shipmentCarrier = view.findViewById(R.id.shipmentCarrierInput);
+        carrierOptions = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item,
+                new java.util.ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.shipment_carrier_options))));
+        carrierOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        shipmentCarrier.setAdapter(carrierOptions);
+        boundCarrier = null;
         shipmentTracking = view.findViewById(R.id.shipmentTrackingInput);
         saveShipment = view.findViewById(R.id.saveShipmentDetailsButton);
         statusActionTitle = view.findViewById(R.id.orderStatusActionTitle);
@@ -92,8 +108,13 @@ public class OrderDetailFragment extends Fragment {
                 vm.transition(orderId, (OrderStatus) selected);
         });
         confirmButton.setOnClickListener(unused -> vm.confirmTransfer(orderId, reference.getText().toString().trim()));
-        saveShipment.setOnClickListener(unused -> vm.updateShipmentDetails(orderId,
-                shipmentCarrier.getText().toString(), shipmentTracking.getText().toString(),
+        saveShipment.setOnClickListener(unused -> {
+            if (shipmentCarrier.getSelectedItemPosition() <= 0) {
+                Toast.makeText(requireContext(), R.string.shipment_carrier_required, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            vm.updateShipmentDetails(orderId,
+                shipmentCarrier.getSelectedItem().toString(), shipmentTracking.getText().toString(),
                 new com.rescuefarm.data.repository.OrderRepository.ActionCallback() {
                     @Override public void onSuccess() {
                         if (isAdded()) Toast.makeText(requireContext(), R.string.shipment_details_saved,
@@ -103,7 +124,8 @@ public class OrderDetailFragment extends Fragment {
                             String text) {
                         if (isAdded()) Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show();
                     }
-                }));
+                });
+        });
         if (orderId.isEmpty()) message.setText(R.string.order_id_missing);
     }
 
@@ -129,6 +151,10 @@ public class OrderDetailFragment extends Fragment {
         addInfoRow("Tình trạng thanh toán", paymentStatusLabel(payment.getStatus()), false);
         if (order.getFulfillmentType() == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY) {
             addInfoRow("Vận chuyển", shipment == null ? "Chưa có thông tin" : shipmentStatusLabel(shipment.getStatus()), false);
+            addInfoRow(getString(R.string.shipment_carrier_hint), shipment == null || blank(shipment.getCarrierName())
+                    ? getString(R.string.shipment_not_updated) : shipment.getCarrierName(), false);
+            addInfoRow(getString(R.string.shipment_tracking_hint), shipment == null || blank(shipment.getTrackingCode())
+                    ? getString(R.string.shipment_not_updated) : shipment.getTrackingCode(), false);
             addInfoRow("Phí giao hàng", money.format(order.getShippingFee()), false);
             if (shipment != null && shipment.getDistanceKm() > 0D)
                 addInfoRow("Khoảng cách", String.format(Locale.getDefault(), "%.1f km", shipment.getDistanceKm()), false);
@@ -153,7 +179,7 @@ public class OrderDetailFragment extends Fragment {
         valueView.setGravity(android.view.Gravity.END);
         valueView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                 emphasized ? R.color.rescue_primary : R.color.rescue_on_surface));
-        if (emphasized) valueView.setTypeface(null, android.graphics.Typeface.BOLD);
+        if (emphasized) valueView.setTypeface(valueView.getTypeface(), android.graphics.Typeface.BOLD);
         row.addView(labelView, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         row.addView(valueView, new LinearLayout.LayoutParams(0,
@@ -197,9 +223,9 @@ public class OrderDetailFragment extends Fragment {
         if (state.getStatus() != OrderLifecycleState.Status.SUCCESS) return;
         Order order = state.getOrder(); Payment payment = state.getPayment(); Shipment shipment = state.getShipment();
         orderCodeView.setText("Mã đơn " + order.getOrderCode());
-        orderStatusView.setText(statusLabel(order.getStatus(), order.getPaymentMethod()));
+        orderStatusView.setText(paymentStatusLabel(order.getStatus(), payment));
         renderOrderInfo(order, payment, shipment);
-        renderTimeline(order);
+        renderTimeline(order, payment);
         instructions.setText(paymentInstructions(payment));
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -216,11 +242,11 @@ public class OrderDetailFragment extends Fragment {
         target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         statusActionTitle.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         boolean bank = payment.getMethod() == PaymentMethod.BANK_TRANSFER;
-        boolean pendingSellerBankConfirmation = seller && bank && payment.getStatus() == PaymentStatus.PENDING
-                && order.getStatus() != OrderStatus.CANCELLED && order.getStatus() != OrderStatus.DELIVERED;
-        reference.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
-        confirmButton.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
-        bankTransferActionTitle.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
+        instructions.setVisibility(bank ? View.GONE : View.VISIBLE);
+        reference.setVisibility(View.GONE);
+        confirmButton.setVisibility(View.GONE);
+        bankTransferActionTitle.setVisibility(View.GONE);
+        renderPaymentVerification(order, payment);
         boolean delivery = order.getFulfillmentType() == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY;
         boolean shipmentEditable = seller && delivery && shipment != null
                 && (order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PREPARING
@@ -230,7 +256,7 @@ public class OrderDetailFragment extends Fragment {
         shipmentTracking.setVisibility(shipmentEditable ? View.VISIBLE : View.GONE);
         saveShipment.setVisibility(shipmentEditable ? View.VISIBLE : View.GONE);
         if (shipment != null) {
-            if (!shipmentCarrier.hasFocus()) shipmentCarrier.setText(shipment.getCarrierName());
+            bindShipmentCarrier(shipment.getCarrierName());
             if (!shipmentTracking.hasFocus()) shipmentTracking.setText(shipment.getTrackingCode());
         }
         boolean buyer = (!uid.isEmpty() && uid.equals(order.getOwnerId())) || vm.canConfirmGuestReceipt(order.getId());
@@ -240,11 +266,33 @@ public class OrderDetailFragment extends Fragment {
         receiptButton.setText(payment.getMethod() == PaymentMethod.COD ? "Đã thanh toán và nhận đơn" : "Đã nhận hàng");
         boolean customer = !uid.isEmpty() && uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
         renderItems(order, customer);
-        if (bank && !seller) showSellerBankInfo(order, payment);
+        if (bank && payment.usesAutomaticVerification() && !seller && payment.getStatus() == PaymentStatus.PENDING
+                && order.getStatus() != OrderStatus.CANCELLED) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
     }
 
-    private void renderTimeline(Order order) {
+    private void bindShipmentCarrier(String value) {
+        String carrier = value == null ? "" : value.trim();
+        // Live order updates must not reset a seller's unsaved selection.
+        if (carrier.equals(boundCarrier)) return;
+        boundCarrier = carrier;
+        int position = carrier.isEmpty() ? 0 : carrierOptions.getPosition(carrier);
+        if (position < 0) {
+            // Preserve names previously entered before this field became a picker.
+            carrierOptions.add(carrier);
+            position = carrierOptions.getPosition(carrier);
+        }
+        shipmentCarrier.setSelection(position);
+    }
+
+    private String paymentStatusLabel(OrderStatus status, Payment payment) {
+        if (status == OrderStatus.PENDING && payment.getMethod() == PaymentMethod.BANK_TRANSFER)
+            return payment.usesAutomaticVerification()
+                        ? "Chờ hệ thống xác minh chuyển khoản" : "Chờ kết nối xác minh chuyển khoản";
+        return statusLabel(status, payment.getMethod());
+    }
+
+    private void renderTimeline(Order order, Payment payment) {
         timeline.removeAllViews();
         if (order.getStatus() == OrderStatus.CANCELLED) {
             addTimelineRow("Đơn hàng đã hủy", OrderStatus.CANCELLED, false, true, true);
@@ -267,7 +315,7 @@ public class OrderDetailFragment extends Fragment {
         for (int i = 0; i < steps.size(); i++) {
             boolean complete = current >= 0 && i < current;
             boolean active = i == current;
-            addTimelineRow(statusLabel(steps.get(i), order.getPaymentMethod()),
+            addTimelineRow(paymentStatusLabel(steps.get(i), payment),
                     steps.get(i), complete, active, i == steps.size() - 1);
         }
     }
@@ -336,7 +384,7 @@ public class OrderDetailFragment extends Fragment {
         title.setTextSize(14);
         title.setTextColor(requireContext().getColor(current ? colorRes
                 : complete ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
-        if (current) title.setTypeface(null, android.graphics.Typeface.BOLD);
+        if (current) title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(title);
         text.addView(title);
         TextView caption = new TextView(requireContext());
         caption.setText(status == OrderStatus.CANCELLED ? R.string.order_timeline_cancelled
@@ -372,7 +420,7 @@ public class OrderDetailFragment extends Fragment {
             TextView productName = new TextView(requireContext());
             productName.setText(item.getProductNameSnapshot());
             productName.setTextSize(15);
-            productName.setTypeface(null, android.graphics.Typeface.BOLD);
+            productName.setTypeface(productName.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(productName);
             productName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                     R.color.rescue_on_surface));
             TextView productDetails = new TextView(requireContext());
@@ -431,20 +479,74 @@ public class OrderDetailFragment extends Fragment {
         if (blank(code) || blank(account) || blank(name)) {
             bankInfo.setText("Đơn chưa lưu thông tin tài khoản nhận chuyển khoản."); return;
         }
+        String transferContent = payment.resolveQrTransferContent(order.getOrderCode());
+        if (transferContent.isEmpty()) {
+            bankInfo.setText("Đơn chưa có mã chuyển khoản SEVQR hợp lệ. Vui lòng tải lại đơn hoặc liên hệ hỗ trợ trước khi thanh toán. Nếu đã chuyển tiền, không thanh toán lại.");
+            return;
+        }
         bankInfo.setText("Chuyển khoản đến " + name + " · " + code + " · " + account
-                + "\nNội dung: " + order.getOrderCode() + " · Số tiền: "
+                + "\nNội dung: " + transferContent + " · Số tiền: "
                 + NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(order.getTotalAmount()));
         String url = "https://img.vietqr.io/image/" + Uri.encode(code) + "-" + Uri.encode(account)
                 + "-compact.png?amount=" + Math.round(order.getTotalAmount()) + "&addInfo="
-                + Uri.encode(order.getOrderCode()) + "&accountName=" + Uri.encode(name);
+                + Uri.encode(transferContent) + "&accountName=" + Uri.encode(name);
         qrImage.setVisibility(View.VISIBLE); Glide.with(this).load(url).into(qrImage);
     }
 
     private String paymentInstructions(Payment payment) {
+        if (payment.getMethod() == PaymentMethod.BANK_TRANSFER && payment.usesAutomaticVerification()) {
+            if (payment.getStatus() == PaymentStatus.PAID)
+                return "Hệ thống đã xác minh chuyển khoản thành công. Người mua xác nhận Đã nhận hàng sau khi nhận đủ hàng.";
+            if (payment.getStatus() == PaymentStatus.FAILED)
+                return "Đơn đã hủy hoặc không còn chờ thanh toán. Không chuyển khoản cho đơn này.";
+            if (payment.resolveQrTransferContent("").isEmpty())
+                return "Chưa tải được mã thanh toán SePay hợp lệ. Vui lòng tải lại đơn; chưa chuyển khoản khi chưa có QR hợp lệ.";
+            return "Thanh toán được SePay xác minh tự động. Quét đúng QR hoặc nhập chính xác nội dung "
+                    + payment.getTransferContent() + ". Khi tiền về, trạng thái đơn sẽ tự cập nhật; không cần cửa hàng xác nhận thủ công.";
+        }
         if (payment.getMethod() == PaymentMethod.BANK_TRANSFER)
-            return getString(R.string.bank_transfer_manual_instruction, payment.getOrderId());
+            return payment.getStatus() == PaymentStatus.PAID
+                    ? "Thanh toán đã được ghi nhận. Người mua xác nhận đã nhận hàng sau khi nhận đủ hàng."
+                    : "Đơn này được tạo trước khi bật tự xác minh. Cửa hàng cần kiểm tra cấu hình SePay và webhook. Nếu đã chuyển tiền, không chuyển thêm lần nữa; hệ thống chỉ xác nhận từ giao dịch đã xác thực.";
         if (payment.getMethod() == PaymentMethod.CASH_ON_SITE) return getString(R.string.cash_onsite_instruction);
         return getString(R.string.cod_instruction);
     }
     private boolean blank(String value) { return value == null || value.trim().isEmpty(); }
+
+    private void renderPaymentVerification(Order order, Payment payment) {
+        View root = requireView(), panel = root.findViewById(R.id.orderPaymentVerificationPanel);
+        if (payment.getMethod() != PaymentMethod.BANK_TRANSFER) { panel.setVisibility(View.GONE); return; }
+        panel.setVisibility(View.VISIBLE);
+        TextView title = root.findViewById(R.id.orderPaymentVerificationTitle);
+        TextView detail = root.findViewById(R.id.orderPaymentVerificationMessage);
+        View progress = root.findViewById(R.id.orderPaymentVerificationProgress);
+        boolean paid = payment.getStatus() == PaymentStatus.PAID;
+        boolean pending = payment.getStatus() == PaymentStatus.PENDING && order.getStatus() != OrderStatus.CANCELLED;
+        progress.setVisibility(pending && payment.usesAutomaticVerification() ? View.VISIBLE : View.GONE);
+        if (paid) {
+            title.setText(payment.usesAutomaticVerification() ? "Đã nhận tiền và xác nhận đơn" : "Đã ghi nhận thanh toán");
+            String amount = NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(payment.getAmount());
+            detail.setText((payment.usesAutomaticVerification() ? "SePay đã xác minh tiền vào: " : "Số tiền đã ghi nhận: ")
+                    + amount + (blank(payment.getReferenceCode()) ? "" : "\nMã giao dịch: " + payment.getReferenceCode())
+            );
+            if (lastPaymentStatus == PaymentStatus.PENDING && payment.usesAutomaticVerification() && !paymentSuccessShown) {
+                paymentSuccessShown = true;
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Đã nhận được tiền")
+                        .setMessage("Hệ thống đã xác minh " + amount + " và tự xác nhận đơn hàng. Bạn có thể tiếp tục theo dõi đơn.")
+                        .setPositiveButton("Đã hiểu", null).show();
+            }
+        } else {
+            title.setText(!pending ? "Đơn không còn chờ thanh toán" : payment.usesAutomaticVerification()
+                    ? "Đang chờ SePay xác minh tiền vào" : "Đơn cũ chưa bật xác minh tự động");
+            detail.setText(paymentInstructions(payment));
+        }
+        lastPaymentStatus = payment.getStatus();
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putBoolean("paymentSuccessShown", paymentSuccessShown);
+        if (lastPaymentStatus != null) state.putString("previousPaymentStatus", lastPaymentStatus.name());
+    }
 }

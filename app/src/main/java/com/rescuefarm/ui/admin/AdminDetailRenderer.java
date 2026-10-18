@@ -82,7 +82,7 @@ public final class AdminDetailRenderer {
             Object value = values.get(i);
             if (value instanceof Map<?, ?>) {
                 TextView title = text("Mục " + (i + 1), 14, R.color.rescue_primary);
-                title.setTypeface(null, Typeface.BOLD); title.setPadding(0, dp(12), 0, dp(4));
+                title.setTypeface(title.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(title); title.setPadding(0, dp(12), 0, dp(4));
                 parent.addView(title, params()); renderMap(parent, (Map<?, ?>) value);
             } else if (value instanceof List<?>) {
                 LinearLayout child = section(parent, "Mục " + (i + 1), false);
@@ -104,7 +104,7 @@ public final class AdminDetailRenderer {
         LinearLayout.LayoutParams contentParams = params(); contentParams.topMargin = dp(4);
         row.addView(content, contentParams);
         if (AdminDetailFormatter.isEnum(key) && !absent) {
-            content.setTextColor(stateColor(String.valueOf(value))); content.setTypeface(null, Typeface.BOLD);
+            content.setTextColor(stateColor(String.valueOf(value))); content.setTypeface(content.getTypeface(), Typeface.BOLD);
         }
         if (raw instanceof String && (((String) raw).startsWith("https://") || ((String) raw).startsWith("http://"))) {
             content.setVisibility(View.GONE);
@@ -148,8 +148,8 @@ public final class AdminDetailRenderer {
                 toggle.setContentDescription(title + (expand ? ", thu gọn" : ", mở rộng"));
             });
         } else {
-            TextView heading = text(title, 14, R.color.rescue_primary); heading.setTypeface(null, Typeface.BOLD);
-            heading.setAccessibilityHeading(true); heading.setPadding(0, 0, 0, dp(4)); section.addView(heading, params());
+            TextView heading = text(title, 14, R.color.rescue_primary); heading.setTypeface(heading.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(heading);
+            heading.setAccessibilityHeading(true); com.rescuefarm.ui.common.AppTypography.title(heading); heading.setPadding(0, 0, 0, dp(4)); section.addView(heading, params());
         }
         section.addView(content, params()); return content;
     }
@@ -164,7 +164,7 @@ public final class AdminDetailRenderer {
     private TextView badge(String value) {
         TextView chip = text(AdminDetailFormatter.status(value), 13, R.color.rescue_on_primary_container);
         int foreground = stateColor(value); chip.setTextColor(foreground);
-        chip.setTypeface(null, Typeface.BOLD); chip.setPadding(dp(12), dp(7), dp(12), dp(7));
+        chip.setTypeface(chip.getTypeface(), Typeface.BOLD); chip.setPadding(dp(12), dp(7), dp(12), dp(7));
         GradientDrawable background = new GradientDrawable(); background.setColor(ColorUtils.setAlphaComponent(foreground, 24));
         background.setCornerRadius(dp(24)); chip.setBackground(background); return chip;
     }
@@ -176,7 +176,7 @@ public final class AdminDetailRenderer {
     }
     private void heading(LinearLayout parent, String title) {
         TextView view = text(title, 18, R.color.rescue_on_surface);
-        view.setTypeface(null, Typeface.BOLD); view.setAccessibilityHeading(true);
+        view.setTypeface(view.getTypeface(), Typeface.BOLD); view.setAccessibilityHeading(true); com.rescuefarm.ui.common.AppTypography.title(view);
         view.setPadding(0, dp(8), 0, dp(12)); parent.addView(view, params());
     }
     private void empty(LinearLayout parent) { parent.addView(text("Chưa có thông tin", 14, R.color.rescue_on_surface_variant), params()); }

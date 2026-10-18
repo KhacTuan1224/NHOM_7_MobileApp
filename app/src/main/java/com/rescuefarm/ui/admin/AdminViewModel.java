@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Date;
 
 public final class AdminViewModel extends ViewModel {
-    private static final int PAGE_SIZE = 40;
+    private static final int PAGE_SIZE = 12;
     private final AdminRepository repository;
     private final MutableLiveData<AdminScreenState> state = new MutableLiveData<>(
             AdminScreenState.dashboard(AdminScreenState.Status.IDLE, null, ""));
@@ -33,6 +33,26 @@ public final class AdminViewModel extends ViewModel {
 
     public void loadDetail(Section section, String id, AdminRepository.DetailCallback callback) {
         repository.loadDetail(section, id, callback);
+    }
+
+    public void loadBannerCampaigns(AdminRepository.ListCallback callback) {
+        loadBannerCampaignPage("", new java.util.ArrayList<>(), callback);
+    }
+
+    private void loadBannerCampaignPage(String cursor, List<AdminListItem> campaigns,
+            AdminRepository.ListCallback callback) {
+        repository.loadSectionPage(Section.CAMPAIGNS, 100, "ACTIVE", cursor, new AdminRepository.PageCallback() {
+            @Override public void onSuccess(List<AdminListItem> items, String nextCursor, boolean more) {
+                if (items != null) campaigns.addAll(items);
+                if (more && nextCursor != null && !nextCursor.isEmpty() && !nextCursor.equals(cursor))
+                    loadBannerCampaignPage(nextCursor, campaigns, callback);
+                else {
+                    campaigns.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
+                    callback.onSuccess(campaigns);
+                }
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String message) { callback.onError(code, message); }
+        });
     }
 
     public void resolveReport(String id, AdminRepository.ReportAction action, String reason,
@@ -98,6 +118,7 @@ public final class AdminViewModel extends ViewModel {
     public boolean hasMore() { return hasMore; }
 
     public void loadNextPage() {
+        if (state.getValue() != null && state.getValue().getStatus() == AdminScreenState.Status.LOADING) return;
         if (!hasMore || currentSection == Section.ANALYTICS) return;
         loadSectionPage(true);
     }
@@ -117,7 +138,10 @@ public final class AdminViewModel extends ViewModel {
                 if (version != pageRequestVersion || requestedSection != currentSection) return;
                 List<AdminListItem> merged = new java.util.ArrayList<>();
                 if (append) merged.addAll(currentItems());
-                if (items != null) merged.addAll(items);
+                java.util.LinkedHashMap<String, AdminListItem> unique = new java.util.LinkedHashMap<>();
+                for (AdminListItem item : merged) unique.put(item.getId(), item);
+                if (items != null) for (AdminListItem item : items) unique.put(item.getId(), item);
+                merged = new java.util.ArrayList<>(unique.values());
                 cursor = nextCursor; hasMore = more;
                 boolean empty = merged.isEmpty();
                 state.postValue(AdminScreenState.list(empty ? AdminScreenState.Status.EMPTY

@@ -1,4 +1,5 @@
 const express = require('express');
+const {bankTransferCapability} = require('./sepay');
 const text = value => typeof value === 'string' ? value.trim() : '';
 const fulfillmentTypes = ['DELIVERY', 'PICKUP', 'ON_SITE_RESCUE'];
 
@@ -9,7 +10,7 @@ function availablePaymentMethods(fulfillmentType, profile) {
   return methods;
 }
 
-function createSellerPaymentOptionsApi({db}) {
+function createSellerPaymentOptionsApi({db, env = process.env}) {
   const router = express.Router();
   // Public capabilities only. Customers and guests never read private bank documents.
   router.post('/sellers/payment-options', async (req, res, next) => {
@@ -24,8 +25,10 @@ function createSellerPaymentOptionsApi({db}) {
           || seller.get('sellerStatus') !== 'APPROVED')
         throw Object.assign(new Error('Cửa hàng hiện chưa thể nhận đơn hàng.'), {status: 409});
       const payment = await db.collection('sellerPaymentProfiles').doc(sellerId).get();
+      const profile = payment.exists ? payment.data() : null;
+      const verification = bankTransferCapability(sellerId, profile, env);
       res.json({ok: true, availablePaymentMethods: availablePaymentMethods(
-        fulfillmentType, payment.exists ? payment.data() : null)});
+        fulfillmentType, verification.available ? profile : null), bankTransferVerification: verification});
     } catch (error) { next(error); }
   });
   return {router};

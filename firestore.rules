@@ -378,48 +378,11 @@ service cloud.firestore {
           ];
     }
 
-    function validPost(data) {
-      return data.keys().hasOnly([
-            'id', 'sellerId', 'title', 'content', 'campaignId', 'imageUrls', 'imagePublicIds',
-            'linkedProductIds', 'urgencyLevel', 'status', 'viewCount',
-            'createdAt', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
-          ])
-          && data.id is string
-          && data.sellerId is string
-          && data.title is string
-          && data.title.size() >= 3 && data.title.size() <= 120
-          && data.content is string
-          && data.content.size() >= 10 && data.content.size() <= 3000
-          && data.campaignId is string
-          && data.imageUrls is list && data.imageUrls.size() <= 6
-          && data.get('imagePublicIds', []) is list && data.get('imagePublicIds', []).size() <= 6
-          && data.linkedProductIds is list && data.linkedProductIds.size() <= 12
-          && data.createdAt is timestamp
-          && data.urgencyLevel in ['NORMAL', 'HIGH', 'CRITICAL']
-          && data.status in ['DRAFT', 'PENDING_APPROVAL', 'PUBLISHED', 'REJECTED', 'HIDDEN']
-          && data.viewCount is int && data.viewCount >= 0
-          && data.createdAt is timestamp;
-    }
 
-    function publishedPost(postId) {
-      return get(/databases/$(database)/documents/posts/$(postId)).data.status == 'PUBLISHED';
-    }
 
-    function validComment(data, postId) {
-      return data.keys().hasOnly([
-            'id', 'postId', 'userId', 'status', 'content', 'createdAt', 'updatedAt',
-            'moderatedBy', 'moderatedAt', 'moderationReason'
-          ])
-          && data.id is string
-          && data.postId == postId
-          && data.userId is string
-          && data.status in ['ACTIVE', 'EDITED', 'DELETED', 'HIDDEN']
-          && data.content is string
-          && ((data.status == 'DELETED' && data.content == '')
-            || (data.status != 'DELETED' && data.content.size() >= 1 && data.content.size() <= 500))
-          && data.createdAt is timestamp
-          && data.updatedAt is timestamp;
-    }
+
+
+
 
     function activeCampaign(campaignId) {
       return get(/databases/$(database)/documents/campaigns/$(campaignId)).data.status == 'ACTIVE';
@@ -695,16 +658,20 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validCatalogImageUrl(url) {
+      return url == '' || url.matches('https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]{1,5})?([/?#][^\\s]*)?');
+    }
+
     function validAdminCategory(data, categoryId) {
       return data.keys().hasOnly([
             'id', 'name', 'description', 'imageUrl', 'imagePublicId', 'active', 'displayOrder',
             'createdAt', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
-          && data.id == categoryId
+          && data.get('id', categoryId) == categoryId
           && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
           && data.get('description', '') is string && data.get('description', '').size() <= 500
           && data.imageUrl is string && data.imageUrl.size() <= 2048
-          && (data.imageUrl == '' || data.imageUrl.matches('https://res\\.cloudinary\\.com/.+'))
+          && validCatalogImageUrl(data.imageUrl)
           && data.get('imagePublicId', '') is string && data.get('imagePublicId', '').size() <= 300
           && data.active is bool
           && data.displayOrder is int && data.displayOrder >= 0 && data.displayOrder <= 10000
@@ -1075,7 +1042,7 @@ service cloud.firestore {
           && data.id == bannerId
           && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
           && data.imageUrl is string && data.imageUrl.size() <= 2048
-          && (data.imageUrl == '' || data.imageUrl.matches('https://res\\.cloudinary\\.com/.+'))
+          && validCatalogImageUrl(data.imageUrl)
           && data.get('imagePublicId', '') is string && data.get('imagePublicId', '').size() <= 300
           && data.campaignId is string && data.campaignId.size() <= 128
           && (data.campaignId == ''
@@ -1107,58 +1074,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /posts/{postId} {
-      allow get: if (isApprovedSeller(request.auth.uid)
-              && !exists(/databases/$(database)/documents/posts/$(postId)))
-          || resource.data.status == 'PUBLISHED'
-          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
-          || isAdmin();
-      allow list: if resource.data.status == 'PUBLISHED'
-          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
-          || isAdmin();
-      // New authored content lives on Campaign documents. This collection is
-      // retained only for historical Post records and report resolution.
-      allow create: if false;
-      allow update: if (
-            (isAdmin()
-              && ((resource.data.status == 'PENDING_APPROVAL'
-                    && request.resource.data.status in ['PUBLISHED', 'REJECTED'])
-                || (resource.data.status == 'PUBLISHED'
-                    && request.resource.data.status == 'HIDDEN')
-                || (resource.data.status == 'HIDDEN'
-                    && request.resource.data.status == 'PUBLISHED'))
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
-              ])
-              && (!(request.resource.data.status in ['REJECTED', 'HIDDEN'])
-                || request.resource.data.moderationReason.size() >= 3)
-              && hasAdminModerationFields(request.resource.data))
-          )
-          && validPost(request.resource.data)
-          && hasNoCredentialFields(request.resource.data);
-      allow delete: if false;
 
-      match /reactions/{reactionId} {
-        allow get, list: if publishedPost(postId);
-        allow create, update, delete: if false;
-      }
-
-      match /comments/{commentId} {
-        allow get, list: if publishedPost(postId) || isAdmin();
-        // Legacy content remains read-only to users; Admin can still enforce reports.
-        allow update: if isAdmin()
-            && request.resource.data.id == resource.data.id
-            && request.resource.data.postId == resource.data.postId
-            && request.resource.data.userId == resource.data.userId
-            && resource.data.status in ['ACTIVE', 'EDITED']
-            && request.resource.data.status == 'HIDDEN'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'])
-            && hasAdminModerationFields(request.resource.data)
-            && validComment(request.resource.data, postId);
-        allow create, delete: if false;
-      }
-    }
 
     match /favorites/{favoriteId} {
       // Transactional favorite toggles must be able to read the deterministic
@@ -1250,25 +1166,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+
+
     function validReportCommentContext(data) {
-      let collection = data.get('parentType', '') == 'CAMPAIGN' ? 'campaigns' : 'posts';
       let parentId = data.get('parentId', '');
       let id = data.targetId;
-      let path = /databases/$(database)/documents/$(collection)/$(parentId)/comments/$(id);
-      return data.get('parentType', '') in ['CAMPAIGN', 'POST']
+      let path = /databases/$(database)/documents/campaigns/$(parentId)/comments/$(id);
+      return data.get('parentType', '') == 'CAMPAIGN'
           && parentId is string && parentId.size() > 0 && !parentId.matches('.*[/].*')
           && !id.matches('.*[/].*')
-          && data.get('targetPath', '') == collection + '/' + parentId + '/comments/' + id
+          && data.get('targetPath', '') == 'campaigns/' + parentId + '/comments/' + id
           && exists(path) && get(path).data.status in ['ACTIVE', 'EDITED']
-          && (isAdmin() || (collection == 'campaigns' && activeCampaign(parentId))
-            || (collection == 'posts' && publishedPost(parentId)));
+          && (isAdmin() || activeCampaign(parentId));
     }
 
     match /reports/{reportId} {
       allow get, list: if isAdmin();
       allow create: if isActiveAccount() && request.resource.data.id == reportId
           && request.resource.data.reporterId == request.auth.uid
-          && request.resource.data.targetType in ['USER', 'PRODUCT', 'CAMPAIGN', 'POST', 'COMMENT', 'REVIEW']
+          && request.resource.data.targetType in ['USER', 'PRODUCT', 'CAMPAIGN', 'COMMENT', 'REVIEW']
           && request.resource.data.targetId is string && request.resource.data.targetId.size() > 0
           && (request.resource.data.targetType != 'COMMENT' || validReportCommentContext(request.resource.data))
           && request.resource.data.reason is string
@@ -1347,7 +1263,7 @@ service cloud.firestore {
           ])
           && request.resource.data.adminId == request.auth.uid
           && request.resource.data.resourceType in [
-            'SELLER_APPLICATIONS', 'USERS', 'POSTS', 'PRODUCTS', 'CAMPAIGNS',
+            'SELLER_APPLICATIONS', 'USERS', 'PRODUCTS', 'CAMPAIGNS',
             'CATEGORIES', 'BANNERS', 'REVIEWS', 'REPORTS', 'COMMENTS', 'ORDERS', 'PRODUCT_BATCHES', 'SHIPPING_SETTINGS'
           ]
           && request.resource.data.resourceId is string
@@ -1405,7 +1321,7 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    // Report moderation searches both Campaign and historical Post comments.
+    // Report moderation searches Campaign comments by their canonical identity.
     // This grants only reads; writes still use the explicit parent rules above.
     match /{parent=**}/comments/{commentId} {
       allow get, list: if isAdmin();

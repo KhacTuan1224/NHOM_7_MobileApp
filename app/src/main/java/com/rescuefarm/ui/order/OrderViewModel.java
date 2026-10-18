@@ -19,21 +19,57 @@ public class OrderViewModel extends ViewModel {
         if (ownerId == null || ownerId.trim().isEmpty()) {
             return new MutableLiveData<>(java.util.Collections.emptyList());
         }
-        return repository.observeOrders(ownerId);
+        return repository.observeCustomerOrderPage(ownerId);
+    }
+    public LiveData<List<Order>> observeReviewOrders(String ownerId) {
+        return ownerId == null || ownerId.trim().isEmpty()
+                ? new MutableLiveData<>(java.util.Collections.emptyList()) : repository.observeOrders(ownerId);
+    }
+    public void refreshReviewOrders(String ownerId) {
+        if (ownerId == null || ownerId.trim().isEmpty()) return;
+        repository.refreshOrders(ownerId, new OrderRepository.ActionCallback() {
+            public void onSuccess() { }
+            public void onError(OrderRepository.ErrorCode error, String message) {
+                state.postValue(OrderLifecycleState.error(message));
+            }
+        });
     }
     public void refreshCustomerOrders(String ownerId) {
+        loadCustomerPage(ownerId, true);
+    }
+    private boolean customerPageLoading;
+    public boolean isCustomerPageLoading() { return customerPageLoading; }
+    public boolean hasMoreCustomerOrders(String ownerId) { return repository.hasMoreCustomerOrders(ownerId); }
+    public void loadCustomerPage(String ownerId, boolean reset) {
+        if (customerPageLoading) return;
         if (ownerId == null || ownerId.trim().isEmpty()) return;
+        customerPageLoading = true;
         state.setValue(OrderLifecycleState.loading());
-        repository.refreshOrders(ownerId, new OrderRepository.ActionCallback() {
-            @Override public void onSuccess() { state.postValue(OrderLifecycleState.idle()); }
+        repository.refreshCustomerOrderPage(ownerId, reset, new OrderRepository.ActionCallback() {
+            @Override public void onSuccess() { customerPageLoading = false; state.postValue(OrderLifecycleState.idle()); }
             @Override public void onError(OrderRepository.ErrorCode error, String message) {
+                customerPageLoading = false;
                 state.postValue(OrderLifecycleState.error(message));
             }
         });
     }
     public LiveData<List<Order>> observeSellerOrders(String sellerId){return repository.observeSellerOrders(sellerId);}
-    public void refreshSellerOrders(String sellerId){repository.refreshSellerOrders(sellerId,new OrderRepository.ActionCallback(){@Override public void onSuccess(){}@Override public void onError(OrderRepository.ErrorCode e,String message){state.postValue(OrderLifecycleState.error(message));}});}
-    public void loadMoreSellerOrders(String sellerId){repository.loadMoreSellerOrders(sellerId,new OrderRepository.ActionCallback(){@Override public void onSuccess(){}@Override public void onError(OrderRepository.ErrorCode e,String message){state.postValue(OrderLifecycleState.error(message));}});}
+    private boolean sellerPageLoading;
+    public void refreshSellerOrders(String sellerId){loadSellerPage(sellerId, true);}
+    public void loadMoreSellerOrders(String sellerId){loadSellerPage(sellerId, false);}
+    private void loadSellerPage(String sellerId, boolean reset) {
+        if (sellerPageLoading) return;
+        sellerPageLoading = true;
+        state.setValue(OrderLifecycleState.loading());
+        OrderRepository.ActionCallback callback = new OrderRepository.ActionCallback() {
+            public void onSuccess() { sellerPageLoading = false; state.postValue(OrderLifecycleState.idle()); }
+            public void onError(OrderRepository.ErrorCode code, String message) {
+                sellerPageLoading = false; state.postValue(OrderLifecycleState.error(message));
+            }
+        };
+        if (reset) repository.refreshSellerOrders(sellerId, callback);
+        else repository.loadMoreSellerOrders(sellerId, callback);
+    }
     public boolean hasMoreSellerOrders(String sellerId){return repository.hasMoreSellerOrders(sellerId);}
     public void load(String id){state.setValue(OrderLifecycleState.loading());repository.getOrder(id,callback());}
     public void observeOrder(String id){state.setValue(OrderLifecycleState.loading());repository.observeOrder(id,callback());}

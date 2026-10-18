@@ -4,15 +4,15 @@ import com.rescuefarm.domain.enums.CommentStatus;
 import java.util.Date;
 
 public class Comment {
-    private String id; private String postId; private String userId; private String content;
+    private String id; private String campaignId; private String userId; private String content;
     private CommentStatus status; private Date createdAt; private Date updatedAt;
     public Comment() { status = CommentStatus.ACTIVE; }
-    public static Comment create(String id, String postId, String userId, String content, Date createdAt) {
-        return restore(id, postId, userId, content, CommentStatus.ACTIVE, createdAt, createdAt);
+    public static Comment create(String id, String campaignId, String userId, String content, Date createdAt) {
+        return restore(id, campaignId, userId, content, CommentStatus.ACTIVE, createdAt, createdAt);
     }
-    public static Comment restore(String id, String postId, String userId, String content,
+    public static Comment restore(String id, String campaignId, String userId, String content,
             CommentStatus status, Date createdAt, Date updatedAt) {
-        if (clean(id).isEmpty() || clean(postId).isEmpty() || clean(userId).isEmpty()) {
+        if (clean(id).isEmpty() || clean(campaignId).isEmpty() || clean(userId).isEmpty()) {
             throw new IllegalArgumentException("Comment identity is required");
         }
         CommentStatus safeStatus = status == null ? CommentStatus.ACTIVE : status;
@@ -20,7 +20,7 @@ public class Comment {
             if (!clean(content).isEmpty()) throw new IllegalArgumentException("Deleted comment content must be empty");
         } else validateContent(content);
         Comment value = new Comment(); value.id = clean(id);
-        value.postId = clean(postId); value.userId = clean(userId); value.content = clean(content);
+        value.campaignId = clean(campaignId); value.userId = clean(userId); value.content = clean(content);
         value.status = safeStatus;
         value.createdAt = copy(createdAt); value.updatedAt = copy(updatedAt); return value;
     }
@@ -35,7 +35,7 @@ public class Comment {
     }
     private static String clean(String value) { return value == null ? "" : value.trim(); }
     private static Date copy(Date value) { return value == null ? null : new Date(value.getTime()); }
-    public String getId() { return id; } public String getPostId() { return postId; }
+    public String getId() { return id; } public String getCampaignId() { return campaignId; }
     public String getUserId() { return userId; } public String getContent() { return content; }
     public CommentStatus getStatus() { return status; } public Date getCreatedAt() { return copy(createdAt); }
     public Date getUpdatedAt() { return copy(updatedAt); }

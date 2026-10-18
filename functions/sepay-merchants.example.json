@@ -1,0 +1,9 @@
+{
+  "SELLER_FIREBASE_UID": {
+    "enabled": false,
+    "bankCode": "ICB",
+    "accountNumber": "REPLACE_WITH_LINKED_VIETINBANK_ACCOUNT",
+    "authMode": "hmac",
+    "webhookSecret": "REPLACE_WITH_SECRET_GENERATED_IN_SEPAY"
+  }
+}

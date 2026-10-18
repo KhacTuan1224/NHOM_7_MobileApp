@@ -46,7 +46,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     for (Section section : dashboardSections())
                         totals.put(section, rawTotals == null ? 0 : rawTotals.optInt(section.name(), 0));
                     callback.onSuccess(new AdminDashboardSnapshot(totals,
-                            response.optInt("pendingSellers"), response.optInt("pendingPosts"),
+                            response.optInt("pendingSellers"),
                             response.optInt("pendingCampaigns"), response.optInt("pendingReviews"),
                             response.optInt("openReports"), response.optDouble("deliveredRevenue"),
                             response.optInt("activeCampaigns"), response.optInt("criticalCampaigns"),
@@ -195,7 +195,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
         switch (section) {
             case SELLER_APPLICATIONS: return "shopName";
             case USERS: return "email";
-            case POSTS: case CAMPAIGNS: return "title";
+            case CAMPAIGNS: return "title";
             case PRODUCTS: return "name";
             case CATEGORIES: return "name";
             case BANNERS: return "title";
@@ -374,10 +374,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 || name.length() < (section == Section.CATEGORIES ? 2 : 3) || name.length() > 120
                 || (section == Section.CATEGORIES && description.length() > 500)
                 || displayOrder < 0 || displayOrder > 10000
-                || (!imageUrl.isEmpty() && !imageUrl.startsWith("https://res.cloudinary.com/"))
-                || (active && imageUrl.isEmpty())
+                || (section == Section.BANNERS && active && imageUrl.isEmpty())
                 || (!active && note.length() < 3)) {
-            callback.onError(ErrorCode.VALIDATION, "Kiểm tra ID, tên, thứ tự, ảnh và lý do tắt hiển thị."); return;
+            callback.onError(ErrorCode.VALIDATION, "Kiểm tra tên, thứ tự từ 0 đến 10000 và lý do khi tắt hiển thị. Banner đang hiển thị phải có ảnh."); return;
         }
         Date startDate = input.get("startDate") instanceof Date ? (Date) input.get("startDate") : null;
         Date endDate = input.get("endDate") instanceof Date ? (Date) input.get("endDate") : null;
@@ -401,8 +400,11 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 } else if (id.isEmpty()) {
                     throw new IllegalArgumentException("Category cần ID ổn định.");
                 }
+                if (!com.rescuefarm.service.admin.CatalogImagePolicy.isAllowed(imageUrl,
+                        current.exists() ? text(current, "imageUrl") : ""))
+                    throw new IllegalArgumentException("Ảnh phải là đường dẫn HTTPS hợp lệ hoặc ảnh tải lên Cloudinary.");
                 Map<String, Object> changes = new HashMap<>();
-                changes.put("id", ref.getId());
+                if (!current.exists() || current.contains("id")) changes.put("id", ref.getId());
                 changes.put(section == Section.CATEGORIES ? "name" : "title", name);
                 if (section == Section.CATEGORIES) changes.put("description", description);
                 changes.put("imageUrl", imageUrl.isEmpty() && current.exists()
@@ -662,7 +664,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 Map<String, Object> target = new HashMap<>(comment.getData());
                 target.put("id", comment.getId()); target.put("targetPath", reference.getPath());
                 target.put("parentId", reference.getParent().getParent().getId());
-                target.put("parentType", reference.getPath().startsWith("campaigns/") ? "CAMPAIGN" : "POST");
+                target.put("parentType", "CAMPAIGN");
                 detail.put("target", target); loadModerationContext(Section.REPORTS, detail, callback);
             }).addOnFailureListener(error -> fail(error, callback)), message -> { detail.put("targetResolutionError", message); callback.onSuccess(detail); });
         } else if (collection.isEmpty()) callback.onSuccess(detail);
@@ -682,8 +684,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
         String id = mapText(report, "targetId"), path = mapText(report, "targetPath");
         if (!path.isEmpty()) {
             String[] parts = path.split("/", -1);
-            String parentType = path.startsWith("campaigns/") ? "CAMPAIGN" : "POST";
-            if (parts.length != 4 || !(parts[0].equals("campaigns") || parts[0].equals("posts"))
+            String parentType = "CAMPAIGN";
+            if (parts.length != 4 || !parts[0].equals("campaigns")
                     || !parts[2].equals("comments") || !parts[3].equals(id) || parts[1].isEmpty()
                     || !parts[1].equals(mapText(report, "parentId")) || !parentType.equals(mapText(report, "parentType"))) {
                 error.accept("Ngữ cảnh bình luận trong báo cáo không hợp lệ."); return;
@@ -694,7 +696,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
             if (matches.size() != 1) { error.accept(matches.isEmpty() ? "Bình luận đã bị xóa."
                     : "Báo cáo cũ có ID trùng ở nhiều nơi; cần bổ sung parentType, parentId và targetPath trước khi xử lý."); return; }
             DocumentReference reference = matches.getDocuments().get(0).getReference();
-            if (!reference.getPath().matches("(campaigns|posts)/[^/]+/comments/[^/]+")) {
+            if (!reference.getPath().matches("campaigns/[^/]+/comments/[^/]+")) {
                 error.accept("Loại bình luận không được hỗ trợ."); return;
             }
             success.accept(reference);
@@ -718,7 +720,6 @@ public final class FirebaseAdminRepository implements AdminRepository {
             String type = clean(mapText(detail, "targetType"));
             subjectSection = "PRODUCT".equals(type) ? Section.PRODUCTS
                     : "CAMPAIGN".equals(type) ? Section.CAMPAIGNS
-                    : "POST".equals(type) ? Section.POSTS
                     : "REVIEW".equals(type) ? Section.REVIEWS : Section.REPORTS;
         }
         List<RelatedDocument> related = new ArrayList<>();
@@ -731,16 +732,6 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 break;
             case CAMPAIGNS:
                 if (!sellerId.isEmpty()) related.add(new RelatedDocument(db.collection(USERS).document(sellerId), "sellerProfile"));
-                break;
-            case POSTS:
-                if (!sellerId.isEmpty()) related.add(new RelatedDocument(db.collection(USERS).document(sellerId), "sellerProfile"));
-                String campaignId = mapText(subject, "campaignId");
-                if (!campaignId.isEmpty()) related.add(new RelatedDocument(db.collection("campaigns").document(campaignId), "campaignDetail"));
-                Object linked = subject.get("linkedProductIds");
-                if (linked instanceof List<?>) for (Object rawId : (List<?>) linked) {
-                    String productId = rawId == null ? "" : trim(String.valueOf(rawId));
-                    if (!productId.isEmpty()) related.add(new RelatedDocument(db.collection("products").document(productId), "linkedProducts"));
-                }
                 break;
             case REVIEWS:
                 String productId = mapText(subject, "productId");
@@ -757,8 +748,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 break;
             case REPORTS:
                 String parentType = mapText(subject, "parentType"), parentId = mapText(subject, "parentId");
-                if (!parentId.isEmpty() && ("CAMPAIGN".equals(parentType) || "POST".equals(parentType)))
-                    related.add(new RelatedDocument(db.collection("CAMPAIGN".equals(parentType) ? "campaigns" : "posts").document(parentId), "commentParent"));
+                if (!parentId.isEmpty() && "CAMPAIGN".equals(parentType))
+                    related.add(new RelatedDocument(db.collection("campaigns").document(parentId), "commentParent"));
                 Object targetRaw = detail.get("target");
                 if (targetRaw instanceof Map<?, ?>) {
                     Map<?, ?> target = (Map<?, ?>) targetRaw;
@@ -928,7 +919,6 @@ public final class FirebaseAdminRepository implements AdminRepository {
 
     private static void validateHideTarget(String collection, String status) {
         boolean allowed = ("products".equals(collection) && java.util.Arrays.asList("ACTIVE", "INACTIVE", "SOLD_OUT").contains(status))
-                || ("posts".equals(collection) && "PUBLISHED".equals(status))
                 || ("campaigns".equals(collection) && "ACTIVE".equals(status))
                 || ("reviews".equals(collection) && "PUBLISHED".equals(status))
                 || ("comments".equals(collection) && java.util.Arrays.asList("ACTIVE", "EDITED").contains(status));
@@ -938,7 +928,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
     private static String targetCollection(String type) {
         switch (clean(type)) {
             case "USER": return "users"; case "PRODUCT": return "products";
-            case "CAMPAIGN": return "campaigns"; case "POST": return "posts";
+            case "CAMPAIGN": return "campaigns";
             case "REVIEW": return "reviews"; case "COMMENT": return "comments";
             default: return "";
         }
@@ -946,7 +936,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
 
     private static Section sectionForCollection(String collection) {
         switch (collection) {
-            case "products": return Section.PRODUCTS; case "posts": return Section.POSTS;
+            case "products": return Section.PRODUCTS;
             case "campaigns": return Section.CAMPAIGNS; case "reviews": return Section.REVIEWS;
             default: return Section.REPORTS;
         }
@@ -1083,10 +1073,10 @@ public final class FirebaseAdminRepository implements AdminRepository {
             case USERS:
                 title = first(document, "fullName", "email", "id"); subtitle = first(document, "email", "role");
                 if (com.rescuefarm.ui.common.EnumLabels.hasLabel(subtitle)) subtitle = com.rescuefarm.ui.common.EnumLabels.label(subtitle); break;
-            case POSTS: case PRODUCTS: case CAMPAIGNS:
+            case PRODUCTS: case CAMPAIGNS:
                 title = first(document, "title", "name", "id"); subtitle = text(document, "sellerId"); break;
             case CATEGORIES:
-                title = first(document, "name", "id"); subtitle = "Category"; imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
+                title = first(document, "name", "id"); subtitle = "Danh mục"; imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
             case BANNERS:
                 title = first(document, "title", "id"); subtitle = text(document, "campaignId"); imageUrl = text(document, "imageUrl"); status = active ? "ACTIVE" : "INACTIVE"; break;
             case REVIEWS:
@@ -1102,7 +1092,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
     }
 
     private static Section[] dashboardSections() {
-        return new Section[]{Section.SELLER_APPLICATIONS, Section.USERS, Section.POSTS,
+        return new Section[]{Section.SELLER_APPLICATIONS, Section.USERS,
                 Section.PRODUCTS, Section.CAMPAIGNS, Section.CATEGORIES, Section.BANNERS,
                 Section.REVIEWS, Section.REPORTS, Section.ORDERS};
     }

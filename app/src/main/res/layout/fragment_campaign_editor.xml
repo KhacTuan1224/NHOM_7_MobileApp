@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/rescue_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:background="@color/rescue_background" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/form_max_width">
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/campaign_editor_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
         <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" android:hint="@string/campaign_title_hint">
@@ -53,12 +53,21 @@
             style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:text="@string/campaign_gps_action" />
         <TextView android:id="@+id/campaignGpsStatus" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="@string/gps_not_selected" />
+            android:layout_height="wrap_content" android:text="@string/campaign_gps_required"
+            android:accessibilityLiveRegion="polite" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/campaign_gps_address_hint"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:layout_marginTop="@dimen/space_xs" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/location_name_hint" /><com.rescuefarm.ui.common.VietnamAddressView android:id="@+id/campaignLocationNameInput" android:layout_width="match_parent" android:layout_height="wrap_content" />
-        <Button android:id="@+id/saveCampaignDraftButton" android:layout_width="match_parent"
+        <TextView android:id="@+id/campaignEditorMessage" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
+            android:textColor="@color/rescue_critical" android:accessibilityLiveRegion="polite"
+            android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/saveCampaignDraftButton" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_lg"
             android:text="@string/save_draft_action" />
-        <Button android:id="@+id/submitCampaignButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton android:id="@+id/submitCampaignButton" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:text="@string/submit_approval_action" />
-    </LinearLayout>
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

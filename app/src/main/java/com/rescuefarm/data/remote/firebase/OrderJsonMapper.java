@@ -35,7 +35,8 @@ final class OrderJsonMapper {
         Payment p = Payment.restore(d.optString("id"), d.optString("orderId"), PaymentMethod.valueOf(d.optString("method")),
                 PaymentStatus.valueOf(d.optString("status")), d.optDouble("amount"), d.optString("referenceCode"), date(d, "paidAt"));
         p.setBankDetails(d.optString("bankCode"), d.optString("bankAccountName"), d.optString("bankAccountNumber"));
-        p.setQrUrl(d.optString("qrUrl")); return p;
+        p.setQrUrl(d.optString("qrUrl"));
+        p.setVerificationDetails(d.optString("verificationProvider"), d.optString("transferContent")); return p;
     }
     static Shipment shipment(JSONObject d) {
         return d == null ? null : Shipment.restore(d.optString("id"), d.optString("orderId"), d.optString("carrierName"),

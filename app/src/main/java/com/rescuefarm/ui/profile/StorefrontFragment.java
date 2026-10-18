@@ -29,15 +29,16 @@ public final class StorefrontFragment extends Fragment {
         AuthRepository auth=AuthRepositoryFactory.create(requireContext());
         editing=getArguments()!=null&&getArguments().getBoolean("edit",false)&&auth.isAuthenticated();
         sellerId=editing?auth.getCurrentUserId():getArguments()==null?"":getArguments().getString("sellerId","");
-        CustomerUi.text(root,editing?"Mã QR nhận chuyển khoản":"Thông tin người bán").setTextSize(24);
+        com.rescuefarm.ui.common.AppTypography.title(CustomerUi.text(root,editing?"Mã QR nhận chuyển khoản":"Thông tin người bán")).setTextSize(24);
         message=CustomerUi.text(root,""); details=CustomerUi.column(requireContext()); root.addView(details);
         vm=new ViewModelProvider(this,new StorefrontViewModelFactory(requireContext())).get(StorefrontViewModel.class);
         if(editing) buildEditor();
         vm.message.observe(getViewLifecycleOwner(),message::setText);
         vm.storefront.observe(getViewLifecycleOwner(),this::render);
         reloadButton = CustomerUi.button(root,"Tải lại",v->vm.load(sellerId));
+        if (editing) com.rescuefarm.ui.seller.SellerUiStyles.styleActions(root, com.rescuefarm.ui.seller.SellerUiStyles.Section.PROFILE);
         if(!editing) {
-            CustomerUi.text(root,"Sản phẩm và đánh giá").setTextSize(20);
+            com.rescuefarm.ui.common.AppTypography.title(CustomerUi.text(root,"Sản phẩm và đánh giá")).setTextSize(20);
             products=CustomerUi.column(requireContext()); root.addView(products);
             HomeViewModel home=new ViewModelProvider(this,new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
             home.getHomeState().observe(getViewLifecycleOwner(),state->{
@@ -85,7 +86,7 @@ public final class StorefrontFragment extends Fragment {
         } else {
             details.removeAllViews();
             if(!value.configured){CustomerUi.text(details,"Người bán chưa cập nhật trang cửa hàng.");return;}
-            CustomerUi.text(details,value.shopName).setTextSize(22);
+            com.rescuefarm.ui.common.AppTypography.title(CustomerUi.text(details,value.shopName)).setTextSize(22);
             CustomerUi.text(details,value.description); CustomerUi.text(details,value.address);
             CustomerUi.text(details,"Phí giao hàng được tính theo khoảng cách GPS khi đặt giao hàng.");
         }

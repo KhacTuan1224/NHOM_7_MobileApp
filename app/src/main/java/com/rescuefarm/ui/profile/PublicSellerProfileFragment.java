@@ -15,7 +15,7 @@ import com.rescuefarm.R;
 
 /** Public seller card for customers; data comes from the intentionally public mirror collection. */
 public class PublicSellerProfileFragment extends Fragment {
-    private TextView name, description, address, bank;
+    private TextView name, description, address;
     private ImageView avatar;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -24,27 +24,40 @@ public class PublicSellerProfileFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        view.findViewById(R.id.publicSellerBackButton).setOnClickListener(v ->
+                requireActivity().getOnBackPressedDispatcher().onBackPressed());
         name = view.findViewById(R.id.publicSellerName); description = view.findViewById(R.id.publicSellerDescription);
-        address = view.findViewById(R.id.publicSellerAddress); bank = view.findViewById(R.id.publicSellerBank);
+        address = view.findViewById(R.id.publicSellerAddress);
         avatar = view.findViewById(R.id.publicSellerAvatar);
+        TextView message = view.findViewById(R.id.publicSellerMessage);
+        View content = view.findViewById(R.id.publicSellerContent);
         String sellerId = getArguments() == null ? "" : getArguments().getString("sellerId", "");
-        if (sellerId.isEmpty()) { name.setText("Không tìm thấy người bán."); return; }
+        if (blank(sellerId)) { message.setText(R.string.public_seller_not_found); return; }
         StorefrontViewModel vm = new ViewModelProvider(this,new StorefrontViewModelFactory(requireContext())).get(StorefrontViewModel.class);
-        android.widget.LinearLayout reportActions = new android.widget.LinearLayout(requireContext());
-        ((android.view.ViewGroup)bank.getParent()).addView(reportActions);
+        android.widget.LinearLayout reportActions = view.findViewById(R.id.publicSellerReportActions);
+        com.rescuefarm.ui.engagement.ContextReportAction.add(this, reportActions, "USER", sellerId,
+                sellerId, getString(R.string.public_seller_report));
+        for (int i = 0; i < reportActions.getChildCount(); i++) {
+            View action = reportActions.getChildAt(i);
+            action.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            if (action instanceof TextView) ((TextView) action).setTextSize(16);
+        }
         vm.observe(sellerId).observe(getViewLifecycleOwner(), profile -> {
-                    reportActions.removeAllViews();
                     if (profile == null || !profile.configured) {
-                        name.setText("Người bán chưa công khai hồ sơ cửa hàng."); return;
+                        content.setVisibility(View.GONE);
+                        message.setVisibility(View.VISIBLE);
+                        message.setText(R.string.public_seller_not_configured);
+                        return;
                     }
-                    com.rescuefarm.ui.engagement.ContextReportAction.add(this, reportActions, "USER", sellerId, sellerId, "Báo cáo người bán");
-                    name.setText(value(profile.shopName, "Cửa hàng RescueFarm"));
-                    description.setText(value(profile.description, "Chưa có giới thiệu cửa hàng."));
-                    address.setText(value(profile.address, "Chưa cập nhật địa chỉ.")
-                        + "\nPhí giao hàng được tính theo khoảng cách GPS khi đặt hàng.");
-                    bank.setText("Thông tin chuyển khoản sẽ hiển thị an toàn trong chi tiết đơn hàng.");
+                    message.setVisibility(View.GONE);
+                    content.setVisibility(View.VISIBLE);
+                    name.setText(value(profile.shopName, getString(R.string.public_seller_name_fallback)));
+                    description.setText(value(profile.description, getString(R.string.public_seller_description_fallback)));
+                    address.setText(value(profile.address, getString(R.string.public_seller_address_fallback)));
                     String url = profile.avatarUrl;
-                    if (!blank(url)) Glide.with(this).load(url).circleCrop().into(avatar);
+                    Glide.with(this).load(blank(url) ? null : url).placeholder(R.drawable.ic_store)
+                            .error(R.drawable.ic_store).circleCrop().into(avatar);
                 });
     }
 

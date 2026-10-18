@@ -9,6 +9,9 @@ import com.rescuefarm.service.order.CheckoutRequest;
 import java.util.List;
 
 public interface OrderRepository {
+    default androidx.lifecycle.LiveData<java.util.List<com.rescuefarm.domain.model.Order>> observeCustomerOrderPage(String ownerId) { return observeOrders(ownerId); }
+    default void refreshCustomerOrderPage(String ownerId, boolean reset, ActionCallback callback) { refreshOrders(ownerId, callback); }
+    default boolean hasMoreCustomerOrders(String ownerId) { return false; }
     interface ItemCallback { void success(List<com.rescuefarm.domain.model.OrderItem> items); void error(String message); }
     default void getOrderItems(String id, ItemCallback callback) { callback.error("Cần kết nối mạng để tải sản phẩm của đơn."); }
     enum ErrorCode { VALIDATION, INSUFFICIENT_STOCK, MULTI_SELLER, CAMPAIGN_CONFLICT,

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MobileRescueFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private java.util.List<RescueCampaign> current = java.util.Collections.emptyList();
     private final java.util.Map<String,TextView> stateLabels=new java.util.HashMap<>();
     private final java.util.Map<String,Button> updateButtons=new java.util.HashMap<>();
@@ -43,6 +44,7 @@ public class MobileRescueFragment extends Fragment {
     @Override public void onStart() { super.onStart(); clock.post(tick); }
     @Override public void onStop() { clock.removeCallbacks(tick); super.onStop(); }
     private CampaignViewModel viewModel; private LinearLayout container; private String requestedCampaignId;
+    private String pendingLocationCampaignId = "";
     private final ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissions);
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -50,46 +52,62 @@ public class MobileRescueFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_mobile_rescue, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.seller.SellerUiStyles.styleActions(view, com.rescuefarm.ui.seller.SellerUiStyles.Section.MOBILE);
         container = view.findViewById(R.id.mobileCampaignContainer);
         requestedCampaignId = getArguments() == null ? "" : getArguments().getString("campaignId", "");
         viewModel = new ViewModelProvider(this, new CampaignViewModelFactory(requireContext())).get(CampaignViewModel.class);
         viewModel.getSellerCampaigns().observe(getViewLifecycleOwner(), this::render);
+        viewModel.getSellerCampaignsHaveMore().observe(getViewLifecycleOwner(), unused -> render(current));
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (current != null) render(current);
             if (value.getStatus() == CampaignScreenState.Status.LOCATION_UPDATED) {
-                Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show(); viewModel.refreshSeller();
+                Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show(); viewModel.refreshSellerPage(true);
             } else if (value.getStatus() == CampaignScreenState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
         });
-        viewModel.refreshSeller();
+        viewModel.refreshSellerPage(true);
     }
     private void render(List<RescueCampaign> values) {
         current = values == null ? java.util.Collections.emptyList() : values;
+        java.util.List<RescueCampaign> matching = new java.util.ArrayList<>();
+        for (RescueCampaign value : current) if (value.getStatus() == CampaignStatus.ACTIVE
+                && value.getRescueMode() == RescueMode.MOBILE_POINT
+                && (requestedCampaignId.isEmpty() || requestedCampaignId.equals(value.getId()))) matching.add(value);
+        pagination.remote(() -> Boolean.TRUE.equals(viewModel.getSellerCampaignsHaveMore().getValue()),
+                viewModel::isSellerPageLoading, () -> viewModel.refreshSellerPage(false))
+                .render(container, matching, this::renderPage);
+    }
+    private void renderPage(List<RescueCampaign> values) {
         container.removeAllViews(); stateLabels.clear(); updateButtons.clear(); if (values == null) return;
         for (RescueCampaign value : values) if (value.getStatus() == CampaignStatus.ACTIVE
                 && value.getRescueMode() == RescueMode.MOBILE_POINT
                 && (requestedCampaignId.isEmpty() || requestedCampaignId.equals(value.getId()))) {
             container.addView(card(value));
         }
+        if (container.getChildCount() == 0) {
+            TextView empty = new TextView(requireContext()); empty.setTextSize(16);
+            empty.setText("Chưa có điểm giải cứu di động đang hoạt động trong danh sách đã tải. Tạo chiến dịch với hình thức Điểm di động và chờ được duyệt để cập nhật GPS tại đây.");
+            container.addView(empty);
+        }
+
     }
     private View card(RescueCampaign value) {
-        MaterialCardView card = new MaterialCardView(requireContext()); card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
-        LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14),dp(14),dp(14),dp(14));
-        TextView title = new TextView(requireContext()); title.setText(value.getTitle()); title.setTextSize(18); title.setTypeface(title.getTypeface(),1);
-        TextView state = new TextView(requireContext()); state.setText(value.isLocationFresh(new Date())
-                ? R.string.mobile_location_fresh : R.string.mobile_location_stale);
+        com.rescuefarm.ui.seller.SellerUiStyles.Row row = com.rescuefarm.ui.seller.SellerUiStyles.row(
+                requireContext(), com.rescuefarm.ui.seller.SellerUiStyles.Section.MOBILE);
+        row.title(value.getTitle());
+        TextView state = row.body("");
         state.setText(com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(value,new Date())
                 +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.locationUpdated(value.getLocationUpdatedAt(),new Date())
                 +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.remaining(value,new Date()));
-        Button update = new Button(requireContext()); update.setText(R.string.update_mobile_location_action);
+        Button update = row.action("Lấy GPS", getString(R.string.update_mobile_location_action), v -> requestLocation(value.getId()));
         update.setEnabled(com.rescuefarm.service.campaign.CampaignTimeFormatter.canUpdateLocation(value,new Date()));
-        update.setOnClickListener(v -> requestLocation(value.getId()));
         stateLabels.put(value.getId(),state); updateButtons.put(value.getId(),update);
-        Button stop = new Button(requireContext()); stop.setText(R.string.stop_location_sharing_action);
-        stop.setEnabled(value.isLocationSharingEnabled()); stop.setOnClickListener(v -> viewModel.stopLocationSharing(value.getId()));
-        body.addView(title); body.addView(state); body.addView(update); body.addView(stop); card.addView(body); return card;
+        Button stop = row.action("Dừng", getString(R.string.stop_location_sharing_action), v -> viewModel.stopLocationSharing(value.getId()));
+        stop.setEnabled(value.isLocationSharingEnabled());
+        return row.root;
     }
     private void requestLocation(String campaignId) {
-        requestedCampaignId = campaignId;
+        pendingLocationCampaignId = campaignId;
         boolean fine = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED;
         boolean coarse = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -101,7 +119,7 @@ public class MobileRescueFragment extends Fragment {
     private void onPermissions(Map<String, Boolean> result) {
         if (Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
                 || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
-            viewModel.updateCurrentLocation(requestedCampaignId);
+            viewModel.updateCurrentLocation(pendingLocationCampaignId);
         } else Toast.makeText(requireContext(), R.string.location_permission_required, Toast.LENGTH_LONG).show();
     }
     @Override public void onDestroyView() {clock.removeCallbacks(tick);stateLabels.clear();updateButtons.clear();container=null;super.onDestroyView();}

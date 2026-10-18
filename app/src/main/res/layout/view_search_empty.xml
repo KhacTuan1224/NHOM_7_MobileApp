@@ -8,7 +8,7 @@
     android:paddingHorizontal="20dp"
     android:paddingVertical="14dp">
 
-    <TextView
+    <TextView android:fontFamily="@font/ibm_plex_sans"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"

@@ -6,7 +6,6 @@ public final class CacheSyncPolicy {
     public static final String CATALOG = "catalog";
     public static final String CAMPAIGNS = "campaigns";
     public static final String BANNERS = "banners";
-    public static final String FEED = "feed";
     public static final String ORDERS = "orders";
     public static final long HARD_EXPIRY_MILLIS = TimeUnit.DAYS.toMillis(7);
 
@@ -15,7 +14,6 @@ public final class CacheSyncPolicy {
                 || (scope != null && scope.startsWith(ORDERS + ":"))) {
             return TimeUnit.MINUTES.toMillis(10);
         }
-        if (FEED.equals(scope)) return TimeUnit.MINUTES.toMillis(15);
         if (CATALOG.equals(scope)) return TimeUnit.MINUTES.toMillis(30);
         if (BANNERS.equals(scope)) return TimeUnit.HOURS.toMillis(1);
         return TimeUnit.MINUTES.toMillis(15);
