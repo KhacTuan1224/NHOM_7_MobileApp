@@ -267,7 +267,7 @@
     <string name="invalid_pricing_quantity">Số lượng phải là số dương.</string>
     <string name="price_breakdown_format">Giá gốc: %1$s\nGiá giải cứu: %2$s\nGiảm promotion: %3$s\nGiảm số lượng: %4$.2f%%\nĐơn giá cuối: %5$s\nThành tiền: %6$s</string>
     <string name="promotion_preview_title">Xem trước giá (số lượng 1)</string>
-    <string name="cart_title">Giỏ nông sản giải cứu</string>
+    <string name="cart_title">Giỏ nông sản</string>
     <string name="open_cart_action">Giỏ hàng</string>
     <string name="add_to_cart_action">Thêm vào giỏ</string>
     <string name="cart_revalidate_action">Đồng bộ &amp; kiểm tra giá/tồn</string>

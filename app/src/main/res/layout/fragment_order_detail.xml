@@ -67,23 +67,12 @@
             android:text="Thông tin đơn hàng"
             android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
+            android:id="@+id/orderDetailInfoContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_sm"
-            app:cardBackgroundColor="@color/rescue_surface"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/rescue_outline"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:id="@+id/orderDetailInfoContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/space_md" />
-        </com.google.android.material.card.MaterialCardView>
+            android:orientation="vertical" />
 
         <TextView
             android:layout_width="match_parent"

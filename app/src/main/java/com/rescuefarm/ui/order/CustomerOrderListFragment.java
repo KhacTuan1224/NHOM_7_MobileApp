@@ -9,7 +9,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -18,9 +17,7 @@ import com.rescuefarm.data.repository.AuthRepository;
 import com.rescuefarm.data.repository.AuthRepositoryFactory;
 import com.rescuefarm.data.repository.OrderRepository;
 import com.rescuefarm.domain.model.Order;
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class CustomerOrderListFragment extends Fragment {
     private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
@@ -113,41 +110,13 @@ public class CustomerOrderListFragment extends Fragment {
         LinearLayout container = view.findViewById(R.id.customerOrdersContainer);
         container.removeAllViews();
         if (orders == null) return;
-        NumberFormat money = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"));
-        String[] statuses = getResources().getStringArray(R.array.customer_order_status_labels);
         for (Order order : orders) {
-            LinearLayout row = new LinearLayout(requireContext());
-            row.setOrientation(LinearLayout.VERTICAL);
-            int verticalPadding = Math.round(12 * getResources().getDisplayMetrics().density);
-            row.setPadding(0, verticalPadding, 0, verticalPadding);
-            row.setClickable(true);
-            row.setFocusable(true);
-            row.setBackgroundResource(android.R.drawable.list_selector_background);
-            TextView code = new TextView(requireContext());
-            code.setText(order.getOrderCode());
-            code.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface));
-            code.setTextSize(14);
-            code.setTypeface(code.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(code);
-            TextView details = new TextView(requireContext());
-            details.setText(com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " • "
-                    + money.format(order.getTotalAmount()) + "\nXem chi tiết");
-            details.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface_variant));
-            details.setTextSize(13);
-            row.addView(code);
-            row.addView(details);
-            row.setOnClickListener(v -> {
+            container.addView(OrderListRow.create(container, order, false, R.color.rescue_primary, v -> {
                 Bundle args = new Bundle();
                 args.putString("orderId", order.getId());
                 Navigation.findNavController(view).navigate(
                         R.id.action_customerOrderListFragment_to_orderDetailFragment, args);
-            });
-            container.addView(row, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            View divider = new View(requireContext());
-            divider.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.rescue_outline));
-            container.addView(divider, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    Math.max(1, Math.round(getResources().getDisplayMetrics().density))));
+            }));
         }
     }
 }

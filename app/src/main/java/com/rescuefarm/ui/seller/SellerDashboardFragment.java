@@ -185,16 +185,12 @@ public class SellerDashboardFragment extends Fragment {
             SellerDashboardCards.addFootnote(requireContext(), recent, "Chưa có đơn hàng.");
         }
         for (Order order : snapshot.getRecentOrders()) {
-            SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), SellerUiStyles.Section.ORDERS);
-            row.title(order.getOrderCode());
-            row.body(com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()));
-            row.body(currency.format(order.getTotalAmount()));
-            row.action("Chi tiết", "Xem chi tiết đơn hàng", unused -> {
+            recent.addView(com.rescuefarm.ui.order.OrderListRow.create(recent, order, false,
+                    R.color.admin_orders, unused -> {
                 Bundle args = new Bundle(); args.putString("orderId", order.getId());
                 Navigation.findNavController(requireView()).navigate(
                         R.id.action_sellerDashboardFragment_to_orderDetailFragment, args);
-            });
-            recent.addView(row.root);
+            }));
         }
         if (snapshot.hasMoreOrders()) {
             Button more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.ORDERS,
