@@ -67,40 +67,15 @@
             android:orientation="vertical"
             android:layout_marginBottom="16dp" />
 
-        <!-- Summary card -->
-        <com.google.android.material.card.MaterialCardView
+        <TextView
+            android:id="@+id/cartSummaryText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="1dp"
-            app:strokeColor="@color/rescue_outline"
-            app:strokeWidth="1dp"
-            app:cardBackgroundColor="@color/rescue_surface">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/cartSummaryText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textStyle="bold"
-                    android:textSize="17sp"
-                    android:textColor="@color/rescue_on_surface"
-                    android:layout_marginBottom="6dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/cart_no_reservation_notice"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
-                    android:textColor="@color/rescue_on_surface_variant" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            android:lineSpacingExtra="6dp"
+            android:textStyle="bold"
+            android:textSize="17sp"
+            android:textColor="@color/rescue_on_surface" />
 
         <!-- Checkout button -->
         <com.google.android.material.button.MaterialButton

@@ -46,7 +46,10 @@ public class OrderDetailFragment extends Fragment {
     private LinearLayout timeline;
     private Spinner target;
     private EditText reference;
-    private EditText shipmentCarrier, shipmentTracking;
+    private Spinner shipmentCarrier;
+    private EditText shipmentTracking;
+    private ArrayAdapter<String> carrierOptions;
+    private String boundCarrier;
     private View shipmentTitle, saveShipment;
     private View statusActionTitle, bankTransferActionTitle;
     private View transitionButton, confirmButton;
@@ -87,6 +90,11 @@ public class OrderDetailFragment extends Fragment {
                 .setPositiveButton("Xác nhận", (dialog, which) -> vm.transition(orderId, OrderStatus.DELIVERED)).show());
         shipmentTitle = view.findViewById(R.id.shipmentManagementTitle);
         shipmentCarrier = view.findViewById(R.id.shipmentCarrierInput);
+        carrierOptions = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item,
+                new java.util.ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.shipment_carrier_options))));
+        carrierOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        shipmentCarrier.setAdapter(carrierOptions);
+        boundCarrier = null;
         shipmentTracking = view.findViewById(R.id.shipmentTrackingInput);
         saveShipment = view.findViewById(R.id.saveShipmentDetailsButton);
         statusActionTitle = view.findViewById(R.id.orderStatusActionTitle);
@@ -100,8 +108,13 @@ public class OrderDetailFragment extends Fragment {
                 vm.transition(orderId, (OrderStatus) selected);
         });
         confirmButton.setOnClickListener(unused -> vm.confirmTransfer(orderId, reference.getText().toString().trim()));
-        saveShipment.setOnClickListener(unused -> vm.updateShipmentDetails(orderId,
-                shipmentCarrier.getText().toString(), shipmentTracking.getText().toString(),
+        saveShipment.setOnClickListener(unused -> {
+            if (shipmentCarrier.getSelectedItemPosition() <= 0) {
+                Toast.makeText(requireContext(), R.string.shipment_carrier_required, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            vm.updateShipmentDetails(orderId,
+                shipmentCarrier.getSelectedItem().toString(), shipmentTracking.getText().toString(),
                 new com.rescuefarm.data.repository.OrderRepository.ActionCallback() {
                     @Override public void onSuccess() {
                         if (isAdded()) Toast.makeText(requireContext(), R.string.shipment_details_saved,
@@ -111,7 +124,8 @@ public class OrderDetailFragment extends Fragment {
                             String text) {
                         if (isAdded()) Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show();
                     }
-                }));
+                });
+        });
         if (orderId.isEmpty()) message.setText(R.string.order_id_missing);
     }
 
@@ -137,6 +151,10 @@ public class OrderDetailFragment extends Fragment {
         addInfoRow("Tình trạng thanh toán", paymentStatusLabel(payment.getStatus()), false);
         if (order.getFulfillmentType() == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY) {
             addInfoRow("Vận chuyển", shipment == null ? "Chưa có thông tin" : shipmentStatusLabel(shipment.getStatus()), false);
+            addInfoRow(getString(R.string.shipment_carrier_hint), shipment == null || blank(shipment.getCarrierName())
+                    ? getString(R.string.shipment_not_updated) : shipment.getCarrierName(), false);
+            addInfoRow(getString(R.string.shipment_tracking_hint), shipment == null || blank(shipment.getTrackingCode())
+                    ? getString(R.string.shipment_not_updated) : shipment.getTrackingCode(), false);
             addInfoRow("Phí giao hàng", money.format(order.getShippingFee()), false);
             if (shipment != null && shipment.getDistanceKm() > 0D)
                 addInfoRow("Khoảng cách", String.format(Locale.getDefault(), "%.1f km", shipment.getDistanceKm()), false);
@@ -238,7 +256,7 @@ public class OrderDetailFragment extends Fragment {
         shipmentTracking.setVisibility(shipmentEditable ? View.VISIBLE : View.GONE);
         saveShipment.setVisibility(shipmentEditable ? View.VISIBLE : View.GONE);
         if (shipment != null) {
-            if (!shipmentCarrier.hasFocus()) shipmentCarrier.setText(shipment.getCarrierName());
+            bindShipmentCarrier(shipment.getCarrierName());
             if (!shipmentTracking.hasFocus()) shipmentTracking.setText(shipment.getTrackingCode());
         }
         boolean buyer = (!uid.isEmpty() && uid.equals(order.getOwnerId())) || vm.canConfirmGuestReceipt(order.getId());
@@ -251,6 +269,20 @@ public class OrderDetailFragment extends Fragment {
         if (bank && payment.usesAutomaticVerification() && !seller && payment.getStatus() == PaymentStatus.PENDING
                 && order.getStatus() != OrderStatus.CANCELLED) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
+    }
+
+    private void bindShipmentCarrier(String value) {
+        String carrier = value == null ? "" : value.trim();
+        // Live order updates must not reset a seller's unsaved selection.
+        if (carrier.equals(boundCarrier)) return;
+        boundCarrier = carrier;
+        int position = carrier.isEmpty() ? 0 : carrierOptions.getPosition(carrier);
+        if (position < 0) {
+            // Preserve names previously entered before this field became a picker.
+            carrierOptions.add(carrier);
+            position = carrierOptions.getPosition(carrier);
+        }
+        shipmentCarrier.setSelection(position);
     }
 
     private String paymentStatusLabel(OrderStatus status, Payment payment) {
