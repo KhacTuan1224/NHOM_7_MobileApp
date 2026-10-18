@@ -30,7 +30,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
       return order.exists && order.get('ownerType') === 'CUSTOMER' ? [order.get('ownerId')] : [];
     }
     if (event.kind === 'ADMINS') {
-      const name = {CAMPAIGN: 'campaigns', REPORT: 'reports', SELLER_APPLICATION: 'sellerApplications', POST: 'posts'}[event.resourceType];
+      const name = {CAMPAIGN: 'campaigns', REPORT: 'reports', SELLER_APPLICATION: 'sellerApplications'}[event.resourceType];
       if (name) {
         const source = await db.collection(name).doc(event.resourceId).get();
         if (!source.exists || !['PENDING', 'PENDING_APPROVAL'].includes(source.get('status'))
@@ -62,7 +62,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
   function payload(event) {
     const resourceType = event.resourceType, referenceId = event.resourceId;
     const titles = {ORDER: 'Cập nhật đơn hàng', CAMPAIGN: 'Cập nhật chiến dịch', PROMOTION: 'Sản phẩm yêu thích có ưu đãi',
-      SELLER_APPLICATION: 'Kết quả hồ sơ người bán', REPORT: 'Cập nhật báo cáo', PRODUCT: 'Kết quả kiểm duyệt sản phẩm', REVIEW: 'Kết quả kiểm duyệt đánh giá', POST: 'Kết quả kiểm duyệt nội dung', USER: 'Cập nhật tài khoản'};
+      SELLER_APPLICATION: 'Kết quả hồ sơ người bán', REPORT: 'Cập nhật báo cáo', PRODUCT: 'Kết quả kiểm duyệt sản phẩm', REVIEW: 'Kết quả kiểm duyệt đánh giá', USER: 'Cập nhật tài khoản'};
     const pending = event.kind === 'ADMINS';
     return {type: resourceType === 'ORDER' ? 'ORDER' : resourceType === 'PROMOTION' ? 'PROMOTION' : event.kind === 'CAMPAIGN' ? 'CAMPAIGN' : 'MODERATION',
       resourceType, referenceId, action: pending ? 'REVIEW' : event.kind === 'CAMPAIGN' || event.kind === 'PROMOTION' ? 'VIEW' : 'RESULT',
@@ -178,8 +178,8 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     if (cursor.exists) query = query.startAfter(cursor.get('at'), cursor.get('id'));
     const page = await query.get();
     for (const doc of page.docs) {
-      const value = doc.data(), types = {SELLER_APPLICATIONS: 'SELLER_APPLICATION', CAMPAIGNS: 'CAMPAIGN', POSTS: 'POST', PRODUCTS: 'PRODUCT', REVIEWS: 'REVIEW', REPORTS: 'REPORT', USERS: 'USER'};
-      const resourceType = types[value.resourceType], collection = {SELLER_APPLICATION: 'sellerApplications', CAMPAIGN: 'campaigns', POST: 'posts', PRODUCT: 'products', REVIEW: 'reviews', REPORT: 'reports', USER: 'users'}[resourceType];
+      const value = doc.data(), types = {SELLER_APPLICATIONS: 'SELLER_APPLICATION', CAMPAIGNS: 'CAMPAIGN', PRODUCTS: 'PRODUCT', REVIEWS: 'REVIEW', REPORTS: 'REPORT', USERS: 'USER'};
+      const resourceType = types[value.resourceType], collection = {SELLER_APPLICATION: 'sellerApplications', CAMPAIGN: 'campaigns', PRODUCT: 'products', REVIEW: 'reviews', REPORT: 'reports', USER: 'users'}[resourceType];
       const source = collection ? await db.collection(collection).doc(value.resourceId).get() : null;
       const data = source && source.exists ? source.data() : {};
       const uid = resourceType === 'SELLER_APPLICATION' || resourceType === 'USER' ? value.resourceId

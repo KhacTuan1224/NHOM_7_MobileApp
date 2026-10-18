@@ -65,12 +65,10 @@ public class AdminDetailPresentationTest {
                             document("id", "batch-A", "availableQuantity", 2.5), document("id", "batch-B", "availableQuantity", 4)));
             case CAMPAIGNS: return document("title", "Giải cứu cam sành", "rescueMode", "FIXED_POINT",
                     "batchTargets", document("batch-A", 10, "batch-B", 20), "imageUrls", Collections.emptyList());
-            case POSTS: return document("title", "Nông sản mùa thu", "content", "Nội dung câu chuyện\nDòng thứ hai.",
-                    "linkedProducts", Arrays.asList(document("name", "Cam sành"), document("name", "Rau cải")));
             case CATEGORIES: return document("name", "Rau củ", "displayOrder", 2, "active", true);
             case BANNERS: return document("title", "Mùa thu xanh", "imageUrl", "https://example.com/banner.png", "startDate", new Date());
             case REVIEWS: return document("rating", 4.5, "content", "Rau tươi, giao hàng nhanh.", "customerProfile", document("fullName", "Trần Thị Mai"));
-            case REPORTS: return document("targetType", "POST", "reason", "Nội dung chưa chính xác",
+            case REPORTS: return document("targetType", "CAMPAIGN", "reason", "Nội dung chưa chính xác",
                     "target", document("title", "Bài viết cần kiểm tra", "sellerProfile", document("shopName", "Nông Sản Xanh")));
             default: return document("newCustomField", "Giá trị bổ sung vẫn được giữ", "optionalField", null);
         }

@@ -19,7 +19,6 @@ public class AdminTransitionPolicyTest {
 
     @Test public void approvalTransitionsAreExplicit() {
         assertTrue(policy.isAllowed(Section.SELLER_APPLICATIONS, "PENDING", "APPROVED"));
-        assertTrue(policy.isAllowed(Section.POSTS, "PENDING_APPROVAL", "PUBLISHED"));
         assertTrue(policy.isAllowed(Section.CAMPAIGNS, "PENDING_APPROVAL", "ACTIVE"));
         assertFalse(policy.isAllowed(Section.CAMPAIGNS, "DRAFT", "ACTIVE"));
         assertFalse(policy.isAllowed(Section.SELLER_APPLICATIONS, "REJECTED", "APPROVED"));
@@ -41,8 +40,8 @@ public class AdminTransitionPolicyTest {
         EnumMap<Section, Integer> totals = new EnumMap<>(Section.class);
         totals.put(Section.USERS, 10); totals.put(Section.ORDERS, 4);
         AdminDashboardSnapshot snapshot = new AdminDashboardSnapshot(totals,
-                2, 3, 1, 1, 2, 450_000D);
-        assertEquals(9, snapshot.getPendingModerationTotal());
+                2, 1, 1, 2, 450_000D);
+        assertEquals(6, snapshot.getPendingModerationTotal());
         assertEquals(10, snapshot.total(Section.USERS));
         assertEquals(0, snapshot.total(Section.BANNERS));
         assertEquals(450_000D, snapshot.getDeliveredRevenue(), 0.001D);

@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Public rescue feed: every entry is a campaign; legacy Posts are not shown here. */
+/** Public rescue feed: campaign stories and their community interactions. */
 public class FeedFragment extends Fragment {
     private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private CampaignViewModel viewModel;

@@ -70,8 +70,6 @@ beforeEach(async () => {
     'customerCarts/customer-a': {items: [
       {id: 'product-a::batch-a', productId: 'product-a', batchId: 'batch-a', quantity: 4, selected: true},
       {id: 'keep', productId: 'other', batchId: 'other', quantity: 2, selected: false}]},
-    'posts/published': {status: 'PUBLISHED', viewCount: 0},
-    'posts/hidden': {status: 'HIDDEN', viewCount: 0}
   };
   for (const [path, data] of Object.entries(documents)) batch.set(db.doc(path), data);
   await batch.commit();
@@ -217,13 +215,11 @@ test('Guest lookup is persistently rate limited; Customer orders cannot be looke
   assert.equal((await post('/lookupGuestOrder', {})).status, 429);
 });
 
-test('post views increment atomically once per device/day, including Guest; hidden posts stay unchanged', async () => {
-  const viewerId = guest().guestId, data = {postId: 'published', viewerId};
-  const results = await Promise.all([post('/recordPostView', data), post('/recordPostView', data)]);
-  assert.equal(results.every(result => result.status === 200), true);
-  assert.equal((await db.doc('posts/published').get()).get('viewCount'), 1);
-  assert.equal((await post('/recordPostView', {postId: 'hidden', viewerId})).status, 404);
-  assert.equal((await db.doc('posts/hidden').get()).get('viewCount'), 0);
+test('retired Post endpoint is unavailable and cannot write any receipts', async () => {
+  const response = await fetch(base + '/recordPostView', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({postId: 'retired', viewerId: guest().guestId})});
+  assert.equal(response.status, 404);
+  assert.equal((await db.collection('postViewReceipts').get()).size, 0);
 });
 
 test('invalid duplicate batches and incompatible payment cannot reach inventory writes', async () => {

@@ -361,21 +361,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     if (!ownerAccess && !lookupAccess) throw error(403, "Hãy tra cứu lại bằng mã đơn và số điện thoại.");
     return details(orderId);
   });
-  route('/recordPostView', async req => {
-    await limit(req, 'postViews', 120);
-    const data = req.body || {};
-    if (!identifier(data.postId) || !/^guest_[a-f0-9-]{36}$/i.test(text(data.viewerId))) throw error(400, "Thông tin lượt xem không hợp lệ.");
-    const postRef = db.collection('posts').doc(data.postId);
-    const viewRef = db.collection('postViewReceipts').doc(hash(`${data.postId}|${data.viewerId}|${Math.floor(Date.now() / 86400000)}`));
-    return db.runTransaction(async tx => {
-      const post = await tx.get(postRef), receipt = await tx.get(viewRef);
-      if (!post.exists || post.get('status') !== 'PUBLISHED') throw error(404, "Bài viết không còn công khai.");
-      if (receipt.exists) return {counted: false, viewCount: number(post.get('viewCount'), 0)};
-      const viewCount = number(post.get('viewCount'), 0) + 1;
-      tx.create(viewRef, {postId: data.postId, createdAt: stamp(), expiresAt: timestamp(Date.now() + 172800000)});
-      tx.update(postRef, {viewCount}); return {counted: true, viewCount};
-    });
-  });
   route('/recordCampaignView', async req => {
     await limit(req, 'campaignViews', 120);
     const data = req.body || {};

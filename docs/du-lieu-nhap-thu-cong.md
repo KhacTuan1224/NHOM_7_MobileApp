@@ -1,7 +1,7 @@
 # Bộ nội dung nhập thủ công cho RescueFarm
 Đối chiếu form Java/XML và kiểm tra nhập liệu của repo ngày **18/10/2026**. Chỉ cung cấp văn bản để bạn tự nhập; không tạo dữ liệu trong database và không thay đổi UI.
 
-Bộ này gồm **8 danh mục, 32 sản phẩm, 32 lô hàng, 16 chiến dịch, 12 khuyến mãi, 12 bài viết và 10 banner**. Đây là nội dung minh họa cho bản demo, không phải thông tin tồn kho, nguồn hàng hay giá thị trường đã được xác minh. Nếu bán thật, thay bằng thông tin đúng của hàng thực tế.
+Bộ này gồm **8 danh mục, 32 sản phẩm, 32 lô hàng, 16 chiến dịch, 12 khuyến mãi và 10 banner**. Đây là nội dung minh họa cho bản demo, không phải thông tin tồn kho, nguồn hàng hay giá thị trường đã được xác minh. Nếu bán thật, thay bằng thông tin đúng của hàng thực tế.
 
 ## Cách nhập để các phần liên kết được với nhau
 1. Admin tạo/bổ sung danh mục. Nếu đã có **Trái cây** và **Rau xanh**, dùng lại, không tạo trùng.
@@ -9,8 +9,9 @@ Bộ này gồm **8 danh mục, 32 sản phẩm, 32 lô hàng, 16 chiến dịch
 3. Mở quản lý lô hàng của từng sản phẩm, tạo một lô theo bảng. Chỉ có sản phẩm mà chưa có lô khả dụng thì chưa đủ để đặt hàng.
 4. Seller tạo chiến dịch, chọn hai lô tương ứng, nhập mục tiêu riêng của từng lô rồi gửi duyệt. Admin duyệt để chiến dịch có thể hiển thị công khai khi đến thời gian bắt đầu.
 5. Tạo khuyến mãi cho một số sản phẩm; không cần áp dụng cho toàn bộ.
-6. Tạo bài viết và gửi duyệt; admin duyệt. Bài viết dưới đây không bắt buộc liên kết ID.
-7. Admin tạo banner sau khi đã có chiến dịch hoạt động để chọn theo tên.
+6. Admin tạo banner sau khi đã có chiến dịch hoạt động để chọn theo tên.
+
+**Chiến dịch và bảng tin đã dùng chung một nội dung:** Seller vào **Quản lý chiến dịch** để tạo chiến dịch. Tên, mô tả, ảnh và sản phẩm/lô hàng của chiến dịch cũng là nội dung hiển thị trên bảng tin cộng đồng sau khi được duyệt và đủ điều kiện công khai. Không có bước tạo bài viết Post độc lập, không nhập Campaign ID hay Product ID vào một form bài viết riêng.
 
 **Quy ước chung:** Tiền và số lượng nhập bằng số thuần, ví dụ `30000`, không thêm `đ`, dấu chấm phân cách hay `kg`. Ngày dùng `yyyy-MM-dd`. Mốc ngày được soạn để nhập từ **2026-10-18**; nếu nhập vào ngày khác, dịch toàn bộ lịch tương ứng để hạn dùng và ngày kết thúc vẫn ở tương lai. Hạn dùng trong tài liệu chỉ phục vụ demo, không phải hướng dẫn xác định hạn dùng thực phẩm.
 
@@ -428,6 +429,8 @@ Trong mỗi sản phẩm mở **Quản lý batch và tồn kho**, tạo đúng m
 | SP32 | Mướp hương Tiền Giang | 2026-10-17 | 2026-10-25 | 70 |
 
 ## 4. Chiến dịch — Seller tạo, Admin duyệt
+
+Đây cũng là nơi tạo nội dung xuất hiện trên **bảng tin cộng đồng**. Dùng trực tiếp **Tên chiến dịch**, **Mô tả chiến dịch** và ảnh dưới đây trong form chiến dịch; không cần đăng lại ở một form bài viết khác. Các trang Home, bảng tin và chi tiết chiến dịch cùng tham chiếu chiến dịch đã tạo.
 Chung cho cả 16 chiến dịch:
 
 - **Hình thức điểm giải cứu:** Điểm bán cố định.
@@ -715,130 +718,7 @@ Chọn đúng sản phẩm trong mục **Khuyến mãi & giá sỉ**, rồi mở
 
 Khuyến mãi tác động lên mức giá đang áp dụng, nên dùng phần xem trước và tổng tiền checkout để xem giá cuối. Ví dụ mức `5=5` có nghĩa là mua từ 5 kg được giảm 5%, không phải giá 5 đồng. Không tạo mã voucher hay tên chương trình vào ô giá trị vì UI hiện không có các trường này.
 
-## 6. Bài viết cộng đồng — Form tạo bài viết
-Chung cho cả 12 bài: **Mức độ: Bình thường**; **Campaign ID liên kết: để trống**; **Product ID liên kết: để trống**; ảnh tự tải nếu muốn. Không dán SP/CD trong tài liệu vào ô ID. Nội dung vẫn đăng độc lập khi không liên kết. Nếu muốn liên kết về sau, dùng ID thật của bản ghi đã tạo. Nhập tiêu đề/nội dung bên dưới và **Gửi chờ duyệt**, sau đó admin duyệt.
-
-### BV01
-
-**Tiêu đề:** Củ cà rốt cong vẫn có thể thành món ngon
-
-**Nội dung:**
-
-Không phải củ cà rốt nào cũng thẳng và có cùng kích cỡ. Những củ cong, nhỏ hoặc lớn hơn quy cách vẫn có thể được phân loại để chế biến khi còn nguyên vẹn và phù hợp sử dụng.
-
-Bạn có thể cắt hạt lựu để nấu súp, thái lát cho món xào hoặc hầm cùng khoai. Khi mua, hãy chọn lượng vừa đủ cho vài bữa ăn và kiểm tra sản phẩm lúc nhận. Một lựa chọn nhỏ cũng giúp phần nông sản đã thu hoạch được sử dụng hợp lý hơn.
-
-### BV02
-
-**Tiêu đề:** Chọn vừa đủ để rau xanh không nằm quên trong tủ lạnh
-
-**Nội dung:**
-
-Trước khi đặt rau, hãy xem lại nguyên liệu đang có và dự tính các bữa ăn sắp tới. Cải ngọt, rau muống hay mồng tơi đều có thể mua theo khối lượng phù hợp với số người dùng.
-
-Sau khi nhận, nhặt bỏ phần không sử dụng, giữ rau khô ráo và bảo quản theo hướng dẫn của từng loại. Hạn sử dụng trên lô hàng là thông tin cần theo dõi; nếu có dấu hiệu hư hỏng thì không tiếp tục dùng. Mua đúng nhu cầu là cách đơn giản để giảm lượng thực phẩm bỏ đi.
-
-### BV03
-
-**Tiêu đề:** Một đợt thu hoạch, nhiều cách chia sẻ
-
-**Nội dung:**
-
-Khi nông sản được thu hoạch cùng lúc, lượng hàng có thể vượt nhu cầu bán trong vài ngày. Các chiến dịch giải cứu giúp người dùng nhìn thấy loại hàng đang có, mức giá và lượng còn khả dụng tại cửa hàng.
-
-Bạn không nhất thiết phải đặt số lượng lớn. Một đơn nhỏ đúng nhu cầu cũng góp phần đưa nông sản đến bữa ăn thay vì nằm lại trong kho. Hãy xem kỹ nguồn gốc, hạn sử dụng và hình thức nhận hàng trước khi đặt.
-
-### BV04
-
-**Tiêu đề:** Thanh long ruột đỏ: ba gợi ý dùng tại nhà
-
-**Nội dung:**
-
-Thanh long ruột đỏ có thể dùng tươi sau khi làm mát, xay cùng sữa chua hoặc cắt nhỏ để thêm vào món trái cây trộn. Nếu muốn làm sinh tố, hãy cân nhắc độ ngọt của quả trước khi thêm đường.
-
-Rửa sạch vỏ trước khi cắt và dùng dụng cụ sạch khi sơ chế. Quả đã cắt nên được bảo quản lạnh và dùng sớm. Bạn có thể chọn nhiều kích cỡ khác nhau khi sản phẩm được bán theo khối lượng.
-
-### BV05
-
-**Tiêu đề:** Nấm tươi cần được bảo quản thế nào sau khi nhận?
-
-**Nội dung:**
-
-Khi nhận nấm, hãy kiểm tra tình trạng sản phẩm và thông tin hạn sử dụng của lô. Nấm tươi cần được giữ lạnh, tránh để lâu ở nhiệt độ phòng và không nên ngâm nước trước khi cất.
-
-Chỉ rửa hoặc làm sạch khi chuẩn bị chế biến, sau đó nấu chín kỹ. Không sử dụng nấm có dấu hiệu nhớt, mùi lạ hoặc hư hỏng. Nếu chưa có kế hoạch nấu, hãy chọn lượng nhỏ phù hợp với bữa ăn gần nhất.
-
-### BV06
-
-**Tiêu đề:** Khoai lang tím: một nguyên liệu, nhiều món ăn
-
-**Nội dung:**
-
-Khoai lang tím có thể hấp cho bữa sáng, nướng để ăn nhẹ hoặc nghiền làm phần nhân bánh. Củ nhỏ và củ cong thường không tiện trưng bày nhưng vẫn dễ chia thành miếng khi chế biến.
-
-Bảo quản khoai ở nơi khô thoáng và kiểm tra trước khi nấu. Khi mua theo khối lượng, bạn có thể chọn lượng phù hợp cho gia đình thay vì mua nhiều rồi để quên. Hãy trao đổi với cửa hàng nếu cần củ có kích thước dễ chia phần.
-
-### BV07
-
-**Tiêu đề:** Giá giải cứu và khuyến mãi khác nhau thế nào?
-
-**Nội dung:**
-
-Giá giải cứu là mức giá đang được cửa hàng niêm yết cho sản phẩm. Một số sản phẩm còn có khuyến mãi theo phần trăm, số tiền cố định hoặc lượng mua; ưu đãi thực tế được tính theo điều kiện áp dụng tại thời điểm đặt hàng.
-
-Trước khi xác nhận, hãy xem lại giá sản phẩm, số lượng, phí giao hàng và tổng thanh toán ở bước checkout. Ưu đãi có thể thay đổi khi chương trình kết thúc hoặc khi số lượng trong giỏ thay đổi.
-
-### BV08
-
-**Tiêu đề:** Mua chung có kế hoạch, chia phần thật gọn
-
-**Nội dung:**
-
-Nếu cùng mua với bạn bè hoặc đồng nghiệp, hãy chốt trước loại nông sản và lượng mỗi người cần. Chỉ nên đặt sau khi đã thống nhất cách nhận hàng và thời điểm chia phần.
-
-Các sản phẩm tính theo kg có thể có hình dáng và kích cỡ khác nhau, nhất là bí, bầu hoặc trái cây nguyên quả. Hãy xem thông tin sản phẩm và trao đổi với cửa hàng về lượng giao thực tế. Mua chung hiệu quả nhất khi mọi phần đều có người sử dụng.
-
-### BV09
-
-**Tiêu đề:** Gạo và đậu: giữ khô ráo để dùng dần
-
-**Nội dung:**
-
-Gạo và đậu khô cần được bảo quản kín, tránh nước và khu vực ẩm. Sau khi nhận, kiểm tra tình trạng hàng, ngày của lô và lượng dự kiến dùng trước khi chia vào hộp sạch.
-
-Nên ghi nhớ ngày nhận và dùng phần mua trước trước khi mở phần mới. Nếu phát hiện mùi lạ, nấm mốc hoặc dấu hiệu bất thường thì không tiếp tục sử dụng. Chọn lượng vừa với nhu cầu giúp việc bảo quản nhẹ nhàng hơn.
-
-### BV10
-
-**Tiêu đề:** Tại sao chiến dịch có thể kết thúc trước khi bạn đặt?
-
-**Nội dung:**
-
-Một chiến dịch có thể dừng khi hết thời gian, đạt mục tiêu hoặc lượng hàng khả dụng không còn phù hợp. Lượng hiển thị cũng có thể thay đổi trong lúc cửa hàng xử lý những đơn khác.
-
-Nếu sản phẩm không còn đặt được, hãy làm mới trang để xem tình trạng mới nhất hoặc tìm lựa chọn khác trong cùng danh mục. Không nên chuyển khoản theo mã của đơn đã hủy hoặc không còn hiệu lực; hãy kiểm tra lại thông tin đơn trước khi thanh toán.
-
-### BV11
-
-**Tiêu đề:** Đã nhận nông sản? Đừng quên kiểm tra đơn hàng
-
-**Nội dung:**
-
-Khi nhận hàng, hãy đối chiếu tên sản phẩm, số lượng và tình trạng thực tế với thông tin đơn. Nếu có vấn đề, liên hệ cửa hàng qua kênh hỗ trợ của đơn để được xử lý.
-
-Sau khi đã nhận đủ và kiểm tra xong, mở chi tiết đơn để xác nhận nhận hàng theo hình thức thanh toán đã chọn. Bạn cũng có thể để lại đánh giá dựa trên trải nghiệm thực tế để những người mua sau có thêm thông tin.
-
-### BV12
-
-**Tiêu đề:** Bếp nhỏ cuối tuần: canh bí đỏ và rau xào
-
-**Nội dung:**
-
-Một quả bí đỏ cùng một ít rau xanh có thể tạo thành hai món đơn giản cho bữa cơm. Bí cắt miếng vừa ăn để nấu canh; rau được nhặt, rửa kỹ rồi luộc hoặc xào theo khẩu vị.
-
-Bạn có thể chọn lượng nguyên liệu vừa đủ, chia phần chưa dùng và bảo quản đúng cách. Thực đơn không cần cầu kỳ: điều đáng quan tâm là nguyên liệu còn phù hợp sử dụng và những món đã chuẩn bị đều được dùng hết.
-
-## 7. Banner — Admin
+## 6. Banner — Admin
 Mở **Ảnh quảng bá → Tạo ảnh quảng bá**. Chung cho các mục: **ID Banner để trống** để app tự tạo; tự tải ảnh; bật **Đang hiển thị**; để trống **Lý do quản trị**. Ngày bắt đầu `2026-10-18`. Chiến dịch liên kết chọn trong danh sách theo tên sau khi được duyệt và hoạt động. Nếu chưa thấy, tạo banner không liên kết trước hoặc quay lại sau khi chiến dịch đủ điều kiện.
 
 | Banner | Tiêu đề Banner | Thứ tự hiển thị | Ngày bắt đầu | Ngày kết thúc | Chiến dịch liên kết chọn theo tên |
@@ -854,7 +734,7 @@ Mở **Ảnh quảng bá → Tạo ảnh quảng bá**. Chung cho các mục: **
 | BN09 | Mua vừa đủ, sử dụng trọn vẹn | 90 | 2026-10-18 | 2026-10-30 | Không liên kết chiến dịch |
 | BN10 | Cùng RescueFarm kết nối nông sản | 100 | 2026-10-18 | 2026-10-30 | Không liên kết chiến dịch |
 
-## 8. Một vài mô tả cửa hàng để chọn thêm
+## 7. Một vài mô tả cửa hàng để chọn thêm
 Phần này là tùy chọn nếu bạn muốn hoàn thiện hồ sơ công khai của seller đang có. Chỉ dùng cho hồ sơ thử nghiệm hoặc thay bằng nội dung đúng của cửa hàng; giữ nguyên thông tin ngân hàng, người đại diện và địa chỉ thật. Không cần tạo thêm users để nhập bộ sản phẩm trên.
 
 **Tên cửa hàng:** Góc Nông Sản Xanh
@@ -869,8 +749,8 @@ Phần này là tùy chọn nếu bạn muốn hoàn thiện hồ sơ công khai
 
 **Mô tả cửa hàng:** Trạm Nông Sản Mỗi Ngày tập hợp nông sản đang cần tiêu thụ theo từng đợt. Cửa hàng bán theo khối lượng và cập nhật các chiến dịch giải cứu để người dùng dễ theo dõi. Vui lòng xem kỹ thời gian, địa điểm nhận và lượng khả dụng trước khi đặt hàng.
 
-## 9. Nhập ít trước để trang chủ có nội dung
-Nếu chưa muốn nhập hết, bắt đầu với **SP01–SP12 và 12 lô tương ứng**, sau đó tạo **CD01–CD06**, **BV01–BV04**, **BN01–BN03** và **KM01–KM05**. Như vậy trang chủ và trang danh mục đã có cả sản phẩm, chiến dịch, bài viết và banner. Sau đó bổ sung các nhóm nấm, ngũ cốc, đậu và gia vị để danh mục đa dạng hơn.
+## 8. Nhập ít trước để trang chủ có nội dung
+Nếu chưa muốn nhập hết, bắt đầu với **SP01–SP12 và 12 lô tương ứng**, sau đó tạo **CD01–CD06**, **BN01–BN03** và **KM01–KM05**. Như vậy trang chủ và trang danh mục đã có cả sản phẩm, chiến dịch và banner; bảng tin cộng đồng dùng chính các chiến dịch này. Sau đó bổ sung các nhóm nấm, ngũ cốc, đậu và gia vị để danh mục đa dạng hơn.
 
 Ảnh/banner đẹp sẽ cải thiện phần nhìn, nhưng số đã bán, lượng đã giải cứu, đánh giá và biểu đồ phải đến từ luồng sử dụng thực tế. Bộ này không tạo sẵn số liệu thành tích hoặc đánh giá giả. Chiến dịch mới bắt đầu ở 0% là bình thường.
 
@@ -879,6 +759,6 @@ Nếu chưa muốn nhập hết, bắt đầu với **SP01–SP12 và 12 lô tư
 - Lô hàng và kiểm tra ngày/giá: `fragment_batch_manager.xml`; `ui/product/ProductValidator.java`.
 - Chiến dịch: `fragment_campaign_editor.xml`; `ui/campaign/CampaignEditorFragment.java`; `CampaignValidator.java`; backend `functions/campaign-media.js`.
 - Khuyến mãi: `fragment_promotion_editor.xml`; `ui/product/PromotionEditorFragment.java`; `domain/model/Promotion.java`.
-- Bài viết: `fragment_post_editor.xml`; `ui/feed/PostValidator.java`.
+- Bảng tin cộng đồng: `ui/feed/FeedFragment.java` dùng `CampaignViewModel.getPublicCampaigns()` và mở `campaignDetailFragment`; không dùng Post làm nội dung bảng tin hiện tại.
 - Danh mục/banner được dựng bằng Java: `ui/admin/AdminResourceFragment.java`.
 - Tên lựa chọn hiển thị: `ui/common/EnumLabels.java`. Các đường dẫn Java ở trên nằm dưới `app/src/main/java/com/rescuefarm/`.

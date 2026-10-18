@@ -3,6 +3,12 @@ import worker,{resolveAsset,imageMime,readCampaignImage,uploadCampaign} from '..
 const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
 const image=(bytes=png,mime='image/png')=>new Request('https://worker/upload-campaign?resourceId=campaign&slot=0',{method:'POST',headers:{'Content-Type':mime},body:bytes});
 
+test('retired Post assets cannot be signed or deleted through shared media routes',async()=>{
+  const profile={role:'SELLER',sellerStatus:'APPROVED'};
+  assert.equal(await resolveAsset({assetType:'post',resourceId:'retired',slot:0},'seller',profile),null);
+  assert.equal(await resolveAsset({assetType:'delete',publicId:'rescuefarm/posts/seller/retired/image-0'},'seller',profile),null);
+});
+
 test('generated payment QR uses immutable owner-scoped IDs, including sellers preparing their profile', async () => {
   const version='12345678-1234-1234-1234-123456789abc';
   const asset=await resolveAsset({assetType:'paymentQr',resourceId:'seller',slot:0,version},'seller',

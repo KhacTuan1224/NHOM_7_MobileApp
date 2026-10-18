@@ -1,14 +1,14 @@
 # RescueFarm
 
-RescueFarm is an Android marketplace for rescuing agricultural products that are near expiry, overstocked, or otherwise need to be sold quickly. Customers and guests can discover products and rescue campaigns; approved sellers manage products, batches, campaigns, posts, and orders; administrators review accounts and content and monitor platform operations.
+RescueFarm is an Android marketplace for rescuing agricultural products that are near expiry, overstocked, or otherwise need to be sold quickly. Customers and guests can discover products and rescue campaigns; approved sellers manage products, batches, campaigns and orders; administrators review accounts and content and monitor platform operations.
 
 The product requirements and domain decisions are documented in [`final.md`](final.md). This README describes the current repository and how to build and operate it; it is not a substitute for that specification.
 
 ## Main capabilities
 
-- **Guest and Customer:** browse products, categories, banners, campaigns, and community posts; use a local guest cart or a signed-in Customer cart; checkout, follow orders, manage profile and addresses, favorite products, comment/react/report, and review eligible delivered purchases.
-- **Seller:** apply for seller access; after approval, manage a storefront, products and expiring product batches, rescue campaigns and mobile rescue locations, promotions, posts, and orders/shipments. Sellers can use a read-only customer-facing view to inspect published content.
-- **Admin:** review Seller applications, moderate products/posts/campaigns/reviews, handle reports and user status, manage catalog content, inspect orders, view rescue analytics, and configure shipping fees.
+- **Guest and Customer:** browse products, categories, banners, campaigns and their community discussions; use a local guest cart or a signed-in Customer cart; checkout, follow orders, manage profile and addresses, favorite products, comment/react/report, and review eligible delivered purchases.
+- **Seller:** apply for seller access; after approval, manage a storefront, products and expiring product batches, rescue campaigns and mobile rescue locations, promotions and orders/shipments. Sellers can use a read-only customer-facing view to inspect published content.
+- **Admin:** review Seller applications, moderate products/campaigns/reviews, handle reports and user status, manage catalog content, inspect orders, view rescue analytics, and configure shipping fees.
 - **Backend:** Firebase Authentication and Cloud Firestore are used for identity and application data. The Express service in `functions/` runs on Render and provides trusted checkout/quote, notification, review-summary, and Admin dashboard endpoints. The Cloudflare Worker in `cloudinary-worker/` signs Cloudinary media operations.
 - **Offline support:** Room caches selected application data and WorkManager handles eligible background synchronization. Checkout and other critical inventory actions require the online backend.
 

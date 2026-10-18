@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 
 public class EnumLabelsTest {
     @Test public void everyDomainEnumAndFilterOptionHasAVietnameseLabel() {
-        Class<?>[] types = {AddressType.class, ApplicationStatus.class, BatchStatus.class, CampaignStatus.class, CartOwnerType.class, CommentStatus.class, CustomerType.class, FulfillmentType.class, NotificationType.class, OrderOwnerType.class, OrderStatus.class, PaymentMethod.class, PaymentStatus.class, PostStatus.class, ProductStatus.class, PromotionType.class, ReactionType.class, ReportStatus.class, ReportTargetType.class, RescueMode.class, RescueReason.class, ReviewStatus.class, SellerStatus.class, ShipmentStatus.class, UrgencyLevel.class, UserRole.class, UserStatus.class, DiscoveryQuery.Sort.class, AdminRepository.Section.class};
+        Class<?>[] types = {AddressType.class, ApplicationStatus.class, BatchStatus.class, CampaignStatus.class, CartOwnerType.class, CommentStatus.class, CustomerType.class, FulfillmentType.class, NotificationType.class, OrderOwnerType.class, OrderStatus.class, PaymentMethod.class, PaymentStatus.class, ProductStatus.class, PromotionType.class, ReactionType.class, ReportStatus.class, ReportTargetType.class, RescueMode.class, RescueReason.class, ReviewStatus.class, SellerStatus.class, ShipmentStatus.class, UrgencyLevel.class, UserRole.class, UserStatus.class, DiscoveryQuery.Sort.class, AdminRepository.Section.class};
         for (Class<?> type : types) for (Object constant : type.getEnumConstants()) {
             Enum<?> value = (Enum<?>) constant;
             assertTrue(type.getSimpleName() + "." + value.name(), EnumLabels.hasLabel(value.name()));
