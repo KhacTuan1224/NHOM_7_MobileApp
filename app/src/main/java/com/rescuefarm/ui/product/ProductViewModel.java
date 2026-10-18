@@ -113,7 +113,7 @@ public class ProductViewModel extends ViewModel {
         if (!Double.isFinite(quantity) || quantity <= 0D) {
             state.setValue(ProductScreenState.error("Số lượng phải là số dương.")); return;
         }
-        repository.getPromotion(product.getId(), new ProductRepository.PromotionCallback() {
+        repository.getApplicablePromotion(product.getId(), new ProductRepository.PromotionCallback() {
             @Override public void onSuccess(Promotion value) {
                 promotion.postValue(value);
                 try { priceBreakdown.postValue(pricingService.calculatePrice(product.getOriginalPrice(),

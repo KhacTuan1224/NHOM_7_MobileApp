@@ -129,6 +129,90 @@ for (const kind of ['expired', 'archived', 'no-stock', 'unapproved-seller']) {
   });
 }
 
+async function seedWalletPromotion(type = 'PERCENT', value = 10, tiers = {}) {
+  await db.doc('promotions/product-a').set({id: 'product-a', productId: 'product-a', sellerId: 'seller',
+    active: true, type, value, quantityDiscountTiers: tiers, startDate: past(), endDate: future()});
+}
+
+for (const [type, value, tiers, expected] of [['PERCENT', 10, {}, 81000], ['FIXED', 1000, {}, 87000], ['VOLUME', 0, {'3': 20}, 72000]]) {
+  test(`saved ${type} offer applies only to its customer in quote and committed checkout`, async () => {
+    await seedWalletPromotion(type, value, tiers);
+    const input = request();
+    assert.equal((await post('/quoteCustomerCheckout', input, 'customer-a')).body.subtotal, 90000);
+    assert.ok([401, 403].includes((await post('/promotions/save', {productId: 'product-a'})).status));
+    assert.equal((await post('/promotions/save', {productId: 'product-a'}, 'seller')).status, 403);
+    assert.equal((await post('/promotions/save', {productId: 'product-a'}, 'customer-a')).status, 200);
+    assert.equal((await post('/promotions/save', {productId: 'product-a'}, 'customer-a')).status, 200);
+    assert.equal((await db.collection('customerPromotionWallets/customer-a/items').get()).size, 1);
+    const quote = await post('/quoteCustomerCheckout', input, 'customer-a');
+    assert.equal(quote.body.subtotal, expected);
+    assert.equal(quote.body.lines[0].promotionApplied, true);
+    assert.equal((await post('/quoteCustomerCheckout', input, 'customer-b')).body.subtotal, 90000);
+    assert.equal((await post('/quoteGuestCheckout', {...input, savedPromotionIds: ['product-a'], customerId: 'customer-a'})).body.subtotal, 90000);
+    const checkout = await post('/checkoutCustomer', input, 'customer-a');
+    assert.equal(checkout.status, 200); assert.equal(checkout.body.order.subtotal, expected);
+    assert.equal((await db.doc(`orders/${input.requestId}/items/batch-a`).get()).get('promotionApplied'), true);
+  });
+}
+
+test('wallet catalog, expiration, disabling and removing offers do not grant stale discounts', async () => {
+  await seedWalletPromotion();
+  const product = {productId: 'product-a'};
+  const guestCatalog = await post('/promotions/catalog', product);
+  assert.equal(guestCatalog.body.items.length, 1); assert.equal(guestCatalog.body.items[0].saved, false);
+  assert.ok([401, 403].includes((await post('/promotions/catalog', {mine: true})).status));
+  assert.equal((await post('/promotions/save', product, 'customer-a')).status, 200);
+  assert.equal((await post('/promotions/catalog', {mine: true}, 'customer-a')).body.items[0].saved, true);
+  assert.equal((await post('/promotions/catalog', {mine: true}, 'customer-b')).body.items.length, 0);
+  await db.doc('promotions/product-a').update({endDate: past()});
+  assert.equal((await post('/promotions/catalog', product)).body.items.length, 0);
+  assert.equal((await post('/promotions/save', product, 'customer-b')).status, 409);
+  assert.equal((await post('/promotions/catalog', {mine: true}, 'customer-a')).body.items[0].eligible, false);
+  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 90000);
+  await db.doc('promotions/product-a').update({endDate: future(), active: false});
+  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 90000);
+  await db.doc('promotions/product-a').update({active: true});
+  assert.equal((await post('/promotions/remove', {...product, customerId: 'customer-a'}, 'customer-b')).status, 200);
+  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 81000);
+  assert.equal((await post('/promotions/remove', product, 'customer-a')).status, 200);
+  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 90000);
+});
+
+test('guest checkout cannot claim a saved customer promotion', async () => {
+  await seedWalletPromotion();
+  await post('/promotions/save', {productId: 'product-a'}, 'customer-a');
+  const result = await post('/checkoutGuest', {...request(), ...guest(), customerId: 'customer-a', savedPromotionIds: ['product-a']});
+  assert.equal(result.status, 200); assert.equal(result.body.order.subtotal, 90000);
+});
+
+test('removing a voucher after quote forces reconfirmation without creating order or reserving inventory', async () => {
+  await seedWalletPromotion();
+  await post('/promotions/save', {productId: 'product-a'}, 'customer-a');
+  const data = request();
+  const quote = (await post('/quoteCustomerCheckout', data, 'customer-a')).body;
+  await post('/promotions/remove', {productId: 'product-a'}, 'customer-a');
+  const result = await post('/checkoutCustomer', {...data, expectedSubtotal: quote.subtotal,
+    expectedShippingFee: quote.shippingFee}, 'customer-a');
+  assert.equal(result.status, 409); assert.match(result.body.error, /QUOTE_CHANGED/);
+  assert.equal((await db.collection('orders').get()).size, 0);
+  assert.equal((await db.doc('productBatches/batch-a').get()).get('reservedQuantity'), 0);
+});
+
+test('wallet pagination has no duplicate records or cross-customer leakage', async () => {
+  const batch = db.batch();
+  for (let i = 0; i < 27; i++) {
+    const id = `offer-${String(i).padStart(2, '0')}`;
+    batch.set(db.doc(`products/${id}`), {sellerId: 'seller', status: 'ACTIVE', name: id});
+    batch.set(db.doc(`promotions/${id}`), {id, productId: id, sellerId: 'seller', active: true, type: 'PERCENT', value: 5, startDate: past(), endDate: future()});
+  }
+  await batch.commit();
+  const first = (await post('/promotions/catalog', {})).body;
+  assert.equal(first.items.length, 24); assert.equal(first.hasMore, true);
+  const second = (await post('/promotions/catalog', {cursor: first.cursor})).body;
+  assert.equal(second.items.length, 3); assert.equal(second.hasMore, false);
+  assert.equal(new Set([...first.items, ...second.items].map(p => p.productId)).size, 27);
+});
+
 test('missing promotions and expired promotions fall back to rescue price', async () => {
   const data = request();
   assert.equal((await post('/quoteCustomerCheckout', data, 'customer-a')).body.subtotal, 90000);

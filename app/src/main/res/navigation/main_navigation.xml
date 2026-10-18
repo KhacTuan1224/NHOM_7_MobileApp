@@ -363,4 +363,9 @@
         <argument android:name="itemActive" app:argType="boolean" />
         <argument android:name="itemImageUrl" app:argType="string" />
     </fragment>
+    <fragment android:id="@+id/promotionWalletFragment"
+        android:name="com.rescuefarm.ui.product.PromotionWalletFragment"
+        android:label="@string/promotion_wallet_title">
+        <argument android:name="productId" app:argType="string" android:defaultValue="" />
+    </fragment>
 </navigation>

@@ -84,6 +84,10 @@ public interface ProductRepository {
     default void getPromotion(String productId, PromotionCallback callback) {
         callback.onSuccess(null);
     }
+    /** Buyer pricing only: a promotion must have been saved by the current Customer. */
+    default void getApplicablePromotion(String productId, PromotionCallback callback) {
+        callback.onSuccess(null);
+    }
     default void getSellerPromotions(String sellerId, PromotionListCallback callback) {
         callback.onSuccess(new java.util.ArrayList<>());
     }

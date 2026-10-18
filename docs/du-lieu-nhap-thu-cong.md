@@ -618,6 +618,8 @@ Chung cho cả 16 chiến dịch:
 - **Tổng mục tiêu để đối chiếu:** 80 kg; không cần tìm ô nhập tổng riêng.
 
 ## 5. Khuyến mãi & giá sỉ — Seller
+> Sau khi seller tạo ưu đãi, customer cần mở **Kho khuyến mãi → Tất cả khuyến mãi → Lưu khuyến mãi** mới được áp dụng khi mua. Guest phải đăng nhập để lưu. Xem [luồng kho khuyến mãi](promotion-wallet.md).
+
 Chọn đúng sản phẩm trong mục **Khuyến mãi & giá sỉ**, rồi mở form khuyến mãi. Form không có trường tên chương trình. Tất cả dùng **Ngày bắt đầu `2026-10-18`**, **Ngày kết thúc `2026-10-20`**, bật **Đang bật**. Với loại phần trăm/số tiền, để trống các dòng mức số lượng. Với loại theo số lượng, giá trị nhập `0`, các mức nhập mỗi dòng một cặp `số_lượng=phần_trăm`. Mỗi sản phẩm chỉ có một cấu hình trong bộ này.
 
 ### KM01. Thanh long ruột đỏ Bình Thuận
