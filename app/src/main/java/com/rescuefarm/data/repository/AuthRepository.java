@@ -11,6 +11,7 @@ public interface AuthRepository {
         EMAIL_ALREADY_IN_USE,
         ACCOUNT_DISABLED,
         NETWORK,
+        TOO_MANY_REQUESTS,
         WEAK_PASSWORD,
         PROFILE_UNAVAILABLE,
         UNKNOWN

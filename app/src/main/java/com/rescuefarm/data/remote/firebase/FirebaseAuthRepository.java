@@ -117,11 +117,27 @@ public class FirebaseAuthRepository implements AuthRepository {
 
     @Override
     public void sendPasswordResetEmail(String email, ActionCallback callback) {
+        firebaseAuth.setLanguageCode("vi");
         firebaseAuth.sendPasswordResetEmail(email)
                 .addOnSuccessListener(unused -> callback.onSuccess())
                 .addOnFailureListener(exception -> {
-                    ErrorCode errorCode = mapErrorCode(exception);
-                    callback.onError(errorCode, userMessageFor(errorCode));
+                    String code = exception instanceof com.google.firebase.auth.FirebaseAuthException
+                            ? ((com.google.firebase.auth.FirebaseAuthException) exception).getErrorCode() : "";
+                    if (com.rescuefarm.service.auth.PasswordResetPolicy.hideAccountStatus(code)) {
+                        callback.onSuccess(); return;
+                    }
+                    if (exception instanceof com.google.firebase.FirebaseTooManyRequestsException) {
+                        callback.onError(ErrorCode.TOO_MANY_REQUESTS,
+                                "Có quá nhiều yêu cầu gửi email. Vui lòng đợi vài phút rồi thử lại.");
+                    } else if (exception instanceof FirebaseNetworkException) {
+                        callback.onError(ErrorCode.NETWORK, "Không kết nối được máy chủ. Hãy kiểm tra mạng và thử lại.");
+                    } else if ("ERROR_INVALID_EMAIL".equals(code)) {
+                        callback.onError(ErrorCode.INVALID_CREDENTIALS, "Email không hợp lệ.");
+                    } else if ("ERROR_OPERATION_NOT_ALLOWED".equals(code)) {
+                        callback.onError(ErrorCode.NOT_CONFIGURED, "Chức năng khôi phục mật khẩu chưa được bật. Vui lòng liên hệ hỗ trợ.");
+                    } else {
+                        callback.onError(ErrorCode.UNKNOWN, "Không gửi được email khôi phục. Vui lòng thử lại sau.");
+                    }
                 });
     }
 
