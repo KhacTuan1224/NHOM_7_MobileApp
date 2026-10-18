@@ -55,7 +55,7 @@ public class ProductListFragment extends Fragment {
         row.addView(image, new LinearLayout.LayoutParams(dp(96), dp(96)));
         if (!product.getImageUrls().isEmpty()) Glide.with(this).load(product.getImageUrls().get(0)).centerCrop().into(image);
         LinearLayout text = new LinearLayout(requireContext()); text.setOrientation(LinearLayout.VERTICAL); text.setPadding(dp(12), 0, 0, 0);
-        TextView name = new TextView(requireContext()); name.setText(product.getName()); name.setTextSize(18); name.setTypeface(name.getTypeface(), android.graphics.Typeface.BOLD);
+        TextView name = new TextView(requireContext()); name.setText(product.getName()); name.setTextSize(18); name.setTypeface(name.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(name);
         TextView price = new TextView(requireContext()); price.setText(money(product.getRescuePrice()) + " / " + product.getUnit());
         TextView origin = new TextView(requireContext()); origin.setText(product.getOrigin() + " • " + product.getProvince());
         text.addView(name); text.addView(price); text.addView(origin); row.addView(text, new LinearLayout.LayoutParams(0, -2, 1)); card.addView(row);

@@ -161,7 +161,7 @@ public class CartFragment extends Fragment {
             empty.setText(R.string.cart_empty);
             empty.setPadding(dp(16), dp(32), dp(16), dp(32));
             empty.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            empty.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge);
+            empty.setTextAppearance(R.style.TextAppearance_RescueFarm_Body);
             empty.setTextColor(requireContext().getColor(R.color.rescue_on_surface_variant));
             groups.addView(empty);
             summary.setText(getString(R.string.cart_summary_format, 0, 0, money.format(0)));

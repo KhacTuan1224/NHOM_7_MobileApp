@@ -19,7 +19,7 @@
             android:scaleType="centerCrop"
             android:src="@drawable/login_leaf_banner" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/auth_horizontal_margin"

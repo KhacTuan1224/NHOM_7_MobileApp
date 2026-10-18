@@ -31,7 +31,7 @@ final class SellerDashboardCards {
         TextView heading = new TextView(context);
         heading.setText(title);
         heading.setTextSize(18);
-        heading.setTypeface(null, Typeface.BOLD);
+        heading.setTypeface(heading.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(heading);
         heading.setTextColor(ContextCompat.getColor(context, R.color.rescue_on_surface));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -73,7 +73,7 @@ final class SellerDashboardCards {
         TextView title = new TextView(context);
         title.setText(metric.title);
         title.setTextSize(12);
-        title.setTypeface(null, Typeface.BOLD);
+        title.setTypeface(title.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(title);
         title.setTextColor(ContextCompat.getColor(context, R.color.rescue_on_surface_variant));
         card.addView(title, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -81,7 +81,7 @@ final class SellerDashboardCards {
         TextView value = new TextView(context);
         value.setText(metric.value);
         value.setTextSize(22);
-        value.setTypeface(null, Typeface.BOLD);
+        value.setTypeface(value.getTypeface(), Typeface.BOLD);
         value.setTextColor(ContextCompat.getColor(context, R.color.rescue_primary));
         LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);

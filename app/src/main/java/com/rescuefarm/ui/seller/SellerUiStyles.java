@@ -150,7 +150,8 @@ public final class SellerUiStyles {
         private TextView text(String value, int size, boolean bold) {
             TextView text = new TextView(context); text.setText(value); text.setTextSize(size);
             text.setTextColor(ContextCompat.getColor(context, bold ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
-            if (bold) text.setTypeface(null, Typeface.BOLD);
+            if (bold) text.setTypeface(text.getTypeface(), Typeface.BOLD);
+            if (bold) com.rescuefarm.ui.common.AppTypography.title(text);
             text.setPadding(0, 0, 0, dp(context, 5)); information.addView(text, new LinearLayout.LayoutParams(-1, -2));
             return text;
         }

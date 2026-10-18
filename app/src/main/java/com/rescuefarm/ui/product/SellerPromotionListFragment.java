@@ -29,7 +29,7 @@ public final class SellerPromotionListFragment extends Fragment {
     private final Locale locale = Locale.forLanguageTag("vi-VN");
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup parent, @Nullable Bundle state) {
         LinearLayout root = CustomerUi.column(requireContext());
-        CustomerUi.text(root, "Khuyến mãi và giá sỉ").setTextSize(24);
+        com.rescuefarm.ui.common.AppTypography.title(CustomerUi.text(root, "Khuyến mãi và giá sỉ")).setTextSize(24);
         CustomerUi.text(root, "Quản lý mức giảm giá, bậc số lượng và thời gian áp dụng theo từng sản phẩm.");
         root.addView(SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PROMOTIONS, "Quay lại", "Quay lại cửa hàng"));
         root.getChildAt(root.getChildCount() - 1).setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());

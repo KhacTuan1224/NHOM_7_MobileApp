@@ -86,7 +86,7 @@ public class AddressListFragment extends Fragment {
         title.setTextSize(15);
         title.setMaxLines(2);
         title.setTextColor(requireContext().getColor(R.color.rescue_on_surface));
-        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(title);
 
         MaterialButton edit = actionButton(R.string.edit_action,
                 R.color.rescue_primary, R.color.rescue_surface, R.color.rescue_outline);

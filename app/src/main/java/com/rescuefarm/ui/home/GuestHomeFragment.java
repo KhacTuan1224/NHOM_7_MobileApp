@@ -110,7 +110,7 @@ public class GuestHomeFragment extends Fragment {
         nearExpirySection = view.findViewById(R.id.nearExpirySection);
         valueSection = view.findViewById(R.id.valueSection);
         volumeGroup=new LinearLayout(requireContext()); volumeGroup.setOrientation(LinearLayout.VERTICAL);
-        TextView volumeTitle=new TextView(requireContext()); volumeTitle.setText("Mua nhiều giá tốt"); volumeTitle.setTextSize(18); volumeTitle.setTypeface(null,android.graphics.Typeface.BOLD);
+        TextView volumeTitle=new TextView(requireContext()); volumeTitle.setText("Mua nhiều giá tốt"); volumeTitle.setTextSize(18); volumeTitle.setTypeface(volumeTitle.getTypeface(),android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(volumeTitle);
         volumeGroup.addView(volumeTitle); volumeSection=new LinearLayout(requireContext()); volumeSection.setOrientation(LinearLayout.HORIZONTAL); android.widget.HorizontalScrollView volumeScroll = new android.widget.HorizontalScrollView(requireContext()); volumeScroll.setHorizontalScrollBarEnabled(false); volumeScroll.addView(volumeSection); volumeGroup.addView(volumeScroll);
         LinearLayout home=(LinearLayout)view.findViewById(R.id.valueHomeGroup).getParent();
         home.addView(volumeGroup,home.indexOfChild(view.findViewById(R.id.valueHomeGroup))+1);

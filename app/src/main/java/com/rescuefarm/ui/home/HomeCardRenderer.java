@@ -48,13 +48,14 @@ public final class HomeCardRenderer {
         }
         body.addView(imageFrame(image, dp(112), 12));
 
-        TextView title = text(campaign.getTitle(), 14, true, R.color.rescue_on_surface);
+        TextView title = text(campaign.getTitle(), 16, true, R.color.rescue_on_surface);
+        com.rescuefarm.ui.common.AppTypography.title(title);
         title.setMinLines(2); title.setMaxLines(2);
         title.setEllipsize(android.text.TextUtils.TruncateAt.END);
         title.setPadding(0, dp(8), 0, dp(3)); body.addView(title);
 
         TextView urgency = text(campaign.getUrgencyLevel() == UrgencyLevel.CRITICAL
-                ? "CẦN GIẢI CỨU GẤP" : campaign.getHighlightLabel(), 10, true,
+                ? "CẦN GIẢI CỨU GẤP" : campaign.getHighlightLabel(), 13, true,
                 campaign.getUrgencyLevel() == UrgencyLevel.CRITICAL
                         ? R.color.rescue_critical : R.color.rescue_primary);
         urgency.setMaxLines(1); body.addView(urgency);
@@ -70,22 +71,19 @@ public final class HomeCardRenderer {
 
         if ("REVIEW_REQUIRED".equals(campaign.getUnitStatus())) {
             progress.setVisibility(View.GONE);
-            body.addView(text("Cần đối soát đơn vị chiến dịch", 12, true, R.color.rescue_on_surface_variant));
+            body.addView(text("Cần đối soát đơn vị chiến dịch", 14, true, R.color.rescue_on_surface_variant));
         } else {
         String unit = campaign.getQuantityUnitLabel();
         body.addView(text(String.format(Locale.forLanguageTag("vi-VN"),
                 "%.0f%% hoàn thành · mục tiêu %.2f %s", campaign.calculateProgress(),
-                campaign.getTargetQuantity(), unit),
-                11, false, R.color.rescue_on_surface_variant));
+                campaign.getTargetQuantity(), unit), 13, false, R.color.rescue_on_surface_variant));
         body.addView(text(String.format(Locale.forLanguageTag("vi-VN"),
                 "Đã giải cứu %.2f · đang giữ %.2f · còn khả dụng %.2f %s",
                 campaign.getRescuedQuantity(), campaign.getReservedQuantity(),
-                campaign.calculateRemainingQuantity(), unit),
-                11, false, R.color.rescue_on_surface_variant));
+                campaign.calculateRemainingQuantity(), unit), 13, false, R.color.rescue_on_surface_variant));
         }
         if (Double.isFinite(distance)) {
-            body.addView(text(String.format(Locale.forLanguageTag("vi-VN"), "Cách bạn %.1f km", distance),
-                    10, false, R.color.rescue_on_surface_variant));
+            body.addView(text(String.format(Locale.forLanguageTag("vi-VN"), "Cách bạn %.1f km", distance), 13, false, R.color.rescue_on_surface_variant));
         }
         card.addView(body, new FrameLayout.LayoutParams(-1, -2));
         card.setOnClickListener(listener);
@@ -120,15 +118,16 @@ public final class HomeCardRenderer {
 
         LinearLayout details = vertical();
         details.setPadding(dp(10), dp(8), dp(10), dp(10));
-        TextView name = text(product.getName(), 13, true, R.color.rescue_on_surface);
+        TextView name = text(product.getName(), 15, true, R.color.rescue_on_surface);
+        com.rescuefarm.ui.common.AppTypography.title(name);
         name.setMaxLines(2); name.setMinLines(2);
         name.setEllipsize(android.text.TextUtils.TruncateAt.END); details.addView(name);
 
         LinearLayout priceRow = vertical();
         priceRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView salePrice = text(money(product.getRescuePrice()), 15, true, R.color.rescue_critical);
+        TextView salePrice = text(money(product.getRescuePrice()), 16, true, R.color.rescue_critical);
         priceRow.addView(salePrice);
-        TextView oldPrice = text(money(product.getOriginalPrice()), 11, false,
+        TextView oldPrice = text(money(product.getOriginalPrice()), 13, false,
                 R.color.rescue_on_surface_variant);
         oldPrice.setPaintFlags(oldPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         LinearLayout.LayoutParams oldPriceParams = new LinearLayout.LayoutParams(-2, -2);
@@ -139,7 +138,7 @@ public final class HomeCardRenderer {
                 ? String.format(Locale.forLanguageTag("vi-VN"), "★ %.1f  ·  %d đánh giá",
                     product.getAverageRating(), product.getReviewCount())
                 : product.getProvince();
-        TextView foot = text(metadata, 10, false, R.color.rescue_on_surface_variant);
+        TextView foot = text(metadata, 13, false, R.color.rescue_on_surface_variant);
         foot.setMaxLines(1); foot.setEllipsize(android.text.TextUtils.TruncateAt.END); details.addView(foot);
         content.addView(details);
         card.addView(content, new FrameLayout.LayoutParams(-1, -2));
@@ -161,7 +160,7 @@ public final class HomeCardRenderer {
         LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(dp(48), dp(48));
         imageParams.gravity = Gravity.CENTER_HORIZONTAL;
         imageParams.topMargin = dp(4); tile.addView(image, imageParams);
-        TextView name = text(category.getName(), 11, false, R.color.rescue_on_surface);
+        TextView name = text(category.getName(), 13, false, R.color.rescue_on_surface);
         name.setGravity(Gravity.CENTER); name.setMinLines(2);
         LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(-1, -2);
         nameParams.setMargins(0, dp(3), 0, 0); tile.addView(name, nameParams);
@@ -170,7 +169,7 @@ public final class HomeCardRenderer {
     }
 
     public TextView message(String value) {
-        TextView message = text(value, 12, false, R.color.rescue_on_surface_variant);
+        TextView message = text(value, 14, false, R.color.rescue_on_surface_variant);
         message.setPadding(dp(3), dp(8), dp(3), dp(8));
         return message;
     }

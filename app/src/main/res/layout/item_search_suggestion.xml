@@ -7,10 +7,10 @@
     android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
     <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
         android:layout_marginEnd="6dp" android:orientation="vertical">
-        <TextView android:id="@+id/suggestionTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/suggestionTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:textSize="14sp" android:textStyle="bold" android:textColor="@color/rescue_on_surface"
             android:maxLines="2" android:ellipsize="end" />
-        <TextView android:id="@+id/suggestionSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/suggestionSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="3dp" android:textSize="11sp" android:textColor="@color/rescue_on_surface_variant"
             android:maxLines="1" android:ellipsize="end" />
     </LinearLayout>

@@ -21,7 +21,7 @@
                         android:layout_weight="1" android:orientation="vertical">
                         <TextView android:id="@+id/homeGreeting" android:layout_width="match_parent"
                             android:layout_height="wrap_content" android:text="@string/home_greeting_guest"
-                            android:textColor="@android:color/white" android:textSize="15sp"
+                            android:textColor="@android:color/white" android:textSize="16sp"
                             android:textStyle="bold" />
                         <LinearLayout android:id="@+id/homeLocationContainer"
                             android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -35,7 +35,7 @@
                                 android:maxLines="1" android:ellipsize="end"
                                 android:drawablePadding="5dp" android:drawableStart="@drawable/ic_home_location"
                                 android:gravity="center_vertical" android:text="@string/home_location_default"
-                                android:textColor="@android:color/white" android:textSize="12sp" />
+                                android:textColor="@android:color/white" android:textSize="14sp" />
                             <ImageView android:layout_width="14dp" android:layout_height="14dp"
                                 android:layout_marginStart="4dp" android:src="@drawable/ic_arrow_forward"
                                 android:rotation="90" app:tint="@android:color/white" />
@@ -59,7 +59,7 @@
                                 android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"
                                 android:layout_marginStart="8dp" android:background="@null" android:hint="@string/home_search_hint"
                                 android:inputType="text" android:imeOptions="actionSearch" android:singleLine="true"
-                                android:textColor="@color/rescue_on_surface" android:textColorHint="@color/rescue_on_surface_variant" android:textSize="14sp" />
+                                android:textColor="@color/rescue_on_surface" android:textColorHint="@color/rescue_on_surface_variant" android:textSize="15sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                     <com.google.android.material.button.MaterialButton android:id="@+id/homeFilterButton"
@@ -79,11 +79,11 @@
             <TextView android:id="@+id/homeMessage" android:layout_width="0dp"
                 android:layout_height="wrap_content" android:layout_weight="1"
                 android:maxLines="1" android:textColor="@color/rescue_on_surface_variant"
-                android:textSize="11sp" />
+                android:textSize="13sp" />
             <com.google.android.material.button.MaterialButton android:id="@+id/refreshHomeButton"
                 style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:text="@string/refresh_action"
-                android:textSize="12sp" />
+                android:textSize="14sp" />
             <ProgressBar android:id="@+id/homeProgress" style="?android:attr/progressBarStyleSmall"
                 android:layout_width="20dp" android:layout_height="20dp" android:visibility="gone" />
         </LinearLayout>
@@ -96,22 +96,22 @@
             android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-            
-            <TextView android:id="@+id/categoryTitle" 
+
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/categoryTitle"
                 style="@style/TextAppearance.Material3.TitleMedium"
-                android:layout_width="0dp" 
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Danh mục nông sản"
                 android:textColor="@color/rescue_on_surface" />
-            
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreCategoriesButton"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/see_more_action"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:minHeight="@dimen/touch_target_min"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
@@ -138,22 +138,22 @@
             android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-            
-            <TextView android:id="@+id/criticalTitle" 
+
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/criticalTitle"
                 style="@style/TextAppearance.Material3.TitleMedium"
-                android:layout_width="0dp" 
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Cần giải cứu gấp"
                 android:textColor="@color/rescue_on_surface" />
-            
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreCriticalButton"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/see_more_action"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:minHeight="@dimen/touch_target_min"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
@@ -187,7 +187,7 @@
 
         <LinearLayout android:id="@+id/nearbyMobileHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:id="@+id/nearbyMobileTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearbyMobileTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="0dp" android:text="Điểm giải cứu di động gần bạn"
             android:textColor="@color/rescue_on_surface" />
@@ -200,7 +200,7 @@
 
         <LinearLayout android:id="@+id/nearbyFixedHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:id="@+id/nearbyFixedTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearbyFixedTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="0dp" android:text="Điểm giải cứu cố định gần bạn"
             android:textColor="@color/rescue_on_surface" />
@@ -213,7 +213,7 @@
 
         <LinearLayout android:id="@+id/endingSoonHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:id="@+id/endingSoonTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/endingSoonTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="0dp" android:text="Sắp hết thời gian"
             android:textColor="@color/rescue_on_surface" />
@@ -226,7 +226,7 @@
 
         <LinearLayout android:id="@+id/nearExpiryHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:id="@+id/nearExpiryTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearExpiryTitle" style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="0dp" android:text="Nông sản gần hết hạn"
             android:textColor="@color/rescue_on_surface" />
@@ -242,22 +242,22 @@
             android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-            
-            <TextView android:id="@+id/valueTitle"
+
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/valueTitle"
                 style="@style/TextAppearance.Material3.TitleMedium"
-                android:layout_width="0dp" 
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Nông sản giá tốt"
                 android:textColor="@color/rescue_on_surface" />
-            
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreValueButton"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/see_more_action"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:minHeight="@dimen/touch_target_min"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
@@ -278,22 +278,22 @@
             android:layout_marginTop="0dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-            
-            <TextView android:id="@+id/campaignTitle" 
+
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/campaignTitle"
                 style="@style/TextAppearance.Material3.TitleMedium"
-                android:layout_width="0dp" 
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Chiến dịch đang diễn ra"
                 android:textColor="@color/rescue_on_surface" />
-            
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreCampaignsButton"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/see_more_action"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:minHeight="@dimen/touch_target_min"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"

@@ -42,7 +42,7 @@ final class SellerStatisticsChart extends View {
     private void ink(float size, Paint.Align align) {
         paint.setColor(getContext().getColor(R.color.rescue_on_surface));
         paint.setTextSize(sp(size)); paint.setTextAlign(align); paint.setStyle(Paint.Style.FILL);
-        paint.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        paint.setTypeface(Typeface.create(com.rescuefarm.ui.common.AppTypography.bodyTypeface(getContext()), Typeface.NORMAL));
     }
     @Override protected void onMeasure(int width, int height) {
         float desired = kind == Kind.HORIZONTAL ? Math.max(1, values.length) * Math.max(dp(86), sp(70))
@@ -62,7 +62,7 @@ final class SellerStatisticsChart extends View {
         double max = 1; for (double value : values) max = Math.max(max, value);
         for (int i = 0; i < values.length; i++) {
             float top = i * rowHeight;
-            TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+            TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG); textPaint.setTypeface(com.rescuefarm.ui.common.AppTypography.bodyTypeface(getContext()));
             textPaint.setColor(getContext().getColor(R.color.rescue_on_surface)); textPaint.setTextSize(sp(16));
             StaticLayout label = StaticLayout.Builder.obtain(labels[i], 0, labels[i].length(), textPaint, Math.max(1, (int) (right-left)))
                     .setMaxLines(2).setEllipsize(TextUtils.TruncateAt.END).setIncludePad(false).build();

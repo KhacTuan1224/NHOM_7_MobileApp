@@ -13,7 +13,7 @@
         android:layout_gravity="center_horizontal"
         app:maxContentWidth="@dimen/reading_max_width">
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:id="@+id/orderConfirmationTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:padding="@dimen/space_md" />
 
-        <TextView
+        <TextView android:fontFamily="@font/ibm_plex_sans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/guest_tracking_title"

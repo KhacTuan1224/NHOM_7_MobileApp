@@ -13,7 +13,7 @@
         android:contentDescription="Gian hàng"
         android:src="@drawable/ic_store" />
 
-    <TextView
+    <TextView android:fontFamily="@font/ibm_plex_sans"
         android:id="@+id/sellerHeaderTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

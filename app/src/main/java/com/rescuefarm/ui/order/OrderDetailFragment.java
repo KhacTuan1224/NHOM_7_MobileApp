@@ -153,7 +153,7 @@ public class OrderDetailFragment extends Fragment {
         valueView.setGravity(android.view.Gravity.END);
         valueView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                 emphasized ? R.color.rescue_primary : R.color.rescue_on_surface));
-        if (emphasized) valueView.setTypeface(null, android.graphics.Typeface.BOLD);
+        if (emphasized) valueView.setTypeface(valueView.getTypeface(), android.graphics.Typeface.BOLD);
         row.addView(labelView, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         row.addView(valueView, new LinearLayout.LayoutParams(0,
@@ -343,7 +343,7 @@ public class OrderDetailFragment extends Fragment {
         title.setTextSize(14);
         title.setTextColor(requireContext().getColor(current ? colorRes
                 : complete ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
-        if (current) title.setTypeface(null, android.graphics.Typeface.BOLD);
+        if (current) title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(title);
         text.addView(title);
         TextView caption = new TextView(requireContext());
         caption.setText(status == OrderStatus.CANCELLED ? R.string.order_timeline_cancelled
@@ -379,7 +379,7 @@ public class OrderDetailFragment extends Fragment {
             TextView productName = new TextView(requireContext());
             productName.setText(item.getProductNameSnapshot());
             productName.setTextSize(15);
-            productName.setTypeface(null, android.graphics.Typeface.BOLD);
+            productName.setTypeface(productName.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(productName);
             productName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                     R.color.rescue_on_surface));
             TextView productDetails = new TextView(requireContext());

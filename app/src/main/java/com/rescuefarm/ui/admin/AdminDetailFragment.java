@@ -297,7 +297,7 @@ public final class AdminDetailFragment extends Fragment {
 
     private void addActionHeading(String text) {
         TextView heading = new TextView(requireContext());
-        heading.setText(text); heading.setTextSize(18); heading.setTypeface(null, android.graphics.Typeface.BOLD);
+        heading.setText(text); heading.setTextSize(18); heading.setTypeface(heading.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(heading);
         heading.setTextColor(requireContext().getColor(R.color.rescue_primary));
         heading.setPadding(0, Math.round(12 * getResources().getDisplayMetrics().density), 0,
                 Math.round(8 * getResources().getDisplayMetrics().density));

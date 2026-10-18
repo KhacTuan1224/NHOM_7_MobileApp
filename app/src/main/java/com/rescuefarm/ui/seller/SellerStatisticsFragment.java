@@ -137,7 +137,8 @@ public final class SellerStatisticsFragment extends Fragment {
     private void text(String value, int size, boolean bold) {
         TextView view = new TextView(requireContext()); view.setText(value); view.setTextSize(size);
         view.setTextColor(requireContext().getColor(R.color.rescue_on_surface));
-        if (bold) view.setTypeface(null, Typeface.BOLD);
+        if (bold) view.setTypeface(view.getTypeface(), Typeface.BOLD);
+        if (bold && size == 18) com.rescuefarm.ui.common.AppTypography.title(view);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
         params.topMargin = Math.round(12 * getResources().getDisplayMetrics().density); content.addView(view, params);
     }
