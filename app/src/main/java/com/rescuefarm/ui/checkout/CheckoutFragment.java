@@ -105,6 +105,8 @@ public class CheckoutFragment extends Fragment {
             return;
         }
         name = view.findViewById(R.id.checkoutName); phone = view.findViewById(R.id.checkoutPhone);
+        view.findViewById(R.id.checkoutPromotionWalletButton).setOnClickListener(v ->
+                Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         address = view.findViewById(R.id.checkoutAddress); note = view.findViewById(R.id.checkoutNote);
         gpsStatus = view.findViewById(R.id.checkoutGpsStatus);
         selectedAddressText = view.findViewById(R.id.checkoutSelectedAddress);
@@ -388,6 +390,11 @@ public class CheckoutFragment extends Fragment {
         scheduleShippingEstimate();
     }
 
+    @Override public void onResume() {
+        super.onResume();
+        if (vm != null) scheduleShippingEstimate();
+    }
+
     private void scheduleShippingEstimate() {
         quoteReady = false;
         quoteVersion++;
@@ -426,6 +433,12 @@ public class CheckoutFragment extends Fragment {
         RenderBackendClient.Callback quoteCallback = new RenderBackendClient.Callback() {
             @Override public void onSuccess(JSONObject quote) {
                 if (version != quoteVersion || !isAdded()) return;
+                if (!"SAVED_CUSTOMER_ONLY".equals(quote.optString("promotionPolicy"))) {
+                    quoteReady = false;
+                    String error = "Máy chủ cần cập nhật tính năng kho khuyến mãi trước khi thanh toán. Vui lòng thử lại sau.";
+                    estimate.setText(error); message.setText(error); message.setVisibility(View.VISIBLE);
+                    return;
+                }
                 JSONArray methods = quote.optJSONArray("availablePaymentMethods");
                 if (methods != null) updatePaymentAvailability(methods);
                 quotedSubtotal = quote.optDouble("subtotal", Double.NaN);
@@ -437,7 +450,8 @@ public class CheckoutFragment extends Fragment {
                     JSONObject line = lines.optJSONObject(i); if (line == null) continue;
                     summary.append("• ").append(line.optString("productName")).append(" · ")
                             .append(line.optDouble("quantity")).append(' ').append(line.optString("unit"))
-                            .append(" · ").append(money.format(line.optDouble("subtotal"))).append('\n');
+                            .append(" · ").append(money.format(line.optDouble("subtotal")))
+                            .append(line.optBoolean("promotionApplied") ? " · Đã áp dụng khuyến mãi đã lưu" : "").append('\n');
                 }
                 summary.append("Tiền hàng: ").append(money.format(quotedSubtotal))
                         .append("\nGiảm giá: ").append(money.format(quote.optDouble("totalDiscount")))

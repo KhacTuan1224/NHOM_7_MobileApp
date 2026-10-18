@@ -5,6 +5,7 @@ const {normalizeUnit, campaignUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
 const crypto = require("node:crypto");
 const {createCampaignLifecycle, readAllocations} = require('./campaign-lifecycle');
+const {createPromotionWallet, walletItem, available: promotionAvailable} = require('./promotion-wallet');
 
 const text = value => typeof value === "string" ? value.trim() : "";
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
@@ -79,7 +80,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     });
   }
 
-  async function quote(read, data, now = Date.now()) {
+  async function quote(read, data, now = Date.now(), identity = null) {
     const items = validateSelection(data), sellerId = items[0].sellerId;
     const seller = await read(db.collection('users').doc(sellerId));
     if (!seller.exists || seller.get('role') !== 'SELLER' || seller.get('status') !== 'ACTIVE'
@@ -89,6 +90,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       const p = await read(db.collection('products').doc(item.productId));
       const b = await read(db.collection('productBatches').doc(item.batchId));
       const promo = await read(db.collection('promotions').doc(item.productId));
+      const saved = identity?.ownerType === 'CUSTOMER' ? await read(walletItem(db, identity.ownerId, item.productId)) : null;
       if (!p.exists || p.get('sellerId') !== sellerId || p.get('status') !== 'ACTIVE') throw error(409, "Sản phẩm không còn bán.");
       if (!b.exists || b.get('productId') !== p.id || !['AVAILABLE', 'RESERVED_PARTIAL'].includes(b.get('status'))
           || time(b.get('expiryDate')) <= now || number(b.get('availableQuantity'), 0) < item.quantity) {
@@ -98,7 +100,12 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       if (!Number.isFinite(batch.initialQuantity) || !Number.isFinite(batch.reservedQuantity)
           || !Number.isFinite(batch.soldQuantity) || Math.abs(batch.initialQuantity - batch.availableQuantity
             - batch.reservedQuantity - batch.soldQuantity) > 0.000001) throw error(409, "Tồn kho lô hàng chưa nhất quán.");
-      rows.push({item, product: p.data(), batch, batchRef: b.ref, price: price(p.data(), promo.exists ? promo.data() : null, item.quantity, now)});
+      const canUsePromotion = !!saved?.exists && saved.get('customerId') === identity.ownerId
+        && saved.get('sellerId') === sellerId && promo.exists
+        && promotionAvailable(promo.data(), p.data(), seller.data(), now);
+      const calculated = price(p.data(), canUsePromotion ? promo.data() : null, item.quantity, now);
+      rows.push({item, product: p.data(), batch, batchRef: b.ref,
+        promotionApplied: canUsePromotion && calculated.unit < money(p.get('rescuePrice')), price: calculated});
     }
     const campaignIds = [...new Set(rows.map(row => text(row.batch.activeCampaignId)).filter(Boolean))];
     if (campaignIds.length > 1 || (data.fulfillmentType === 'ON_SITE_RESCUE' && !campaignIds.length)) {
@@ -160,12 +167,12 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     if (data.paymentMethod === 'BANK_TRANSFER' && !['bankCode', 'bankAccountName', 'bankAccountNumber'].every(key => text(paymentProfile[key]))) {
       throw error(409, "Cửa hàng chưa cấu hình đủ tài khoản nhận chuyển khoản.");
     }
-    const lines = rows.map(({item, product, price: value}) => ({...item, productName: text(product.name),
+    const lines = rows.map(({item, product, price: value, promotionApplied}) => ({...item, productName: text(product.name), promotionApplied,
       unit: text(product.unit), subtotal: value.subtotal, finalUnitPrice: value.unit, originalSubtotal: value.originalSubtotal}));
     const subtotal = lines.reduce((sum, line) => sum + line.subtotal, 0);
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
     return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
-      public: {lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
+      public: {promotionPolicy: 'SAVED_CUSTOMER_ONLY', lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
         availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, verification.available ? paymentProfile : null),
         bankTransferVerification: verification,
         sellerName: text(seller.get('fullName')), sellerAddress: profile ? text(profile.address) : '',
@@ -214,7 +221,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         const account = await tx.get(db.collection('users').doc(identity.ownerId));
         if (!account.exists || account.get('role') !== 'CUSTOMER' || account.get('status') !== 'ACTIVE') throw error(403, "Tài khoản Customer không còn hoạt động.");
       }
-      const q = await quote(ref => tx.get(ref), normalized);
+      const q = await quote(ref => tx.get(ref), normalized, Date.now(), identity);
       const cartRef = db.collection('customerCarts').doc(identity.ownerId);
       const cart = identity.ownerType === 'CUSTOMER' ? await tx.get(cartRef) : null;
       const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
@@ -259,7 +266,8 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
           productId: item.productId, batchId: item.batchId, productNameSnapshot: text(p.name),
           productImageSnapshot: Array.isArray(p.imageUrls) ? text(p.imageUrls[0]) : '', unitSnapshot: normalizeUnit(p.unit),
           originalPriceSnapshot: p.originalPrice, rescuePriceSnapshot: p.rescuePrice, finalPriceSnapshot: row.price.unit,
-          quantity: item.quantity, subtotal: row.price.subtotal});
+          quantity: item.quantity, subtotal: row.price.subtotal, promotionApplied: row.promotionApplied,
+          promotionIdSnapshot: row.promotionApplied ? item.productId : ''});
         tx.update(row.batchRef, {availableQuantity: batch.availableQuantity - item.quantity,
           reservedQuantity: batch.reservedQuantity + item.quantity, status: 'RESERVED_PARTIAL',
           inventoryVersion: number(batch.inventoryVersion, 0) + 1, lastReservationOrderId: requestId,
@@ -325,11 +333,15 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
   const route = (path, handler) => router.post(path, async (req, res, next) => {
     try { res.json(await handler(req)); } catch (failure) { next(failure); }
   });
-  async function reconciledQuote(data) {
+  router.use(createPromotionWallet({db, admin, authenticate, limit}).router);
+  async function reconciledQuote(data, identity = null) {
     await lifecycle.reconcileItems(validateSelection(data));
-    return (await quote(ref => ref.get(), data)).public;
+    return (await quote(ref => ref.get(), data, Date.now(), identity)).public;
   }
-  route('/quoteCustomerCheckout', async req => { await authenticate(req, ['CUSTOMER']); return reconciledQuote(req.body || {}); });
+  route('/quoteCustomerCheckout', async req => {
+    const caller = await authenticate(req, ['CUSTOMER']);
+    return reconciledQuote(req.body || {}, {ownerType: 'CUSTOMER', ownerId: caller.uid});
+  });
   route('/quoteGuestCheckout', async req => { await limit(req, 'guestQuote', 60); return reconciledQuote(req.body || {}); });
   route('/checkoutCustomer', async req => {
     const caller = await authenticate(req, ['CUSTOMER']);

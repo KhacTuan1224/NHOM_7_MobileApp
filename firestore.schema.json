@@ -16,6 +16,8 @@
     {"path":"products/{productId}","purpose":"Sản phẩm","documentId":"productId","references":["users/{sellerId}","categories/{categoryId}"]},
     {"path":"productBatches/{batchId}","purpose":"Lô hàng và tồn kho","documentId":"batchId","references":["products/{productId}","campaigns/{activeCampaignId}?optional"]},
     {"path":"promotions/{productId}","purpose":"Khuyến mãi và giá theo số lượng","documentId":"productId","references":["products/{productId}","users/{sellerId}"]},
+    {"path":"customerPromotionWallets/{customerId}","purpose":"Kho khuyến mãi đã lưu của customer; backend ghi","documentId":"customer UID","references":["users/{customerId}"]},
+    {"path":"customerPromotionWallets/{customerId}/items/{productId}","purpose":"Quyền áp dụng khuyến mãi đã lưu; backend ghi","documentId":"productId","references":["users/{customerId}","promotions/{productId}","products/{productId}"]},
     {"path":"customerCarts/{customerId}","purpose":"Giỏ hàng khách đăng nhập; items là mảng trong document","documentId":"customer UID","references":["users/{customerId}","products/{items.productId}","productBatches/{items.batchId}"]},
     {"path":"orders/{orderId}","purpose":"Đơn hàng customer và guest","documentId":"requestId UUID","references":["users/{sellerId}","users/{ownerId}?customer-only","campaigns/{campaignId}?optional","productBatches/{batchReservations.keys}"]},
     {"path":"orders/{orderId}/items/{itemId}","purpose":"Sản phẩm và giá chụp tại thời điểm mua","documentId":"batchId","references":["orders/{orderId}","products/{productId}","productBatches/{batchId}"]},

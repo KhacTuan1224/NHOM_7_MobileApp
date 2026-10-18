@@ -79,6 +79,12 @@
 
         <!-- Checkout button -->
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/cartPromotionWalletButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:layout_marginBottom="12dp"
+            android:text="@string/promotion_wallet_title" android:textAllCaps="false" />
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/cartCheckoutButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"

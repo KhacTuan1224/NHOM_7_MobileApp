@@ -565,6 +565,28 @@ public class FirebaseProductRepository implements ProductRepository {
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+    @Override public void getApplicablePromotion(String productId, PromotionCallback callback) {
+        String uid = currentUserId();
+        if (uid == null || uid.trim().isEmpty()) { callback.onSuccess(null); return; }
+        firestore.collection("customerPromotionWallets").document(uid).collection("items").document(productId)
+                .get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(saved -> {
+                    if (!saved.exists() || !uid.equals(saved.getString("customerId"))) {
+                        callback.onSuccess(null); return;
+                    }
+                    getPromotion(productId, new PromotionCallback() {
+                        @Override public void onSuccess(Promotion value) {
+                            callback.onSuccess(value != null && value.getSellerId().equals(saved.getString("sellerId"))
+                                    && value.isValid(new java.util.Date()) ? value : null);
+                        }
+                        @Override public void onError(ErrorCode code, String message) { callback.onError(code, message); }
+                    });
+                }).addOnFailureListener(error -> {
+                    if (error instanceof FirebaseFirestoreException && ((FirebaseFirestoreException) error).getCode()
+                            == FirebaseFirestoreException.Code.PERMISSION_DENIED) callback.onSuccess(null);
+                    else notifyFailure(error, callback::onError);
+                });
+    }
+
     @Override public void getPromotion(String productId, PromotionCallback callback) {
         firestore.collection(PROMOTIONS).document(productId).get()
                 .addOnSuccessListener(snapshot -> {
@@ -664,16 +686,10 @@ public class FirebaseProductRepository implements ProductRepository {
                 if (batch == null || !productId.equals(batch.getProductId())) {
                     callback.onError(ErrorCode.NOT_FOUND, "Batch không còn khả dụng."); return;
                 }
-                firestore.collection(PROMOTIONS).document(productId).get()
-                        .addOnSuccessListener(promotionSnapshot -> callback.onSuccess(product, batch,
-                                promotionSnapshot.exists() ? mapPromotion(promotionSnapshot) : null))
-                        .addOnFailureListener(error -> {
-                            if (error instanceof FirebaseFirestoreException
-                                    && ((FirebaseFirestoreException) error).getCode()
-                                    == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                                callback.onSuccess(product, batch, null);
-                            } else notifyFailure(error, callback::onError);
-                        });
+                getApplicablePromotion(productId, new PromotionCallback() {
+                    @Override public void onSuccess(Promotion value) { callback.onSuccess(product, batch, value); }
+                    @Override public void onError(ErrorCode code, String message) { callback.onError(code, message); }
+                });
             }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
