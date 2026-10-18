@@ -23,6 +23,7 @@ import java.util.List;
 
 /** Public rescue feed: every entry is a campaign; legacy Posts are not shown here. */
 public class FeedFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private CampaignViewModel viewModel;
     private CampaignFeedCardRenderer renderer;
     private LinearLayout container;
@@ -40,21 +41,27 @@ public class FeedFragment extends Fragment {
         progress = view.findViewById(R.id.feedProgress);
         viewModel = new ViewModelProvider(this, new CampaignViewModelFactory(requireContext()))
                 .get(CampaignViewModel.class);
-        viewModel.getActiveCampaigns().observe(getViewLifecycleOwner(), values -> {
+        viewModel.getPublicCampaigns().observe(getViewLifecycleOwner(), values -> {
             campaigns = values == null ? new ArrayList<>() : new ArrayList<>(values);
             render();
         });
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            render();
             if (progress != null) progress.setVisibility(value.getStatus() == CampaignScreenState.Status.LOADING
                     ? View.VISIBLE : View.GONE);
             if (value.getStatus() == CampaignScreenState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
         });
-        view.findViewById(R.id.refreshFeedButton).setOnClickListener(v -> viewModel.refreshActive());
-        viewModel.refreshActive();
+        view.findViewById(R.id.refreshFeedButton).setOnClickListener(v -> { pagination.reset(); viewModel.refreshPublicPage(true); });
+        viewModel.refreshPublicPage(true);
     }
 
     private void render() {
+        if (container == null) return;
+        pagination.remote(viewModel::hasMorePublicCampaigns, viewModel::isPublicPageLoading,
+                () -> viewModel.refreshPublicPage(false)).render(container, campaigns, this::renderPage);
+    }
+    private void renderPage(List<RescueCampaign> campaigns) {
         if (!isAdded() || container == null) return;
         container.removeAllViews();
         if (campaigns.isEmpty()) {

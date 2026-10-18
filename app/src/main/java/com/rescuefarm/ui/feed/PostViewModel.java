@@ -42,12 +42,17 @@ public class PostViewModel extends ViewModel {
         repository.refreshSellerPosts(userId, action(null));
     }
     public void refreshSellerPostPage(boolean reset) {
+        if (sellerPageLoading) return;
         String userId = requireUser("Vui lòng đăng nhập seller."); if (userId == null) return;
+        sellerPageLoading = true;
+        state.setValue(PostScreenState.loading());
         repository.refreshSellerPostPage(userId, reset, PAGE_SIZE, new PostRepository.PageCallback() {
-            @Override public void onSuccess(boolean more) { sellerPostsHaveMore.postValue(more); }
-            @Override public void onError(PostRepository.ErrorCode error, String message) { state.postValue(PostScreenState.error(message)); }
+            @Override public void onSuccess(boolean more) { sellerPageLoading = false; sellerPostsHaveMore.postValue(more); state.postValue(PostScreenState.idle()); }
+            @Override public void onError(PostRepository.ErrorCode error, String message) { sellerPageLoading = false; state.postValue(PostScreenState.error(message)); }
         });
     }
+    private boolean sellerPageLoading;
+    public boolean isSellerPageLoading() { return sellerPageLoading; }
     public void loadPost(String postId) {
         loadedPostId = postId == null ? "" : postId; state.setValue(PostScreenState.loading());
         repository.getPost(loadedPostId, new PostRepository.PostCallback() {

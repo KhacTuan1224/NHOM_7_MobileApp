@@ -56,7 +56,86 @@ public class FirebaseProductRepository implements ProductRepository {
     private final NetworkStatusProvider network;
     private final Map<String, DocumentSnapshot> sellerProductCursors = new HashMap<>();
     private final Set<String> sellersWithMoreProducts = new HashSet<>();
-    private static final int SELLER_PAGE_SIZE = 50;
+    private static final int SELLER_PAGE_SIZE = 12;
+    private DocumentSnapshot publicCursor;
+    private volatile Set<String> publicIds;
+    private volatile boolean publicHasMore = true;
+    private volatile boolean publicLoading;
+
+    private final androidx.lifecycle.MutableLiveData<Object> publicRevision = new androidx.lifecycle.MutableLiveData<>();
+    @Override public LiveData<List<Product>> observePublicProductPage() {
+        androidx.lifecycle.MediatorLiveData<List<Product>> result = new androidx.lifecycle.MediatorLiveData<>();
+        java.util.concurrent.atomic.AtomicReference<List<Product>> cached =
+                new java.util.concurrent.atomic.AtomicReference<>(new ArrayList<>());
+        Runnable publish = () -> {
+            List<Product> values = cached.get();
+            Set<String> ids = publicIds;
+            if (ids == null) { result.setValue(new ArrayList<>(values.subList(0, Math.min(12, values.size())))); return; }
+            Map<String, Product> byId = new HashMap<>();
+            for (Product value : values) byId.put(value.getId(), value);
+            List<Product> visible = new ArrayList<>();
+            for (String id : ids) if (byId.containsKey(id)) visible.add(byId.get(id));
+            result.setValue(visible);
+        };
+        result.addSource(dao.observeActiveProducts(), entities -> { cached.set(CatalogCacheMapper.products(entities)); publish.run(); });
+        result.addSource(publicRevision, ignored -> publish.run());
+        return result;
+    }
+
+    @Override public boolean hasMorePublicProducts() { return publicHasMore; }
+
+    @Override public void refreshPublicProductPage(boolean reset, ActionCallback callback) {
+        if (publicLoading) { callback.onError(ErrorCode.CONFLICT, "Đang tải sản phẩm, vui lòng đợi."); return; }
+        if (!online(callback, "Không có kết nối; đang giữ sản phẩm đã tải.")) return;
+        if (!reset && !publicHasMore) { callback.onSuccess(); return; }
+        publicLoading = true;
+        ActionCallback completion = new ActionCallback() {
+            public void onSuccess() { publicLoading = false; callback.onSuccess(); }
+            public void onError(ErrorCode code, String message) { publicLoading = false; callback.onError(code, message); }
+        };
+        Runnable load = () -> {
+            Query page = firestore.collection(PRODUCTS).whereEqualTo("status", ProductStatus.ACTIVE.name())
+                    .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(13);
+            if (!reset && publicCursor != null) page = page.startAfter(publicCursor);
+            page.get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(snapshot -> {
+                List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(12, snapshot.size()));
+                Set<String> ids = reset || publicIds == null ? new LinkedHashSet<>() : new LinkedHashSet<>(publicIds);
+                List<ProductCacheEntity> entities = new ArrayList<>();
+                for (DocumentSnapshot doc : docs) {
+                    Product product = mapProduct(doc);
+                    if (product != null) { ids.add(product.getId()); entities.add(CatalogCacheMapper.toEntity(product, System.currentTimeMillis())); }
+                }
+                cacheExecutor.execute(() -> {
+                    try {
+                    dao.replaceProducts(entities);
+                    publicIds = ids;
+                    publicCursor = docs.isEmpty() ? (reset ? null : publicCursor) : docs.get(docs.size()-1);
+                    publicHasMore = snapshot.size() > 12;
+                    publicRevision.postValue(new Object());
+                    completion.onSuccess();
+                    } catch (RuntimeException error) {
+                        completion.onError(ErrorCode.UNKNOWN, "Không thể lưu trang sản phẩm trên thiết bị. Vui lòng thử lại.");
+                    }
+                });
+            }).addOnFailureListener(error -> notifyFailure(error, completion::onError));
+        };
+        if (!reset) { load.run(); return; }
+        firestore.collection(CATEGORIES).whereEqualTo("active", true).get().addOnSuccessListener(snapshot -> {
+            List<CategoryCacheEntity> entities = new ArrayList<>();
+            for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                Category category = mapCategory(doc);
+                if (category != null) entities.add(CatalogCacheMapper.toEntity(category, System.currentTimeMillis()));
+            }
+            cacheExecutor.execute(() -> {
+                try {
+                database.runInTransaction(() -> { dao.clearCategories(); dao.replaceCategories(entities); });
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(load);
+                } catch (RuntimeException error) {
+                    completion.onError(ErrorCode.UNKNOWN, "Không thể cập nhật danh mục trên thiết bị. Vui lòng thử lại.");
+                }
+            });
+        }).addOnFailureListener(error -> notifyFailure(error, completion::onError));
+    }
     private final InventoryService inventoryService = new InventoryService();
 
     public FirebaseProductRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,

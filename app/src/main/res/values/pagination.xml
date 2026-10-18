@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pagination_more">Xem thêm</string>
+    <string name="pagination_loading">Đang tải…</string>
+    <string name="pagination_loaded_count">Đã tải %1$d mục</string>
+</resources>

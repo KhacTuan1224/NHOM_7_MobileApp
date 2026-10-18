@@ -20,6 +20,7 @@ import com.rescuefarm.R;
 import com.rescuefarm.domain.model.Address;
 
 public class AddressListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private ProfileViewModel viewModel;
     private LinearLayout container;
     private TextView emptyView;
@@ -54,6 +55,9 @@ public class AddressListFragment extends Fragment {
     }
 
     private void renderAddresses(java.util.List<Address> addresses) {
+        pagination.render(container, addresses, this::renderAddressesPage);
+    }
+    private void renderAddressesPage(java.util.List<Address> addresses) {
         container.removeAllViews();
         emptyView.setVisibility(addresses.isEmpty() ? View.VISIBLE : View.GONE);
         for (Address address : addresses) container.addView(createCard(address));

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DiscoveryFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private HomeViewModel viewModel; private HomeCardRenderer renderer;
     private TextInputEditText searchInput, provinceInput, minPriceInput, maxPriceInput,
             radiusInput, expiryDaysInput, minStockInput;
@@ -62,6 +63,7 @@ public class DiscoveryFragment extends Fragment {
         setupEnumSpinner(sortSpinner, null, DiscoveryQuery.Sort.values());
         viewModel = new ViewModelProvider(this, new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
+        viewModel.ensureLoaded();
         restoreInputs(viewModel.getQuery());
         viewModel.getHomeState().observe(getViewLifecycleOwner(), value -> setupCategories(value.getCategories()));
         viewModel.getSearchResults().observe(getViewLifecycleOwner(), this::render);
@@ -93,6 +95,7 @@ public class DiscoveryFragment extends Fragment {
         result.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); return result;
     }
     private void apply() {
+        pagination.reset();
         String category = categorySpinner.getSelectedItemPosition() <= 0 ? ""
                 : categories.get(categorySpinner.getSelectedItemPosition() - 1).getId();
         try {
@@ -118,8 +121,11 @@ public class DiscoveryFragment extends Fragment {
         sortSpinner.setSelection(0); viewModel.setQuery(DiscoveryQuery.empty());
     }
     private void render(List<DiscoveryResult> values) {
-        results.removeAllViews(); count.setText(values.size() + " kết quả từ cache/Firestore");
-        if (values.isEmpty()) { results.addView(renderer.message("Không tìm thấy dữ liệu phù hợp.")); return; }
+        pagination.remote(() -> viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns(), viewModel::isPageLoading, () -> viewModel.loadNextPage(true, true)).render(results, values, this::renderPage);
+    }
+    private void renderPage(List<DiscoveryResult> values) {
+        results.removeAllViews(); count.setText(values.size() + " kết quả đang hiển thị");
+        if (values.isEmpty()) { results.addView(renderer.message(viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns() ? "Chưa có kết quả phù hợp trong phần đã tải. Nhấn Xem thêm để tìm tiếp." : "Không tìm thấy dữ liệu phù hợp.")); return; }
         for (DiscoveryResult value : values) {
             if (value.getType() == DiscoveryResult.Type.PRODUCT) {
                 results.addView(renderer.product(value.getProduct(), v -> openProduct(value)));

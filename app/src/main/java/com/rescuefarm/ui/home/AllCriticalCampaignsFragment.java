@@ -17,6 +17,7 @@ import com.rescuefarm.domain.model.RescueCampaign;
 import java.util.List;
 
 public class AllCriticalCampaignsFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private HomeViewModel viewModel;
     private HomeCardRenderer renderer;
     private LinearLayout campaignContainer;
@@ -39,12 +40,16 @@ public class AllCriticalCampaignsFragment extends Fragment {
 
         viewModel = new ViewModelProvider(requireActivity(), new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
+        viewModel.ensureLoaded();
         
         viewModel.getHomeState().observe(getViewLifecycleOwner(), state -> 
                 renderCampaigns(state.getCritical(), state));
     }
 
     private void renderCampaigns(List<RescueCampaign> campaigns, HomeViewState state) {
+        pagination.remote(viewModel::hasMoreCampaigns, viewModel::isPageLoading, () -> viewModel.loadNextPage(false, true)).render(campaignContainer, campaigns, page -> renderCampaignsPage(page, state));
+    }
+    private void renderCampaignsPage(List<RescueCampaign> campaigns, HomeViewState state) {
         campaignContainer.removeAllViews();
         
         if (campaigns == null || campaigns.isEmpty()) {

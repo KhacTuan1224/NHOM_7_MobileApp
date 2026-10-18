@@ -21,6 +21,7 @@ import com.rescuefarm.domain.model.Product;
 import java.util.List;
 
 public class SellerProductListFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private ProductViewModel viewModel; private LinearLayout container; private List<Product> currentProducts;
     private boolean batchSelectionMode;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -49,6 +50,7 @@ public class SellerProductListFragment extends Fragment {
             if (currentProducts != null) render(currentProducts);
         });
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (currentProducts != null) render(currentProducts);
             if (value.getStatus() == ProductScreenState.Status.ERROR)
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
             else if (value.getStatus() == ProductScreenState.Status.SAVED) {
@@ -60,12 +62,14 @@ public class SellerProductListFragment extends Fragment {
     @Override public void onResume() { super.onResume(); if (viewModel != null) viewModel.refreshSellerProductPage(true); }
     private void render(List<Product> products) {
         currentProducts = products;
+        pagination.remote(() -> Boolean.TRUE.equals(viewModel.getSellerProductsHaveMore().getValue()),
+                viewModel::isSellerPageLoading, () -> viewModel.refreshSellerProductPage(false))
+                .render(container, products, this::renderPage);
+    }
+    private void renderPage(List<Product> products) {
         container.removeAllViews(); if (products == null) return;
         for (Product product : products) container.addView(card(product));
-        if (viewModel != null && Boolean.TRUE.equals(viewModel.getSellerProductsHaveMore().getValue())) {
-            Button more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PRODUCTS, "Tải thêm", "Tải thêm sản phẩm");
-            more.setOnClickListener(v -> viewModel.refreshSellerProductPage(false)); container.addView(more);
-        }
+
     }
     private View card(Product product) {
         SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), batchSelectionMode

@@ -62,7 +62,88 @@ public class FirebaseOrderRepository implements OrderRepository {
     private final Map<String, DocumentSnapshot> sellerOrderCursors = new HashMap<>();
     private final Map<String, Boolean> sellerOrderHasMore = new HashMap<>();
     private final Map<String, ListenerRegistration> sellerOrderListeners = new HashMap<>();
-    private static final int SELLER_ORDER_PAGE_SIZE = 50;
+    private static final int SELLER_ORDER_PAGE_SIZE = 12;
+    private final Map<String, DocumentSnapshot> customerOrderCursors = new HashMap<>();
+    private final Map<String, Boolean> customerOrderHasMore = new HashMap<>();
+    private final Map<String, androidx.lifecycle.MutableLiveData<List<Order>>> customerPages = new HashMap<>();
+    private final java.util.Set<String> customerPagesLoading = new java.util.HashSet<>();
+
+    private androidx.lifecycle.MutableLiveData<List<Order>> customerPage(String ownerId) {
+        return customerPages.computeIfAbsent(ownerId, key -> new androidx.lifecycle.MutableLiveData<>());
+    }
+    @Override public LiveData<List<Order>> observeCustomerOrderPage(String ownerId) {
+        MediatorLiveData<List<Order>> result = new MediatorLiveData<>();
+        androidx.lifecycle.MutableLiveData<List<Order>> page = customerPage(ownerId);
+        result.addSource(orderDao.observeOwnerOrders(ownerId), entities -> {
+            List<Order> cached = OrderCacheMapper.orders(entities);
+            List<Order> loaded = page.getValue();
+            if (loaded == null) { result.setValue(new ArrayList<>(cached.subList(0, Math.min(12, cached.size())))); return; }
+            Map<String, Order> byId = new HashMap<>();
+            for (Order value : cached) byId.put(value.getId(), value);
+            List<Order> visible = new ArrayList<>();
+            for (Order value : loaded) visible.add(byId.containsKey(value.getId()) ? byId.get(value.getId()) : value);
+            result.setValue(visible);
+        });
+        result.addSource(page, result::setValue);
+        // Keep statuses live only for the requested window, not the complete history.
+        LiveData<Boolean> updates = Transformations.switchMap(page, loaded -> new LiveData<Boolean>() {
+            private ListenerRegistration listener;
+            @Override protected void onActive() {
+                if (loaded == null || loaded.isEmpty()) return;
+                listener = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
+                        .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
+                        .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(loaded.size())
+                        .addSnapshotListener((snapshot, error) -> {
+                            if (error != null || snapshot == null) return;
+                            List<Order> values = new ArrayList<>();
+                            for (DocumentSnapshot doc : snapshot.getDocuments()) values.add(mapOrder(doc, new ArrayList<>()));
+                            cacheExecutor.execute(() -> orderDao.replaceOrders(toEntities(values)));
+                        });
+            }
+            @Override protected void onInactive() { if (listener != null) listener.remove(); listener = null; }
+        });
+        result.addSource(updates, ignored -> { });
+        return result;
+    }
+    @Override public boolean hasMoreCustomerOrders(String ownerId) {
+        return customerOrderHasMore.getOrDefault(ownerId, true);
+    }
+    @Override public void refreshCustomerOrderPage(String ownerId, boolean reset, ActionCallback callback) {
+        if (customerPagesLoading.contains(ownerId)) return;
+        if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Không thể tải thêm đơn hàng khi offline."); return; }
+        if (!reset && !hasMoreCustomerOrders(ownerId)) { callback.onSuccess(); return; }
+        customerPagesLoading.add(ownerId);
+        Query query = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
+                .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
+                .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(13);
+        DocumentSnapshot cursor = customerOrderCursors.get(ownerId);
+        if (!reset && cursor != null) query = query.startAfter(cursor);
+        query.get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(snapshot -> {
+            List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(12, snapshot.size()));
+            java.util.LinkedHashMap<String, Order> merged = new java.util.LinkedHashMap<>();
+            List<Order> previous = customerPage(ownerId).getValue();
+            if (!reset && previous != null) for (Order value : previous) merged.put(value.getId(), value);
+            for (DocumentSnapshot doc : docs) { Order value = mapOrder(doc, new ArrayList<>()); merged.put(value.getId(), value); }
+            List<Order> values = new ArrayList<>(merged.values());
+            cacheExecutor.execute(() -> {
+                try {
+                orderDao.replaceOrders(toEntities(values));
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (reset) customerOrderCursors.remove(ownerId);
+                    if (!docs.isEmpty()) customerOrderCursors.put(ownerId, docs.get(docs.size()-1));
+                    customerOrderHasMore.put(ownerId, snapshot.size() > 12);
+                    customerPagesLoading.remove(ownerId);
+                    customerPage(ownerId).setValue(values); callback.onSuccess();
+                });
+                } catch (RuntimeException error) {
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        customerPagesLoading.remove(ownerId);
+                        callback.onError(ErrorCode.UNKNOWN, "Không thể lưu trang đơn hàng trên thiết bị. Vui lòng thử lại.");
+                    });
+                }
+            });
+        }).addOnFailureListener(error -> { customerPagesLoading.remove(ownerId); failure(error, callback); });
+    }
     private final SharedPreferencesGuestSessionRepository guestSession;
     private final Handler guestHandler = new Handler(Looper.getMainLooper());
     private final Map<String, Runnable> guestPolls = new HashMap<>();

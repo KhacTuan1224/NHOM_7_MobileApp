@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="public_seller_back">Quay lại</string>
+    <string name="public_seller_page_title">Hồ sơ cửa hàng</string>
+    <string name="public_seller_loading">Đang tải hồ sơ cửa hàng…</string>
+    <string name="public_seller_not_found">Không tìm thấy người bán.</string>
+    <string name="public_seller_not_configured">Người bán chưa công khai hồ sơ cửa hàng hoặc hồ sơ chưa tải được. Vui lòng thử lại sau.</string>
+    <string name="public_seller_name_fallback">Cửa hàng RescueFarm</string>
+    <string name="public_seller_description_fallback">Chưa có giới thiệu cửa hàng.</string>
+    <string name="public_seller_address_fallback">Chưa cập nhật địa chỉ.</string>
+    <string name="public_seller_about_title">Giới thiệu cửa hàng</string>
+    <string name="public_seller_address_title">Địa chỉ cửa hàng</string>
+    <string name="public_seller_report">Báo cáo người bán</string>
+</resources>

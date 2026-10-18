@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private HomeViewModel viewModel;
     private HomeCardRenderer renderer;
     private TextInputEditText searchInput, provinceInput, minPriceInput, maxPriceInput,
@@ -91,6 +92,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
         viewModel = new ViewModelProvider(filterOnly && getParentFragment() instanceof GuestHomeFragment
                 ? requireParentFragment() : requireActivity(), new HomeViewModelFactory(requireContext()))
                 .get(HomeViewModel.class);
+        viewModel.ensureLoaded();
         restoreInputs(viewModel.getQuery());
         if (filterOnly) {
             view.findViewById(R.id.discoveryKeywordLayout).setVisibility(View.GONE);
@@ -155,6 +157,7 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     }
 
     private boolean apply() {
+        pagination.reset();
         String category = categorySpinner.getSelectedItemPosition() <= 0 ? ""
                 : categories.get(categorySpinner.getSelectedItemPosition() - 1).getId();
         try {
@@ -193,10 +196,13 @@ public class DiscoveryBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void render(List<DiscoveryResult> values) {
+        pagination.remote(() -> viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns(), viewModel::isPageLoading, () -> viewModel.loadNextPage(true, true)).render(results, values, this::renderPage);
+    }
+    private void renderPage(List<DiscoveryResult> values) {
         results.removeAllViews();
-        count.setText(values.size() + " kết quả · Giá và lượng bán so sánh trong cùng đơn vị");
+        count.setText(values.size() + " kết quả đang hiển thị · Giá và lượng bán so sánh trong cùng đơn vị");
         if (values.isEmpty()) {
-            results.addView(renderer.message("Không tìm thấy dữ liệu phù hợp."));
+            results.addView(renderer.message(viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns() ? "Chưa có kết quả phù hợp trong phần đã tải. Nhấn Xem thêm để tìm tiếp." : "Không tìm thấy dữ liệu phù hợp."));
             return;
         }
         for (DiscoveryResult value : values) {

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MobileRescueFragment extends Fragment {
+    private final com.rescuefarm.ui.common.ListPagination pagination = new com.rescuefarm.ui.common.ListPagination();
     private java.util.List<RescueCampaign> current = java.util.Collections.emptyList();
     private final java.util.Map<String,TextView> stateLabels=new java.util.HashMap<>();
     private final java.util.Map<String,Button> updateButtons=new java.util.HashMap<>();
@@ -58,6 +59,7 @@ public class MobileRescueFragment extends Fragment {
         viewModel.getSellerCampaigns().observe(getViewLifecycleOwner(), this::render);
         viewModel.getSellerCampaignsHaveMore().observe(getViewLifecycleOwner(), unused -> render(current));
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
+            if (current != null) render(current);
             if (value.getStatus() == CampaignScreenState.Status.LOCATION_UPDATED) {
                 Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_SHORT).show(); viewModel.refreshSellerPage(true);
             } else if (value.getStatus() == CampaignScreenState.Status.ERROR)
@@ -67,6 +69,15 @@ public class MobileRescueFragment extends Fragment {
     }
     private void render(List<RescueCampaign> values) {
         current = values == null ? java.util.Collections.emptyList() : values;
+        java.util.List<RescueCampaign> matching = new java.util.ArrayList<>();
+        for (RescueCampaign value : current) if (value.getStatus() == CampaignStatus.ACTIVE
+                && value.getRescueMode() == RescueMode.MOBILE_POINT
+                && (requestedCampaignId.isEmpty() || requestedCampaignId.equals(value.getId()))) matching.add(value);
+        pagination.remote(() -> Boolean.TRUE.equals(viewModel.getSellerCampaignsHaveMore().getValue()),
+                viewModel::isSellerPageLoading, () -> viewModel.refreshSellerPage(false))
+                .render(container, matching, this::renderPage);
+    }
+    private void renderPage(List<RescueCampaign> values) {
         container.removeAllViews(); stateLabels.clear(); updateButtons.clear(); if (values == null) return;
         for (RescueCampaign value : values) if (value.getStatus() == CampaignStatus.ACTIVE
                 && value.getRescueMode() == RescueMode.MOBILE_POINT
@@ -78,11 +89,7 @@ public class MobileRescueFragment extends Fragment {
             empty.setText("Chưa có điểm giải cứu di động đang hoạt động trong danh sách đã tải. Tạo chiến dịch với hình thức Điểm di động và chờ được duyệt để cập nhật GPS tại đây.");
             container.addView(empty);
         }
-        if (Boolean.TRUE.equals(viewModel.getSellerCampaignsHaveMore().getValue())) {
-            Button more = com.rescuefarm.ui.seller.SellerUiStyles.button(requireContext(),
-                    com.rescuefarm.ui.seller.SellerUiStyles.Section.MOBILE, "Tải thêm", "Tải thêm chiến dịch để tìm điểm di động");
-            more.setOnClickListener(v -> viewModel.refreshSellerPage(false)); container.addView(more);
-        }
+
     }
     private View card(RescueCampaign value) {
         com.rescuefarm.ui.seller.SellerUiStyles.Row row = com.rescuefarm.ui.seller.SellerUiStyles.row(

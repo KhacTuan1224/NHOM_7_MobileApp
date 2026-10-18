@@ -47,6 +47,9 @@ public interface ProductRepository {
 
     LiveData<List<Category>> observeCategories();
     LiveData<List<Product>> observeProducts();
+    default LiveData<List<Product>> observePublicProductPage() { return observeProducts(); }
+    default void refreshPublicProductPage(boolean reset, ActionCallback callback) { refreshCatalog(callback); }
+    default boolean hasMorePublicProducts() { return false; }
     LiveData<List<Product>> observeSellerProducts(String sellerId);
     default LiveData<Product> observeProduct(String productId) {
         return new androidx.lifecycle.MutableLiveData<>();

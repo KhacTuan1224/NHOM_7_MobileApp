@@ -16,7 +16,22 @@ public class FirebaseEngagementRepository implements EngagementRepository{
   }
   protected void onInactive(){if(listener!=null)listener.remove();listener=null;}
  };}
- public LiveData<Boolean> observeFavorite(String customerId,String productId){return new LiveData<Boolean>(){private ListenerRegistration registration;@Override protected void onActive(){if(clean(customerId).isEmpty()||clean(productId).isEmpty()){postValue(false);return;}String id=Favorite.key(customerId,productId);registration=db.collection(FAVORITES).document(id).addSnapshotListener((snapshot,error)->{if(error!=null||snapshot==null){postValue(null);return;}postValue(snapshot.exists()&&customerId.equals(snapshot.getString("customerId")));});}@Override protected void onInactive(){if(registration!=null){registration.remove();registration=null;}}};}
+ public LiveData<Boolean> observeFavorite(String customerId,String productId){return new LiveData<Boolean>(){
+  private ListenerRegistration registration;
+  @Override protected void onActive(){
+   if(clean(customerId).isEmpty()||clean(productId).isEmpty()){postValue(false);return;}
+   // An owner-scoped query also succeeds before the first favorite exists.
+   registration=db.collection(FAVORITES).whereEqualTo("customerId",customerId)
+    .whereEqualTo("productId",productId).addSnapshotListener((snapshot,error)->{
+     if(error!=null||snapshot==null){
+      android.util.Log.w("FavoriteState","Unable to load favorite state",error);
+      postValue(null);return;
+     }
+     postValue(!snapshot.isEmpty());
+    });
+  }
+  @Override protected void onInactive(){if(registration!=null){registration.remove();registration=null;}}
+ };}
  public void refreshFavorites(String uid,ActionCallback cb){query(FAVORITES,"customerId",uid,s->{List<Favorite> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapFavorite(d));favorites.setValue(out);cb.onSuccess();},cb);}
  public void toggleFavorite(String uid,String productId,FavoriteCallback cb){if(!online(cb)||!session(uid,cb))return;Favorite f;try{f=Favorite.create(uid,productId,new Date());}catch(Exception e){cb.onError(ErrorCode.VALIDATION,e.getMessage());return;}DocumentReference ref=db.collection(FAVORITES).document(f.getId());db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(d.exists()){tx.delete(ref);return false;}tx.set(ref,favoriteMap(f));return true;}).addOnSuccessListener(cb::onSuccess).addOnFailureListener(e->fail(e,cb));}
  public void refreshProductReviews(String productId,ActionCallback cb){if(!online(cb))return;db.collection(REVIEWS).whereEqualTo("productId",productId).whereEqualTo("status",ReviewStatus.PUBLISHED.name()).get().addOnSuccessListener(s->{List<Review> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReview(d));reviews.setValue(out);cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}
