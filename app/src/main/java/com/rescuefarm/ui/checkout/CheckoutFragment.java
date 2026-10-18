@@ -141,8 +141,6 @@ public class CheckoutFragment extends Fragment {
         bindPaymentMethods();
         vm = new ViewModelProvider(this, new CheckoutViewModelFactory(requireContext()))
                 .get(CheckoutViewModel.class);
-        ((TextView) view.findViewById(R.id.checkoutOwnerText)).setText(
-                vm.isGuest() ? R.string.guest_checkout_notice : R.string.customer_checkout_notice);
         if (!vm.isGuest()) {
             vm.observeAddresses().observe(getViewLifecycleOwner(), this::renderAddresses);
             vm.observeCustomer().observe(getViewLifecycleOwner(), value -> {
@@ -155,13 +153,6 @@ public class CheckoutFragment extends Fragment {
                     applyCustomerLocation();
                 }
             });
-        } else if (state == null && !addressEdited && !restoringAddress) {
-            if (hasLocationPermission()) {
-                fetchCurrentLocation(false);
-            } else if (!hasPromptedLocationPermission) {
-                hasPromptedLocationPermission = true;
-                requestLocationPermissionAndFetch(false);
-            }
         }
         updateFulfillmentFields();
         savedAddressSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
@@ -269,11 +260,7 @@ public class CheckoutFragment extends Fragment {
                 android.R.layout.simple_spinner_dropdown_item, labels));
         int selected = 0;
         boolean initial = selectedAddressId == null && !addressEdited && !restoringAddress;
-        if (initial && !savedAddresses.isEmpty()) {
-            selected = 2;
-            for (int i = 0; i < savedAddresses.size(); i++) if (savedAddresses.get(i).isDefault()) { selected = i + 2; break; }
-            selectedAddressId = savedAddresses.get(selected - 2).getId();
-        } else if (initial) {
+        if (initial) {
             selected = 1;
             selectedAddressId = PROFILE_ADDRESS;
         } else {
@@ -465,9 +452,7 @@ public class CheckoutFragment extends Fragment {
                     summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"));
                 sellerAddress.setText(fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE
                         ? "Điểm nhận tại chiến dịch: " + quote.optString("campaignLocationName")
-                        : "Cửa hàng: " + quote.optString("sellerName") + (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY
-                                ? "\nĐiểm gửi: " : "\nĐiểm nhận tại cửa hàng: ")
-                                + quote.optString("sellerAddress", "Chưa cập nhật"));
+                        : quote.optString("sellerName") + "\n" + quote.optString("sellerAddress", "Chưa cập nhật"));
                 estimate.setText(summary.toString());
                 message.setText("");
                 quoteReady = Double.isFinite(quotedSubtotal)
@@ -516,10 +501,9 @@ public class CheckoutFragment extends Fragment {
         }
         View view = getView();
         if (view != null) {
-            gpsStatus.setVisibility(delivery ? View.VISIBLE : View.GONE);
-            view.findViewById(R.id.checkoutReceiverAddressTitle).setVisibility(delivery ? View.VISIBLE : View.GONE);
-            if (useCurrentLocationButton != null) useCurrentLocationButton.setVisibility(delivery ? View.VISIBLE : View.GONE);
-            view.findViewById(R.id.checkoutLocationHint).setVisibility(delivery ? View.VISIBLE : View.GONE);
+            gpsStatus.setVisibility(View.GONE);
+            if (useCurrentLocationButton != null) useCurrentLocationButton.setVisibility(
+                    delivery && vm != null && vm.isGuest() ? View.VISIBLE : View.GONE);
             savedAddressSpinner.setVisibility(delivery && vm != null && !vm.isGuest() ? View.VISIBLE : View.GONE);
         }
     }
@@ -541,6 +525,7 @@ public class CheckoutFragment extends Fragment {
         }
         applyPaymentMethods();
         if (selectedSeller.isEmpty()) { sellerAddress.setText("Chọn sản phẩm để xem địa chỉ cửa hàng."); return; }
+        paymentStatus.setVisibility(View.VISIBLE);
         paymentStatus.setText("Đang tải phương thức thanh toán của cửa hàng…");
         JSONObject optionsRequest = new JSONObject();
         try {
@@ -554,6 +539,7 @@ public class CheckoutFragment extends Fragment {
             }
             public void onError(String error) {
                 if (version != bankLoadVersion || getView() == null) return;
+                paymentStatus.setVisibility(View.VISIBLE);
                 paymentStatus.setText("Chưa tải được phương thức thanh toán. Vui lòng thử lại. "
                         + (error != null && error.contains("HTTP 404")
                         ? "Máy chủ cần cập nhật API thanh toán." : ""));
@@ -564,8 +550,7 @@ public class CheckoutFragment extends Fragment {
                 if (version != bankLoadVersion || getView() == null) return;
                 if (!quoteReady && fulfillment.getSelectedItem() != FulfillmentType.ON_SITE_RESCUE) sellerAddress.setText(profile.address.trim().isEmpty()
                         ? "Cửa hàng chưa cập nhật địa chỉ gửi hàng."
-                        : (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY
-                                ? "Điểm gửi từ cửa hàng: " : "Điểm nhận tại cửa hàng: ") + profile.shopName + "\n" + profile.address);
+                        : profile.shopName + "\n" + profile.address);
             }
             public void error(String message) {
                 if (version != bankLoadVersion || getView() == null) return;
@@ -576,6 +561,7 @@ public class CheckoutFragment extends Fragment {
 
     private void updatePaymentAvailability(JSONArray methods) {
         if (methods == null) {
+            paymentStatus.setVisibility(View.VISIBLE);
             paymentStatus.setText("Máy chủ chưa trả về phương thức thanh toán. Vui lòng cập nhật backend.");
             return;
         }
@@ -586,8 +572,8 @@ public class CheckoutFragment extends Fragment {
             bankTransferAvailable = available;
             applyPaymentMethods();
         }
-        paymentStatus.setText(available ? "Có thể thanh toán bằng chuyển khoản ngân hàng."
-                : "Cửa hàng chưa cấu hình đủ thông tin nhận chuyển khoản.");
+        paymentStatus.setText("");
+        paymentStatus.setVisibility(View.GONE);
     }
 
     private void applyPaymentMethods() {

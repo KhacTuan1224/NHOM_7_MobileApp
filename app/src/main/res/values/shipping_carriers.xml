@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shipment_carrier_choose">Chọn đơn vị vận chuyển</string>
+    <string name="shipment_carrier_required">Vui lòng chọn đơn vị vận chuyển.</string>
+    <string name="shipment_not_updated">Chưa cập nhật</string>
+    <string-array name="shipment_carrier_options">
+        <item>@string/shipment_carrier_choose</item>
+        <item>Giao Hàng Nhanh (GHN)</item>
+        <item>Giao Hàng Tiết Kiệm (GHTK)</item>
+        <item>Viettel Post</item>
+        <item>Vietnam Post (VNPost)</item>
+        <item>J&amp;T Express</item>
+        <item>SPX Express</item>
+        <item>BEST Express</item>
+        <item>Ahamove</item>
+        <item>GrabExpress</item>
+        <item>Lalamove</item>
+    </string-array>
+</resources>

@@ -224,7 +224,6 @@ public class CartFragment extends Fragment {
         CheckBox check = row.findViewById(R.id.cartItemCheck);
         ShapeableImageView image = row.findViewById(R.id.cartItemImage);
         TextView title = row.findViewById(R.id.cartItemTitle);
-        TextView batch = row.findViewById(R.id.cartItemBatch);
         TextView unitPrice = row.findViewById(R.id.cartItemUnitPrice);
         TextView total = row.findViewById(R.id.cartItemTotal);
         TextView quantity = row.findViewById(R.id.cartItemQuantity);
@@ -255,9 +254,6 @@ public class CartFragment extends Fragment {
         } else {
             image.setImageResource(R.drawable.ic_placeholder_food);
         }
-
-        // Lô hàng
-        batch.setText(String.format("Lô: %s", item.getBatchId()));
 
         // Đơn giá & Thành tiền
         unitPrice.setText(String.format("%s / %s", money.format(item.getUnitPrice()), unit));

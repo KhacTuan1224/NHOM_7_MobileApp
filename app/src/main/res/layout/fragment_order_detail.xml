@@ -139,12 +139,11 @@
             android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
             android:visibility="gone" />
 
-        <EditText
+        <Spinner
             android:id="@+id/shipmentCarrierInput"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/shipment_carrier_hint"
-            android:maxLength="120"
+            android:layout_height="@dimen/touch_target_min"
+            android:contentDescription="@string/shipment_carrier_hint"
             android:visibility="gone" />
 
         <EditText

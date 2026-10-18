@@ -50,19 +50,6 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/cartItemBatch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/bg_quantity_stepper"
-                android:paddingStart="6dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="6dp"
-                android:paddingBottom="2dp"
-                android:textColor="@color/rescue_on_surface_variant"
-                android:textSize="11sp" />
-
-            <TextView
                 android:id="@+id/cartItemUnitPrice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
