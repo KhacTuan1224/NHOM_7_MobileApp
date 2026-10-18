@@ -13,5 +13,7 @@
         <item name="android:fontFamily">sans</item>
     </style>
 
-    <style name="Theme.RescueFarm" parent="Base.Theme.RescueFarm" />
+    <style name="Theme.RescueFarm" parent="Base.Theme.RescueFarm">
+        <item name="android:windowBackground">@drawable/bg_launch_logo</item>
+    </style>
 </resources>
