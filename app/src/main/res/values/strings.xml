@@ -183,7 +183,7 @@
     <string name="seller_products_title">Sản phẩm của cửa hàng</string>
     <string name="seller_approval_catalog_notice">Chỉ seller đã được phê duyệt mới có thể tạo hoặc sửa sản phẩm và batch.</string>
     <string name="add_product_action">Thêm sản phẩm</string>
-    <string name="manage_batches_action">Batch</string>
+    <string name="manage_batches_action">Quản lý lô hàng</string>
     <string name="seller_batch_products_title">Chọn sản phẩm để quản lý batch</string>
     <string name="seller_batch_products_notice">Batch là các lô hàng của một sản phẩm. Chọn sản phẩm để xem, tạo hoặc cập nhật lô và tồn kho.</string>
     <string name="open_product_batches_action">Quản lý batch và tồn kho</string>
@@ -236,9 +236,9 @@
     <string name="campaign_progress_format">Tiến độ %1$.1f%% • %2$.2f / %3$.2f</string>
     <string name="campaign_reason_format">%1$s • Mức độ %2$s</string>
     <string name="detail_action">Chi tiết</string>
-    <string name="mobile_rescue_action">Mobile</string>
+    <string name="mobile_rescue_action">Điểm giải cứu di động</string>
     <string name="mobile_rescue_title">Điểm giải cứu di động</string>
-    <string name="mobile_rescue_foreground_notice">Vị trí chỉ được lấy khi bạn bấm cập nhật. Ứng dụng không theo dõi nền.</string>
+    <string name="mobile_rescue_foreground_notice">Quản lý GPS của điểm bán di động trong các chiến dịch đã duyệt. Bấm Lấy GPS khi điểm bán đổi vị trí hoặc Dừng để ngừng chia sẻ. Vị trí chỉ cập nhật khi bạn bấm, không theo dõi nền.</string>
     <string name="mobile_location_fresh">Vị trí đang hoạt động (cập nhật trong 10 phút).</string>
     <string name="mobile_location_stale">Vị trí đã cũ hoặc đang tắt; điểm này bị loại khỏi danh sách gần bạn.</string>
     <string name="update_mobile_location_action">Cập nhật vị trí hiện tại</string>

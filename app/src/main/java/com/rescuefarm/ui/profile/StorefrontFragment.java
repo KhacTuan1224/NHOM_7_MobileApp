@@ -36,6 +36,7 @@ public final class StorefrontFragment extends Fragment {
         vm.message.observe(getViewLifecycleOwner(),message::setText);
         vm.storefront.observe(getViewLifecycleOwner(),this::render);
         reloadButton = CustomerUi.button(root,"Tải lại",v->vm.load(sellerId));
+        if (editing) com.rescuefarm.ui.seller.SellerUiStyles.styleActions(root, com.rescuefarm.ui.seller.SellerUiStyles.Section.PROFILE);
         if(!editing) {
             CustomerUi.text(root,"Sản phẩm và đánh giá").setTextSize(20);
             products=CustomerUi.column(requireContext()); root.addView(products);

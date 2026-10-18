@@ -6,7 +6,7 @@
         android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/seller_campaigns_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
-        <Button android:id="@+id/addCampaignButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton android:id="@+id/addCampaignButton" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md"
             android:text="@string/add_campaign_action" />
         <LinearLayout android:id="@+id/sellerCampaignContainer" android:layout_width="match_parent"

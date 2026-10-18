@@ -83,11 +83,14 @@ public class SellerDashboardFragment extends Fragment {
         bind(view, R.id.dashboardShipmentsButton, "shipments");
         bind(view, R.id.dashboardStatisticsButton, "statistics");
         bind(view, R.id.dashboardProfileButton, "profile");
+        SellerUiStyles.styleButton(view.findViewById(R.id.sellerHomeOrdersButton), SellerUiStyles.Section.ORDERS);
         view.findViewById(R.id.sellerHomeOrdersButton).setOnClickListener(unused ->
                 navigate(SellerRoutePolicy.Destination.ORDERS, "orders"));
     }
 
     private void bind(View root, int id, String key) {
+        SellerUiStyles.Section section = SellerUiStyles.forRoute(key);
+        SellerUiStyles.drawerButton(root.findViewById(id), section, SellerUiStyles.icon(section));
         root.findViewById(id).setOnClickListener(unused -> {
             closeDrawer();
             navigate(routes.destinationFor(key), key);
@@ -108,6 +111,10 @@ public class SellerDashboardFragment extends Fragment {
         int action;
         if (destination == SellerRoutePolicy.Destination.PRODUCTS)
             action = R.id.action_sellerDashboardFragment_to_sellerProductListFragment;
+        else if (destination == SellerRoutePolicy.Destination.PROMOTIONS)
+            action = R.id.action_sellerDashboardFragment_to_sellerPromotionListFragment;
+        else if (destination == SellerRoutePolicy.Destination.MOBILE)
+            action = R.id.action_sellerDashboardFragment_to_mobileRescueFragment;
         else if (destination == SellerRoutePolicy.Destination.BATCHES) {
             Bundle args = new Bundle(); args.putBoolean("batchSelectionMode", true);
             Navigation.findNavController(requireView()).navigate(
@@ -178,15 +185,16 @@ public class SellerDashboardFragment extends Fragment {
             SellerDashboardCards.addFootnote(requireContext(), recent, "Chưa có đơn hàng.");
         }
         for (Order order : snapshot.getRecentOrders()) {
-            Button row = new Button(requireContext()); row.setAllCaps(false);
-            row.setText(getString(R.string.seller_recent_order_format, order.getOrderCode(),
-                    EnumLabels.label(order.getStatus()), order.getTotalAmount()));
-            row.setOnClickListener(unused -> {
+            SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), SellerUiStyles.Section.ORDERS);
+            row.title(order.getOrderCode());
+            row.body(com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()));
+            row.body(currency.format(order.getTotalAmount()));
+            row.action("Chi tiết", "Xem chi tiết đơn hàng", unused -> {
                 Bundle args = new Bundle(); args.putString("orderId", order.getId());
                 Navigation.findNavController(requireView()).navigate(
                         R.id.action_sellerDashboardFragment_to_orderDetailFragment, args);
             });
-            recent.addView(row);
+            recent.addView(row.root);
         }
         if (snapshot.hasMoreOrders()) {
             TextView more = new TextView(requireContext()); more.setText(R.string.seller_more_orders_notice);

@@ -1,5 +1,6 @@
 package com.rescuefarm.ui.campaign;
 import com.rescuefarm.ui.common.EnumLabels;
+import com.rescuefarm.ui.seller.SellerUiStyles;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -28,6 +29,7 @@ public class SellerCampaignListFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_seller_campaign_list, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        SellerUiStyles.styleActions(view, SellerUiStyles.Section.CAMPAIGNS);
         container = view.findViewById(R.id.sellerCampaignContainer);
         view.findViewById(R.id.addCampaignButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(R.id.action_sellerCampaignListFragment_to_campaignEditorFragment));
@@ -53,24 +55,21 @@ public class SellerCampaignListFragment extends Fragment {
         }
     }
     private View card(RescueCampaign value) {
-        MaterialCardView card = new MaterialCardView(requireContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1,-2); params.setMargins(0,0,0,dp(12)); card.setLayoutParams(params);
-        card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
-        LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(12),dp(12),dp(12),dp(12));
-        TextView title = new TextView(requireContext()); title.setText(value.getTitle() + " • " + EnumLabels.label(value.getStatus())); title.setTextSize(17); title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
-        TextView progress = new TextView(requireContext()); progress.setText(getString(R.string.campaign_progress_format,
+        SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), SellerUiStyles.Section.CAMPAIGNS);
+        row.title(value.getTitle()); row.body("Trạng thái: " + EnumLabels.label(value.getStatus()));
+        row.body(getString(R.string.campaign_progress_format,
                 value.calculateProgress(), value.getRescuedQuantity(), value.getTargetQuantity()));
-        LinearLayout actions = new LinearLayout(requireContext());
-        Button detail = button(R.string.detail_action); detail.setOnClickListener(v -> navigate(R.id.action_sellerCampaignListFragment_to_campaignDetailFragment, value)); actions.addView(detail);
+        row.action("Chi tiết", "Xem chi tiết chiến dịch", v -> navigate(R.id.action_sellerCampaignListFragment_to_campaignDetailFragment, value));
         if (value.getStatus() == CampaignStatus.DRAFT || value.getStatus() == CampaignStatus.REJECTED) {
-            Button edit = button(R.string.edit_action); edit.setOnClickListener(v -> navigate(R.id.action_sellerCampaignListFragment_to_campaignEditorFragment, value)); actions.addView(edit);
+            row.action("Sửa", "Chỉnh sửa chiến dịch", v -> navigate(R.id.action_sellerCampaignListFragment_to_campaignEditorFragment, value));
         }
         if (value.getStatus() == CampaignStatus.ACTIVE && value.getRescueMode() == RescueMode.MOBILE_POINT) {
-            Button mobile = button(R.string.mobile_rescue_action); mobile.setOnClickListener(v -> navigate(R.id.action_sellerCampaignListFragment_to_mobileRescueFragment, value)); actions.addView(mobile);
+            row.action("Vị trí", getString(R.string.mobile_rescue_action), v -> navigate(R.id.action_sellerCampaignListFragment_to_mobileRescueFragment, value));
         }
-        body.addView(title); body.addView(progress); body.addView(actions); card.addView(body); return card;
+        return row.root;
     }
-    private Button button(int text) { Button value = new Button(requireContext()); value.setText(text); return value; }
+    private Button button(int text) { return SellerUiStyles.button(requireContext(), SellerUiStyles.Section.CAMPAIGNS,
+            getString(text), getString(text)); }
     private void navigate(int action, RescueCampaign value) {
         Bundle args = new Bundle(); args.putString("campaignId", value.getId());
         Navigation.findNavController(requireView()).navigate(action, args);

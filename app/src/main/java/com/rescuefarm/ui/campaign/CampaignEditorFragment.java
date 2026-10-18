@@ -84,6 +84,7 @@ public class CampaignEditorFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.seller.SellerUiStyles.styleActions(view, com.rescuefarm.ui.seller.SellerUiStyles.Section.CAMPAIGNS);
         imageStatus = view.findViewById(R.id.campaignImageUploadStatus);
         imageGallery = view.findViewById(R.id.campaignImageGallery);
         title = view.findViewById(R.id.campaignTitleInput);

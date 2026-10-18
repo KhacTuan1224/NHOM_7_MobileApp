@@ -1,5 +1,6 @@
 package com.rescuefarm.ui.product;
 import com.rescuefarm.ui.common.EnumLabels;
+import com.rescuefarm.ui.seller.SellerUiStyles;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -41,6 +42,7 @@ public class BatchManagerFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_batch_manager, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        SellerUiStyles.styleActions(view, SellerUiStyles.Section.BATCHES);
         Bundle args = getArguments(); productId = args == null ? "" : args.getString("productId", "");
         ((TextView) view.findViewById(R.id.batchProductName)).setText(args == null ? "" : args.getString("productName", ""));
         container = view.findViewById(R.id.batchContainer); harvest = view.findViewById(R.id.harvestDateInput);
@@ -83,14 +85,12 @@ public class BatchManagerFragment extends Fragment {
         }
     }
     private View card(ProductBatch batch, Date now) {
-        MaterialCardView card = new MaterialCardView(requireContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2); params.setMargins(0, 0, 0, dp(10)); card.setLayoutParams(params);
-        card.setRadius(dp(14)); card.setStrokeWidth(dp(1));
-        LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(12), dp(12), dp(12), dp(12));
-        TextView info = new TextView(requireContext()); info.setText(getString(R.string.batch_info_format,
+        SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), SellerUiStyles.Section.BATCHES);
+        row.title("Lô hàng"); row.metadata("ID: " + batch.getId());
+        row.body(getString(R.string.batch_info_format,
                 batch.getAvailableQuantity(), batch.getReservedQuantity(), batch.getSoldQuantity(),
                 EnumLabels.label(batch.getStatus()), batch.getInventoryVersion()));
-        TextView alerts = new TextView(requireContext());
+        TextView alerts = row.body("");
         StringBuilder warning = new StringBuilder();
         if (batch.getStatus() == BatchStatus.EXPIRED || batch.isExpired(now)) {
             warning.append(getString(R.string.batch_alert_expired));
@@ -112,15 +112,12 @@ public class BatchManagerFragment extends Fragment {
         alerts.setTextColor(getResources().getColor(warning.length() > 0
                 ? R.color.rescue_critical : R.color.rescue_on_surface_variant, requireContext().getTheme()));
         alerts.setVisibility(warning.length() == 0 ? View.GONE : View.VISIBLE);
-        LinearLayout actions = new LinearLayout(requireContext());
-        Button edit = new Button(requireContext()); edit.setText(R.string.edit_action); edit.setOnClickListener(v -> edit(batch));
+        Button edit = row.action("Sửa", getString(R.string.edit_action), v -> edit(batch));
         edit.setEnabled(batch.getStatus() != BatchStatus.ARCHIVED);
-        Button delete = new Button(requireContext()); delete.setText("Lưu trữ lô");
+        Button delete = row.action("Lưu trữ", "Lưu trữ lô hàng", v -> viewModel.deleteBatch(batch.getId(), batch.getInventoryVersion()));
         delete.setEnabled(batch.getStatus() != BatchStatus.ARCHIVED && batch.getReservedQuantity() == 0D && batch.getSoldQuantity() == 0D
                 && (batch.getActiveCampaignId() == null || batch.getActiveCampaignId().isEmpty()));
-        delete.setOnClickListener(v -> viewModel.deleteBatch(batch.getId(), batch.getInventoryVersion()));
-        actions.addView(edit); actions.addView(delete); body.addView(info); body.addView(alerts);
-        body.addView(actions); card.addView(body); return card;
+        return row.root;
     }
     private void cycleAlertFilter() {
         if (alertFilter == InventoryAlertEvaluator.Filter.ALL) {

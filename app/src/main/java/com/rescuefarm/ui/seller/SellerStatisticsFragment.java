@@ -43,6 +43,7 @@ public final class SellerStatisticsFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_seller_statistics, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        SellerUiStyles.styleActions(view, SellerUiStyles.Section.ANALYTICS);
         viewModel = new ViewModelProvider(this).get(SellerStatisticsViewModel.class);
         content = view.findViewById(R.id.sellerStatisticsContent); message = view.findViewById(R.id.sellerStatisticsMessage);
         progress = view.findViewById(R.id.sellerStatisticsProgress);
@@ -63,37 +64,58 @@ public final class SellerStatisticsFragment extends Fragment {
         content.removeAllViews(); message.setText(state.message);
         progress.setVisibility(state.status == SellerStatisticsViewModel.Status.LOADING ? View.VISIBLE : View.GONE);
         SellerStatisticsSnapshot value = state.snapshot; if (value == null) return;
-        text(value.timeBasis, 13, false);
-        if (value.unverifiedCampaigns > 0) text(value.unverifiedCampaigns + " chiến dịch cũ chưa xác minh đơn vị; chưa cộng vào lượng giải cứu.", 13, false);
-        if (value.approximateDates) text("Một số giao dịch cũ chưa có ngày giao/hoàn thành riêng; thống kê dùng ngày cập nhật gần nhất của bản ghi đó.", 12, false);
+        text(value.timeBasis, 14, false);
+        if (value.unverifiedCampaigns > 0) text(value.unverifiedCampaigns + " chiến dịch cũ chưa xác minh đơn vị; chưa cộng vào lượng giải cứu.", 14, false);
+        if (value.approximateDates) text("Một số giao dịch cũ chưa có ngày giao/hoàn thành riêng; thống kê dùng ngày cập nhật gần nhất của bản ghi đó.", 14, false);
         text("Doanh thu: " + NumberFormat.getCurrencyInstance(locale).format(value.revenue), 22, true);
         String[] dates = new String[value.trendDates.size()]; double[] revenue = new double[dates.length];
         SimpleDateFormat date = new SimpleDateFormat("dd/MM", locale);
         for (int i = 0; i < dates.length; i++) { dates[i] = date.format(new Date(value.trendDates.get(i))); revenue[i] = value.trendRevenue.get(i); }
         chart(dates, revenue, true, "Doanh thu đơn đã giao theo thời gian");
-        chart(new String[]{"Đơn tạo", "Đã giao", "Hoàn thành"}, new double[]{value.orders, value.deliveredOrders, value.completedCampaigns}, false,
-                "Đơn hàng và chiến dịch trong kỳ");
-        text("Đơn đang xử lý toàn bộ cửa hàng: " + value.pendingOrders, 15, true);
-        text("Lượng đã giải cứu trong kỳ", 20, true);
-        if (value.rescued.isEmpty()) text("Chưa có đơn giải cứu đã giao trong kỳ.", 14, false);
+        chart(new String[]{"Đơn tạo", "Đã nhận"}, new double[]{value.orders, value.deliveredOrders}, false,
+                "Đơn hàng trong kỳ");
+        text("Đơn tạo tính theo ngày tạo; đơn đã nhận tính theo ngày nhận. Hai cột có thể thuộc các nhóm đơn khác nhau.", 14, false);
+        text("Đơn đang xử lý toàn bộ cửa hàng: " + value.pendingOrders, 16, false);
+        text("Chiến dịch hoàn thành trong kỳ: " + value.completedCampaigns, 16, false);
+        chart(new String[]{"Có chiến dịch giải cứu", "Đơn khác"}, new double[]{value.rescuedOrders,
+                Math.max(0, value.deliveredOrders - value.rescuedOrders)}, SellerStatisticsChart.Kind.RING,
+                "Cơ cấu đơn đã nhận trong kỳ");
+        text("Lượng đã giải cứu trong kỳ", 18, true);
+        if (value.rescued.isEmpty()) text("Chưa có đơn giải cứu đã nhận trong kỳ.", 16, false);
         for (SellerStatisticsSnapshot.Quantity quantity : value.rescued) text(format(quantity.value) + " " + quantity.unit, 22, true);
-        text("Mức hoàn thành mục tiêu trung bình: " + format(value.rescueRate) + "%", 18, true);
-        text("Tiến độ lũy kế của " + value.rescueRateCampaigns + " chiến dịch có thời gian giao với kỳ đã chọn. Trung bình từng chiến dịch, không cộng lẫn các đơn vị hàng hóa.", 12, false);
+        if (value.rescueRateCampaigns > 0) {
+            double rate = Math.max(0, Math.min(100, value.rescueRate));
+            chart(new String[]{"Đã hoàn thành", "Còn lại"}, new double[]{rate, 100-rate},
+                    SellerStatisticsChart.Kind.PROGRESS, "Mức hoàn thành mục tiêu trung bình");
+            text("Tiến độ lũy kế của " + value.rescueRateCampaigns + " chiến dịch có thời gian giao với kỳ đã chọn. Trung bình từng chiến dịch, không cộng lẫn các đơn vị hàng hóa.", 14, false);
+        } else text("Chưa có chiến dịch đủ điều kiện tính tiến độ trong kỳ.", 16, false);
         ranked("Sản phẩm đã giao nhiều nhất", value.products, false);
         ranked("Lý do giải cứu theo sản lượng", value.reasons, true);
-        text("Cập nhật: " + new SimpleDateFormat("dd/MM/yyyy HH:mm", locale).format(new Date(value.calculatedAt)), 12, false);
+        if (value.dashboard != null) {
+            chart(new String[]{"Đang hoạt động", "Trạng thái khác"},
+                    new double[]{value.dashboard.getActiveProducts(), Math.max(0,value.dashboard.getProducts()-value.dashboard.getActiveProducts())},
+                    SellerStatisticsChart.Kind.RING, "Sản phẩm hiện tại của cửa hàng");
+            chart(new String[]{"Đang hoạt động", "Trạng thái khác"},
+                    new double[]{value.dashboard.getActiveCampaigns(), Math.max(0,value.dashboard.getCampaigns()-value.dashboard.getActiveCampaigns())},
+                    SellerStatisticsChart.Kind.RING, "Chiến dịch hiện tại của cửa hàng");
+            text("Hai biểu đồ hiện trạng phản ánh toàn bộ cửa hàng tại lúc tải dữ liệu, không giới hạn theo kỳ đã chọn.", 14, false);
+        }
+        text("Cập nhật: " + new SimpleDateFormat("dd/MM/yyyy HH:mm", locale).format(new Date(value.calculatedAt)), 14, false);
     }
     private void ranked(String title, List<SellerStatisticsSnapshot.Quantity> values, boolean reasons) {
-        text(title, 20, true);
-        if (values.isEmpty()) { text("Chưa có dữ liệu trong kỳ.", 14, false); return; }
-        int rank = 0; String unit = null;
-        for (SellerStatisticsSnapshot.Quantity value : values) {
-            if (!value.unit.equals(unit)) { unit = value.unit; rank = 0; text("Đơn vị: " + unit, 13, true); }
-            String label = value.label;
-            if (reasons) {
-                try { label = reasonLabel(com.rescuefarm.domain.enums.RescueReason.valueOf(label)); } catch (IllegalArgumentException ignored) { }
+        if (values.isEmpty()) { text(title, 18, true); text("Chưa có dữ liệu trong kỳ.", 16, false); return; }
+        java.util.Map<String, java.util.List<SellerStatisticsSnapshot.Quantity>> groups = new java.util.LinkedHashMap<>();
+        for (SellerStatisticsSnapshot.Quantity value : values) groups.computeIfAbsent(value.unit, key -> new java.util.ArrayList<>()).add(value);
+        for (java.util.Map.Entry<String, java.util.List<SellerStatisticsSnapshot.Quantity>> entry : groups.entrySet()) {
+            java.util.List<SellerStatisticsSnapshot.Quantity> group = entry.getValue();
+            group.sort((a,b) -> Double.compare(b.value,a.value));
+            int count = Math.min(6, group.size()); String[] labels = new String[count]; double[] quantities = new double[count];
+            for (int i=0; i<count; i++) {
+                labels[i]=group.get(i).label; quantities[i]=group.get(i).value;
+                if (reasons) try { labels[i]=reasonLabel(com.rescuefarm.domain.enums.RescueReason.valueOf(labels[i])); } catch(IllegalArgumentException ignored) { }
             }
-            text((++rank) + ". " + label + " · " + format(value.value) + " " + unit, 15, false);
+            chart(labels, quantities, SellerStatisticsChart.Kind.HORIZONTAL, title + " (" + entry.getKey() + ")");
+            text("Tối đa 6 mục theo sản lượng; chỉ so sánh cùng đơn vị " + entry.getKey() + ".", 14, false);
         }
     }
     private String reasonLabel(com.rescuefarm.domain.enums.RescueReason reason) {
@@ -106,8 +128,11 @@ public final class SellerStatisticsFragment extends Fragment {
     }
     private String format(double value) { return NumberFormat.getNumberInstance(locale).format(value); }
     private void chart(String[] labels, double[] values, boolean line, String title) {
-        content.addView(new SellerStatisticsChart(requireContext(), labels, values, line), new LinearLayout.LayoutParams(-1, -2));
-        text(title, 16, true);
+        chart(labels, values, line ? SellerStatisticsChart.Kind.LINE : SellerStatisticsChart.Kind.COLUMN, title);
+    }
+    private void chart(String[] labels, double[] values, SellerStatisticsChart.Kind kind, String title) {
+        text(title, 18, true);
+        content.addView(new SellerStatisticsChart(requireContext(), labels, values, kind), new LinearLayout.LayoutParams(-1, -2));
     }
     private void text(String value, int size, boolean bold) {
         TextView view = new TextView(requireContext()); view.setText(value); view.setTextSize(size);
