@@ -56,6 +56,8 @@ public class ProfileFragment extends Fragment {
                 R.id.action_profileFragment_to_sellerProfileFragment));
         favoritesButton.setOnClickListener(Navigation.createNavigateOnClickListener(
                 R.id.action_profileFragment_to_favoriteFragment));
+        com.rescuefarm.ui.common.NotificationBadge.bind(this,
+                view.findViewById(R.id.notificationsButton), view.findViewById(R.id.profileNotificationBadge));
         view.findViewById(R.id.notificationsButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(R.id.action_profileFragment_to_notificationFragment));
         viewModel = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext()))

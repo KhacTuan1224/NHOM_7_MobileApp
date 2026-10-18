@@ -391,4 +391,5 @@
     <string name="all_critical_campaigns_title">Chiến dịch cần giải cứu gấp</string>
     <string name="all_value_products_title">Sản phẩm giá tốt</string>
     <string name="all_active_campaigns_title">Chiến dịch đang diễn ra</string>
+    <string name="notification_unread_description">Thông báo, %1$d chưa đọc</string>
 </resources>
