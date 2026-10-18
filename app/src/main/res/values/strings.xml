@@ -358,7 +358,7 @@
     <string name="seller_dashboard_stats_format">Sản phẩm: %1$d (%2$d đang bán)\nCampaign: %3$d (%4$d đang hoạt động, %5$d di động)\nĐơn mới nhất đã tải (tối đa 50): %6$d (%7$d đang xử lý, %8$d giao tận nơi)\nPromotion: %9$d\nDoanh thu đơn đã giao trong kỳ: %10$s\nKhối lượng giải cứu toàn bộ campaign: %11$.2f kg</string>
     <string name="seller_recent_order_format">%1$s • %2$s • %3$.0f ₫</string>
     <string name="admin_dashboard_title">Dashboard quản trị</string>
-    <string name="admin_access_message">Tài khoản quản trị — mọi thao tác moderation đều được ghi audit.</string>
+    <string name="admin_access_message">Tài khoản quản trị.</string>
     <string name="admin_refresh_action">Làm mới dữ liệu quản trị</string>
     <string name="admin_view_detail_action">Xem chi tiết và xử lý</string>
     <string name="admin_back_action">Quay lại</string>
