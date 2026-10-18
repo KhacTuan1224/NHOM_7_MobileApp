@@ -1,5 +1,6 @@
 package com.rescuefarm.ui.product;
 import com.rescuefarm.ui.common.EnumLabels;
+import com.rescuefarm.ui.seller.SellerUiStyles;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -29,6 +30,7 @@ public class SellerProductListFragment extends Fragment {
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         Bundle args = getArguments();
         batchSelectionMode = args != null && args.getBoolean("batchSelectionMode", false);
+        SellerUiStyles.styleActions(view, batchSelectionMode ? SellerUiStyles.Section.BATCHES : SellerUiStyles.Section.PRODUCTS);
         TextView title = view.findViewById(R.id.sellerProductListTitle);
         TextView notice = view.findViewById(R.id.sellerProductListNotice);
         if (batchSelectionMode) {
@@ -61,29 +63,27 @@ public class SellerProductListFragment extends Fragment {
         container.removeAllViews(); if (products == null) return;
         for (Product product : products) container.addView(card(product));
         if (viewModel != null && Boolean.TRUE.equals(viewModel.getSellerProductsHaveMore().getValue())) {
-            Button more = new Button(requireContext()); more.setAllCaps(false); more.setText("Tải thêm sản phẩm");
+            Button more = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PRODUCTS, "Tải thêm", "Tải thêm sản phẩm");
             more.setOnClickListener(v -> viewModel.refreshSellerProductPage(false)); container.addView(more);
         }
     }
     private View card(Product product) {
-        MaterialCardView card = new MaterialCardView(requireContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2); params.setMargins(0, 0, 0, dp(12)); card.setLayoutParams(params);
-        card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
-        LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14), dp(14), dp(14), dp(14));
-        TextView title = new TextView(requireContext()); title.setText(product.getName() + " • " + EnumLabels.label(product.getStatus())); title.setTextSize(17); title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
-        LinearLayout actions = new LinearLayout(requireContext());
-        Button batches = new Button(requireContext()); batches.setText(R.string.manage_batches_action); batches.setOnClickListener(v -> navigateBatches(product));
-        actions.setOrientation(LinearLayout.VERTICAL);
+        SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), batchSelectionMode
+                ? SellerUiStyles.Section.BATCHES : SellerUiStyles.Section.PRODUCTS);
+        row.title(product.getName());
+        row.body("Trạng thái: " + EnumLabels.label(product.getStatus()));
+        row.body(java.text.NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("vi-VN"))
+                .format(product.getRescuePrice()) + " / " + product.getUnit());
+        row.metadata("ID: " + product.getId());
         if (!batchSelectionMode) {
-            Button edit = new Button(requireContext()); edit.setText(R.string.edit_action); edit.setOnClickListener(v -> navigateEditor(product));
-            Button promotion = new Button(requireContext()); promotion.setText(R.string.manage_promotion_action); promotion.setOnClickListener(v -> navigatePromotion(product));
-            Button hide = new Button(requireContext()); hide.setText(R.string.hide_product_action); hide.setOnClickListener(v -> viewModel.hideProduct(product.getId()));
-            actions.addView(edit); actions.addView(batches); actions.addView(promotion); actions.addView(hide);
+            row.action("Sửa", "Chỉnh sửa sản phẩm", v -> navigateEditor(product));
+            row.action("Lô hàng", getString(R.string.manage_batches_action), v -> navigateBatches(product));
+            row.action("Ưu đãi", getString(R.string.manage_promotion_action), v -> navigatePromotion(product));
+            row.action("Ẩn", getString(R.string.hide_product_action), v -> viewModel.hideProduct(product.getId()));
         } else {
-            batches.setText(R.string.open_product_batches_action);
-            actions.addView(batches);
+            row.action("Lô hàng", getString(R.string.open_product_batches_action), v -> navigateBatches(product));
         }
-        body.addView(title); body.addView(actions); card.addView(body); return card;
+        return row.root;
     }
     private void navigateEditor(Product product) {
         Bundle args = productBundle(product);

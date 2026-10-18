@@ -65,6 +65,7 @@ public class SellerProfileFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_seller_profile, container, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.seller.SellerUiStyles.styleActions(view, com.rescuefarm.ui.seller.SellerUiStyles.Section.PROFILE);
         viewModel = new ViewModelProvider(this,
                 new ProfileViewModelFactory(requireContext())).get(ProfileViewModel.class);
         representativeInput = view.findViewById(R.id.sellerRepresentativeInput);
@@ -121,7 +122,8 @@ public class SellerProfileFragment extends Fragment {
             }
         });
         android.view.ViewGroup parent = (android.view.ViewGroup)view.findViewById(R.id.saveSellerProfileButton).getParent();
-        com.google.android.material.button.MaterialButton settings = new com.google.android.material.button.MaterialButton(requireContext());
+        com.google.android.material.button.MaterialButton settings = com.rescuefarm.ui.seller.SellerUiStyles.button(
+                requireContext(), com.rescuefarm.ui.seller.SellerUiStyles.Section.PROFILE, "Mã QR thanh toán", "Mở mã QR thanh toán");
         settings.setText("Mã QR thanh toán");
         settings.setOnClickListener(v -> { Bundle args = new Bundle(); args.putBoolean("edit",true);
             Navigation.findNavController(view).navigate(R.id.storefrontFragment,args); });

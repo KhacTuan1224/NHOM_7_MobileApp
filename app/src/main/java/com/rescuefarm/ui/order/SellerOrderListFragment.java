@@ -1,5 +1,6 @@
 package com.rescuefarm.ui.order;
 import com.rescuefarm.ui.common.EnumLabels;
+import com.rescuefarm.ui.seller.SellerUiStyles;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -37,6 +38,7 @@ public class SellerOrderListFragment extends Fragment {
         empty = view.findViewById(R.id.sellerOrderEmpty);
         title = view.findViewById(R.id.sellerOrderTitle);
         Bundle args = getArguments(); deliveryOnly = args != null && args.getBoolean("deliveryOnly", false);
+        SellerUiStyles.styleActions(view, deliveryOnly ? SellerUiStyles.Section.SHIPMENTS : SellerUiStyles.Section.ORDERS);
         title.setText(deliveryOnly ? R.string.seller_shipments_title : R.string.seller_orders_title);
         sellerId = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -59,42 +61,26 @@ public class SellerOrderListFragment extends Fragment {
         empty.setText(deliveryOnly ? R.string.seller_shipments_empty : R.string.seller_orders_empty);
         empty.setVisibility(visible.isEmpty() ? View.VISIBLE : View.GONE);
         for (Order order : visible) {
-            LinearLayout row = new LinearLayout(requireContext());
-            row.setOrientation(LinearLayout.VERTICAL);
-            int verticalPadding = Math.round(12 * getResources().getDisplayMetrics().density);
-            row.setPadding(0, verticalPadding, 0, verticalPadding);
-            row.setClickable(true);
-            row.setFocusable(true);
-            row.setBackgroundResource(android.R.drawable.list_selector_background);
-            TextView code = new TextView(requireContext());
-            code.setText(order.getOrderCode());
-            code.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface));
-            code.setTextSize(14);
-            code.setTypeface(code.getTypeface(), android.graphics.Typeface.BOLD);
-            TextView details = new TextView(requireContext());
-            details.setText(deliveryOnly
+            SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), deliveryOnly
+                    ? SellerUiStyles.Section.SHIPMENTS : SellerUiStyles.Section.ORDERS);
+            row.title(order.getOrderCode());
+            row.body(deliveryOnly
                     ? "Giao hàng: " + com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus())
                     : com.rescuefarm.ui.common.OrderLabels.status(order.getStatus(), order.getPaymentMethod()) + " · Thanh toán " + EnumLabels.label(order.getPaymentStatus()));
-            details.setTextColor(ContextCompat.getColor(requireContext(), R.color.rescue_on_surface_variant));
-            details.setTextSize(13);
-            row.addView(code);
-            row.addView(details);
-            row.setOnClickListener(unused -> {
+            row.body(java.text.NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("vi-VN")).format(order.getTotalAmount()));
+            View.OnClickListener open = unused -> {
                 Bundle args = new Bundle(); args.putString("orderId", order.getId());
                 Navigation.findNavController(requireView()).navigate(
                         R.id.action_sellerOrderListFragment_to_orderDetailFragment, args);
-            });
-            container.addView(row, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            View divider = new View(requireContext());
-            divider.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.rescue_outline));
-            container.addView(divider, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    Math.max(1, Math.round(getResources().getDisplayMetrics().density))));
+            };
+            row.action("Chi tiết", "Xem và xử lý đơn hàng", open);
+            row.root.setOnClickListener(open);
+            container.addView(row.root);
         }
         if (viewModel.hasMoreSellerOrders(sellerId)) {
-            com.google.android.material.button.MaterialButton more = new com.google.android.material.button.MaterialButton(requireContext());
-            more.setText(deliveryOnly ? "Tải thêm đơn giao hàng" : "Tải đơn cũ hơn");
+            com.google.android.material.button.MaterialButton more = SellerUiStyles.button(requireContext(),
+                    deliveryOnly ? SellerUiStyles.Section.SHIPMENTS : SellerUiStyles.Section.ORDERS,
+                    "Tải thêm", deliveryOnly ? "Tải thêm đơn giao hàng" : "Tải đơn cũ hơn");
             more.setOnClickListener(unused -> viewModel.loadMoreSellerOrders(sellerId));
             container.addView(more);
         }

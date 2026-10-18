@@ -5,7 +5,7 @@
     <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Thống kê cửa hàng" android:textSize="28sp" android:textStyle="bold"
+            android:text="Thống kê cửa hàng" android:textSize="24sp" android:textStyle="bold"
             android:textColor="@color/rescue_on_surface" android:accessibilityHeading="true" />
         <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp">
             <com.google.android.material.button.MaterialButton android:id="@+id/sellerStatisticsBack"
@@ -16,11 +16,11 @@
                 android:layout_height="wrap_content" android:minHeight="48dp" android:text="Làm mới" />
         </com.rescuefarm.ui.common.ResponsiveActionLayout>
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
-            android:text="Kỳ thống kê" android:textStyle="bold" android:textColor="@color/rescue_on_surface" />
+            android:text="Kỳ thống kê" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/rescue_on_surface" />
         <Spinner android:id="@+id/sellerStatisticsPeriod" android:layout_width="match_parent" android:layout_height="48dp" android:contentDescription="Chọn kỳ thống kê" />
         <ProgressBar android:id="@+id/sellerStatisticsProgress" android:layout_width="32dp" android:layout_height="32dp" android:visibility="gone" />
         <TextView android:id="@+id/sellerStatisticsMessage" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:textColor="@color/rescue_on_surface_variant" android:layout_marginTop="8dp" android:accessibilityLiveRegion="polite" />
+            android:textSize="16sp" android:textColor="@color/rescue_on_surface_variant" android:layout_marginTop="8dp" android:accessibilityLiveRegion="polite" />
         <LinearLayout android:id="@+id/sellerStatisticsContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
     </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

@@ -64,10 +64,10 @@
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
             android:textColor="@color/rescue_critical" android:accessibilityLiveRegion="polite"
             android:visibility="gone" />
-        <Button android:id="@+id/saveCampaignDraftButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton android:id="@+id/saveCampaignDraftButton" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_lg"
             android:text="@string/save_draft_action" />
-        <Button android:id="@+id/submitCampaignButton" android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton android:id="@+id/submitCampaignButton" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:text="@string/submit_approval_action" />
     </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

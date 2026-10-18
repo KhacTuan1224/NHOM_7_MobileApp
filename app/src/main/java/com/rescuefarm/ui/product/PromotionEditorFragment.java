@@ -42,6 +42,7 @@ public class PromotionEditorFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.seller.SellerUiStyles.styleActions(view, com.rescuefarm.ui.seller.SellerUiStyles.Section.PROMOTIONS);
         Bundle args = getArguments();
         productId = args == null ? "" : args.getString("productId", "");
         ((TextView) view.findViewById(R.id.promotionProductName)).setText(
