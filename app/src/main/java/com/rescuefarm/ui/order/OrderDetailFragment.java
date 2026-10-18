@@ -496,7 +496,7 @@ public class OrderDetailFragment extends Fragment {
             String amount = NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(payment.getAmount());
             detail.setText((payment.usesAutomaticVerification() ? "SePay đã xác minh tiền vào: " : "Số tiền đã ghi nhận: ")
                     + amount + (blank(payment.getReferenceCode()) ? "" : "\nMã giao dịch: " + payment.getReferenceCode())
-                    + "\nKhông cần xác nhận tiền thủ công. Tiếp tục theo dõi tiến trình giao nhận bên dưới.");
+            );
             if (lastPaymentStatus == PaymentStatus.PENDING && payment.usesAutomaticVerification() && !paymentSuccessShown) {
                 paymentSuccessShown = true;
                 new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
