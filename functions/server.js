@@ -80,7 +80,12 @@ async function auth(req, roles = []) {
   if (roles.length && !roles.includes(role)) throw httpError(403, "Role is not allowed");
   return {uid: decoded.uid, role};
 }
-app.get("/health", (_, res) => res.json({ok: true}));
+app.get("/health", (_, res) => {
+  let sepayStatus;
+  try { sepayStatus = Object.keys(require('./sepay').merchants()).length ? 'CONFIGURED' : 'NOT_CONFIGURED'; }
+  catch (_) { sepayStatus = 'INVALID_CONFIGURATION'; }
+  res.json({ok: true, paymentFlowVersion: 2, sepayStatus});
+});
 app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: auth}).router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
 app.use(require('./seller-payment-options').createSellerPaymentOptionsApi({db}).router);

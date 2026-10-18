@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('node:crypto');
 const {enqueueNotification} = require('./notification-outbox');
 const text = value => typeof value === 'string' ? value.trim() : '';
-const fail = (status, message) => Object.assign(new Error(message), {status});
+const fail = (status, message) => Object.assign(new Error(message), {status, ...(status === 503 ? {expose: true} : {})});
 const digest = value => crypto.createHash('sha256').update(value).digest('hex');
 const bankAliases = {
   ICB: '970415', VIETINBANK: '970415', VCB: '970436', VIETCOMBANK: '970436', MB: '970422', MBBANK: '970422',
@@ -43,6 +43,21 @@ function paymentDetails(sellerId, bank, env = process.env) {
   // QR content must not depend on whether webhook verification has been enabled yet.
   return {verificationProvider: merchant ? 'SEPAY' : 'MANUAL',
     transferContent: 'SEVQR' + crypto.randomBytes(10).toString('hex').toUpperCase()};
+}
+
+function bankTransferCapability(sellerId, bank, env = process.env) {
+  let merchant;
+  try { merchant = merchants(env)[sellerId]; }
+  catch (error) {
+    if (error.status !== 503) throw error;
+    // Invalid payment integration must disable transfers, not cash/COD checkout.
+    return {available: false, provider: '', reason: 'SEPAY_INVALID_CONFIGURATION'};
+  }
+  if (!merchant) return {available: false, provider: '', reason: 'SEPAY_NOT_CONNECTED'};
+  if (!bank || bankBin(bank.bankCode) !== merchant.bankBin
+      || text(bank.bankAccountNumber) !== merchant.accountNumber)
+    return {available: false, provider: '', reason: 'BANK_ACCOUNT_MISMATCH'};
+  return {available: true, provider: 'SEPAY', reason: ''};
 }
 
 function timingEqual(a, b) {
@@ -116,7 +131,9 @@ function createSePayApi({db, admin, env = process.env, now = Date.now}) {
       const bankTransactionRef = db.collection('sepayBankTransactions').doc(digest(bin + ':' + payload.accountNumber + ':' + financial.reference));
       const used = await tx.get(bankTransactionRef);
       if (used.exists) { review('BANK_TRANSACTION_ALREADY_USED'); return; }
-      if (order.sellerId !== sellerId || payment.orderId !== id || payment.verificationProvider !== 'SEPAY'
+      // An old pending order may have been created before this seller connected SePay.
+      // Only authenticated webhooks with the original immutable bank/code binding may upgrade it.
+      if (order.sellerId !== sellerId || payment.orderId !== id || !['SEPAY', 'MANUAL'].includes(payment.verificationProvider)
           || order.paymentMethod !== 'BANK_TRANSFER' || payment.method !== 'BANK_TRANSFER'
           || payment.transferContent !== code || bankBin(payment.bankCode) !== bin
           || payment.bankAccountNumber !== payload.accountNumber) { review('PAYMENT_BINDING_MISMATCH'); return; }
@@ -131,7 +148,7 @@ function createSePayApi({db, admin, env = process.env, now = Date.now}) {
       if (!Number.isFinite(created) || transactionTime + 2000 < created) { review('TRANSACTION_BEFORE_ORDER'); return; }
       tx.create(eventRef, {...event, orderId: id, status: 'APPLIED'});
       tx.create(bankTransactionRef, {sellerId, orderId: id, transactionId: payload.id, createdAt: stamp()});
-      tx.update(paymentRef, {status: 'PAID', referenceCode: financial.reference, verificationSource: 'SEPAY_WEBHOOK',
+      tx.update(paymentRef, {status: 'PAID', verificationProvider: 'SEPAY', referenceCode: financial.reference, verificationSource: 'SEPAY_WEBHOOK',
         providerTransactionId: String(payload.id), paidAt: stamp(), updatedAt: stamp()});
       tx.update(orderRef, {paymentStatus: 'PAID', status: order.status === 'PENDING' ? 'CONFIRMED' : order.status,
         ...(order.status === 'PENDING' ? {confirmedAt: stamp()} : {}), updatedAt: stamp()});
@@ -153,4 +170,4 @@ function createSePayApi({db, admin, env = process.env, now = Date.now}) {
   return {router, receive};
 }
 
-module.exports = {createSePayApi, paymentDetails, merchants, bankBin, paymentCode};
+module.exports = {createSePayApi, paymentDetails, merchants, bankBin, paymentCode, bankTransferCapability};

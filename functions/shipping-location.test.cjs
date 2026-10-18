@@ -16,7 +16,8 @@ function fixture() {
       initialQuantity: 10, availableQuantity: 10, reservedQuantity: 0, soldQuantity: 0,
       expiryDate: new Timestamp(Date.now() + 86400000), inventoryVersion: 1}
   });
-  const api = createCommerce({db, admin, authenticate: async () => ({uid: 'buyer', role: 'CUSTOMER'})});
+  const env = {SEPAY_MERCHANTS_JSON: JSON.stringify({seller: {enabled: true, bankCode: 'MB', accountNumber: '123456789', webhookSecret: 'test-only-webhook-secret-at-least-32-characters'}})};
+  const api = createCommerce({db, admin, env, authenticate: async () => ({uid: 'buyer', role: 'CUSTOMER'})});
   const data = {requestId: crypto.randomUUID(), receiverName: 'Người nhận', receiverPhone: '0912345678',
     receiverAddress: '20 đường B, Đồng Tháp', latitude: 10.8, longitude: 106.7,
     fulfillmentType: 'DELIVERY', paymentMethod: 'COD', note: '',
@@ -35,10 +36,10 @@ test('checkout quote exposes payment choices from private bank configuration wit
   const f = fixture();
   assert.deepEqual((await f.quote()).public.availablePaymentMethods, ['COD']);
   f.db.documents.set('sellerPaymentProfiles/seller', {bankCode: 'MB', bankAccountName: 'NGUYEN AN',
-    bankAccountNumber: 'secret-number', qrUrl: 'https://example.com/secret-qr'});
+    bankAccountNumber: '123456789', qrUrl: 'https://example.com/secret-qr'});
   const quote = (await f.quote()).public;
   assert.deepEqual(quote.availablePaymentMethods, ['COD', 'BANK_TRANSFER']);
-  assert.equal(JSON.stringify(quote).includes('secret-number'), false);
+  assert.equal(JSON.stringify(quote).includes('123456789'), false);
   assert.equal(JSON.stringify(quote).includes('secret-qr'), false);
 });
 

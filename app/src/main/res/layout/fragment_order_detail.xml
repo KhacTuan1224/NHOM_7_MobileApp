@@ -40,6 +40,26 @@
             android:textColor="@color/rescue_primary"
             android:textStyle="bold" />
 
+        <LinearLayout android:id="@+id/orderPaymentVerificationPanel"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:orientation="vertical"
+            android:background="@drawable/bg_quantity_stepper" android:padding="16dp"
+            android:visibility="gone">
+            <TextView android:id="@+id/orderPaymentVerificationTitle"
+                style="@style/TextAppearance.RescueFarm.TitleMedium"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/rescue_primary" android:accessibilityHeading="true" />
+            <TextView android:id="@+id/orderPaymentVerificationMessage"
+                style="@style/TextAppearance.RescueFarm.BodyMedium"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
+            <ProgressBar android:id="@+id/orderPaymentVerificationProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent" android:layout_height="4dp"
+                android:layout_marginTop="12dp" android:indeterminate="true"
+                android:visibility="gone" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

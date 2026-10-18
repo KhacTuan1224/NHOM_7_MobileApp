@@ -56,7 +56,13 @@ Số tài khoản phải là chuỗi để giữ số 0 đầu. Không lưu JSON
 
 Deploy code backend mới và Restart service sau khi lưu Environment. Endpoint `/health` vẫn dùng để kiểm tra service hoạt động. Có thể kiểm tra cú pháp và cấu hình trước khi deploy bằng `npm run check` và `npm run check:sepay` với env tương ứng; lệnh check:sepay không in secret hoặc số tài khoản đầy đủ.
 
-Mọi đơn BANK_TRANSFER mới đều có transferContent bắt đầu SEVQR và mapping bankTransferReferences, kể cả khi chưa bật webhook. Không có entry enabled cho seller → verificationProvider vẫn MANUAL; có tiền tố không đồng nghĩa đã bật tự xác minh. Entry đã bật nhưng sai ngân hàng/số tài khoản → từ chối tạo đơn chuyển khoản thay vì sinh QR nhận tiền sai. Đơn tạo trước khi cấu hình vẫn giữ phương thức xác nhận cũ, để không đổi mã khi khách đang thanh toán. Muốn kiểm tra SePay, tạo đơn mới sau khi cấu hình xong.
+**Luồng cập nhật 18/10/2026:** Đơn chuyển khoản mới chỉ được tạo khi seller có cấu hình SePay enabled hợp lệ và ngân hàng/số tài khoản khớp hồ sơ thanh toán riêng. Chưa kết nối thì API payment-options không cho chọn BANK_TRANSFER; backend cũng từ chối nếu client cũ cố tạo đơn. Không tạo đơn mới rồi âm thầm chuyển sang xác nhận MANUAL.
+
+Đơn cũ có mã SEVQR và mapping nguyên gốc, còn chờ thanh toán, có thể được webhook đã xác thực đối soát sau khi seller bật SePay. Backend vẫn kiểm tra ngân hàng, tài khoản, mã đơn, số tiền, thời gian và chống dùng lại giao dịch; chỉ khi hợp lệ mới ghi provider SEPAY, payment PAID và order CONFIRMED. Không đổi QR/mã thanh toán. Đơn đã xác nhận thủ công hoặc hoàn tất giữ nguyên lịch sử; webhook gửi lại không ghi đè lịch sử đó.
+
+`GET /health` của backend mới trả `paymentFlowVersion: 2` và `sepayStatus` là CONFIGURED, NOT_CONFIGURED hoặc INVALID_CONFIGURATION. Đây là trạng thái cấu hình, chưa chứng minh đã liên kết ngân hàng hoặc webhook thật đã tới. API `/sellers/payment-options` trả thêm `bankTransferVerification` (available, provider, reason) để kiểm tra từng seller, không trả secret hay số tài khoản.
+
+App hiển thị khung chờ xác minh và khung xác nhận số tiền/mã giao dịch trong chi tiết đơn. Khi đơn đang chờ chuyển sang PAID qua SePay, app báo “Đã nhận được tiền”; không có ô seller nhập mã giao dịch. Customer/seller cập nhật qua Firestore; guest kiểm tra trạng thái qua backend mỗi 3 giây khi chờ chuyển khoản, dừng khi rời màn hình.
 
 ## 4. Kiểm tra trước khi dùng thật
 
@@ -64,7 +70,7 @@ Mọi đơn BANK_TRANSFER mới đều có transferContent bắt đầu SEVQR v�
 - Nút Gửi thử của SePay thường dùng id 0; endpoint trả success nhưng không xác nhận đơn thật cho id 0. Chỉ dùng để kiểm tra kết nối, không coi đây là bằng chứng ngân hàng đã liên kết thành công.
 - Sau khi bật webhook Live, tạo đơn mới giá trị nhỏ bằng BANK_TRANSFER. Trang chi tiết phải hiển thị mã SEVQR và thông báo tự xác minh; seller không có nút xác nhận tiền thủ công.
 - Quét đúng QR và tự thực hiện giao dịch thật từ ngân hàng của người mua. Sau khi SePay gửi webhook, Order chuyển CONFIRMED/PAID, Payment lưu nguồn SEPAY_WEBHOOK và mã giao dịch. Không xác nhận nhận hàng tự động.
-- Customer nhận cập nhật qua Firestore listener hiện có. Guest dùng API trạng thái bằng token đơn (chu kỳ polling hiện có), không gọi ngân hàng từ app.
+- Customer/seller nhận cập nhật qua Firestore listener hiện có. Guest dùng API trạng thái bằng token đơn (3 giây khi đang chờ thanh toán), không gọi ngân hàng từ app.
 - Khi đã nhận hàng, người mua bấm Đã nhận hàng như trước.
 
 ## 5. Kiểm tra lỗi và đối soát
@@ -97,3 +103,16 @@ HTTP 401: kiểm tra HMAC secret, thời gian server và chế độ xác thực
 Có thể dùng API-key mode khi cần tương thích: đổi authMode thành apikey và chọn API Key ở SePay với đúng webhookSecret; header phải là Authorization: Apikey .... Không bật chế độ không xác thực.
 
 Nguồn xác thực/payload chính thức: https://developer.sepay.vn/vi/sepay-webhooks/xac-thuc và https://developer.sepay.vn/vi/sepay-webhooks/tich-hop-webhook
+
+
+## 6. Chẩn đoán thực tế ngày 18/10/2026
+
+Lần kiểm tra trực tiếp: Render `/health` trả `{ok:true}` nhưng request rỗng, không xác thực tới webhook seller trả HTTP 503. Firestore chưa có event webhook. Đơn được người dùng phản ánh mang provider MANUAL và đã được xác nhận/hoàn tất; không sửa lịch sử hoặc tự đánh dấu trả tiền từ ảnh chụp.
+
+Với code này, request thiếu xác thực phải bị HTTP 401 sau khi seller đã có cấu hình hợp lệ. HTTP 503 xảy ra trước bước kiểm tra chữ ký: kiểm tra biến `SEPAY_MERCHANTS_JSON` ở đúng Render service/environment, JSON object (không bọc thành chuỗi lần hai), key là đúng UID seller, `enabled` là boolean true, `accountNumber` là chuỗi, `webhookSecret` ít nhất 32 ký tự và `authMode` khớp SePay. Một entry sai cũng làm toàn bộ cấu hình bị từ chối. Chạy `npm run check:sepay` trong môi trường server; lệnh không in secret.
+
+Cần triển khai backend mới trong `functions/` rồi kiểm tra `/health` có paymentFlowVersion 2, webhook không xác thực trả 401 thay cho 503. Sau đó xem Lịch sử gửi webhook của giao dịch thật trong SePay; `200 {success:true}` phải đi cùng event APPLIED và đúng đơn PAID/CONFIRMED trong Firestore mới chứng minh tự xác nhận thành công. Không yêu cầu khách chuyển thêm tiền để thử lại đơn đã trả.
+
+Phiên công cụ hiện tại không có quyền quản trị Render hoặc phiên trình duyệt đã đăng nhập SePay/Render; code và APK cục bộ không tự thay thế bản backend đang chạy.
+
+Kiểm thử của bản sửa: 131 kiểm thử backend và 7 kiểm thử Cloudinary Worker pass; 42 kiểm thử tập trung về SePay/capabilities/thông báo pass sau chỉnh sửa cuối; 75 kiểm thử Firestore Emulator pass. Hai bài kiểm thử mới gọi HTTP webhook có HMAC trên database demo thật của Emulator, kiểm tra cả đơn SEPAY mới và đơn MANUAL cũ còn chờ, retry đồng thời không trả tiền hai lần, không ghi nhận đã giao hàng và thông báo cho cả hai phía. Kiểm thử Android về SePay, vòng đời đơn và nhãn trạng thái pass; assembleDebug và assembleDebugAndroidTest thành công. Không tạo webhook giả hoặc sửa payment trên database production.

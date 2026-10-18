@@ -28,6 +28,13 @@ const guestToken = 'a'.repeat(64);
 const buyer = {role: 'GUEST', accessToken: guestToken};
 const identity = {ownerType: 'GUEST', ownerId: 'guest_11111111-1111-1111-1111-111111111111', tokenHash: crypto.createHash('sha256').update(guestToken).digest('hex')};
 async function activate(fixture) { await fixture.lifecycle.moderate(moderator, {campaignId: 'campaign', targetStatus: 'ACTIVE'}); }
+// Historical manual orders remain readable/processable; new checkout requires SePay.
+async function legacyBankCheckout(f, request) {
+  await f.commerce.checkout({...request, paymentMethod: 'CASH_ON_SITE'}, identity);
+  const op = 'orders/' + request.requestId, pp = 'payments/' + request.requestId;
+  f.db.documents.set(op, {...f.db.snapshot(op).data(), paymentMethod: 'BANK_TRANSFER', paymentStatus: 'PENDING'});
+  f.db.documents.set(pp, {...f.db.snapshot(pp).data(), method: 'BANK_TRANSFER', status: 'PENDING', verificationProvider: 'MANUAL'});
+}
 async function finish(fixture, id) {
   for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'DELIVERED'])
     await fixture.lifecycle.transitionOrder(targetStatus === 'DELIVERED' ? buyer : seller, {orderId: id, targetStatus});
@@ -170,10 +177,10 @@ for (const fulfillmentType of ['DELIVERY', 'ON_SITE_RESCUE']) {
   });
 }
 
-test('bank transfer atomically confirms payment and order before preparation; only buyer completes receipt', async () => {
+test('legacy bank transfer atomically confirms payment and order before preparation; only buyer completes receipt', async () => {
   const f = setup(); await activate(f);
   f.db.documents.set('sellerPaymentProfiles/seller', {bankCode: 'VCB', bankAccountName: 'Test', bankAccountNumber: '123456'});
-  const request = {...data(), paymentMethod: 'BANK_TRANSFER'}; await f.commerce.checkout(request, identity);
+  const request = {...data(), paymentMethod: 'BANK_TRANSFER'}; await legacyBankCheckout(f, request);
   const id = request.requestId;
   await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: id, targetStatus: 'CONFIRMED'}), /mã giao dịch/);
   await assert.rejects(() => f.lifecycle.confirmBankTransfer(seller, {orderId: id, referenceCode: ''}), e => e.status === 400);
@@ -225,7 +232,7 @@ test('guest receipt requires its matching checkout token and bank confirmation r
   const f = setup(); await activate(f);
   f.db.documents.set('sellerPaymentProfiles/seller', {bankCode: 'MB', bankAccountName: 'Test', bankAccountNumber: '123456'});
   const request = {...data(), paymentMethod: 'BANK_TRANSFER'}, command = {orderId: request.requestId, referenceCode: 'TX123'};
-  await f.commerce.checkout(request, identity);
+  await legacyBankCheckout(f, request);
   for (const actor of [moderator, {role: 'CUSTOMER', uid: 'customer'}, {role: 'SELLER', uid: 'other'}])
     await assert.rejects(() => f.lifecycle.confirmBankTransfer(actor, command), e => e.status === 403);
   await f.lifecycle.confirmBankTransfer(seller, command);

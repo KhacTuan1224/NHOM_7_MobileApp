@@ -296,7 +296,10 @@ public class FirebaseOrderRepository implements OrderRepository {
                     getGuestOrder(id, new LifecycleCallback() {
                         public void onSuccess(Order order, Payment p, Shipment s, boolean replay) {
                             if (guestPolls.get(id) != currentPoll) return;
-                            callback.onSuccess(order, p, s, replay); guestHandler.postDelayed(currentPoll, 15000L);
+                            callback.onSuccess(order, p, s, replay);
+                            boolean waitingForTransfer = p.getMethod() == PaymentMethod.BANK_TRANSFER
+                                    && p.getStatus() == PaymentStatus.PENDING && order.getStatus() != OrderStatus.CANCELLED;
+                            guestHandler.postDelayed(currentPoll, waitingForTransfer ? 3000L : 15000L);
                         }
                         public void onError(ErrorCode error, String message) {
                             if (guestPolls.get(id) != currentPoll) return;

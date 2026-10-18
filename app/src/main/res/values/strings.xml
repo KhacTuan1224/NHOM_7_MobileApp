@@ -392,4 +392,6 @@
     <string name="all_value_products_title">Sản phẩm giá tốt</string>
     <string name="all_active_campaigns_title">Chiến dịch đang diễn ra</string>
     <string name="notification_unread_description">Thông báo, %1$d chưa đọc</string>
+    <string name="campaign_decrease_quantity">Giảm số lượng</string>
+    <string name="campaign_increase_quantity">Tăng số lượng</string>
 </resources>
