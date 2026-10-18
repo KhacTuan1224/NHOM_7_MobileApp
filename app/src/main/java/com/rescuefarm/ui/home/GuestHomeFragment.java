@@ -125,6 +125,8 @@ public class GuestHomeFragment extends Fragment {
                         name == null || name.trim().isEmpty() ? "bạn" : name.trim())));
 
         setupSearch(view, state);
+        com.rescuefarm.ui.common.NotificationBadge.bind(this,
+                view.findViewById(R.id.notificationButton), view.findViewById(R.id.homeNotificationBadge));
         view.findViewById(R.id.notificationButton).setOnClickListener(unused ->
                 Navigation.findNavController(view).navigate(viewModel.isAuthenticated()
                         ? R.id.action_guestHomeFragment_to_notificationFragment

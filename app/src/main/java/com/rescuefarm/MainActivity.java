@@ -122,10 +122,14 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
 
     @Override protected void onStart() {
         super.onStart();
+        new androidx.lifecycle.ViewModelProvider(this)
+                .get(com.rescuefarm.ui.engagement.UnreadNotificationsViewModel.class).start();
         if (authStateListener != null) FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
     }
 
     @Override protected void onStop() {
+        new androidx.lifecycle.ViewModelProvider(this)
+                .get(com.rescuefarm.ui.engagement.UnreadNotificationsViewModel.class).stop();
         if (authStateListener != null) FirebaseAuth.getInstance().removeAuthStateListener(authStateListener);
         super.onStop();
     }

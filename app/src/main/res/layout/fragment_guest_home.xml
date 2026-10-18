@@ -41,10 +41,18 @@
                                 android:rotation="90" app:tint="@android:color/white" />
                         </LinearLayout>
                     </LinearLayout>
-                    <ImageButton android:id="@+id/notificationButton" android:layout_width="42dp"
-                        android:layout_height="42dp" android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/notifications_title" android:padding="9dp"
-                        android:src="@drawable/ic_home_notifications" app:tint="@android:color/white" />
+                    <FrameLayout android:layout_width="48dp" android:layout_height="42dp"
+                        android:clipChildren="false" android:clipToPadding="false">
+                        <ImageButton android:id="@+id/notificationButton" android:layout_width="42dp"
+                            android:layout_height="42dp" android:layout_gravity="center"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/notifications_title" android:padding="9dp"
+                            android:src="@drawable/ic_home_notifications" app:tint="@android:color/white" />
+                        <TextView android:id="@+id/homeNotificationBadge"
+                            style="@style/Widget.RescueFarm.NotificationBadge"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:layout_gravity="top|end" />
+                    </FrameLayout>
                 </LinearLayout>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="10dp" android:orientation="horizontal" android:gravity="center_vertical">
