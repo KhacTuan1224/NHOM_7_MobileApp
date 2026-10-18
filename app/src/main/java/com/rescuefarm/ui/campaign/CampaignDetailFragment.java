@@ -361,16 +361,18 @@ public class CampaignDetailFragment extends Fragment {
     private void renderStoryImages(View root, RescueCampaign value) {
         LinearLayout gallery = root.findViewById(R.id.campaignStoryGallery);
         if (gallery == null) return;
+        if (value.getImageUrls().equals(gallery.getTag())) return;
+        gallery.setTag(new java.util.ArrayList<>(value.getImageUrls()));
         gallery.removeAllViews();
         for (String url : value.getImageUrls()) {
             ImageView image = new ImageView(requireContext());
             int width = Math.round(280 * getResources().getDisplayMetrics().density);
-            int height = Math.round(180 * getResources().getDisplayMetrics().density);
+            int height = Math.round(210 * getResources().getDisplayMetrics().density);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
-            params.rightMargin = Math.round(8 * getResources().getDisplayMetrics().density);
-            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            params.leftMargin = params.rightMargin = Math.round(4 * getResources().getDisplayMetrics().density);
+            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
             image.setContentDescription("Ảnh nội dung chiến dịch");
-            Glide.with(this).load(url).centerCrop().into(image); gallery.addView(image, params);
+            Glide.with(this).load(url).fitCenter().dontAnimate().into(image); gallery.addView(image, params);
         }
         gallery.setVisibility(value.getImageUrls().isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -522,7 +524,7 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private TextView commentText(String value) {
-        TextView text = new TextView(requireContext()); text.setText(value); text.setPadding(8, 10, 8, 10); return text;
+        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(16); text.setPadding(8, 10, 8, 10); return text;
     }
 
     @Override public void onDestroy() {

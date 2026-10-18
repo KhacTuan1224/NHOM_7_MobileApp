@@ -52,13 +52,9 @@ test('checkout creates a unique short SEVQR reference bound to its seller and co
   assert.equal(f.db.snapshot('bankTransferReferences/' + f.payment.transferContent).get('sellerId'), 'seller');
 });
 
-test('customer and guest get mapped SEVQR content even before seller enables automatic verification', async () => {
+test('new bank transfer checkout is blocked until automatic verification is configured', async () => {
   for (const ownerType of ['CUSTOMER', 'GUEST']) {
-    const f = await fixture(ownerType, {});
-    assert.equal(f.payment.verificationProvider, 'MANUAL');
-    assert.match(f.payment.transferContent, /^SEVQR[A-F0-9]{20}$/);
-    assert.equal(f.db.snapshot('bankTransferReferences/' + f.payment.transferContent).get('orderId'), f.id);
-    assert.equal(f.db.snapshot('bankTransferReferences/' + f.payment.transferContent).get('sellerId'), 'seller');
+    await assert.rejects(() => fixture(ownerType, {}), e => e.status === 409 && /SePay/.test(e.message));
   }
 });
 
@@ -74,6 +70,36 @@ test('HMAC webhook atomically confirms order and money without finalizing goods;
   const notices = (await f.db.collection('notifications').get()).docs.filter(doc => doc.id.includes('SEPAY_PAID'));
   assert.deepEqual(notices.map(doc => doc.get('userId')).sort(), ['buyer', 'seller']);
   assert.ok(notices.every(doc => doc.get('body').includes('xác minh')));
+});
+
+test('authenticated webhook upgrades a legacy pending MANUAL order without changing its QR binding', async () => {
+  const f = await fixture();
+  f.db.documents.set('payments/' + f.id, {...f.payment, verificationProvider: 'MANUAL'});
+  await f.api.receive(request(f.payload));
+  const p = f.db.snapshot('payments/' + f.id);
+  assert.equal(p.get('status'), 'PAID'); assert.equal(p.get('verificationProvider'), 'SEPAY');
+  assert.equal(p.get('transferContent'), f.payment.transferContent);
+  assert.equal(f.db.snapshot('orders/' + f.id).get('status'), 'CONFIRMED');
+});
+
+test('legacy pending payment still requires authentication and exact amount/account binding', async () => {
+  const f = await fixture();
+  f.db.documents.set('payments/' + f.id, {...f.payment, verificationProvider: 'MANUAL'});
+  await assert.rejects(() => f.api.receive(request(f.payload, {'x-sepay-signature': ''})), e => e.status === 401);
+  await f.api.receive(request({...f.payload, transferAmount: 1}));
+  assert.equal(f.db.snapshot('payments/' + f.id).get('status'), 'PENDING');
+  assert.equal(f.db.snapshot('orders/' + f.id).get('status'), 'PENDING');
+});
+
+test('already manually paid orders retain their original payment history on webhook delivery', async () => {
+  const f = await fixture();
+  f.db.documents.set('payments/' + f.id, {...f.payment, status: 'PAID', verificationProvider: 'MANUAL', referenceCode: 'LEGACY-RECEIPT'});
+  const order = f.db.snapshot('orders/' + f.id).data();
+  f.db.documents.set('orders/' + f.id, {...order, paymentStatus: 'PAID'});
+  await f.api.receive(request(f.payload));
+  const p = f.db.snapshot('payments/' + f.id);
+  assert.equal(p.get('referenceCode'), 'LEGACY-RECEIPT');assert.equal(p.get('verificationProvider'), 'MANUAL');
+  assert.equal((await f.db.collection('sepayBankTransactions').get()).size, 0);
 });
 
 test('simultaneous retries and replay do not confirm or notify twice', async () => {

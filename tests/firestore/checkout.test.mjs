@@ -98,7 +98,7 @@ test('active customers can manage only their own receiver addresses', async () =
       await assertFails(setDoc(doc(foreign, `users/${owner}/addresses/other`), addressData(owner, 'other')));
       await assertFails(deleteDoc(foreignRef));
     }
-    await assertFails(updateDoc(ref, { customerId: 'customer-b', updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(ref, { customerId: owner === 'customer-a' ? 'customer-b' : 'customer-a', updatedAt: serverTimestamp() }));
     await assertSucceeds(deleteDoc(ref));
   }
 });

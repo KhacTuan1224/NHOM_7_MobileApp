@@ -52,6 +52,8 @@ public class OrderDetailFragment extends Fragment {
     private View transitionButton, confirmButton;
     private com.google.android.material.button.MaterialButton receiptButton;
     private String orderId = "";
+    private PaymentStatus lastPaymentStatus;
+    private boolean paymentSuccessShown;
     private final OrderLifecycleService lifecycleService = new OrderLifecycleService();
     private List<OrderStatus> displayedTargets = Collections.emptyList();
 
@@ -61,6 +63,12 @@ public class OrderDetailFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        if (state != null) {
+            paymentSuccessShown = state.getBoolean("paymentSuccessShown");
+            String previous = state.getString("previousPaymentStatus", "");
+            if (!previous.isEmpty()) try { lastPaymentStatus = PaymentStatus.valueOf(previous); }
+            catch (IllegalArgumentException ignored) { }
+        }
         orderCodeView = view.findViewById(R.id.orderDetailCode);
         orderStatusView = view.findViewById(R.id.orderDetailStatus);
         orderInfo = view.findViewById(R.id.orderDetailInfoContainer);
@@ -216,11 +224,11 @@ public class OrderDetailFragment extends Fragment {
         target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         statusActionTitle.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         boolean bank = payment.getMethod() == PaymentMethod.BANK_TRANSFER;
-        boolean pendingSellerBankConfirmation = seller && bank && !payment.usesAutomaticVerification() && payment.getStatus() == PaymentStatus.PENDING
-                && order.getStatus() != OrderStatus.CANCELLED && order.getStatus() != OrderStatus.DELIVERED;
-        reference.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
-        confirmButton.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
-        bankTransferActionTitle.setVisibility(pendingSellerBankConfirmation ? View.VISIBLE : View.GONE);
+        instructions.setVisibility(bank ? View.GONE : View.VISIBLE);
+        reference.setVisibility(View.GONE);
+        confirmButton.setVisibility(View.GONE);
+        bankTransferActionTitle.setVisibility(View.GONE);
+        renderPaymentVerification(order, payment);
         boolean delivery = order.getFulfillmentType() == com.rescuefarm.domain.enums.FulfillmentType.DELIVERY;
         boolean shipmentEditable = seller && delivery && shipment != null
                 && (order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PREPARING
@@ -240,14 +248,15 @@ public class OrderDetailFragment extends Fragment {
         receiptButton.setText(payment.getMethod() == PaymentMethod.COD ? "Đã thanh toán và nhận đơn" : "Đã nhận hàng");
         boolean customer = !uid.isEmpty() && uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
         renderItems(order, customer);
-        if (bank && !seller && payment.getStatus() == PaymentStatus.PENDING
+        if (bank && payment.usesAutomaticVerification() && !seller && payment.getStatus() == PaymentStatus.PENDING
                 && order.getStatus() != OrderStatus.CANCELLED) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
     }
 
     private String paymentStatusLabel(OrderStatus status, Payment payment) {
-        if (status == OrderStatus.PENDING && payment.getMethod() == PaymentMethod.BANK_TRANSFER
-                && payment.usesAutomaticVerification()) return "Chờ hệ thống xác minh chuyển khoản";
+        if (status == OrderStatus.PENDING && payment.getMethod() == PaymentMethod.BANK_TRANSFER)
+            return payment.usesAutomaticVerification()
+                        ? "Chờ hệ thống xác minh chuyển khoản" : "Chờ kết nối xác minh chuyển khoản";
         return statusLabel(status, payment.getMethod());
     }
 
@@ -464,9 +473,48 @@ public class OrderDetailFragment extends Fragment {
                     + payment.getTransferContent() + ". Khi tiền về, trạng thái đơn sẽ tự cập nhật; không cần cửa hàng xác nhận thủ công.";
         }
         if (payment.getMethod() == PaymentMethod.BANK_TRANSFER)
-            return getString(R.string.bank_transfer_manual_instruction, payment.getOrderId());
+            return payment.getStatus() == PaymentStatus.PAID
+                    ? "Thanh toán đã được ghi nhận. Người mua xác nhận đã nhận hàng sau khi nhận đủ hàng."
+                    : "Đơn này được tạo trước khi bật tự xác minh. Cửa hàng cần kiểm tra cấu hình SePay và webhook. Nếu đã chuyển tiền, không chuyển thêm lần nữa; hệ thống chỉ xác nhận từ giao dịch đã xác thực.";
         if (payment.getMethod() == PaymentMethod.CASH_ON_SITE) return getString(R.string.cash_onsite_instruction);
         return getString(R.string.cod_instruction);
     }
     private boolean blank(String value) { return value == null || value.trim().isEmpty(); }
+
+    private void renderPaymentVerification(Order order, Payment payment) {
+        View root = requireView(), panel = root.findViewById(R.id.orderPaymentVerificationPanel);
+        if (payment.getMethod() != PaymentMethod.BANK_TRANSFER) { panel.setVisibility(View.GONE); return; }
+        panel.setVisibility(View.VISIBLE);
+        TextView title = root.findViewById(R.id.orderPaymentVerificationTitle);
+        TextView detail = root.findViewById(R.id.orderPaymentVerificationMessage);
+        View progress = root.findViewById(R.id.orderPaymentVerificationProgress);
+        boolean paid = payment.getStatus() == PaymentStatus.PAID;
+        boolean pending = payment.getStatus() == PaymentStatus.PENDING && order.getStatus() != OrderStatus.CANCELLED;
+        progress.setVisibility(pending && payment.usesAutomaticVerification() ? View.VISIBLE : View.GONE);
+        if (paid) {
+            title.setText(payment.usesAutomaticVerification() ? "Đã nhận tiền và xác nhận đơn" : "Đã ghi nhận thanh toán");
+            String amount = NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(payment.getAmount());
+            detail.setText((payment.usesAutomaticVerification() ? "SePay đã xác minh tiền vào: " : "Số tiền đã ghi nhận: ")
+                    + amount + (blank(payment.getReferenceCode()) ? "" : "\nMã giao dịch: " + payment.getReferenceCode())
+                    + "\nKhông cần xác nhận tiền thủ công. Tiếp tục theo dõi tiến trình giao nhận bên dưới.");
+            if (lastPaymentStatus == PaymentStatus.PENDING && payment.usesAutomaticVerification() && !paymentSuccessShown) {
+                paymentSuccessShown = true;
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Đã nhận được tiền")
+                        .setMessage("Hệ thống đã xác minh " + amount + " và tự xác nhận đơn hàng. Bạn có thể tiếp tục theo dõi đơn.")
+                        .setPositiveButton("Đã hiểu", null).show();
+            }
+        } else {
+            title.setText(!pending ? "Đơn không còn chờ thanh toán" : payment.usesAutomaticVerification()
+                    ? "Đang chờ SePay xác minh tiền vào" : "Đơn cũ chưa bật xác minh tự động");
+            detail.setText(paymentInstructions(payment));
+        }
+        lastPaymentStatus = payment.getStatus();
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putBoolean("paymentSuccessShown", paymentSuccessShown);
+        if (lastPaymentStatus != null) state.putString("previousPaymentStatus", lastPaymentStatus.name());
+    }
 }

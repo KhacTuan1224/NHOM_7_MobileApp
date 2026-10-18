@@ -1,5 +1,5 @@
 const express = require("express");
-const {paymentDetails} = require('./sepay');
+const {paymentDetails, bankTransferCapability} = require('./sepay');
 const {availablePaymentMethods} = require('./seller-payment-options');
 const {normalizeUnit, campaignUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
@@ -139,6 +139,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     }
     const paymentSnapshot = await read(db.collection('sellerPaymentProfiles').doc(sellerId));
     if (paymentSnapshot.exists) paymentProfile = paymentSnapshot.data();
+    const verification = bankTransferCapability(sellerId, paymentProfile, env);
     if (data.paymentMethod === 'BANK_TRANSFER' && !paymentProfile)
       throw error(409, "Cửa hàng chưa khai báo thông tin nhận thanh toán.");
     if (data.fulfillmentType === 'DELIVERY') {
@@ -165,7 +166,8 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
     return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
       public: {lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
-        availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, paymentProfile),
+        availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, verification.available ? paymentProfile : null),
+        bankTransferVerification: verification,
         sellerName: text(seller.get('fullName')), sellerAddress: profile ? text(profile.address) : '',
         sellerLatitude: profile ? number(profile.latitude, 0) : 0,
         sellerLongitude: profile ? number(profile.longitude, 0) : 0,
@@ -225,6 +227,8 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       const paymentStatus = normalized.paymentMethod === 'BANK_TRANSFER' ? 'PENDING' : 'UNPAID';
       const bankTransfer = normalized.paymentMethod === 'BANK_TRANSFER'
         ? paymentDetails(q.sellerId, q.paymentProfile, env) : {verificationProvider: '', transferContent: ''};
+      if (normalized.paymentMethod === 'BANK_TRANSFER' && bankTransfer.verificationProvider !== 'SEPAY')
+        throw error(409, 'Cửa hàng chưa kết nối xác minh chuyển khoản SePay. Vui lòng chọn thanh toán khi nhận hàng hoặc chờ cửa hàng hoàn tất kết nối; chưa chuyển tiền.');
       const order = {id: requestId, requestId, ownerType: identity.ownerType, ownerId: identity.ownerId,
         orderCode: `RF-${requestId.replace(/-/g, '').toUpperCase()}`, sellerId: q.sellerId, campaignId: q.public.campaignId,
         ...normalized, subtotal: q.public.subtotal, quantityDiscount: 0, shippingFee: q.public.shippingFee,
@@ -297,7 +301,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         isRead: false, createdAt: stamp()});
       if (identity.ownerType === 'GUEST') tx.create(codeRef, {orderId: requestId, phoneHash: hash(receiverPhone), createdAt: stamp()});
       enqueueNotification(tx, db, admin, `order_${requestId}_seller`, {kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId,
-        recipientUid: q.sellerId, decision: 'PENDING', title: 'Có đơn hàng mới', publicMessage: 'Có đơn hàng mới đang chờ cửa hàng xác nhận.'});
+        recipientUid: q.sellerId, inboxId: sellerNotificationId, decision: 'PENDING', title: 'Có đơn hàng mới', publicMessage: 'Có đơn hàng mới đang chờ cửa hàng xác nhận.'});
       enqueueNotification(tx, db, admin, `order_${requestId}_admins`, {kind: 'ADMINS', resourceType: 'ORDER', resourceId: requestId});
       if (identity.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${requestId}_PENDING`, {
         kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId, recipientUid: identity.ownerId, decision: 'PENDING', inboxId: `${requestId}_PENDING`});
