@@ -70,7 +70,6 @@ public final class EnumLabels {
         labels.put("DELETED", "Đã xóa");
         labels.put("PRODUCT", "Sản phẩm");
         labels.put("CAMPAIGN", "Chiến dịch");
-        labels.put("POST", "Bài viết");
         labels.put("COMMENT", "Bình luận");
         labels.put("REVIEW", "Đánh giá");
         labels.put("USER", "Tài khoản");
@@ -108,7 +107,6 @@ public final class EnumLabels {
         labels.put("BEST_SELLING", "Bán chạy nhất");
         labels.put("SELLER_APPLICATIONS", "Hồ sơ đăng ký người bán");
         labels.put("USERS", "Tài khoản");
-        labels.put("POSTS", "Bài viết");
         labels.put("PRODUCTS", "Sản phẩm");
         labels.put("CAMPAIGNS", "Chiến dịch");
         labels.put("CATEGORIES", "Danh mục");

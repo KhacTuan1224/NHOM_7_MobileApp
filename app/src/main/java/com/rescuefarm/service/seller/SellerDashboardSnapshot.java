@@ -14,21 +14,21 @@ public final class SellerDashboardSnapshot {
         public double getQuantity() { return quantity; }
     }
     private final int products, activeProducts, campaigns, activeCampaigns, completedCampaigns;
-    private final int mobileCampaigns, posts, pendingPosts, orders, pendingOrders, deliveryOrders, promotions;
+    private final int mobileCampaigns, orders, pendingOrders, deliveryOrders, promotions;
     private final double revenue, rescuedQuantity, rescueRate;
     private final List<RankedMetric> topProducts, topReasons, revenueTrend;
     private final List<Order> recentOrders;
     private int totalOrders;
 
     public SellerDashboardSnapshot(int products, int activeProducts, int campaigns, int activeCampaigns,
-            int completedCampaigns, int mobileCampaigns, int posts, int pendingPosts, int orders,
+            int completedCampaigns, int mobileCampaigns, int orders,
             int pendingOrders, int deliveryOrders, int promotions, double revenue,
             double rescuedQuantity, double rescueRate, List<RankedMetric> topProducts,
             List<RankedMetric> topReasons, List<Order> recentOrders,
             List<RankedMetric> revenueTrend) {
         this.products = products; this.activeProducts = activeProducts; this.campaigns = campaigns;
         this.activeCampaigns = activeCampaigns; this.completedCampaigns = completedCampaigns;
-        this.mobileCampaigns = mobileCampaigns; this.posts = posts; this.pendingPosts = pendingPosts;
+        this.mobileCampaigns = mobileCampaigns;
         this.totalOrders = orders; this.orders = orders; this.pendingOrders = pendingOrders; this.deliveryOrders = deliveryOrders;
         this.promotions = promotions; this.revenue = revenue; this.rescuedQuantity = rescuedQuantity;
         this.rescueRate = rescueRate; this.topProducts = immutable(topProducts);
@@ -46,8 +46,6 @@ public final class SellerDashboardSnapshot {
     public int getActiveCampaigns() { return activeCampaigns; }
     public int getCompletedCampaigns() { return completedCampaigns; }
     public int getMobileCampaigns() { return mobileCampaigns; }
-    public int getPosts() { return posts; }
-    public int getPendingPosts() { return pendingPosts; }
     public int getOrders() { return orders; }
     public int getPendingOrders() { return pendingOrders; }
     public int getDeliveryOrders() { return deliveryOrders; }
@@ -59,7 +57,7 @@ public final class SellerDashboardSnapshot {
     public List<RankedMetric> getTopReasons() { return topReasons; }
     public List<RankedMetric> getRevenueTrend() { return revenueTrend; }
     public List<Order> getRecentOrders() { return recentOrders; }
-    public boolean isEmpty() { return products + campaigns + posts + orders + pendingOrders == 0; }
+    public boolean isEmpty() { return products + campaigns + orders + pendingOrders == 0; }
     public SellerDashboardSnapshot withTotalOrders(int total) { totalOrders = total; return this; }
     public boolean hasMoreOrders() { return totalOrders > recentOrders.size(); }
 }

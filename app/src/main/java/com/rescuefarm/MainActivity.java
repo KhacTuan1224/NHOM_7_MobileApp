@@ -251,7 +251,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
             case "campaignDetailFragment": return R.id.campaignDetailFragment;
             case "productDetailFragment": return R.id.productDetailFragment;
             case "reviewFragment": return R.id.reviewFragment;
-            case "postDetailFragment": return R.id.postDetailFragment;
             case "profileFragment": return R.id.profileFragment;
             case "notificationFragment": return R.id.notificationFragment;
             default: return 0;
@@ -350,7 +349,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.productListFragment
                 || destinationId == R.id.campaignListFragment
                 // Feed related
-                || destinationId == R.id.postDetailFragment
                 // Engagement
                 || destinationId == R.id.reviewFragment
                 || destinationId == R.id.reportFragment
@@ -391,7 +389,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment
-                || destinationId == R.id.sellerPostListFragment
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
@@ -404,8 +401,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.campaignListFragment;
         
         // Highlight community button for feed related
-        boolean isCommunityActive = destinationId == R.id.feedFragment
-                || destinationId == R.id.postDetailFragment;
+        boolean isCommunityActive = destinationId == R.id.feedFragment;
         
         // Highlight orders button for order related
         boolean isOrdersActive = destinationId == R.id.orderConfirmationFragment
@@ -447,8 +443,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment
-                || destinationId == R.id.sellerPostListFragment
-                || destinationId == R.id.postEditorFragment
                 || destinationId == R.id.sellerOrderListFragment
                 || destinationId == R.id.storefrontFragment;
     }

@@ -1,5 +1,7 @@
 # Dọn dữ liệu mẫu trên Firestore — 18/10/2026
 
+> Báo cáo tại thời điểm kiểm tra trước. Phần Post đã được ngừng sử dụng sau đó; xem [kết quả rà soát và dọn Post](post-retirement-2026-10-18.md).
+
 Đã thực hiện trực tiếp trên project `nhom7-rescuefarm` bằng service account cục bộ. Toàn bộ 165 thao tác được commit trong **một transaction**: xóa 160 document (kể cả subcollection), cập nhật 3 document và tạo 2 danh mục thay thế.
 
 ## Cách xác định dữ liệu mẫu

@@ -128,25 +128,25 @@
     </fragment>
 
     <fragment android:id="@+id/allCategoriesFragment"
-        android:name="com.rescuefarm.ui.home.AllCategoriesFragment" 
+        android:name="com.rescuefarm.ui.home.AllCategoriesFragment"
         android:label="@string/all_categories_title" />
 
     <fragment android:id="@+id/allCriticalCampaignsFragment"
-        android:name="com.rescuefarm.ui.home.AllCriticalCampaignsFragment" 
+        android:name="com.rescuefarm.ui.home.AllCriticalCampaignsFragment"
         android:label="@string/all_critical_campaigns_title">
         <action android:id="@+id/action_allCriticalCampaignsFragment_to_campaignDetailFragment"
             app:destination="@id/campaignDetailFragment" />
     </fragment>
 
     <fragment android:id="@+id/allValueProductsFragment"
-        android:name="com.rescuefarm.ui.home.AllValueProductsFragment" 
+        android:name="com.rescuefarm.ui.home.AllValueProductsFragment"
         android:label="@string/all_value_products_title">
         <action android:id="@+id/action_allValueProductsFragment_to_productDetailFragment"
             app:destination="@id/productDetailFragment" />
     </fragment>
 
     <fragment android:id="@+id/allActiveCampaignsFragment"
-        android:name="com.rescuefarm.ui.home.AllActiveCampaignsFragment" 
+        android:name="com.rescuefarm.ui.home.AllActiveCampaignsFragment"
         android:label="@string/all_active_campaigns_title">
         <action android:id="@+id/action_allActiveCampaignsFragment_to_campaignDetailFragment"
             app:destination="@id/campaignDetailFragment" />
@@ -218,8 +218,6 @@
             app:destination="@id/sellerProductListFragment" />
         <action android:id="@+id/action_sellerProfileFragment_to_sellerCampaignListFragment"
             app:destination="@id/sellerCampaignListFragment" />
-        <action android:id="@+id/action_sellerProfileFragment_to_sellerPostListFragment"
-            app:destination="@id/sellerPostListFragment" />
         <action android:id="@+id/action_sellerProfileFragment_to_sellerOrderListFragment"
             app:destination="@id/sellerOrderListFragment" />
         <action android:id="@+id/action_sellerProfileFragment_to_sellerDashboardFragment"
@@ -269,7 +267,6 @@
         <action android:id="@+id/action_sellerDashboardFragment_to_mobileRescueFragment" app:destination="@id/mobileRescueFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerProductListFragment" app:destination="@id/sellerProductListFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerCampaignListFragment" app:destination="@id/sellerCampaignListFragment" />
-        <action android:id="@+id/action_sellerDashboardFragment_to_sellerPostListFragment" app:destination="@id/sellerPostListFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerOrderListFragment" app:destination="@id/sellerOrderListFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerProfileFragment" app:destination="@id/sellerProfileFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" />
@@ -331,17 +328,9 @@
         <action android:id="@+id/action_feedFragment_to_campaignDetailFragment"
             app:destination="@id/campaignDetailFragment" />
     </fragment>
-    <fragment android:id="@+id/postDetailFragment"
-        android:name="com.rescuefarm.ui.feed.PostDetailFragment" android:label="@string/feed_title"><deepLink app:uri="rescuefarm://posts/{postId}" /><action android:id="@+id/action_postDetailFragment_to_reportFragment" app:destination="@id/reportFragment" /></fragment>
-    <fragment android:id="@+id/sellerPostListFragment"
-        android:name="com.rescuefarm.ui.feed.SellerPostListFragment" android:label="@string/seller_posts_title">
-        <action android:id="@+id/action_sellerPostListFragment_to_postEditorFragment"
-            app:destination="@id/postEditorFragment" />
-        <action android:id="@+id/action_sellerPostListFragment_to_postDetailFragment"
-            app:destination="@id/postDetailFragment" />
-    </fragment>
-    <fragment android:id="@+id/postEditorFragment"
-        android:name="com.rescuefarm.ui.feed.PostEditorFragment" android:label="@string/post_editor_title" />
+
+
+
     <fragment android:id="@+id/favoriteFragment" android:name="com.rescuefarm.ui.engagement.FavoriteFragment" android:label="@string/favorites_title"><action android:id="@+id/action_favoriteFragment_to_productDetailFragment" app:destination="@id/productDetailFragment" /></fragment>
     <fragment android:id="@+id/reviewFragment" android:name="com.rescuefarm.ui.engagement.ReviewFragment" android:label="@string/reviews_title" />
     <fragment android:id="@+id/storefrontFragment" android:name="com.rescuefarm.ui.profile.StorefrontFragment" android:label="Cấu hình cửa hàng" />

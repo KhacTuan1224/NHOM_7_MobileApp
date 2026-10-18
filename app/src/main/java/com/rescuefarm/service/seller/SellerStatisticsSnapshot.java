@@ -70,7 +70,7 @@ public final class SellerStatisticsSnapshot {
         }
         return new SellerDashboardSnapshot(inventory.optInt("products"), inventory.optInt("activeProducts"),
                 inventory.optInt("campaigns"), inventory.optInt("activeCampaigns"), completedCampaigns,
-                inventory.optInt("mobileCampaigns"), inventory.optInt("posts"), inventory.optInt("pendingPosts"), orders,
+                inventory.optInt("mobileCampaigns"), orders,
                 pendingOrders, inventory.optInt("deliveryOrders"), inventory.optInt("promotions"), revenue, kg, rescueRate,
                 top, why, recent, trend).withTotalOrders(json.optInt("totalOrders"));
     }

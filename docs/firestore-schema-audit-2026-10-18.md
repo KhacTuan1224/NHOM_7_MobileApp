@@ -1,5 +1,7 @@
 # Kiểm tra cấu trúc Firestore — 18/10/2026
 
+> Báo cáo tại thời điểm kiểm tra trước. Phần Post đã được ngừng sử dụng sau đó; xem [kết quả rà soát và dọn Post](post-retirement-2026-10-18.md).
+
 ## Kết quả
 
 Đã kết nối trực tiếp bằng service account cục bộ tới project `nhom7-rescuefarm`, database `(default)`, Firestore Native, vùng `asia-southeast1`.

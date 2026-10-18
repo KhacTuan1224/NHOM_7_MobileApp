@@ -39,8 +39,7 @@ async function main(){
       const db=admin.firestore(),checks=[];
       const add=(name,query)=>checks.push({name,query});
       for(const c of roots)add('collection:'+c,db.collection(c));
-      for(const c of ['posts','products','campaigns','orders'])add(c+':seller/createdAt',db.collection(c).where('sellerId','==','__schema_read_probe__').orderBy('createdAt','desc'));
-      add('posts:public feed',db.collection('posts').where('status','==','PUBLISHED').orderBy('createdAt','desc'));
+      for(const c of ['products','campaigns','orders'])add(c+':seller/createdAt',db.collection(c).where('sellerId','==','__schema_read_probe__').orderBy('createdAt','desc'));
       add('orders:customer',db.collection('orders').where('ownerId','==','__schema_read_probe__').where('ownerType','==','CUSTOMER'));
       add('orders:guest lookup',db.collection('orders').where('orderCode','==','__schema_read_probe__').where('receiverPhone','==','__schema_read_probe__'));
       add('orders:campaign/customer',db.collection('orders').where('campaignId','==','__schema_read_probe__').where('ownerType','==','CUSTOMER'));

@@ -19,10 +19,6 @@ public final class AdminTransitionPolicy {
             case USERS:
                 if (status.equals("ACTIVE") || status.equals("INACTIVE")) return list("BLOCKED");
                 return status.equals("BLOCKED") ? list("ACTIVE") : none();
-            case POSTS:
-                if (status.equals("PENDING_APPROVAL")) return list("PUBLISHED", "REJECTED");
-                if (status.equals("PUBLISHED")) return list("HIDDEN");
-                return status.equals("HIDDEN") ? list("PUBLISHED") : none();
             case PRODUCTS:
                 if (status.equals("ACTIVE") || status.equals("INACTIVE") || status.equals("SOLD_OUT")) return list("HIDDEN");
                 return status.equals("HIDDEN") ? list("ACTIVE", "INACTIVE", "SOLD_OUT") : none();

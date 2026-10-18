@@ -16,7 +16,7 @@ import com.rescuefarm.R;
 
 /** Seller management surfaces follow the Admin list and drawer presentation. */
 public final class SellerUiStyles {
-    public enum Section { PRODUCTS, BATCHES, PROMOTIONS, CAMPAIGNS, MOBILE, ORDERS, SHIPMENTS, ANALYTICS, PROFILE, POSTS }
+    public enum Section { PRODUCTS, BATCHES, PROMOTIONS, CAMPAIGNS, MOBILE, ORDERS, SHIPMENTS, ANALYTICS, PROFILE }
     private SellerUiStyles() { }
 
     public static Section forRoute(String route) {

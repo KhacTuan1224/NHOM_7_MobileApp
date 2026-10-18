@@ -583,24 +583,25 @@ test('Admin can moderate Campaign comments while Customer cannot bypass moderati
   await assertFails(getDoc(doc(owner, path)));
 });
 
-test('legacy Post comments cannot be created or edited, including by Admin', async () => {
+test('retired comments are inaccessible to customers and cannot be created or edited, including by Admin', async () => {
   const path = 'posts/legacy/comments/legacy-comment';
   const value = {id: 'legacy-comment', postId: 'legacy', userId: 'customer-a', content: 'Historical',
     status: 'ACTIVE', createdAt: past, updatedAt: past};
   await seed({'posts/legacy': {status: 'PUBLISHED'}, [path]: value});
   for (const uid of ['customer-a', 'admin']) {
     const db = env.authenticatedContext(uid).firestore();
-    await assertSucceeds(getDoc(doc(db, path)));
+    if (uid === 'admin') await assertSucceeds(getDoc(doc(db, path)));
+    else await assertFails(getDoc(doc(db, path)));
     await assertFails(updateDoc(doc(db, path), {content: 'Changed', status: 'EDITED', updatedAt: serverTimestamp()}));
     await assertFails(setDoc(doc(db, 'posts/legacy/comments/new'), {...value, id: 'new'}));
   }
 });
 
-test('only active Admin can query comments across Campaign and legacy Post parents', async () => {
+test('only active Admin can query comments across Campaign parents', async () => {
   await seed({
-    'campaigns/closed': {status: 'STOPPED'}, 'posts/hidden': {status: 'HIDDEN'},
+    'campaigns/closed': {status: 'STOPPED'}, 'campaigns/hidden': {status: 'STOPPED'},
     'campaigns/closed/comments/campaign-comment': {id: 'reported', campaignId: 'closed', userId: 'customer-a', content: 'Campaign', status: 'HIDDEN'},
-    'posts/hidden/comments/post-comment': {id: 'reported', postId: 'hidden', userId: 'customer-a', content: 'Legacy', status: 'ACTIVE'}
+    'campaigns/hidden/comments/other-comment': {id: 'reported', campaignId: 'hidden', userId: 'customer-a', content: 'Legacy', status: 'ACTIVE'}
   });
   const db = env.authenticatedContext('admin').firestore();
   const found = await assertSucceeds(getDocs(query(collectionGroup(db, 'comments'), where('id', '==', 'reported'))));
@@ -700,7 +701,7 @@ test('bank payment and confirmation require trusted API instead of direct client
 });
 
 
-test('COMMENT reports bind an exact existing Campaign or legacy Post parent; forged paths are rejected', async () => {
+test('COMMENT reports bind an exact Campaign parent and reject retired or forged contexts', async () => {
   const common = {id: 'same', userId: 'customer-b', content: 'Same ID in different parents', status: 'ACTIVE', createdAt: past, updatedAt: past};
   await seed({'campaigns/c': {status: 'ACTIVE'}, 'posts/p': {status: 'PUBLISHED'},
     'campaigns/c/comments/same': {...common, campaignId: 'c'}, 'posts/p/comments/same': {...common, postId: 'p'}});
@@ -709,24 +710,25 @@ test('COMMENT reports bind an exact existing Campaign or legacy Post parent; for
     const id = 'report-' + parentType, targetPath = `${collectionName}/${parentId}/comments/same`, batch = writeBatch(db);
     batch.set(doc(db, 'reports/' + id), {...newReport(id), targetType: 'COMMENT', targetId: 'same', parentType, parentId, targetPath});
     batch.set(doc(db, 'notificationOutbox/' + id), outboxData('customer-a', 'REPORT', id));
-    await assertSucceeds(batch.commit());
+    if (parentType === 'CAMPAIGN') await assertSucceeds(batch.commit());
+    else await assertFails(batch.commit());
   }
   const valid = {...newReport('forged-context'), targetType: 'COMMENT', targetId: 'same', parentType: 'CAMPAIGN', parentId: 'c', targetPath: 'posts/p/comments/same'};
   await assertFails(setDoc(doc(db, 'reports/forged-context'), valid));
   await assertFails(setDoc(doc(db, 'reports/missing-context'), {...newReport('missing-context'), targetType: 'COMMENT', targetId: 'same'}));
   await assertFails(setDoc(doc(db, 'reports/missing-comment'), {...valid, id: 'missing-comment', targetId: 'absent', targetPath: 'campaigns/c/comments/absent'}));
 });
-test('Admin can hide the exact legacy comment and audit its parent without changing another same-ID comment', async () => {
+test('Admin can hide the exact Campaign comment and audit its parent without changing another same-ID comment', async () => {
   const common = {id: 'same', userId: 'customer-a', content: 'Comment', status: 'ACTIVE', createdAt: past, updatedAt: past};
-  await seed({'posts/p': {status: 'PUBLISHED'}, 'campaigns/c': {status: 'ACTIVE'},
-    'posts/p/comments/same': {...common, postId: 'p'}, 'campaigns/c/comments/same': {...common, campaignId: 'c'}});
+  await seed({'campaigns/p': {status: 'ACTIVE'}, 'campaigns/c': {status: 'ACTIVE'},
+    'campaigns/p/comments/same': {...common, campaignId: 'p'}, 'campaigns/c/comments/same': {...common, campaignId: 'c'}});
   const db = env.authenticatedContext('admin').firestore(), batch = writeBatch(db);
-  batch.update(doc(db, 'posts/p/comments/same'), {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+  batch.update(doc(db, 'campaigns/p/comments/same'), {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
     moderationReason: 'Violation', updatedAt: serverTimestamp()});
   batch.set(doc(db, 'adminAuditLogs/legacy-hide'), {adminId: 'admin', resourceType: 'COMMENTS', resourceId: 'same',
-    resourcePath: 'posts/p/comments/same', fromState: 'ACTIVE', toState: 'HIDDEN', reason: 'Violation', createdAt: serverTimestamp()});
+    resourcePath: 'campaigns/p/comments/same', fromState: 'ACTIVE', toState: 'HIDDEN', reason: 'Violation', createdAt: serverTimestamp()});
   await assertSucceeds(batch.commit());
-  assert.equal((await getDoc(doc(db, 'posts/p/comments/same'))).data().status, 'HIDDEN');
+  assert.equal((await getDoc(doc(db, 'campaigns/p/comments/same'))).data().status, 'HIDDEN');
   assert.equal((await getDoc(doc(db, 'campaigns/c/comments/same'))).data().status, 'ACTIVE');
 });
 test('Guest and other Customer can view published Review images but not hidden Review media', async () => {
@@ -828,4 +830,14 @@ test('Admin catalog accepts uploaded and external HTTPS images while rejecting u
   await assertSucceeds(setDoc(doc(db, 'categories/no-image'), {...moderation, id: 'no-image', name: 'Danh mục chưa có ảnh',
     imageUrl: '', displayOrder: 0, active: true, createdAt: serverTimestamp()}));
   await assertFails(updateDoc(doc(env.authenticatedContext('customer-a').firestore(), 'categories/no-image'), {...moderation, name: 'Giả mạo'}));
+});
+
+ test('retired Post collection is denied for every client role', async () => {
+  await seed({'posts/retired': {status: 'PUBLISHED', sellerId: 'seller'}});
+  for (const uid of ['customer-a', 'seller', 'admin']) {
+    const db = env.authenticatedContext(uid).firestore();
+    await assertFails(getDoc(doc(db, 'posts/retired')));
+    await assertFails(setDoc(doc(db, 'posts/new'), {sellerId: uid, status: 'PUBLISHED'}));
+    await assertFails(updateDoc(doc(db, 'posts/retired'), {status: 'HIDDEN'}));
+  }
 });
