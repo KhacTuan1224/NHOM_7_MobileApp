@@ -13,6 +13,11 @@ This folder replaces Firebase Cloud Functions with an Express API. The Firebase 
 
 ## Routes
 
+Password recovery uses Firebase Authentication's native email service directly from Android. It needs no Render reset endpoint, mail API key, Firestore reset collection or backend deployment. See `docs/password-reset.md` in the repository root for the audited project configuration, limits and end-to-end tests.
+
+- `POST /promotions/catalog`: paginated public promotion cards; `mine: true` requires Customer authentication and returns only the caller's saved offers.
+- `POST /promotions/save` and `/promotions/remove`: Customer only, `{productId}`; the backend validates and owns wallet writes. Buyer quotes and checkout apply promotions only from the authenticated Customer's wallet; Guest purchases use rescue prices without promotions. Deploy this backend before distributing the wallet APK. `/health` must expose `promotionWalletVersion: 1` and `promotionPolicy: "SAVED_CUSTOMER_ONLY"`. See `docs/promotion-wallet.md` in the repository root.
+
 - `POST /seller/payment-qr`: active Seller only. Generates from the owner's saved bank details using VietQR API credentials on Render, uploads PNG through the Cloudinary signing Worker and saves the QR URL automatically. Configure `VIETQR_CLIENT_ID`, `VIETQR_API_KEY`, `CLOUDINARY_SIGNING_URL` and `CLOUDINARY_CLOUD_NAME`. Deploy the updated Worker first. See `docs/checkout-shipping-and-bank-setup.md` for setup and the VietQR Generate API retirement date.
 
 - `POST /sellers/names`: public for Customer and Guest carts. Accepts up to 50 `sellerIds` and returns only the `fullName` of active, approved Sellers in `sellerNames`. Deploy this route before distributing the Android cart name update; no Firestore rule changes or data migration are required.

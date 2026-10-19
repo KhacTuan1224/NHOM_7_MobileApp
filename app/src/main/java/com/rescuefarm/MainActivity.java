@@ -342,6 +342,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.addressListFragment
                 || destinationId == R.id.addressEditorFragment
                 || destinationId == R.id.favoriteFragment
+                || destinationId == R.id.promotionWalletFragment
                 // Product/Campaign
                 || destinationId == R.id.productDetailFragment
                 || destinationId == R.id.publicSellerProfileFragment
@@ -416,6 +417,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.addressListFragment
                 || destinationId == R.id.addressEditorFragment
                 || destinationId == R.id.favoriteFragment
+                || destinationId == R.id.promotionWalletFragment
                 || destinationId == R.id.notificationFragment
                 || destinationId == R.id.reviewFragment
                 || destinationId == R.id.reportFragment;

@@ -34,7 +34,31 @@ public class ProductViewModelTest {
         assertEquals(ProductScreenState.Status.SAVED, viewModel.getState().getValue().getStatus());
     }
 
+    @Test public void buyerPricingUsesOnlySavedPromotionAndRecalculatesAfterRemoval() {
+        FakeProductRepository repository = new FakeProductRepository();
+        ProductViewModel viewModel = new ProductViewModel(repository, new FakeAuthRepository());
+        Product product = new Product("product", "seller", "vegetables", "Rau", "", 100, 80, "kg", "", "",
+                new ArrayList<>(), com.rescuefarm.domain.enums.ProductStatus.ACTIVE);
+        viewModel.calculatePrice(product, 2);
+        assertEquals(80, viewModel.getPriceBreakdown().getValue().getFinalUnitPrice(), 0);
+        repository.saved = true;
+        viewModel.calculatePrice(product, 2);
+        assertEquals(72, viewModel.getPriceBreakdown().getValue().getFinalUnitPrice(), 0);
+        repository.saved = false;
+        viewModel.calculatePrice(product, 2);
+        assertEquals(80, viewModel.getPriceBreakdown().getValue().getFinalUnitPrice(), 0);
+        assertFalse(repository.rawPromotionRead);
+    }
+
     private static final class FakeProductRepository implements ProductRepository {
+        private boolean saved, rawPromotionRead;
+        @Override public void getPromotion(String id, PromotionCallback callback) { rawPromotionRead = true; }
+        @Override public void getApplicablePromotion(String id, PromotionCallback callback) {
+            long now = System.currentTimeMillis();
+            callback.onSuccess(saved ? new com.rescuefarm.domain.model.Promotion(id, "seller", id,
+                    com.rescuefarm.domain.enums.PromotionType.PERCENT, 10, new java.util.HashMap<>(),
+                    new java.util.Date(now - 100000), new java.util.Date(now + 100000), true) : null);
+        }
         private boolean saveCalled;
         private final MutableLiveData<List<Product>> products = new MutableLiveData<>(new ArrayList<>());
         private final MutableLiveData<List<Category>> categories = new MutableLiveData<>(new ArrayList<>());

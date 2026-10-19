@@ -151,7 +151,7 @@ public class AuthViewModel extends ViewModel {
             @Override
             public void onSuccess() {
                 screenState.postValue(AuthScreenState.resetEmailSent(
-                        "Email đặt lại mật khẩu đã được gửi."
+                        com.rescuefarm.service.auth.PasswordResetPolicy.ACCEPTED_MESSAGE
                 ));
             }
 

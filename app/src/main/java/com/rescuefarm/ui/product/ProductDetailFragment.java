@@ -59,6 +59,10 @@ public class ProductDetailFragment extends Fragment {
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         productId = getArguments() == null ? "" : getArguments().getString("productId", "");
+        view.findViewById(R.id.productPromotionWalletButton).setOnClickListener(v -> {
+            Bundle args = new Bundle(); args.putString("productId", productId);
+            Navigation.findNavController(v).navigate(R.id.promotionWalletFragment, args);
+        });
         Bundle arguments = getArguments();
         requestedBatchId = arguments == null ? "" : clean(arguments.getString("batchId"));
         campaignId = arguments == null ? "" : clean(arguments.getString("campaignId"));
@@ -205,6 +209,11 @@ public class ProductDetailFragment extends Fragment {
                 .centerCrop().into((ImageView) view.findViewById(R.id.productDetailImage));
         recalculate();
     }
+    @Override public void onResume() {
+        super.onResume();
+        if (viewModel != null) recalculate();
+    }
+
     private void recalculate() {
         if (currentProduct == null) return;
         try {

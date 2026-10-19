@@ -815,10 +815,11 @@ service cloud.firestore {
 
     match /promotions/{promotionId} {
       // Checkout reads by product ID even when no promotion exists or it has expired.
-      // Only active customers may use this path, for products currently on sale.
+      // Sellers also read a missing document before creating it in an atomic transaction.
       allow get: if (isSignedIn() && hasRole(request.auth.uid, 'CUSTOMER')
             && exists(/databases/$(database)/documents/products/$(promotionId))
             && get(/databases/$(database)/documents/products/$(promotionId)).data.status == 'ACTIVE')
+          || (isSignedIn() && isApprovedSeller(request.auth.uid) && ownsProduct(promotionId))
           || (resource.data.active == true
             && resource.data.startDate <= request.time
             && resource.data.endDate > request.time)
@@ -843,6 +844,16 @@ service cloud.firestore {
           && validPromotion(request.resource.data, promotionId)
           && hasNoCredentialFields(request.resource.data);
       allow delete: if false;
+    }
+
+    // Wallet entitlements are validated and written by the trusted backend only.
+    match /customerPromotionWallets/{customerId} {
+      allow get: if hasRole(customerId, 'CUSTOMER');
+      allow list, create, update, delete: if false;
+      match /items/{productId} {
+        allow get, list: if hasRole(customerId, 'CUSTOMER');
+        allow create, update, delete: if false;
+      }
     }
 
     match /customerCarts/{customerId} {

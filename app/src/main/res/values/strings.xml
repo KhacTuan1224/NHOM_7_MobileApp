@@ -60,10 +60,10 @@
     <string name="customer_role">Khách hàng</string>
     <string name="seller_role">Người bán</string>
     <string name="forgot_password_title">Khôi phục mật khẩu</string>
-    <string name="forgot_password_body">Nhập email đã đăng ký. Firebase sẽ gửi liên kết đặt lại mật khẩu cho bạn.</string>
+    <string name="forgot_password_body">Nhập email của tài khoản để nhận liên kết đặt lại mật khẩu.</string>
     <string name="send_reset_email_action">Gửi email đặt lại</string>
-    <string name="reset_email_sent_title">Đặt lại mật khẩu thành công</string>
-    <string name="reset_email_sent_body">Đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.</string>
+    <string name="reset_email_sent_title">Kiểm tra email của bạn</string>
+    <string name="reset_email_sent_body">Nếu email này đã được đăng ký, bạn sẽ nhận được liên kết đặt lại mật khẩu.</string>
     <string name="reset_success_icon_description">Biểu tượng xác nhận thành công</string>
     <string name="back_to_login_action">Quay lại đăng nhập</string>
     <string name="nav_home">Trang chủ</string>

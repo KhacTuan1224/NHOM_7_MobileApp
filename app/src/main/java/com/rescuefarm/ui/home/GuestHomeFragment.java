@@ -92,6 +92,8 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        view.findViewById(R.id.homePromotionWalletButton).setOnClickListener(v ->
+                Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         super.onViewCreated(view, state); renderer = new HomeCardRenderer(this);
         message = view.findViewById(R.id.homeMessage); progress = view.findViewById(R.id.homeProgress);
         greeting = view.findViewById(R.id.homeGreeting);
@@ -430,7 +432,7 @@ public class GuestHomeFragment extends Fragment {
                 Navigation.findNavController(requireView()).navigate(R.id.action_guestHomeFragment_to_productDetailFragment,args);
             }));
             TextView terms=new TextView(requireContext()); terms.setText(String.format(java.util.Locale.forLanguageTag("vi-VN"),
-                "Từ %s %s: giảm thêm %s%%\nGiá tại mức này: %,.0f đ / %s · chưa gồm phí giao hàng",
+                "Từ %s %s: giảm thêm %s%%\nGiá sau khi lưu khuyến mãi: %,.0f đ / %s · chưa gồm phí giao hàng",
                 java.math.BigDecimal.valueOf(offer.threshold).stripTrailingZeros().toPlainString().replace('.',','),offer.product.getUnit(),
                 java.math.BigDecimal.valueOf(offer.percent).stripTrailingZeros().toPlainString().replace('.',','),offer.unitPrice,offer.product.getUnit()));
             row.addView(terms);return row;
