@@ -12,13 +12,19 @@
     </com.rescuefarm.ui.common.ResponsiveActionLayout>
     <com.google.android.material.tabs.TabLayout android:id="@+id/promotionWalletTabs"
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:background="@android:color/transparent" app:tabMode="fixed" app:tabGravity="fill" />
+        android:layout_marginTop="4dp" android:background="@android:color/transparent"
+        app:tabMode="fixed" app:tabGravity="fill"
+        app:tabIndicatorColor="@color/rescue_primary" app:tabIndicatorHeight="3dp"
+        app:tabSelectedTextColor="@color/rescue_primary"
+        app:tabTextColor="@color/rescue_on_surface_variant" />
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="12dp" android:text="@string/promotion_wallet_hint"
+        android:layout_marginTop="10dp" android:paddingHorizontal="4dp"
+        android:text="@string/promotion_wallet_hint"
         android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium" />
     <com.google.android.material.button.MaterialButton android:id="@+id/promotionWalletRefresh"
         style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
-        android:layout_height="wrap_content" android:layout_gravity="end" android:text="@string/refresh_action" />
+        android:layout_height="wrap_content" android:layout_gravity="end" android:text="@string/refresh_action"
+        android:textColor="@color/rescue_primary" />
     <ProgressBar android:id="@+id/promotionWalletProgress" android:layout_width="32dp" android:layout_height="32dp"
         android:layout_gravity="center_horizontal" android:visibility="gone" />
     <TextView android:id="@+id/promotionWalletMessage" android:layout_width="match_parent"
