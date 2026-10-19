@@ -76,7 +76,7 @@ public final class AuthValidator {
     }
 
     public static String validateEmail(String email) {
-        if (email == null || !EMAIL_PATTERN.matcher(email.trim()).matches()) {
+        if (email == null || email.trim().length() > 254 || !EMAIL_PATTERN.matcher(email.trim()).matches()) {
             return "Email không hợp lệ.";
         }
         return null;
