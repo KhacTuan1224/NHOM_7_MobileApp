@@ -1,25 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:background="@color/rescue_background">
-    <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp"
-        android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+    android:layout_height="match_parent" android:background="@color/rescue_background" android:fillViewport="true">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:id="@+id/rescueEditorForm"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
         <com.google.android.material.button.MaterialButton android:id="@+id/rescueEditorBack"
             style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:text="Quay lại" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/rescue_create" android:fontFamily="@font/ibm_plex_sans"
-            android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:paddingTop="12dp" android:paddingBottom="12dp"
-            android:text="Mỗi suất giữ đúng lượng từ các lô bạn chọn. Hạn nhận phải trước hạn dùng của mọi lô. Chọn lô chưa gắn chiến dịch; không tạo lô ảo cho combo. Giá và nội dung gói không đổi sau khi tạo."
-            android:textColor="@color/rescue_on_surface_variant" />
-        <ProgressBar android:id="@+id/rescueEditorProgress" style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent" android:layout_height="4dp" android:indeterminate="true" android:visibility="gone" />
-        <TextView android:id="@+id/rescueEditorMessage" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:textColor="@color/rescue_critical" android:accessibilityLiveRegion="polite" />
-        <LinearLayout android:id="@+id/rescueEditorForm" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:orientation="vertical" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Chọn cách bạn muốn giải cứu" android:textSize="26sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Mỗi phương thức có màn tạo riêng. Hãy chọn phù hợp với nông sản đang có." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" app:cardCornerRadius="18dp" app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Hộp bí ẩn" android:textSize="22sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_primary" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Gom nhiều loại nông sản vào một hộp bất ngờ, định giá và hẹn khách đến nhận." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/rescueChooseMystery"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tạo hộp bí ẩn" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" app:cardCornerRadius="18dp" app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Gói định kỳ" android:textSize="22sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_primary" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Đăng một đợt nhận mới cho gói khách đang theo dõi, dùng mã gói ổn định." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/rescueChooseSubscription"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tạo đợt nhận định kỳ" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" app:cardCornerRadius="18dp" app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Giải cứu giờ chót" android:textSize="22sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_primary" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Mở khung bán ngắn tối đa 2 giờ để nông sản nhanh đến với khách gần điểm nhận." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/rescueChooseFlash"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tạo đợt giờ chót" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

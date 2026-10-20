@@ -12,6 +12,12 @@
     </fragment>
     <fragment android:id="@+id/rescueOfferEditorFragment"
         android:name="com.rescuefarm.ui.rescue.RescueOfferEditorFragment" android:label="@string/rescue_create" />
+    <fragment android:id="@+id/mysteryBoxEditorFragment"
+        android:name="com.rescuefarm.ui.rescue.MysteryBoxEditorFragment" android:label="Tạo hộp bí ẩn" />
+    <fragment android:id="@+id/subscriptionOfferEditorFragment"
+        android:name="com.rescuefarm.ui.rescue.SubscriptionOfferEditorFragment" android:label="Tạo đợt nhận định kỳ" />
+    <fragment android:id="@+id/flashRescueEditorFragment"
+        android:name="com.rescuefarm.ui.rescue.FlashRescueEditorFragment" android:label="Tạo đợt giờ chót" />
 
     <fragment
         android:id="@+id/launchLoadingFragment"

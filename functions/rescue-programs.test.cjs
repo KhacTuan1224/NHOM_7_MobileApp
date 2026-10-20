@@ -53,8 +53,8 @@ function input(overrides = {}) {
 }
 async function create(overrides) { const response = await post('create', input(overrides)); assert.equal(response.status, 200, JSON.stringify(response.body)); return response; }
 async function inventory() { return (await db.doc('productBatches/batch').get()).data(); }
-test('removed wholesale and donation types cannot be created, discovered or joined', async () => {
-  for (const type of ['BULK', 'DONATION']) {
+test('retired rescue types cannot be created, discovered or joined', async () => {
+  for (const type of ['BULK', 'DONATION', 'GROUP_BUY']) {
     assert.equal((await post('create', input({type, unitPrice: type === 'DONATION' ? 0 : 20000}))).status, 400);
     await db.doc('rescueOffers/retired').set({...input(), id: 'retired', type, sellerId: 'seller', status: 'OPEN', availableUnits: 10});
     assert.equal((await post('catalog', {}, '')).body.items.length, 0);
@@ -79,6 +79,13 @@ test('creation atomically holds physical stock, redacts mystery contents and rep
   now += 3601000;
   assert.equal((await post('create', request)).body.replay, true);
   assert.equal((await post('create', {...request, title: 'Gói khác'})).status, 409);
+});
+test('normal offer replay survives removal of retired method metadata without reserving twice', async () => {
+  const request = input(); await create();
+  await db.doc('rescueOffers/offer').update({fingerprint: 'older-normalization', minPeople: 1, minUnits: 1, groupSucceeded: false});
+  assert.equal((await post('create', request)).body.replay, true);
+  assert.equal((await post('create', {...request, unitPrice: 15000})).status, 409);
+  assert.equal((await inventory()).reservedQuantity, 10);
 });
 test('concurrent offers cannot over-reserve same batch and nonowners cannot use stock', async () => {
   const results = await Promise.all([post('create', input({requestId: 'one', totalUnits: 6})), post('create', input({requestId: 'two', totalUnits: 6}))]);
@@ -128,24 +135,6 @@ test('receipt requires owning buyer, seller readiness, actual pickup time and ex
   assert.equal(receiptDetails.receivedContents[0].productName, 'Rau cải');
   assert.equal((await post('impact', {sellerId: 'seller'}, '')).body.impact.quantityByUnit.kg, 2);
   await api.settle('offer'); assert.equal((await inventory()).availableQuantity, 8);
-});
-test('unsuccessful group releases stock once without payment or refund records', async () => {
-  await create({type: 'GROUP_BUY', minPeople: 2, minUnits: 5});
-  assert.equal((await post('join', {offerId: 'offer', units: 6}, 'a')).body.claim.status, 'PLEDGED');
-  now += 3600001; await api.settle('offer'); await api.settle('offer');
-  assert.equal((await inventory()).availableQuantity, 10); assert.equal((await inventory()).reservedQuantity, 0);
-  assert.equal((await post('mine', {}, 'a')).body.items[0].status, 'CANCELLED');
-  assert.equal((await db.collection('payments').get()).size, 0);
-});
-test('successful group freezes pledge cancellation and releases only unclaimed stock at cutoff', async () => {
-  await create({type: 'GROUP_BUY', minPeople: 2, minUnits: 5});
-  const a = (await post('join', {offerId: 'offer', units: 3}, 'a')).body.claim;
-  await post('join', {offerId: 'offer', units: 2}, 'b');
-  assert.equal((await post('claims/action', {claimId: a.id, action: 'CANCEL'}, 'a')).status, 409);
-  now += 3600001; await api.settle('offer');
-  assert.equal((await inventory()).availableQuantity, 5); assert.equal((await inventory()).reservedQuantity, 5);
-  now += 3600001; await api.settle('offer');
-  assert.equal((await inventory()).availableQuantity, 10);
 });
 test('subscription reminders create no payment or unattended orders and pause stops reminders', async () => {
   await create({type: 'SUBSCRIPTION', planKey: 'weekly-veg'});

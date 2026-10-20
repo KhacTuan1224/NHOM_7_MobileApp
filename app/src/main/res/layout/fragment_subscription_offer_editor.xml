@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@color/rescue_background" android:fillViewport="true">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:id="@+id/rescueEditorForm"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+        <com.google.android.material.button.MaterialButton android:id="@+id/rescueEditorBack"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Quay lại" />
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" app:cardCornerRadius="22dp" app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/admin_analytics_soft" android:layout_marginBottom="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="20dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="GÓI ĐỊNH KỲ" android:textSize="12sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_primary_container" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Chuẩn bị đợt nhận tiếp theo" android:textSize="26sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_primary_container" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Một mã gói cố định, nhiều đợt nông sản mới. Khách chọn nhắc 7 hoặc 30 ngày và xác nhận từng kỳ; không tự trừ tiền." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_primary_container" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <ProgressBar android:id="@+id/rescueEditorProgress" style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent" android:layout_height="4dp" android:indeterminate="true" android:visibility="gone" />
+        <TextView android:id="@+id/rescueEditorMessage" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:paddingTop="8dp" android:paddingBottom="8dp" android:textColor="@color/rescue_critical" android:accessibilityLiveRegion="polite" />
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/subscriptionPlan" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Mã gói &amp; câu chuyện" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Dùng lại đúng mã gói khi đăng đợt sau để khách đang theo dõi tìm được suất mới." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/subscriptionSchedule" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Lịch của đợt nhận này" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Đây là lịch của một đợt có hàng thật, không phải lịch tự động tạo đơn." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/subscriptionHarvest" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Nông sản kỳ này" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Bổ sung lô mới, mô tả thành phần dự kiến và lượng thực tế trong một suất." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/subscriptionAllocation" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Số suất &amp; giá kỳ này" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Khách kiểm tra giá của kỳ này trước khi xác nhận. Thanh toán tại điểm nhận." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <LinearLayout android:id="@+id/rescueEditorActions" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:paddingTop="16dp" />
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
+</com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

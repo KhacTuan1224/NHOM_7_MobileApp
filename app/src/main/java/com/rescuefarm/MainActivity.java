@@ -339,6 +339,9 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
                 || destinationId == R.id.rescueOfferEditorFragment
+                || destinationId == R.id.mysteryBoxEditorFragment
+                || destinationId == R.id.subscriptionOfferEditorFragment
+                || destinationId == R.id.flashRescueEditorFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment
@@ -400,6 +403,9 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
                 || destinationId == R.id.rescueOfferEditorFragment
+                || destinationId == R.id.mysteryBoxEditorFragment
+                || destinationId == R.id.subscriptionOfferEditorFragment
+                || destinationId == R.id.flashRescueEditorFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment

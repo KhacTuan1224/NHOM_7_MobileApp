@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@color/rescue_background" android:fillViewport="true">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout android:id="@+id/rescueEditorForm"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+        <com.google.android.material.button.MaterialButton android:id="@+id/rescueEditorBack"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Quay lại" />
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" app:cardCornerRadius="22dp" app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/rescue_primary_container" android:layout_marginBottom="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="20dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="HỘP BÍ ẨN" android:textSize="12sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_primary_container" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Bất ngờ trong mỗi hộp" android:textSize="26sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_primary_container" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Gom nông sản lẻ thành hộp giá tốt. Khách biết phân loại và lưu ý an toàn; thành phần thực tế mở sau khi nhận." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_primary_container" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <ProgressBar android:id="@+id/rescueEditorProgress" style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent" android:layout_height="4dp" android:indeterminate="true" android:visibility="gone" />
+        <TextView android:id="@+id/rescueEditorMessage" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:paddingTop="8dp" android:paddingBottom="8dp" android:textColor="@color/rescue_critical" android:accessibilityLiveRegion="polite" />
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/mysteryIdentity" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="01 · Giới thiệu hộp" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Đặt tên và mô tả điều khách có thể mong đợi." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/mysteryContents" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="02 · Bên trong mỗi hộp" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Chọn lô và lượng trong một hộp. Thông tin dị ứng cần rõ ràng dù giữ bí mật thành phần cụ thể." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/mysteryPricing" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="03 · Giá và số hộp" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Tổng số hộp quyết định lượng nông sản được giữ. Giá trị gốc không vượt giá trị các thành phần." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="16dp"
+            app:cardElevation="0dp" app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+            <LinearLayout android:id="@+id/mysteryPickup" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="04 · Hẹn nhận hộp" android:textSize="20sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Chọn ngày, giờ và lấy GPS tại điểm giao hộp. Mọi lô phải còn hạn sau giờ nhận cuối." android:textSize="15sp" android:paddingBottom="8dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <LinearLayout android:id="@+id/rescueEditorActions" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:paddingTop="16dp" />
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
+</com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

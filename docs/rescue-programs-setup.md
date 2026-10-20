@@ -7,11 +7,10 @@ Mở **Giải cứu mở rộng** từ Home của Guest/Customer hoặc dashboar
 | Phương thức | Luồng có thể dùng |
 | --- | --- |
 | Hộp bí ẩn | Seller chọn nhiều lô thật, lượng trong mỗi hộp, phân loại và thông tin thành phần/dị ứng; backend giữ tồn kho. Customer thấy phân loại/lưu ý, nhận tại điểm; thành phần thực tế được mở trong lịch sử sau khi nhận. |
-| Mua chung | Cam kết theo số suất, ngưỡng **cả số người khác nhau và số suất**; chia sẻ deep link; thông báo khi đạt ngưỡng; chốt khi đủ điều kiện; thất bại trả tồn kho. |
 | Định kỳ | Theo dõi theo cửa hàng + `planKey`, chu kỳ 7 hoặc 30 ngày, nhắc đến kỳ, chọn gói mới và xác nhận giá từng kỳ, tạm dừng/tiếp tục. |
 | Giờ chót | Gói FLASH tối đa 2 giờ; lọc trong 5 km từ Fused Location Provider; mở điểm nhận trên ứng dụng bản đồ; chủ động bật FCM gần đây trong 24 giờ, tắt/xóa vị trí bất kỳ lúc nào. |
 
-Các gói mới dùng **nhận tại điểm và trả tiền trực tiếp khi nhận**. Đăng ký nhóm không thu tiền trước, vì vậy nhóm thất bại không phát sinh giao dịch hoàn tiền. Đây là lựa chọn triển khai hiện tại, không phải tích hợp giữ tiền/hoàn tiền qua SePay.
+Các gói mới dùng **nhận tại điểm và trả tiền trực tiếp khi nhận**. Đây là lựa chọn triển khai hiện tại, không phải tích hợp giữ tiền/hoàn tiền qua SePay.
 
 Định kỳ là đăng ký nhắc và xác nhận từng kỳ, **không tự động thu tiền/tạo đơn khi người dùng không xác nhận**. Scheduler tin cậy ở backend xử lý nhắc; WorkManager không được dùng để âm thầm mua hàng khi ứng dụng nền bị hệ điều hành hạn chế.
 
@@ -80,7 +79,7 @@ Module tận dụng `.github/workflows/notification-worker.yml`, không cần th
 3. Đưa workflow lên default branch. Trong Actions bật workflow **Notification worker wakeup** nếu đang tắt.
 4. Chọn **Run workflow** và kiểm tra job thành công.
 
-Workflow gọi `POST /internal/notifications/run` mỗi 5 phút theo lịch cấu hình. Endpoint này xử lý đóng nhóm/hết giờ nhận, nhắc định kỳ, thông báo gần đây, rồi gửi outbox. Trong khi Render đang chạy, vòng xử lý nội bộ cũng chạy mỗi phút.
+Workflow gọi `POST /internal/notifications/run` mỗi 5 phút theo lịch cấu hình. Endpoint này xử lý đóng đăng ký/hết giờ nhận, nhắc định kỳ, thông báo gần đây, rồi gửi outbox. Trong khi Render đang chạy, vòng xử lý nội bộ cũng chạy mỗi phút.
 
 Khi kiểm tra thủ công, lấy secret từ biến môi trường của phiên shell, không chép nó vào source:
 
@@ -132,12 +131,16 @@ $env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=D:\NHOM_7_MobileApp\build\
 
 1. Đăng nhập Seller đã được Admin duyệt, có sản phẩm ACTIVE và lô AVAILABLE/RESERVED_PARTIAL còn đủ lượng.
 2. Đảm bảo lô đã thu hoạch, còn hạn sau **kết thúc nhận hàng**, chưa gắn campaign. Lô còn thuộc campaign cũ cần kết thúc/gỡ liên kết bằng luồng campaign hiện có trước.
-3. Dashboard Seller → Giải cứu mở rộng → **Tạo gói giải cứu**.
-4. Điền phương thức, phân loại, thông tin thành phần/dị ứng, số suất, giới hạn mỗi khách, giá trị gốc, giá giải cứu, giờ và địa chỉ/GPS điểm nhận.
+3. Dashboard Seller → Giải cứu mở rộng → **Tạo gói giải cứu**. Chọn một trong ba phương thức; mỗi phương thức mở một màn riêng:
+   - **Hộp bí ẩn:** giới thiệu hộp → thành phần từng hộp → giá/số hộp → lịch và điểm nhận.
+   - **Định kỳ:** mã gói cố định → đợt nhận này → nông sản kỳ này → số suất và giá kỳ này. Chỉ màn này có trường mã gói định kỳ.
+   - **Giờ chót:** khung bán ngắn và nút chọn nhanh 15/30/60 phút → GPS điểm nhận → hàng cần bán nhanh → giá và số phần còn lại.
+4. Điền phương thức, phân loại, thông tin thành phần/dị ứng, số suất, giới hạn mỗi khách, giá trị gốc và giá giải cứu. Chạm từng mốc thời gian để chọn ngày trên lịch, rồi chọn giờ; không nhập chuỗi ngày giờ.
+   Tại điểm nhận, bấm **Lấy vị trí hiện tại bằng GPS** và cấp quyền vị trí khi dùng ứng dụng. App tự lưu vị trí bản đồ và tìm địa chỉ để điền sẵn, không yêu cầu nhập vĩ độ/kinh độ. Kiểm tra hoặc bổ sung số nhà/tên cửa hàng/hướng dẫn; nếu dịch vụ tìm địa chỉ không khả dụng, có thể nhập phần địa chỉ mô tả trong khi vẫn giữ vị trí GPS đã lấy. GPS dùng để chỉ đường, địa chỉ giúp khách nhận biết đúng nơi nhận. Nếu đổi sang điểm nhận khác, lấy GPS lại tại điểm mới.
 5. Thêm lô, nhập lượng **trong một suất**. Ví dụ 0,5 kg rau + 0,2 kg củ mỗi hộp, 10 hộp sẽ giữ 5 kg rau và 2 kg củ.
 6. Kiểm tra tổng lượng cần giữ không vượt tồn khả dụng. Giá trị gốc mỗi suất không được lớn hơn tổng giá gốc các thành phần. Tạo gói.
 
-Mỗi gói tối đa 12 lô và 100 đăng ký; nhóm mua chung tối đa 50 người. Mỗi Customer có một bản đăng ký cho mỗi gói, gửi lại cùng lựa chọn là replay. Sau khi hủy, không đăng ký lại cùng gói; chọn gói mới của Seller.
+Mỗi gói tối đa 12 lô và 100 đăng ký. Mỗi Customer có một bản đăng ký cho mỗi gói, gửi lại cùng lựa chọn là replay. Sau khi hủy, không đăng ký lại cùng gói; chọn gói mới của Seller.
 
 Gói đã tạo giữ nguyên giá/nội dung/giờ nhận. Muốn thay đổi hãy dừng gói và tạo gói mới; kiểm tra người đã đăng ký trước khi dừng. Gói dừng chỉ trả phần chưa nhận, không đảo lịch sử đã nhận. Khi mất kết nối sau tạo, gửi lại **nguyên nội dung** với cùng màn hình để backend chống trùng; kiểm tra “Gói cửa hàng” trước khi tạo lại từ màn hình mới.
 
@@ -148,15 +151,6 @@ Gói đã tạo giữ nguyên giá/nội dung/giờ nhận. Muốn thay đổi h
 - Customer giữ suất → Seller vào gói, đến khung giờ nhận bấm **Đã chuẩn bị, mời khách đến nhận**.
 - Customer tới điểm, kiểm tra hàng, trả tiền tại điểm và bấm **Xác nhận đã nhận nông sản**. Sau đó có danh sách thành phần mỗi suất trong chi tiết lịch sử.
 - Trạng thái thanh toán là **khách xác nhận trả tiền trực tiếp** (`BUYER_CONFIRMED_CASH`), không phải ngân hàng đã xác minh hoặc webhook SePay.
-
-### Mua chung
-
-- Ví dụ mỗi suất 5 kg dưa hấu; tổng 100 suất; ngưỡng 10 người + 100 suất tương đương 500 kg. Phải có đủ tồn cho 100 suất.
-- Đặt giờ bắt đầu nhận sau hoặc bằng hạn đăng ký; mọi người nhận ở cùng địa chỉ/GPS của gói.
-- Customer giữ số suất và chia sẻ `rescuefarm://rescue/<offerId>` qua share sheet. Link mở app đã cài; chưa có trang web cài đặt/Universal Link cho thiết bị chưa cài RescueFarm.
-- Trước khi đạt ngưỡng có thể rút cam kết. Khi đã đạt cả hai ngưỡng, hệ thống gửi thông báo và khóa rút cam kết để không làm vỡ nhóm.
-- Đến hạn đăng ký: thiếu ngưỡng → FAILED, hủy đăng ký và trả kho; đủ ngưỡng → LOCKED, trả phần suất dư, giữ đúng phần đã cam kết đến giờ nhận.
-- Sau giờ nhận, các suất chưa nhận bị hủy và trả kho. Không có khoản thu trước hoặc hoàn tiền tự động.
 
 ### Đăng ký định kỳ
 
@@ -221,13 +215,15 @@ npm --prefix tests/firestore test
 python scripts/check_navigation.py
 ```
 
-Suite gồm: nguồn kho thật/chống giữ trùng, khách mua đồng thời, replay, thời gian và quyền nhận, hoàn tất một lần, nhóm thiếu/đủ ngưỡng, trả kho hết hạn, nhắc định kỳ không tự mua, vị trí có thời hạn/opt-out, Firestore Rules chặn ghi giả ledger. Kiểm thử thông báo kiểm tra lại việc tắt vị trí trước delivery.
+Suite gồm: nguồn kho thật/chống giữ trùng, khách mua đồng thời, replay, thời gian và quyền nhận, hoàn tất một lần, trả kho hết hạn, nhắc định kỳ không tự mua, vị trí có thời hạn/opt-out, Firestore Rules chặn ghi giả ledger. Kiểm thử thông báo kiểm tra lại việc tắt vị trí trước delivery.
 
-Chưa có thiết bị/emulator Android được kết nối trong phiên triển khai này, nên cần kiểm tra UI và FCM thực tế theo các kịch bản trên sau khi deploy backend/indexes. Build và unit tests không thay thế kiểm thử nhận hàng giữa hai thiết bị.
+Đã mở và kiểm tra cả ba màn tạo riêng trên emulator Android, gồm luồng lịch → chọn giờ; ảnh kiểm tra nằm trong `build/rescue-editor-previews/`. APK build thành công; 13 kiểm thử giao dịch giải cứu và bộ unit tests backend đạt. Cần thử FCM và nhận hàng thực tế sau khi deploy backend/indexes; kiểm tra bố cục không thay thế kiểm thử nhận hàng giữa hai thiết bị.
+
+Bộ hồi quy toàn repo hiện còn lỗi ngoài module giải cứu: 1 test Android `AdminTransitionPolicyTest.restrictiveTransitionsRequireAuditReason` và 3 test Firestore liên quan kiểm duyệt comment/category của Admin. Các source/rules đó không bị chỉnh trong lần gỡ mua chung và tách màn này.
 
 ## Chưa triển khai trong phiên bản này
 
-- Thu tiền trước, escrow, chia tiền nhóm, tự động hoàn tiền ngân hàng; vận chuyển chung tới một người đại diện.
+- Thu tiền trước, escrow, tự động hoàn tiền ngân hàng; vận chuyển chung tới một người đại diện.
 - Auto-debit và tạo đơn định kỳ không cần xác nhận.
 - Bản đồ nhúng, marker thời gian thực và cập nhật GPS điểm di động vào gói đã công khai.
 - Web landing page cho link chia sẻ khi chưa cài app, ảnh riêng của hộp, lưu offline riêng cho module mới.

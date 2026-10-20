@@ -4,7 +4,7 @@ const P = require('./rescue-policy');
 const {enqueueNotification, digest} = require('./notification-outbox');
 const {fail, text, id, time, round, number, DAY} = P;
 
-/** Stock-backed pickup programs. Money is collected in person, never captured for a pledge. */
+/** Stock-backed pickup programs. Money is collected in person at pickup. */
 function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
   const router = express.Router();
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
@@ -73,7 +73,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
   }
   const publicKeys = ['id', 'sellerId', 'sellerName', 'type', 'title', 'description', 'categoryLabel', 'contentsDisclosure',
     'unitLabel', 'unitPrice', 'originalUnitPrice', 'closesAt', 'pickupStartAt', 'pickupEndAt', 'pickupAddress', 'latitude', 'longitude',
-    'totalUnits', 'availableUnits', 'claimedUnits', 'completedUnits', 'participantCount', 'minPeople', 'minUnits', 'groupSucceeded',
+    'totalUnits', 'availableUnits', 'claimedUnits', 'completedUnits',
     'maxUnitsPerClaim', 'planKey', 'status', 'createdAt'];
   function publicOffer(offer) {
     return Object.fromEntries(publicKeys.filter(key => offer[key] !== undefined).map(key => [key, offer[key]]));
@@ -95,7 +95,11 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       const input = P.validateOffer(body, existing ? existing.validationAt || time(existing.createdAt) : now());
       const fingerprint = digest(JSON.stringify(input));
       if (existing) {
-        if (existing.sellerId !== caller.uid || existing.fingerprint !== fingerprint) throw fail(409, 'Mã yêu cầu đã được dùng cho gói khác.');
+        // Compare the supported fields so removal of a retired method's metadata
+        // does not break replay of an already-created, unchanged offer.
+        const previousInput = P.validateOffer({...existing, requestId: existing.id}, existing.validationAt || time(existing.createdAt));
+        if (existing.sellerId !== caller.uid || digest(JSON.stringify(previousInput)) !== fingerprint)
+          throw fail(409, 'Mã yêu cầu đã được dùng cho gói khác.');
         return {offer: existing, replay: true};
       }
       const offer = {...input, sellerId: caller.uid, components: input.components};
@@ -107,8 +111,8 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       const saved = {...offer, components: rows.map(row => ({...row.component, productNameSnapshot: text(row.product.name),
         unitSnapshot: text(row.product.unit), expiryDate: time(row.batch.expiryDate)})),
         id: offerRef.id, fingerprint, sellerName: text(seller.shopName) || text(seller.fullName),
-        availableUnits: input.totalUnits, claimedUnits: 0, completedUnits: 0, releasedUnits: 0, participantCount: 0, claimCount: 0,
-        groupSucceeded: false, status: 'OPEN', validationAt: now(), createdAt: stamp(), updatedAt: stamp(), nextActionAt: ts(input.closesAt)};
+        availableUnits: input.totalUnits, claimedUnits: 0, completedUnits: 0, releasedUnits: 0, claimCount: 0,
+        status: 'OPEN', validationAt: now(), createdAt: stamp(), updatedAt: stamp(), nextActionAt: ts(input.closesAt)};
       moveStock(tx, rows, input.totalUnits, 'RESERVE');
       tx.create(offerRef, saved);
       return {offer: saved};
@@ -212,28 +216,21 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
             || offer.type !== 'SUBSCRIPTION' || subscription.nextDueAt > now())) throw fail(409, 'Kỳ đăng ký chưa đến hạn hoặc không phù hợp.');
         if (subscription && subscription.status !== 'ACTIVE') subscription = null;
       }
-      const participantCount = offer.participantCount + 1, claimedUnits = offer.claimedUnits + units;
+      const claimedUnits = offer.claimedUnits + units;
       if ((offer.claimCount || 0) >= 100) throw fail(409, 'Gói đã đạt giới hạn 100 đăng ký.');
-      if (offer.type === 'GROUP_BUY' && participantCount > 50) throw fail(409, 'Nhóm đã đủ 50 người.');
-      const groupSucceeded = offer.type === 'GROUP_BUY' && P.groupReady({...offer, participantCount, claimedUnits});
-      const priorMembers = groupSucceeded && !offer.groupSucceeded
-        ? await tx.get(db.collection('rescueClaims').where('offerId', '==', offer.id).limit(100)) : null;
       const claim = {id: claimRef.id, offerId: offer.id, customerId: caller.uid, sellerId: offer.sellerId,
         customerName: text(buyer.fullName), units, unitPrice: offer.unitPrice, totalAmount: offer.unitPrice * units,
         status: 'RESERVED', paymentMethod: 'CASH_ON_PICKUP',
         paymentStatus: 'UNPAID', createdAt: stamp(), updatedAt: stamp()};
       tx.create(claimRef, claim);
-      tx.update(offerRef, {availableUnits: offer.availableUnits - units, claimedUnits, participantCount,
-        claimCount: (offer.claimCount || 0) + 1, groupSucceeded, updatedAt: stamp()});
+      tx.update(offerRef, {availableUnits: offer.availableUnits - units, claimedUnits,
+        claimCount: (offer.claimCount || 0) + 1, updatedAt: stamp()});
       if (subscription) tx.update(subscriptionRef, {nextDueAt: now() + subscription.cadenceDays * DAY,
         lastOfferId: offer.id, nextRunAt: ts(now() + subscription.cadenceDays * DAY), updatedAt: stamp()});
       notify(tx, claimRef.id + ':joined', caller.uid, offer.id, 'Đã đăng ký giải cứu',
-        P.groupReady({...offer, groupSucceeded}) ? 'Cửa hàng sẽ chuẩn bị nông sản để bạn nhận tại điểm.' : 'Đã ghi nhận cam kết; chỉ nhận khi nhóm đạt đủ ngưỡng. Chưa thu tiền.');
-      if (priorMembers) for (const member of priorMembers.docs) if (member.get('status') !== 'CANCELLED')
-        notify(tx, member.id + ':group-success', member.get('customerId'), offer.id, 'Nhóm giải cứu đã đạt ngưỡng',
-          'Cam kết đã được chốt. Xem giờ và điểm nhận của nhóm; thanh toán khi nhận hàng.');
+        'Cửa hàng sẽ chuẩn bị nông sản để bạn nhận tại điểm.');
       notify(tx, claimRef.id + ':seller', offer.sellerId, offer.id, 'Có đăng ký giải cứu mới', 'Mở khu Giải cứu mở rộng để chuẩn bị hàng.');
-      return {claim: {...claim, status: P.claimState({...offer, groupSucceeded}, claim)}};
+      return {claim: {...claim, status: P.claimState(offer, claim)}};
     });
   }
   route('join', ['CUSTOMER'], (body, caller) => join(body, caller));
@@ -259,13 +256,13 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     if (body.action === 'COMPLETE' && claim.status === 'COMPLETED' || body.action === 'CANCEL' && effective === 'CANCELLED') return {replay: true};
     if (['COMPLETED', 'CANCELLED'].includes(effective)) throw fail(409, 'Đăng ký đã kết thúc.');
     if (body.action === 'READY') {
-      if (caller.role !== 'SELLER' || !P.groupReady(offer) || now() < offer.pickupStartAt || now() >= offer.pickupEndAt)
+      if (caller.role !== 'SELLER' || now() < offer.pickupStartAt || now() >= offer.pickupEndAt)
         throw fail(409, 'Chỉ cửa hàng chuẩn bị khi đã đủ điều kiện và trong giờ nhận.');
       await assertLive(tx, offer);
       tx.update(claimRef, {status: 'READY', updatedAt: stamp()});
       notify(tx, claim.id + ':ready', claim.customerId, offer.id, 'Nông sản đã sẵn sàng', 'Đến điểm nhận trong khung giờ của gói. Chỉ xác nhận đã nhận sau khi nhận hàng thực tế.');
     } else if (body.action === 'COMPLETE') {
-      if (caller.role !== 'CUSTOMER' || claim.status !== 'READY' || !P.groupReady(offer)
+      if (caller.role !== 'CUSTOMER' || claim.status !== 'READY'
           || now() < offer.pickupStartAt || now() >= offer.pickupEndAt) throw fail(409, 'Khách chỉ xác nhận khi cửa hàng đã chuẩn bị và còn trong giờ nhận.');
       if (body.confirmReceived !== true || claim.totalAmount > 0 && body.confirmPaid !== true)
         throw fail(400, 'Cần xác nhận đã nhận hàng và thanh toán tại điểm.');
@@ -284,15 +281,15 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
         quantityByUnit: quantities, updatedAt: stamp()});
       notify(tx, claim.id + ':completed', offer.sellerId, offer.id, 'Khách đã xác nhận nhận nông sản', 'Lượt giải cứu đã được ghi nhận vào thống kê Giải cứu mở rộng.');
     } else if (body.action === 'CANCEL') {
-      if (caller.role !== 'CUSTOMER' || offer.type === 'GROUP_BUY' && P.groupReady(offer))
-        throw fail(409, 'Nhóm đã thành công không thể rút cam kết; hãy liên hệ cửa hàng.');
+      if (caller.role !== 'CUSTOMER')
+        throw fail(409, 'Chỉ khách sở hữu có thể hủy đăng ký.');
       const release = offer.status !== 'OPEN' || now() >= offer.closesAt;
       const rows = release ? await stock(tx, offer) : [];
       if (release) moveStock(tx, rows, claim.units, 'RELEASE');
       tx.update(claimRef, {status: 'CANCELLED', updatedAt: stamp()});
       tx.update(offerRef, {claimedUnits: offer.claimedUnits - claim.units,
         availableUnits: offer.availableUnits + (release ? 0 : claim.units),
-        releasedUnits: offer.releasedUnits + (release ? claim.units : 0), participantCount: offer.participantCount - 1, updatedAt: stamp()});
+        releasedUnits: offer.releasedUnits + (release ? claim.units : 0), updatedAt: stamp()});
     } else throw fail(400, 'Thao tác không hợp lệ.');
     return {};
   }));
@@ -305,19 +302,18 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       if (caller && caller.role !== 'ADMIN' && offer.sellerId !== caller.uid) throw fail(403, 'Không có quyền dừng gói.');
       if (!['OPEN', 'LOCKED'].includes(offer.status)) return {replay: true};
       if (!caller && now() < offer.closesAt) return {};
-      const failed = offer.type === 'GROUP_BUY' && !P.groupReady(offer);
-      const terminal = !!caller || failed || now() >= offer.pickupEndAt;
+      const terminal = !!caller || !P.TYPES.includes(offer.type) || now() >= offer.pickupEndAt;
       const units = terminal ? offer.totalUnits - offer.completedUnits - offer.releasedUnits : offer.availableUnits;
       const rows = await stock(tx, offer);
       const claims = terminal ? await tx.get(db.collection('rescueClaims').where('offerId', '==', offer.id).limit(100)) : null;
       moveStock(tx, rows, units, 'RELEASE');
-      const status = caller ? 'CANCELLED' : failed ? 'FAILED' : terminal ? 'EXPIRED' : 'LOCKED';
+      const status = caller || !P.TYPES.includes(offer.type) ? 'CANCELLED' : terminal ? 'EXPIRED' : 'LOCKED';
       tx.update(offerRef, {status, availableUnits: 0, claimedUnits: terminal ? 0 : offer.claimedUnits,
         releasedUnits: offer.releasedUnits + units, nextActionAt: ts(terminal ? now() : offer.pickupEndAt), updatedAt: stamp()});
       if (claims) for (const doc of claims.docs) if (!['COMPLETED', 'CANCELLED'].includes(doc.get('status'))) {
         tx.update(doc.ref, {status: 'CANCELLED', cancellationReason: status, updatedAt: stamp()});
         notify(tx, doc.id + ':closed', doc.get('customerId'), offer.id,
-          failed ? 'Nhóm chưa đạt ngưỡng giải cứu' : 'Đăng ký giải cứu đã kết thúc',
+          'Đăng ký giải cứu đã kết thúc',
           'Đã trả tồn kho chưa nhận. Không có khoản thanh toán trước để hoàn tiền.');
       }
       return {status};

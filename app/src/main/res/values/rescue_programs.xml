@@ -2,14 +2,14 @@
 <resources>
     <string name="rescue_hub_title">Giải cứu mở rộng</string>
     <string name="rescue_hub_intro">Mỗi cách nhận, thêm một cơ hội cứu nông sản.</string>
-    <string name="rescue_hub_policy">Nhận tại điểm · thanh toán khi nhận. Không thu tiền trước cho cam kết mua chung hoặc đăng ký định kỳ.</string>
+    <string name="rescue_hub_policy">Nhận tại điểm · thanh toán khi nhận. Không thu tiền trước cho đăng ký định kỳ.</string>
     <string name="rescue_create">Tạo gói giải cứu</string>
     <string name="rescue_nearby">Tìm quanh tôi</string>
     <string name="rescue_alerts">Thông báo giờ chót</string>
     <string name="rescue_empty">Chưa có nội dung phù hợp trong phần đã tải.</string>
-    <string name="rescue_entry_description">Hộp bí ẩn, mua chung, gói định kỳ, giải cứu giờ chót.</string>
+    <string name="rescue_entry_description">Hộp bí ẩn, gói định kỳ, giải cứu giờ chót.</string>
     <string-array name="rescue_type_labels">
-        <item>Tất cả phương thức</item><item>Hộp bí ẩn</item><item>Mua chung</item><item>Gói định kỳ</item>
+        <item>Tất cả phương thức</item><item>Hộp bí ẩn</item><item>Gói định kỳ</item>
         <item>Giờ chót</item>
     </string-array>
 </resources>
