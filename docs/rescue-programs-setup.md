@@ -18,6 +18,16 @@ Các lượt mới được quản lý trong **Suất của tôi / Gói cửa h�
 
 ## 1. Deploy backend
 
+### Cập nhật danh sách chọn lô
+
+Sau thay đổi danh sách chọn lô, cần deploy lại `functions/rescue-programs.js` lên Render và cài APK mới. Không cần đổi Firestore Rules hoặc thêm index mới cho thay đổi này.
+
+Android tự tải tiếp các trang lô hàng. Hộp **Chọn lô nông sản** có tìm kiếm theo tên (hỗ trợ không dấu) hoặc mã lô, thẻ riêng cho từng lô và nút **Tải lại danh sách lô**. Lô không đủ điều kiện vẫn hiện cùng lý do, ví dụ đang gắn chiến dịch, sản phẩm không Đang bán, chưa thu hoạch, hết hạn hoặc hết số lượng khả dụng. Nếu hạn dùng không sau giờ kết thúc nhận, app cũng giải thích và không cho chọn.
+
+API `POST /rescue/batches` với `includeUnavailable: true` phân trang cả sản phẩm lẫn lô (tối đa 100 lô mỗi phản hồi), trả `selectable` và `unavailableReason`. Cursor là chuỗi opaque; không tự tạo cursor từ ID sản phẩm. Bản Android cũ vẫn dùng hợp đồng API cũ. Nếu chưa deploy backend mới, APK mới vẫn đọc được dữ liệu cũ và tải tiếp trang sản phẩm, nhưng các lô bị backend cũ lọc sẽ chưa hiện lý do.
+
+Trường hợp Cà chua có tồn nhưng chưa chọn được: tìm theo tên hoặc ID lô, đợi tải xong và đọc lý do trên thẻ. Chỉnh ngày/số lượng không xóa liên kết chiến dịch. Không xóa thủ công `activeCampaignId` trên Firestore để bỏ qua ràng buộc tồn kho.
+
 Từ thư mục repository:
 
 ```powershell

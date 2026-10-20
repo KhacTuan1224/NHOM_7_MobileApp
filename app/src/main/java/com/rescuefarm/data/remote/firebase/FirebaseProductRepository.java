@@ -525,8 +525,17 @@ public class FirebaseProductRepository implements ProductRepository {
             }
             Map<String, Object> data = batchMap(saved);
             data.put("updatedAt", FieldValue.serverTimestamp());
-            if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
-            transaction.set(batchRef, data); return saved;
+            if (existing.exists()) {
+                // Edit only seller-owned fields. Replacing the document drops createdAt and
+                // lifecycle metadata, and normalizes legacy campaign IDs from "" to null.
+                data.keySet().retainAll(java.util.Arrays.asList("harvestDate", "expiryDate",
+                        "initialQuantity", "availableQuantity", "status", "inventoryVersion", "updatedAt"));
+                transaction.update(batchRef, data);
+            } else {
+                data.put("createdAt", FieldValue.serverTimestamp());
+                transaction.set(batchRef, data);
+            }
+            return saved;
         }).addOnSuccessListener(saved -> {
             cacheExecutor.execute(() -> dao.replaceBatch(CatalogCacheMapper.toEntity(
                     saved, System.currentTimeMillis()))); callback.onSuccess(saved);

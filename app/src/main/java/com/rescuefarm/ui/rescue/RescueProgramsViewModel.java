@@ -44,7 +44,10 @@ public final class RescueProgramsViewModel extends ViewModel {
         try { load(screen == null ? "catalog" : screen, path == null ? "catalog" : path, body == null ? new JSONObject() : new JSONObject(body)); }
         catch (org.json.JSONException error) { load("catalog", "catalog", new JSONObject()); }
     }
-    public void refresh() { value = new JSONObject(); fetch(false); }
+    public void refresh() {
+        State previous = state.getValue(); if (previous != null && previous.loading) return;
+        value = new JSONObject(); fetch(false);
+    }
     public void more() { fetch(true); }
     private void fetch(boolean more) {
         State previous = state.getValue(); if (previous != null && previous.loading) return;

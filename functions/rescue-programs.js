@@ -177,6 +177,43 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     return {offer: caller?.uid === offer.sellerId ? offer : publicOffer(offer), claims, impact, receivedContents};
   });
   route('batches', ['SELLER'], async (body, caller) => {
+    // New picker: page both products and their batches, and explain exclusions.
+    // Keep the original response contract for previously installed clients.
+    if (body.includeUnavailable === true) {
+      let cursor = null;
+      if (body.cursor) {
+        try {
+          if (typeof body.cursor !== 'string' || body.cursor.length > 600) throw Error();
+          cursor = JSON.parse(Buffer.from(body.cursor, 'base64url').toString('utf8'));
+          if (!id(cursor.productId) || cursor.batchId !== '' && !id(cursor.batchId)) throw Error();
+        } catch { throw fail(400, 'Trang lô hàng không hợp lệ.'); }
+      }
+      let products = db.collection('products').where('sellerId', '==', caller.uid)
+        .orderBy(admin.firestore.FieldPath.documentId()).limit(30);
+      if (cursor) products = cursor.batchId ? products.startAt(cursor.productId) : products.startAfter(cursor.productId);
+      const result = await products.get(), items = [];
+      const encode = (productId, batchId = '') => Buffer.from(JSON.stringify({productId, batchId})).toString('base64url');
+      for (const product of result.docs) {
+        let query = db.collection('productBatches').where('productId', '==', product.id)
+          .orderBy(admin.firestore.FieldPath.documentId()).limit(100 - items.length);
+        if (cursor?.productId === product.id && cursor.batchId) query = query.startAfter(cursor.batchId);
+        const batches = await query.get();
+        for (const batch of batches.docs) {
+          let unavailableReason = '';
+          if (product.get('status') !== 'ACTIVE') unavailableReason = 'Sản phẩm không ở trạng thái Đang bán.';
+          else if (text(batch.get('activeCampaignId'))) unavailableReason = 'Lô đang gắn với chiến dịch, không thể dùng đồng thời cho gói giải cứu.';
+          else if (time(batch.get('expiryDate')) <= now()) unavailableReason = 'Lô đã hết hạn sử dụng.';
+          else if (time(batch.get('harvestDate')) > now()) unavailableReason = 'Chưa đến ngày thu hoạch.';
+          else if (!['AVAILABLE', 'RESERVED_PARTIAL'].includes(batch.get('status'))) unavailableReason = 'Trạng thái lô không cho phép bán.';
+          else if (!(batch.get('availableQuantity') > 0)) unavailableReason = 'Lô không còn số lượng khả dụng.';
+          items.push({batchId: batch.id, productName: product.get('name'), unit: product.get('unit'),
+            availableQuantity: batch.get('availableQuantity'), harvestDate: batch.get('harvestDate'),
+            expiryDate: batch.get('expiryDate'), selectable: !unavailableReason, unavailableReason});
+        }
+        if (items.length === 100) return {items, cursor: encode(product.id, batches.docs.at(-1).id), hasMore: true};
+      }
+      return {items, cursor: result.empty ? '' : encode(result.docs.at(-1).id), hasMore: result.size === 30};
+    }
     const result = await page('products', body, 'sellerId', caller.uid), items = [];
     for (const productDoc of result.docs) {
       if (productDoc.get('status') !== 'ACTIVE') continue;

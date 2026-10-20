@@ -53,6 +53,55 @@ function input(overrides = {}) {
 }
 async function create(overrides) { const response = await post('create', input(overrides)); assert.equal(response.status, 200, JSON.stringify(response.body)); return response; }
 async function inventory() { return (await db.doc('productBatches/batch').get()).data(); }
+test('batch picker pages past 30 products and 100 batches without losing or duplicating tomato stock', async () => {
+  const write = db.batch(), baseBatch = await inventory();
+  for (let i = 0; i < 31; i++) {
+    const productId = 'z' + String(i).padStart(2, '0');
+    write.set(db.doc('products/' + productId), {sellerId: 'seller', status: 'ACTIVE',
+      name: i === 30 ? 'Cà chua chín Lâm Đồng' : 'Nông sản ' + i, unit: 'kg'});
+    for (let j = 0; j < (i === 0 ? 101 : 1); j++) {
+      const id = productId + '_b' + String(j).padStart(3, '0');
+      write.set(db.doc('productBatches/' + id), {...baseBatch, id, productId});
+    }
+  }
+  await write.commit();
+  assert.equal((await post('batches', {})).body.items.some(b => b.productName === 'Cà chua chín Lâm Đồng'), false);
+  const items = []; let cursor = '', pages = 0, more = true;
+  while (more) {
+    const response = await post('batches', {includeUnavailable: true, cursor});
+    assert.equal(response.status, 200, JSON.stringify(response.body));
+    items.push(...response.body.items); cursor = response.body.cursor; more = response.body.hasMore;
+    assert.ok(++pages <= 5, 'pagination must terminate');
+  }
+  assert.equal(items.length, 132);
+  assert.equal(new Set(items.map(b => b.batchId)).size, 132);
+  assert.equal(items.find(b => b.productName === 'Cà chua chín Lâm Đồng').selectable, true);
+});
+
+test('batch picker explains unavailable stock and never exposes another seller inventory', async () => {
+  const batch = await inventory();
+  await db.doc('products/private').set({sellerId: 'seller2', status: 'ACTIVE', name: 'Private'});
+  await db.doc('productBatches/private').set({...batch, productId: 'private'});
+  for (const [change, expected] of [
+    [{activeCampaignId: 'campaign'}, /chiến dịch/],
+    [{activeCampaignId: '', harvestDate: ts(now + 3600000)}, /thu hoạch/],
+    [{harvestDate: ts(now - 1000), expiryDate: ts(now - 1)}, /hết hạn/],
+    [{expiryDate: ts(now + 86400000), availableQuantity: 0}, /khả dụng/]
+  ]) {
+    await db.doc('productBatches/batch').update(change);
+    const result = await post('batches', {includeUnavailable: true});
+    assert.equal(result.status, 200);
+    assert.equal(result.body.items.length, 1);
+    assert.equal(result.body.items[0].selectable, false);
+    assert.match(result.body.items[0].unavailableReason, expected);
+  }
+  await db.doc('products/p').update({status: 'INACTIVE'});
+  assert.match((await post('batches', {includeUnavailable: true})).body.items[0].unavailableReason, /Đang bán/);
+  assert.equal((await post('batches', {includeUnavailable: true, cursor: 'invalid'})).status, 400);
+  assert.equal((await post('batches', {includeUnavailable: true}, 'a')).status, 403);
+  assert.equal((await post('batches', {})).body.items.length, 0);
+});
+
 test('retired rescue types cannot be created, discovered or joined', async () => {
   for (const type of ['BULK', 'DONATION', 'GROUP_BUY']) {
     assert.equal((await post('create', input({type, unitPrice: type === 'DONATION' ? 0 : 20000}))).status, 400);
