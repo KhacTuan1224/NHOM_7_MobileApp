@@ -7,9 +7,9 @@ const offer = overrides => ({requestId: 'offer-1', type: 'MYSTERY_BOX', title: '
   unitPrice: 20000, originalUnitPrice: 100000, closesAt: now + 3600000, pickupStartAt: now + 3600000,
   pickupEndAt: now + 7200000, latitude: 10.8, longitude: 106.7, pickupAddress: '10 đường A, TP HCM',
   components: [{batchId: 'b', quantityPerUnit: 0.5}], ...overrides});
-test('all three types validate with explicit stock and pickup windows', () => {
-  for (const type of P.TYPES) assert.equal(P.validateOffer(offer({type, planKey: 'weekly',
-    unitPrice: 20000}), now).type, type);
+test('both supported types validate with explicit stock and pickup windows', () => {
+  assert.deepEqual(P.TYPES, ['MYSTERY_BOX', 'FLASH']);
+  for (const type of P.TYPES) assert.equal(P.validateOffer(offer({type, unitPrice: 20000}), now).type, type);
 });
 test('free offers, invalid windows, duplicate batches and fractions are rejected', () => {
   for (const bad of [{unitPrice: 0}, {pickupEndAt: now}, {latitude: 100},

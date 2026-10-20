@@ -286,7 +286,6 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
             JSONObject input = body("requestId", model.requestId(), "type", offerType());
             for (String key : new String[]{"title", "description", "categoryLabel", "contentsDisclosure", "unitLabel", "pickupAddress"}) input.put(key, value(key));
             for (String key : new String[]{"totalUnits", "maxUnitsPerClaim", "unitPrice", "originalUnitPrice"}) input.put(key, Integer.parseInt(value(key)));
-            input.put("planKey", fields.containsKey("planKey") ? value("planKey") : "");
             input.put("latitude", pickupLatitude);
             input.put("longitude", pickupLongitude);
             for (String key : new String[]{"closesAt", "pickupStartAt", "pickupEndAt"}) input.put(key, times.get(key));

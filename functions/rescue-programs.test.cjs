@@ -103,7 +103,7 @@ test('batch picker explains unavailable stock and never exposes another seller i
 });
 
 test('retired rescue types cannot be created, discovered or joined', async () => {
-  for (const type of ['BULK', 'DONATION', 'GROUP_BUY']) {
+  for (const type of ['BULK', 'DONATION', 'GROUP_BUY', 'SUBSCRIPTION']) {
     assert.equal((await post('create', input({type, unitPrice: type === 'DONATION' ? 0 : 20000}))).status, 400);
     await db.doc('rescueOffers/retired').set({...input(), id: 'retired', type, sellerId: 'seller', status: 'OPEN', availableUnits: 10});
     assert.equal((await post('catalog', {}, '')).body.items.length, 0);
@@ -114,12 +114,32 @@ test('retired rescue types cannot be created, discovered or joined', async () =>
     assert.equal((await post('claims/action', {claimId: 'retired-claim', action: 'COMPLETE', confirmReceived: true, confirmPaid: true}, 'a')).status, 404);
   }
   for (const route of ['quotes/request', 'quotes/list', 'quotes/propose', 'quotes/accept',
-    'organizations/apply', 'organizations/list', 'organizations/review']) {
+    'organizations/apply', 'organizations/list', 'organizations/review',
+    'subscriptions/save', 'subscriptions/list', 'subscriptions/pause']) {
     const response = await fetch(base + route, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
     assert.equal(response.status, 404);
   }
   assert.equal((await inventory()).reservedQuantity, 0);
 });
+test('retired recurring offers release reserved stock at cutoff without generating reminders', async () => {
+  await db.doc('productBatches/batch').update({availableQuantity: 0, reservedQuantity: 10, status: 'RESERVED_PARTIAL'});
+  await db.doc('rescueOffers/legacy').set({...input(), id: 'legacy', sellerId: 'seller',
+    type: 'SUBSCRIPTION', status: 'OPEN', availableUnits: 8, claimedUnits: 2, completedUnits: 0,
+    releasedUnits: 0, closesAt: now - 1, nextActionAt: ts(now - 1)});
+  await db.doc('rescueClaims/legacy').set({offerId: 'legacy', customerId: 'a', sellerId: 'seller',
+    units: 2, status: 'RESERVED'});
+  await db.doc('rescueSubscriptions/legacy').set({customerId: 'a', sellerId: 'seller', status: 'ACTIVE',
+    nextDueAt: now - 1, nextRunAt: ts(now - 1)});
+  await api.reconcile();
+  assert.equal((await inventory()).availableQuantity, 10);
+  assert.equal((await inventory()).reservedQuantity, 0);
+  assert.equal((await db.doc('rescueOffers/legacy').get()).get('status'), 'CANCELLED');
+  assert.equal((await db.doc('rescueClaims/legacy').get()).get('status'), 'CANCELLED');
+  assert.equal((await db.collection('notificationOutbox').get()).docs.some(d => !d.get('resourceId')), false);
+  await api.reconcile();
+  assert.equal((await inventory()).availableQuantity, 10);
+});
+
 test('creation atomically holds physical stock, redacts mystery contents and replays after cutoff', async () => {
   const request = input(); assert.equal((await post('create', request)).status, 200);
   assert.equal((await inventory()).availableQuantity, 0); assert.equal((await inventory()).reservedQuantity, 10);
@@ -131,7 +151,7 @@ test('creation atomically holds physical stock, redacts mystery contents and rep
 });
 test('normal offer replay survives removal of retired method metadata without reserving twice', async () => {
   const request = input(); await create();
-  await db.doc('rescueOffers/offer').update({fingerprint: 'older-normalization', minPeople: 1, minUnits: 1, groupSucceeded: false});
+  await db.doc('rescueOffers/offer').update({fingerprint: 'older-normalization', planKey: '', minPeople: 1, minUnits: 1, groupSucceeded: false});
   assert.equal((await post('create', request)).body.replay, true);
   assert.equal((await post('create', {...request, unitPrice: 15000})).status, 409);
   assert.equal((await inventory()).reservedQuantity, 10);
@@ -184,26 +204,6 @@ test('receipt requires owning buyer, seller readiness, actual pickup time and ex
   assert.equal(receiptDetails.receivedContents[0].productName, 'Rau cải');
   assert.equal((await post('impact', {sellerId: 'seller'}, '')).body.impact.quantityByUnit.kg, 2);
   await api.settle('offer'); assert.equal((await inventory()).availableQuantity, 8);
-});
-test('subscription reminders create no payment or unattended orders and pause stops reminders', async () => {
-  await create({type: 'SUBSCRIPTION', planKey: 'weekly-veg'});
-  const saved = await post('subscriptions/save', {offerId: 'offer', cadenceDays: 7}, 'a');
-  assert.equal(saved.status, 200); await api.reconcile(); await api.reconcile();
-  assert.equal((await db.collection('rescueClaims').get()).size, 0);
-  const due = (await db.collection('notificationOutbox').get()).docs.filter(d => d.get('title') === 'Đến kỳ giải cứu định kỳ');
-  assert.equal(due.length, 1);
-  const body = {offerId: 'offer', units: 1, subscriptionId: saved.body.subscriptionId};
-  assert.equal((await post('join', body, 'a')).status, 200);
-  const subscriptions = (await post('subscriptions/list', {}, 'a')).body.items;
-  assert.ok(subscriptions[0].nextDueAt > now); assert.equal(subscriptions[0].currentOffer, null);
-  assert.equal((await post('subscriptions/pause', {subscriptionId: saved.body.subscriptionId, status: 'PAUSED'}, 'a')).status, 200);
-});
-test('following a subscription after joining its first offer starts the next cycle without suggesting duplicate pickup', async () => {
-  await create({type: 'SUBSCRIPTION', planKey: 'weekly'});
-  assert.equal((await post('join', {offerId: 'offer', units: 1}, 'a')).status, 200);
-  assert.equal((await post('subscriptions/save', {offerId: 'offer', cadenceDays: 7}, 'a')).status, 200);
-  const item = (await post('subscriptions/list', {}, 'a')).body.items[0];
-  assert.ok(item.nextDueAt > now); assert.equal(item.currentOffer, null);
 });
 test('nearby opt-in is private, bounded, deduplicated and expires', async () => {
   await create({type: 'FLASH'});

@@ -2,8 +2,6 @@
   "indexes": [
     {"collectionGroup":"rescueOffers","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"nextActionAt","order":"ASCENDING"}]},
     {"collectionGroup":"rescueOffers","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"type","order":"ASCENDING"},{"fieldPath":"closesAt","order":"ASCENDING"}]},
-    {"collectionGroup":"rescueOffers","queryScope":"COLLECTION","fields":[{"fieldPath":"sellerId","order":"ASCENDING"},{"fieldPath":"planKey","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"}]},
-    {"collectionGroup":"rescueSubscriptions","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"nextRunAt","order":"ASCENDING"}]},
     {"collectionGroup":"rescueClaims","queryScope":"COLLECTION","fields":[{"fieldPath":"offerId","order":"ASCENDING"},{"fieldPath":"customerId","order":"ASCENDING"}]},
     {
       "collectionGroup": "products",

@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.Locale;
 
 final class RescueUi {
-    static final String[] TYPES = {"", "MYSTERY_BOX", "SUBSCRIPTION", "FLASH"};
+    static final String[] TYPES = {"", "MYSTERY_BOX", "FLASH"};
     static JSONObject body(Object... values) {
         JSONObject result = new JSONObject();
         try { for (int i = 0; i < values.length; i += 2) result.put((String) values[i], values[i + 1]); }
@@ -27,7 +27,6 @@ final class RescueUi {
     static String type(String type) {
         switch (type) {
             case "MYSTERY_BOX": return "Hộp bí ẩn";
-            case "SUBSCRIPTION": return "Gói định kỳ";
             case "FLASH": return "Giải cứu giờ chót";
             default: return type;
         }
@@ -39,7 +38,6 @@ final class RescueUi {
             case "CANCELLED": return "Đã hủy";
             case "RESERVED": return "Đã giữ suất"; case "READY": return "Sẵn sàng nhận";
             case "COMPLETED": return "Đã nhận nông sản";
-            case "ACTIVE": return "Đang đăng ký"; case "PAUSED": return "Đã tạm dừng";
             default: return value;
         }
     }

@@ -17,6 +17,20 @@ async function event(f, id = 'event', extra = {}) {
     {kind: 'DIRECT', resourceType: 'ORDER', resourceId: 'order', recipientUid: 'customer', decision: 'CONFIRMED', ...extra}));
 }
 
+test('retired rescue reminders with no offer are skipped before expansion and delivery', async () => {
+  const f = fixture();
+  await event(f, 'old-reminder', {resourceType: 'RESCUE_OFFER', resourceId: ''});
+  const outbox = (await f.db.collection('notificationOutbox').get()).docs[0];
+  await f.worker.expand(outbox);
+  assert.equal((await f.db.collection('notificationDeliveries').get()).size, 0);
+  f.db.documents.set('notificationDeliveries/pending', {id: 'pending', userId: 'customer',
+    resourceType: 'RESCUE_OFFER', referenceId: '', status: 'PENDING'});
+  await f.worker.deliver(f.db.collection('notificationDeliveries').doc('pending'));
+  assert.equal(f.db.snapshot('notificationDeliveries/pending').get('status'), 'SKIPPED');
+  assert.equal((await f.db.collection('notifications').get()).size, 0);
+  assert.equal(f.sends(), 0);
+});
+
 test('nearby rescue push rechecks opt-in at expansion and again before delivery', async () => {
   const future = Date.now() + 86400000;
   const seed = {'rescueNearbyPreferences/customer': {enabled: true, latitude: 10.8, longitude: 106.7, radiusKm: 5, expiresAt: new Timestamp(future)},

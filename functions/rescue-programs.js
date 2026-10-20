@@ -74,7 +74,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
   const publicKeys = ['id', 'sellerId', 'sellerName', 'type', 'title', 'description', 'categoryLabel', 'contentsDisclosure',
     'unitLabel', 'unitPrice', 'originalUnitPrice', 'closesAt', 'pickupStartAt', 'pickupEndAt', 'pickupAddress', 'latitude', 'longitude',
     'totalUnits', 'availableUnits', 'claimedUnits', 'completedUnits',
-    'maxUnitsPerClaim', 'planKey', 'status', 'createdAt'];
+    'maxUnitsPerClaim', 'status', 'createdAt'];
   function publicOffer(offer) {
     return Object.fromEntries(publicKeys.filter(key => offer[key] !== undefined).map(key => [key, offer[key]]));
   }
@@ -244,15 +244,6 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       if (offer.availableUnits < units) throw fail(409, 'Không còn đủ suất.');
       if (offer.sellerId === caller.uid) throw fail(403, 'Không thể tự đăng ký.');
       await assertLive(tx, offer);
-      let subscription = null, subscriptionRef = null;
-      if (body.subscriptionId || offer.type === 'SUBSCRIPTION') {
-        subscriptionRef = ref('rescueSubscriptions', body.subscriptionId || digest(caller.uid + '|' + offer.sellerId + '|' + offer.planKey));
-        subscription = data(await tx.get(subscriptionRef));
-        if (body.subscriptionId && (!subscription || subscription.customerId !== caller.uid || subscription.status !== 'ACTIVE'
-            || subscription.sellerId !== offer.sellerId || subscription.planKey !== offer.planKey
-            || offer.type !== 'SUBSCRIPTION' || subscription.nextDueAt > now())) throw fail(409, 'Kỳ đăng ký chưa đến hạn hoặc không phù hợp.');
-        if (subscription && subscription.status !== 'ACTIVE') subscription = null;
-      }
       const claimedUnits = offer.claimedUnits + units;
       if ((offer.claimCount || 0) >= 100) throw fail(409, 'Gói đã đạt giới hạn 100 đăng ký.');
       const claim = {id: claimRef.id, offerId: offer.id, customerId: caller.uid, sellerId: offer.sellerId,
@@ -262,8 +253,6 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       tx.create(claimRef, claim);
       tx.update(offerRef, {availableUnits: offer.availableUnits - units, claimedUnits,
         claimCount: (offer.claimCount || 0) + 1, updatedAt: stamp()});
-      if (subscription) tx.update(subscriptionRef, {nextDueAt: now() + subscription.cadenceDays * DAY,
-        lastOfferId: offer.id, nextRunAt: ts(now() + subscription.cadenceDays * DAY), updatedAt: stamp()});
       notify(tx, claimRef.id + ':joined', caller.uid, offer.id, 'Đã đăng ký giải cứu',
         'Cửa hàng sẽ chuẩn bị nông sản để bạn nhận tại điểm.');
       notify(tx, claimRef.id + ':seller', offer.sellerId, offer.id, 'Có đăng ký giải cứu mới', 'Mở khu Giải cứu mở rộng để chuẩn bị hàng.');
@@ -358,42 +347,6 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
   }
   route('close', ['SELLER', 'ADMIN'], (body, caller) => settle(body.offerId, caller));
 
-  route('subscriptions/save', ['CUSTOMER'], async (body, caller) => db.runTransaction(async tx => {
-    await account(tx, caller, ['CUSTOMER']);
-    const offer = data(await tx.get(ref('rescueOffers', body.offerId)));
-    if (!offer || offer.type !== 'SUBSCRIPTION') throw fail(400, 'Gói định kỳ không hợp lệ.');
-    const cadenceDays = number(body.cadenceDays, 7, 30, 'Chu kỳ', true);
-    if (![7, 30].includes(cadenceDays)) throw fail(400, 'Chọn chu kỳ 7 hoặc 30 ngày.');
-    const subscriptionRef = ref('rescueSubscriptions', digest(caller.uid + '|' + offer.sellerId + '|' + offer.planKey));
-    const previous = data(await tx.get(subscriptionRef));
-    const currentClaim = data(await tx.get(ref('rescueClaims', digest(offer.id + '|' + caller.uid))));
-    const alreadyRegistered = currentClaim && currentClaim.status !== 'CANCELLED';
-    const nextDueAt = previous?.nextDueAt || (alreadyRegistered ? now() + cadenceDays * DAY : now());
-    tx.set(subscriptionRef, {id: subscriptionRef.id, customerId: caller.uid, sellerId: offer.sellerId, planKey: offer.planKey,
-      title: offer.title, cadenceDays, status: 'ACTIVE', nextDueAt,
-      lastOfferId: alreadyRegistered ? offer.id : previous?.lastOfferId || '',
-      nextRunAt: ts(now()), lastNotifiedDueAt: previous?.lastNotifiedDueAt || 0, updatedAt: stamp()});
-    return {subscriptionId: subscriptionRef.id};
-  }));
-  route('subscriptions/list', ['CUSTOMER'], async (body, caller) => {
-    const result = await page('rescueSubscriptions', body, 'customerId', caller.uid), items = [];
-    for (const doc of result.docs) {
-      const subscription = data(doc);
-      const offers = await db.collection('rescueOffers').where('sellerId', '==', subscription.sellerId)
-        .where('planKey', '==', subscription.planKey).where('status', '==', 'OPEN').limit(30).get();
-      const available = offers.docs.map(data).filter(o => o.closesAt > now() && o.availableUnits > 0 && o.id !== subscription.lastOfferId)
-        .sort((a, b) => b.closesAt - a.closesAt)[0];
-      items.push({...subscription, currentOffer: available ? publicOffer(available) : null});
-    }
-    return {items, cursor: result.cursor, hasMore: result.hasMore};
-  });
-  route('subscriptions/pause', ['CUSTOMER'], async (body, caller) => db.runTransaction(async tx => {
-    const subscriptionRef = ref('rescueSubscriptions', body.subscriptionId), subscription = data(await tx.get(subscriptionRef));
-    if (!subscription || subscription.customerId !== caller.uid) throw fail(403, 'Đăng ký không thuộc bạn.');
-    if (!['PAUSED', 'ACTIVE'].includes(body.status)) throw fail(400, 'Trạng thái không hợp lệ.');
-    tx.update(subscriptionRef, {status: body.status, nextRunAt: ts(now()), updatedAt: stamp()}); return {};
-  }));
-
   route('nearby/preferences', ['CUSTOMER'], async (body, caller) => {
     const preferenceRef = ref('rescueNearbyPreferences', caller.uid);
     if (body.enabled === false) { await preferenceRef.delete(); return {}; }
@@ -414,18 +367,6 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       const due = await db.collection('rescueOffers').where('status', 'in', ['OPEN', 'LOCKED'])
         .where('nextActionAt', '<=', ts(now())).orderBy('nextActionAt').limit(40).get();
       for (const doc of due.docs) await settle(doc.id);
-      const subscriptions = await db.collection('rescueSubscriptions').where('status', '==', 'ACTIVE')
-        .where('nextRunAt', '<=', ts(now())).orderBy('nextRunAt').limit(40).get();
-      for (const doc of subscriptions.docs) await db.runTransaction(async tx => {
-        const current = data(await tx.get(doc.ref));
-        if (current.status !== 'ACTIVE' || time(current.nextRunAt) > now()) return;
-        if (current.nextDueAt <= now() && current.lastNotifiedDueAt !== current.nextDueAt) {
-          notify(tx, doc.id + ':due:' + current.nextDueAt, current.customerId, '', 'Đến kỳ giải cứu định kỳ',
-            'Mở đăng ký định kỳ để chọn suất mới. Chưa tạo đơn hoặc thu tiền tự động.');
-        }
-        tx.update(doc.ref, {lastNotifiedDueAt: current.nextDueAt <= now() ? current.nextDueAt : current.lastNotifiedDueAt,
-          nextRunAt: ts(Math.max(now() + 3600000, current.nextDueAt)), updatedAt: stamp()});
-      });
       const preferences = await db.collection('rescueNearbyPreferences').where('nextRunAt', '<=', ts(now())).orderBy('nextRunAt').limit(40).get();
       const flash = preferences.empty ? [] : (await db.collection('rescueOffers').where('status', '==', 'OPEN')
         .where('type', '==', 'FLASH').orderBy('closesAt').limit(100).get()).docs.map(data).filter(o => o.closesAt > now() && o.availableUnits > 0);
@@ -457,7 +398,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
             tx.update(doc.ref, {nextRunAt: ts(now() + 5 * 60000)});
         });
       }
-      return {settled: due.size, subscriptions: subscriptions.size, nearby: preferences.size};
+      return {settled: due.size, nearby: preferences.size};
     } finally { running = false; }
   }
   return {router, reconcile, settle, join};

@@ -7,16 +7,18 @@ Mở **Giải cứu mở rộng** từ Home của Guest/Customer hoặc dashboar
 | Phương thức | Luồng có thể dùng |
 | --- | --- |
 | Hộp bí ẩn | Seller chọn nhiều lô thật, lượng trong mỗi hộp, phân loại và thông tin thành phần/dị ứng; backend giữ tồn kho. Customer thấy phân loại/lưu ý, nhận tại điểm; thành phần thực tế được mở trong lịch sử sau khi nhận. |
-| Định kỳ | Theo dõi theo cửa hàng + `planKey`, chu kỳ 7 hoặc 30 ngày, nhắc đến kỳ, chọn gói mới và xác nhận giá từng kỳ, tạm dừng/tiếp tục. |
 | Giờ chót | Gói FLASH tối đa 2 giờ; lọc trong 5 km từ Fused Location Provider; mở điểm nhận trên ứng dụng bản đồ; chủ động bật FCM gần đây trong 24 giờ, tắt/xóa vị trí bất kỳ lúc nào. |
 
 Các gói mới dùng **nhận tại điểm và trả tiền trực tiếp khi nhận**. Đây là lựa chọn triển khai hiện tại, không phải tích hợp giữ tiền/hoàn tiền qua SePay.
 
-Định kỳ là đăng ký nhắc và xác nhận từng kỳ, **không tự động thu tiền/tạo đơn khi người dùng không xác nhận**. Scheduler tin cậy ở backend xử lý nhắc; WorkManager không được dùng để âm thầm mua hàng khi ứng dụng nền bị hệ điều hành hạn chế.
 
 Các lượt mới được quản lý trong **Suất của tôi / Gói cửa hàng**, lưu ở `rescueClaims`, chưa hợp nhất vào `orders`/danh sách đơn hàng thông thường. Phương thức vận chuyển hiện tại của module là PICKUP, chưa giao hàng tận nơi cho gói mới.
 
 ## 1. Deploy backend
+
+### Cập nhật sau khi gỡ Đăng ký định kỳ
+
+Chỉ còn Hộp bí ẩn và Giải cứu giờ chót. Cài APK mới và deploy lại backend Render để gỡ toàn bộ màn tạo/theo dõi, API và nhắc lịch đã bỏ. Các thông báo nhắc cũ không có offerId trong hàng đợi sẽ bị bỏ qua. Không cần xóa dữ liệu Firestore cũ hoặc sửa các gói còn hỗ trợ; khi đến hạn, scheduler hiện có kết thúc gói thuộc phương thức đã gỡ và trả phần kho chưa nhận đúng một lần. Các collection cũ tiếp tục bị chặn bởi quy tắc mặc định.
 
 ### Cập nhật danh sách chọn lô
 
@@ -72,11 +74,11 @@ Kiểm tra đúng project Firebase của bạn trước khi deploy:
 .\tests\firestore\node_modules\.bin\firebase.cmd deploy --only firestore --project YOUR_FIREBASE_PROJECT_ID
 ```
 
-Chờ indexes mới trong Firebase Console → Firestore Database → Indexes chuyển sang **Enabled** trước khi thử scheduler/gói định kỳ. File `firestore.indexes.json` bổ sung các index cho hạn xử lý, tìm gói định kỳ, FLASH và claims.
+Chờ indexes mới trong Firebase Console → Firestore Database → Indexes chuyển sang **Enabled** trước khi thử scheduler và gói giải cứu. File `firestore.indexes.json` bổ sung các index cho hạn xử lý, FLASH và claims.
 
 Không phải tạo collection rỗng hoặc seed hàng loạt. Dữ liệu xuất hiện sau thao tác thực tế đầu tiên. Dữ liệu cũ không cần chuyển `productType`; module dùng một lớp gói phủ trên `productBatches` để giữ đúng nguồn tồn kho của nhiều thành phần.
 
-Các collection `rescueOffers`, `rescueClaims`, `rescueSubscriptions`, `rescueNearbyPreferences`, `rescueImpact` đều **chặn đọc/ghi Firestore trực tiếp từ mọi vai trò trên client**. API chỉ trả dữ liệu được phép xem.
+Các collection `rescueOffers`, `rescueClaims`, `rescueNearbyPreferences`, `rescueImpact` đều **chặn đọc/ghi Firestore trực tiếp từ mọi vai trò trên client**. API chỉ trả dữ liệu được phép xem.
 
 ## 3. Bật scheduler đã có trong repo
 
@@ -89,7 +91,7 @@ Module tận dụng `.github/workflows/notification-worker.yml`, không cần th
 3. Đưa workflow lên default branch. Trong Actions bật workflow **Notification worker wakeup** nếu đang tắt.
 4. Chọn **Run workflow** và kiểm tra job thành công.
 
-Workflow gọi `POST /internal/notifications/run` mỗi 5 phút theo lịch cấu hình. Endpoint này xử lý đóng đăng ký/hết giờ nhận, nhắc định kỳ, thông báo gần đây, rồi gửi outbox. Trong khi Render đang chạy, vòng xử lý nội bộ cũng chạy mỗi phút.
+Workflow gọi `POST /internal/notifications/run` mỗi 5 phút theo lịch cấu hình. Endpoint này xử lý đóng đăng ký/hết giờ nhận, thông báo gần đây, rồi gửi outbox. Trong khi Render đang chạy, vòng xử lý nội bộ cũng chạy mỗi phút.
 
 Khi kiểm tra thủ công, lấy secret từ biến môi trường của phiên shell, không chép nó vào source:
 
@@ -141,9 +143,8 @@ $env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=D:\NHOM_7_MobileApp\build\
 
 1. Đăng nhập Seller đã được Admin duyệt, có sản phẩm ACTIVE và lô AVAILABLE/RESERVED_PARTIAL còn đủ lượng.
 2. Đảm bảo lô đã thu hoạch, còn hạn sau **kết thúc nhận hàng**, chưa gắn campaign. Lô còn thuộc campaign cũ cần kết thúc/gỡ liên kết bằng luồng campaign hiện có trước.
-3. Dashboard Seller → Giải cứu mở rộng → **Tạo gói giải cứu**. Chọn một trong ba phương thức; mỗi phương thức mở một màn riêng:
+3. Dashboard Seller → Giải cứu mở rộng → **Tạo gói giải cứu**. Chọn một trong hai phương thức; mỗi phương thức mở một màn riêng:
    - **Hộp bí ẩn:** giới thiệu hộp → thành phần từng hộp → giá/số hộp → lịch và điểm nhận.
-   - **Định kỳ:** mã gói cố định → đợt nhận này → nông sản kỳ này → số suất và giá kỳ này. Chỉ màn này có trường mã gói định kỳ.
    - **Giờ chót:** khung bán ngắn và nút chọn nhanh 15/30/60 phút → GPS điểm nhận → hàng cần bán nhanh → giá và số phần còn lại.
 4. Điền phương thức, phân loại, thông tin thành phần/dị ứng, số suất, giới hạn mỗi khách, giá trị gốc và giá giải cứu. Chạm từng mốc thời gian để chọn ngày trên lịch, rồi chọn giờ; không nhập chuỗi ngày giờ.
    Tại điểm nhận, bấm **Lấy vị trí hiện tại bằng GPS** và cấp quyền vị trí khi dùng ứng dụng. App tự lưu vị trí bản đồ và tìm địa chỉ để điền sẵn, không yêu cầu nhập vĩ độ/kinh độ. Kiểm tra hoặc bổ sung số nhà/tên cửa hàng/hướng dẫn; nếu dịch vụ tìm địa chỉ không khả dụng, có thể nhập phần địa chỉ mô tả trong khi vẫn giữ vị trí GPS đã lấy. GPS dùng để chỉ đường, địa chỉ giúp khách nhận biết đúng nơi nhận. Nếu đổi sang điểm nhận khác, lấy GPS lại tại điểm mới.
@@ -162,14 +163,6 @@ Gói đã tạo giữ nguyên giá/nội dung/giờ nhận. Muốn thay đổi h
 - Customer tới điểm, kiểm tra hàng, trả tiền tại điểm và bấm **Xác nhận đã nhận nông sản**. Sau đó có danh sách thành phần mỗi suất trong chi tiết lịch sử.
 - Trạng thái thanh toán là **khách xác nhận trả tiền trực tiếp** (`BUYER_CONFIRMED_CASH`), không phải ngân hàng đã xác minh hoặc webhook SePay.
 
-### Đăng ký định kỳ
-
-- Seller tạo SUBSCRIPTION và nhập mã ổn định, ví dụ `rau-tuan`. Mỗi tuần Seller bổ sung một gói **mới** bằng lô mới, giữ cùng mã.
-- Customer vào gói → **Theo dõi gói định kỳ** → chọn 7 hoặc 30 ngày.
-- Đến kỳ nhận được nhắc. Vào **Gói định kỳ** → **Xem và đặt suất kỳ này**, kiểm tra giá rồi xác nhận. Sau khi đặt thành công, kỳ tiếp theo được tính từ lúc xác nhận + số ngày đăng ký.
-- Không dùng lại gói đã nhận cho kỳ sau. Nếu Seller chưa đăng gói mới hoặc hết hàng, hiển thị chưa có gói phù hợp; không tạo tồn kho giả và không tự thu tiền.
-- Tạm dừng chỉ dừng nhắc tương lai; suất đã đặt được quản lý riêng trong “Suất của tôi”.
-
 ### Giải cứu giờ chót và vị trí
 
 - Seller tạo FLASH, hạn đăng ký trong vòng tối đa 2 giờ; giờ nhận phải nằm trước hạn dùng mọi lô. Chọn vị trí điểm nhận đang dùng, kể cả điểm di động; vị trí gói là **snapshot**, chưa bám theo GPS Seller sau khi tạo.
@@ -184,7 +177,6 @@ Gói đã tạo giữ nguyên giá/nội dung/giờ nhận. Muốn thay đổi h
 | --- | --- |
 | `rescueOffers` | Thành phần lô riêng của Seller, snapshot tên/đơn vị, giá, giờ, điểm nhận, số suất và trạng thái. Public API chỉ trả các trường đã chọn. |
 | `rescueClaims` | Một bản/Customer/gói; số suất, giá snapshot, trạng thái, xác nhận nhận và thanh toán tại điểm. Chỉ khách sở hữu và Seller của gói đọc. |
-| `rescueSubscriptions` | Customer, Seller, planKey, cadenceDays, nextDueAt, ACTIVE/PAUSED. |
 | `rescueNearbyPreferences` | Điểm chủ động bật, bán kính, thời điểm hết hạn; chỉ trusted backend truy cập. |
 | `rescueImpact` | Lượt nhận và lượng đã nhận theo từng đơn vị vật lý. Không cộng vào số kg campaign một cách suy diễn. |
 
@@ -206,7 +198,6 @@ Mọi route là POST với JSON. Route cần đăng nhập dùng `Authorization:
 | `join` | Customer. |
 | `claims`, `claims/action` | Seller sở hữu chuẩn bị; Customer sở hữu hủy/xác nhận nhận theo điều kiện. |
 | `close` | Seller sở hữu hoặc Admin. |
-| `subscriptions/save`, `subscriptions/list`, `subscriptions/pause` | Customer sở hữu. |
 | `nearby/preferences` | Customer; `{enabled:false}` xóa vị trí. |
 
 Danh sách public và danh sách cá nhân có cursor 30 bản ghi/trang; có thể có trang không khớp bộ lọc nhưng vẫn `hasMore=true`. Một gói giới hạn 100 claims để xử lý kết thúc có giới hạn rõ ràng. Bộ chọn nguồn hàng đọc 30 sản phẩm/trang, tối đa 100 lô cho mỗi sản phẩm trong trang đó; nếu sản phẩm có nhiều hơn cần thu gọn/archive lịch sử lô hoặc mở rộng phân trang nguồn hàng trước khi vận hành ở quy mô đó.
@@ -225,16 +216,13 @@ npm --prefix tests/firestore test
 python scripts/check_navigation.py
 ```
 
-Suite gồm: nguồn kho thật/chống giữ trùng, khách mua đồng thời, replay, thời gian và quyền nhận, hoàn tất một lần, trả kho hết hạn, nhắc định kỳ không tự mua, vị trí có thời hạn/opt-out, Firestore Rules chặn ghi giả ledger. Kiểm thử thông báo kiểm tra lại việc tắt vị trí trước delivery.
+Suite gồm: nguồn kho thật/chống giữ trùng, khách mua đồng thời, replay, thời gian và quyền nhận, hoàn tất một lần, trả kho hết hạn, từ chối phương thức đã gỡ, vị trí có thời hạn/opt-out, Firestore Rules chặn ghi giả ledger. Kiểm thử thông báo kiểm tra lại việc tắt vị trí trước delivery.
 
-Đã mở và kiểm tra cả ba màn tạo riêng trên emulator Android, gồm luồng lịch → chọn giờ; ảnh kiểm tra nằm trong `build/rescue-editor-previews/`. APK build thành công; 13 kiểm thử giao dịch giải cứu và bộ unit tests backend đạt. Cần thử FCM và nhận hàng thực tế sau khi deploy backend/indexes; kiểm tra bố cục không thay thế kiểm thử nhận hàng giữa hai thiết bị.
-
-Bộ hồi quy toàn repo hiện còn lỗi ngoài module giải cứu: 1 test Android `AdminTransitionPolicyTest.restrictiveTransitionsRequireAuditReason` và 3 test Firestore liên quan kiểm duyệt comment/category của Admin. Các source/rules đó không bị chỉnh trong lần gỡ mua chung và tách màn này.
+Khi kiểm tra bản cập nhật, chạy toàn bộ Android unit tests, build APK và suite giao dịch giải cứu trên emulator. Kiểm tra FCM và nhận hàng thực tế sau khi deploy backend/indexes.
 
 ## Chưa triển khai trong phiên bản này
 
 - Thu tiền trước, escrow, tự động hoàn tiền ngân hàng; vận chuyển chung tới một người đại diện.
-- Auto-debit và tạo đơn định kỳ không cần xác nhận.
 - Bản đồ nhúng, marker thời gian thực và cập nhật GPS điểm di động vào gói đã công khai.
 - Web landing page cho link chia sẻ khi chưa cài app, ảnh riêng của hộp, lưu offline riêng cho module mới.
 
