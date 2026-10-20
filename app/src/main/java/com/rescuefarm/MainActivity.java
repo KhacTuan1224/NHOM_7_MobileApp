@@ -333,6 +333,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.sellerProfileFragment
                 // Home related
                 || destinationId == R.id.allCategoriesFragment
+                || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment
@@ -391,6 +392,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment
                 || destinationId == R.id.allCategoriesFragment
+                || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment

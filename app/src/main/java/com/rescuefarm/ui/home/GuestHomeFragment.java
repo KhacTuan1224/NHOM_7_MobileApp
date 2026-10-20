@@ -92,8 +92,6 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
-        view.findViewById(R.id.homePromotionWalletButton).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         super.onViewCreated(view, state); renderer = new HomeCardRenderer(this);
         message = view.findViewById(R.id.homeMessage); progress = view.findViewById(R.id.homeProgress);
         greeting = view.findViewById(R.id.homeGreeting);
@@ -517,9 +515,8 @@ public class GuestHomeFragment extends Fragment {
             View tile = renderer.category(category, v -> {
                 Bundle args = new Bundle();
                 args.putString("categoryId", category.getId());
-                DiscoveryBottomSheet bottomSheet = new DiscoveryBottomSheet();
-                bottomSheet.setArguments(args);
-                bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
+                args.putString("categoryName", category.getName());
+                Navigation.findNavController(v).navigate(R.id.categoryDetailFragment, args);
             });
             LinearLayout.LayoutParams itemParams = new LinearLayout.LayoutParams(dp(76), -2);
             itemParams.setMargins(0, 0, dp(8), 0);

@@ -127,6 +127,18 @@
             app:destination="@id/campaignDetailFragment" />
     </fragment>
 
+    <fragment android:id="@+id/categoryDetailFragment"
+        android:name="com.rescuefarm.ui.home.CategoryDetailFragment"
+        android:label="@string/category_detail_title">
+        <argument android:name="categoryId" app:argType="string" />
+        <argument android:name="categoryName" app:argType="string"
+            android:defaultValue="Danh mục nông sản" />
+        <action android:id="@+id/action_categoryDetailFragment_to_productDetailFragment"
+            app:destination="@id/productDetailFragment" />
+        <action android:id="@+id/action_categoryDetailFragment_to_campaignDetailFragment"
+            app:destination="@id/campaignDetailFragment" />
+    </fragment>
+
     <fragment android:id="@+id/allCategoriesFragment"
         android:name="com.rescuefarm.ui.home.AllCategoriesFragment"
         android:label="@string/all_categories_title" />

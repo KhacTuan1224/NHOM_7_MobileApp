@@ -96,12 +96,6 @@
                 android:layout_width="20dp" android:layout_height="20dp" android:visibility="gone" />
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/homePromotionWalletButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" android:layout_marginBottom="12dp"
-            android:text="@string/promotion_wallet_title" android:textAllCaps="false" />
         <LinearLayout android:id="@+id/categoryHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <com.rescuefarm.ui.common.ResponsiveActionLayout
