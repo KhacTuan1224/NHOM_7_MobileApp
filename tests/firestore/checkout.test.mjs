@@ -535,6 +535,56 @@ test('customer cannot create an unreserved order or append items/payments/shipme
   assert.equal((await getDoc(doc(db, 'productBatches/batch-a'))).data().availableQuantity, 10);
 });
 
+test('Seller batch edit updates 80 to 15 without replacing creation and lifecycle metadata', async () => {
+  const path = 'productBatches/batch-a';
+  await seed({[path]: {id: 'batch-a', productId: 'product-a', activeCampaignId: '',
+    harvestDate: past, expiryDate: future, initialQuantity: 80, availableQuantity: 80,
+    reservedQuantity: 0, soldQuantity: 0, inventoryVersion: 2, status: 'AVAILABLE',
+    createdAt: past, updatedAt: past, everOrdered: false}});
+  const db = env.authenticatedContext('seller').firestore();
+  const edit = {harvestDate: Timestamp.fromMillis(now - 3600000),
+    expiryDate: Timestamp.fromMillis(now + 10 * 86400000), initialQuantity: 15,
+    availableQuantity: 15, status: 'AVAILABLE', inventoryVersion: 3, updatedAt: serverTimestamp()};
+  // The former Android set() payload removed server-owned metadata and was denied.
+  await assertFails(setDoc(doc(db, path), {id: 'batch-a', productId: 'product-a',
+    activeCampaignId: '', reservedQuantity: 0, soldQuantity: 0, ...edit}));
+  await assertSucceeds(runTransaction(db, async tx => {
+    await tx.get(doc(db, 'products/product-a'));
+    await tx.get(doc(db, path));
+    tx.update(doc(db, path), edit);
+  }));
+  const saved = (await getDoc(doc(db, path))).data();
+  assert.equal(saved.initialQuantity, 15);
+  assert.equal(saved.availableQuantity, 15);
+  assert.equal(saved.reservedQuantity, 0);
+  assert.equal(saved.soldQuantity, 0);
+  assert.equal(saved.inventoryVersion, 3);
+  assert.ok(saved.createdAt.isEqual(past));
+  assert.equal(saved.activeCampaignId, '');
+  assert.equal(saved.everOrdered, false);
+  await assertFails(updateDoc(doc(db, path), {...edit, initialQuantity: 14, availableQuantity: 14}));
+});
+
+test('Seller batch edit still rejects nonowners, unapproved sellers and reserved or sold inventory', async () => {
+  const path = 'productBatches/batch-a';
+  const edit = {initialQuantity: 15, availableQuantity: 15,
+    inventoryVersion: 1, updatedAt: serverTimestamp()};
+  await seed({'users/other-seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'}});
+  for (const uid of ['customer-a', 'other-seller'])
+    await assertFails(updateDoc(doc(env.authenticatedContext(uid).firestore(), path), edit));
+  await seed({'users/seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'PENDING'}});
+  const db = env.authenticatedContext('seller').firestore();
+  await assertFails(updateDoc(doc(db, path), edit));
+  await seed({'users/seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'}});
+  for (const [reservedQuantity, soldQuantity] of [[1, 0], [0, 1]]) {
+    await seed({[path]: {id: 'batch-a', productId: 'product-a', activeCampaignId: '',
+      harvestDate: past, expiryDate: future, initialQuantity: 10, availableQuantity: 9,
+      reservedQuantity, soldQuantity, inventoryVersion: 0, status: 'AVAILABLE',
+      createdAt: past, updatedAt: past}});
+    await assertFails(updateDoc(doc(db, path), edit));
+  }
+});
+
 test('batch referenced by a cancelled order cannot be deleted; archiving preserves the reference', async () => {
   await seed({'orders/cancelled': {ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller', status: 'CANCELLED'},
     'orders/cancelled/items/batch-a': {batchId: 'batch-a', productId: 'product-a'},

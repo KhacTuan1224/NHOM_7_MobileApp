@@ -52,6 +52,8 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
     private int locationRequest;
     private DatePickerDialog datePicker;
     private TimePickerDialog timePicker;
+    private RescueBatchPickerDialog batchPicker;
+    private TextView stockStatus;
     private final ActivityResultLauncher<String[]> locationPermissions = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 if (Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
@@ -82,9 +84,15 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
         model.state().observe(getViewLifecycleOwner(), value -> {
             view.findViewById(R.id.rescueEditorProgress).setVisibility(value.loading ? View.VISIBLE : View.GONE);
             submit.setEnabled(!value.loading && !locating); message.setText(value.message);
-            JSONArray values = value.value.optJSONArray("items"); if (values != null) choices = values;
+            JSONArray values = value.value.optJSONArray("items"); choices = values == null ? new JSONArray() : values;
+            boolean more = value.value.optBoolean("hasMore");
+            stockStatus.setText(!value.message.isEmpty() ? "Chưa tải đủ lô: " + value.message
+                    : value.loading || more ? "Đã tải " + choices.length() + " lô · đang tải tiếp…"
+                    : "Đã tải đủ " + choices.length() + " lô của cửa hàng.");
+            if (batchPicker != null) batchPicker.update(choices, value.loading, more, value.message);
+            if (!value.loading && value.message.isEmpty() && more) model.more();
         });
-        model.load("batches", "batches", body());
+        model.load("batches", "batches", body("includeUnavailable", true));
     }
     protected abstract int editorLayout();
     protected abstract String offerType();
@@ -104,12 +112,32 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
             pickupLatitude = state.getDouble("pickupLatitude"); pickupLongitude = state.getDouble("pickupLongitude");
             locationStatus.setText("Đã lưu vị trí điểm nhận. Có thể lấy GPS lại nếu đổi điểm nhận.");
         }
-        add("pickupAddress", "Địa chỉ / hướng dẫn đến điểm nhận", false, "", state);
+        // Keep the long address label outside the input so GPS text cannot overlap it.
+        TextView addressLabel = text(form, "Địa chỉ / hướng dẫn đến điểm nhận", false);
+        TextInputLayout addressLayout = new TextInputLayout(requireContext());
+        addressLayout.setHintEnabled(false);
+        addressLayout.setBoxBackgroundMode(TextInputLayout.BOX_BACKGROUND_OUTLINE);
+        TextInputEditText address = new TextInputEditText(addressLayout.getContext());
+        address.setId(View.generateViewId());
+        addressLabel.setLabelFor(address.getId());
+        address.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+                | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        address.setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
+        address.setMinLines(2);
+        address.setHorizontallyScrolling(false);
+        int padding = dp(requireContext(), 16);
+        address.setPadding(padding, padding, padding, padding);
+        address.setText(state == null ? "" : state.getString("pickupAddress", ""));
+        addressLayout.addView(address, new LinearLayout.LayoutParams(-1, -2));
+        form.addView(addressLayout, new LinearLayout.LayoutParams(-1, -2));
+        fields.put("pickupAddress", address);
     }
     protected final void addStockPicker() {
         selected = column(requireContext()); form.addView(selected); renderComponents();
+        stockStatus = text(form, "Đang tải lô của cửa hàng…", false);
         button(form, "Chọn lô nông sản (tối đa 12)", this::chooseBatch);
-        button(form, "Tải thêm lô của cửa hàng", model::more);
+        button(form, "Tải lại danh sách lô", model::refresh);
     }
     protected final void add(String key, String label, boolean numeric, String initial, Bundle state) {
         EditText input = field(form, label, numeric); input.setText(state == null ? initial : state.getString(key, initial)); fields.put(key, input);
@@ -200,39 +228,54 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
     private String value(String key) { return fields.get(key).getText().toString().trim(); }
     private void chooseBatch() {
         if (components.length() >= 12) { message.setText("Mỗi gói tối đa 12 lô."); return; }
-        if (choices.length() == 0) { message.setText("Chưa có lô đủ điều kiện trong phần đã tải. Thêm lô còn hạn, chưa gắn chiến dịch hoặc tải thêm danh sách."); return; }
-        String[] names = new String[choices.length()];
-        for (int i = 0; i < choices.length(); i++) {
-            JSONObject batch = choices.optJSONObject(i);
-            names[i] = batch.optString("productName") + " · " + batch.optDouble("availableQuantity") + " " + batch.optString("unit")
-                    + "\nHSD: " + date(batch.optLong("expiryDate")) + " · " + batch.optString("batchId");
-        }
-        new MaterialAlertDialogBuilder(requireContext()).setTitle("Chọn lô có tồn kho thật").setItems(names, (dialog, index) -> {
-            JSONObject batch = choices.optJSONObject(index);
-            for (int i = 0; i < components.length(); i++) if (components.optJSONObject(i).optString("batchId").equals(batch.optString("batchId"))) {
-                message.setText("Lô đã được thêm. Xóa rồi thêm lại để đổi lượng mỗi suất."); return;
-            }
+        if (batchPicker != null) return;
+        batchPicker = new RescueBatchPickerDialog(requireContext(), times.get("pickupEndAt"), id -> {
+            for (int i = 0; i < components.length(); i++)
+                if (components.optJSONObject(i).optString("batchId").equals(id)) return true;
+            return false;
+        }, this::chooseAmount, model::refresh, () -> batchPicker = null);
+        batchPicker.show();
+        RescueProgramsViewModel.State state = model.state().getValue();
+        if (state != null) batchPicker.update(choices, state.loading, state.value.optBoolean("hasMore"), state.message);
+    }
+    private void chooseAmount(JSONObject batch) {
             LinearLayout form = column(requireContext()); int pad = dp(requireContext(), 20); form.setPadding(pad, 0, pad, 0);
-            EditText amount = field(form, "Lượng trong MỖI suất (" + batch.optString("unit") + ")", true);
-            new MaterialAlertDialogBuilder(requireContext()).setTitle(batch.optString("productName")).setView(form)
-                    .setMessage("Ví dụ 0.5 kg trong mỗi suất × 10 suất sẽ giữ 5 kg từ lô này.")
-                    .setPositiveButton("Thêm lô", (d, w) -> {
+            TextView amountLabel = text(form, "Lượng trong MỖI suất (" + batch.optString("unit") + ")", false);
+            EditText amount = new EditText(requireContext());
+            amount.setId(View.generateViewId()); amountLabel.setLabelFor(amount.getId());
+            amount.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+            amount.setSingleLine(true); amount.setTextSize(16); amount.setMinHeight(dp(requireContext(), 48));
+            form.addView(amount, new LinearLayout.LayoutParams(-1, -2));
+            text(form, "Khả dụng: " + batch.optDouble("availableQuantity") + " " + batch.optString("unit")
+                    + ". Lượng giữ kho = lượng mỗi suất × số suất của gói.", false);
+            androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(batch.optString("productName")).setView(form)
+                    .setPositiveButton("Thêm lô", null).setNegativeButton("Đóng", null).create();
+            dialog.setOnShowListener(unused -> dialog.getButton(-1).setOnClickListener(v -> {
                         try {
                             double quantity = Double.parseDouble(amount.getText().toString().trim().replace(',', '.'));
                             if (!Double.isFinite(quantity) || quantity <= 0) throw new NumberFormatException();
+                            int units = Integer.parseInt(value("totalUnits"));
+                            if (units <= 0) throw new NumberFormatException();
+                            if (quantity * units > batch.optDouble("availableQuantity") + 0.000001) {
+                                amount.setError("Không đủ tồn cho " + units + " suất. Giảm lượng mỗi suất hoặc số suất của gói."); return;
+                            }
                             components.put(body("batchId", batch.optString("batchId"), "quantityPerUnit", quantity,
                                     "productName", batch.optString("productName"), "unit", batch.optString("unit")));
-                            renderComponents();
-                        } catch (NumberFormatException e) { message.setText("Lượng mỗi suất phải là số dương hợp lệ."); }
-                    }).setNegativeButton("Đóng", null).show();
-        }).setNegativeButton("Đóng", null).show();
+                            renderComponents(); dialog.dismiss();
+                        } catch (NumberFormatException e) { amount.setError("Nhập lượng dương và kiểm tra số suất của gói."); }
+                    }));
+            dialog.show();
     }
     private void renderComponents() {
         selected.removeAllViews();
+        if (components.length() == 0) text(selected, "Chưa chọn lô nông sản.", false);
         for (int i = 0; i < components.length(); i++) {
             final int index = i; JSONObject component = components.optJSONObject(i);
-            text(selected, component.optString("productName") + ": " + component.optDouble("quantityPerUnit") + " " + component.optString("unit") + " / suất", false);
-            button(selected, "Bỏ lô " + component.optString("productName"), () -> { components.remove(index); renderComponents(); });
+            LinearLayout row = card(selected);
+            text(row, component.optString("productName"), true);
+            text(row, component.optDouble("quantityPerUnit") + " " + component.optString("unit") + " / suất", false);
+            button(row, "Bỏ lô", () -> { components.remove(index); renderComponents(); });
         }
     }
     private void submit() {
@@ -271,6 +314,7 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
         if (locationProvider != null) { locationProvider.close(); locationProvider = null; }
         if (datePicker != null) { datePicker.dismiss(); datePicker = null; }
         if (timePicker != null) { timePicker.dismiss(); timePicker = null; }
+        if (batchPicker != null) { batchPicker.dismiss(); batchPicker = null; }
         fields.clear(); times.clear(); form = null; selected = null; gpsButton = null; locationStatus = null;
         super.onDestroyView();
     }
