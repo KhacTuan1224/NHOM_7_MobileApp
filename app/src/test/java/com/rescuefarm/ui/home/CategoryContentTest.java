@@ -65,7 +65,7 @@ public class CategoryContentTest {
                 RescueReason.NEAR_EXPIRY, UrgencyLevel.HIGH, RescueMode.FIXED_POINT,
                 Collections.singletonMap("mango-batch", 10D), 10D, 0D, 0D,
                 new Date(now - 60000), new Date(now + 3600000), 10D, 106D, 10D, 106D,
-                new Date(now), true, "Đồng Tháp", CampaignStatus.ACTIVE);
+                new Date(now), false, "Đồng Tháp", CampaignStatus.ACTIVE);
         story.setQuantityUnit("kg", "VERIFIED");
         ProductBatch batch = ProductBatch.restore("mango-batch", "mango", "fruit-story",
                 new Date(now - 60000), new Date(now + 3600000), 10, 10, 0, 0, BatchStatus.AVAILABLE, 1);

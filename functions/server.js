@@ -85,7 +85,8 @@ app.get("/health", (_, res) => {
   try { sepayStatus = Object.keys(require('./sepay').merchants()).length ? 'CONFIGURED' : 'NOT_CONFIGURED'; }
   catch (_) { sepayStatus = 'INVALID_CONFIGURATION'; }
   res.json({ok: true, paymentFlowVersion: 2, sepayStatus, promotionWalletVersion: 1,
-    promotionPolicy: 'SAVED_CUSTOMER_ONLY'});
+    promotionPolicy: 'SAVED_CUSTOMER_ONLY', rescueProgramsVersion: 1,
+    rescuePaymentPolicy: 'PICKUP_CASH_NO_PREPAYMENT'});
 });
 app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: auth}).router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
@@ -96,6 +97,8 @@ app.use(require('./seller-analytics').createSellerAnalytics({db, admin, authenti
 const campaignMedia = require('./campaign-media').createCampaignMedia({db, admin, authenticate: auth});
 app.use(campaignMedia.router);
 const worker = require('./notification-outbox').createNotificationWorker({db, admin});
+const rescuePrograms = require('./rescue-programs').createRescuePrograms({db, admin, authenticate: auth});
+app.use(rescuePrograms.router);
 app.use(require('./notifications-api').createNotificationsApi({db, admin, authenticate: auth}).router);
 app.post('/internal/notifications/run', async (req, res, next) => {
   try {
@@ -104,7 +107,9 @@ app.post('/internal/notifications/run', async (req, res, next) => {
     if (expected.length < 32 || actual.length !== expected.length || !require('node:crypto').timingSafeEqual(expected, actual))
       throw httpError(403, 'Worker credentials required');
     await campaignLifecycle.reconcileExpired();
+    const rescueResult = await rescuePrograms.reconcile();
     const result = await worker.runOnce();
+    result.rescuePrograms = rescueResult;
     result.mediaCleanup = await campaignMedia.reconcile();
     if (result.mediaCleanup.errors) result.attentionRequired = true;
     if (result.busy) {
@@ -225,7 +230,7 @@ migrateSellerPaymentProfiles().then(() => campaignMedia.migrateReferences()).the
     if (reconciling) return;
     reconciling = true;
     try {
-      const jobs = await Promise.allSettled([campaignLifecycle.reconcileExpired(), worker.runOnce(), campaignMedia.reconcile()]);
+      const jobs = await Promise.allSettled([campaignLifecycle.reconcileExpired(), worker.runOnce(), campaignMedia.reconcile(), rescuePrograms.reconcile()]);
       for (const result of jobs) if (result.status === 'rejected') console.error('Backend reconciliation:', result.reason.message);
     }
     catch (error) { console.error('Campaign reconciliation failed:', error.message); }

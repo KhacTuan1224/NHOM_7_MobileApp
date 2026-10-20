@@ -23,7 +23,17 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
   const admins = async () => (await db.collection('users').where('role', '==', 'ADMIN').get()).docs
     .filter(doc => doc.get('status') === 'ACTIVE').map(doc => doc.id);
 
+  async function nearbyAllowed(uid, offerId) {
+    const [preference, offer] = await Promise.all([db.collection('rescueNearbyPreferences').doc(uid).get(), db.collection('rescueOffers').doc(offerId).get()]);
+    if (!preference.exists || !preference.get('enabled') || time(preference.get('expiresAt')) <= now()
+        || !offer.exists || offer.get('status') !== 'OPEN' || offer.get('closesAt') <= now() || offer.get('availableUnits') <= 0) return false;
+    const seller = await db.collection('users').doc(offer.get('sellerId')).get();
+    return seller.exists && seller.get('status') === 'ACTIVE' && seller.get('sellerStatus') === 'APPROVED'
+      && require('./rescue-policy').distanceKm(preference.data(), offer.data()) <= preference.get('radiusKm');
+  }
+
   async function audience(event) {
+    if (event.kind === 'RESCUE_NEARBY') return await nearbyAllowed(event.recipientUid, event.resourceId) ? [event.recipientUid] : [];
     if (event.kind === 'DIRECT') return [event.recipientUid];
     if (event.kind === 'ORDER_PAYMENT') {
       const order = await db.collection('orders').doc(event.resourceId).get();
@@ -64,7 +74,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     const titles = {ORDER: 'Cập nhật đơn hàng', CAMPAIGN: 'Cập nhật chiến dịch', PROMOTION: 'Sản phẩm yêu thích có ưu đãi',
       SELLER_APPLICATION: 'Kết quả hồ sơ người bán', REPORT: 'Cập nhật báo cáo', PRODUCT: 'Kết quả kiểm duyệt sản phẩm', REVIEW: 'Kết quả kiểm duyệt đánh giá', USER: 'Cập nhật tài khoản'};
     const pending = event.kind === 'ADMINS';
-    return {type: resourceType === 'ORDER' ? 'ORDER' : resourceType === 'PROMOTION' ? 'PROMOTION' : event.kind === 'CAMPAIGN' ? 'CAMPAIGN' : 'MODERATION',
+    return {type: resourceType === 'RESCUE_OFFER' ? 'SYSTEM' : resourceType === 'ORDER' ? 'ORDER' : resourceType === 'PROMOTION' ? 'PROMOTION' : event.kind === 'CAMPAIGN' ? 'CAMPAIGN' : 'MODERATION',
       resourceType, referenceId, action: pending ? 'REVIEW' : event.kind === 'CAMPAIGN' || event.kind === 'PROMOTION' ? 'VIEW' : 'RESULT',
       title: text(event.title) || (pending ? 'Có nội dung mới cần xử lý' : titles[resourceType] || 'Cập nhật RescueFarm'),
       body: text(event.publicMessage) || (event.kind === 'ORDER_PAYMENT' ? 'Cửa hàng đã xác nhận thanh toán chuyển khoản.' : pending ? 'Mở để xem và xử lý nội dung.' : `Trạng thái: ${decisionLabel(text(event.decision)) || 'Đã cập nhật'}`)};
@@ -80,7 +90,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
         const id = digest(doc.id + '|' + uid), ref = db.collection('notificationDeliveries').doc(id);
         await db.runTransaction(async tx => {
           if ((await tx.get(ref)).exists) return;
-          tx.create(ref, {...data, id: event.inboxId || id, eventId: doc.id, sourceUpdatedAt: event.sourceUpdatedAt || event.createdAt, userId: uid, status: 'PENDING', inboxCreated: false,
+          tx.create(ref, {...data, audiencePolicy: event.kind === 'RESCUE_NEARBY' ? 'RESCUE_NEARBY' : '', id: event.inboxId || id, eventId: doc.id, sourceUpdatedAt: event.sourceUpdatedAt || event.createdAt, userId: uid, status: 'PENDING', inboxCreated: false,
             pushAttempted: false, pushDelivered: false, deliveredTokenIds: [], retryCount: 0, nextAttemptAt: ts(now()), createdAt: stamp()});
         });
       }
@@ -109,6 +119,10 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     });
     const inbox = db.collection('notifications').doc(delivery.id);
     try {
+      if (delivery.audiencePolicy === 'RESCUE_NEARBY' && !await nearbyAllowed(delivery.userId, delivery.referenceId)) {
+        await ownedUpdate({status: 'SKIPPED', lastError: 'Đã tắt nhắc, hết hạn vị trí hoặc gói không còn phù hợp.', leaseUntil: ts(0)});
+        return {skipped: true};
+      }
       await db.runTransaction(async tx => {
         const [existing, current] = await Promise.all([tx.get(inbox), tx.get(ref)]);
         if (current.get('leaseId') !== leaseId) throw Error('Delivery lease changed');

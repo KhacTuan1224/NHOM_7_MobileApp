@@ -49,6 +49,8 @@ public class SellerDashboardFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle savedState) {
+        view.findViewById(R.id.openRescueProgramsButton).setOnClickListener(v ->
+                Navigation.findNavController(v).navigate(R.id.rescueHubFragment));
         message = view.findViewById(R.id.sellerDashboardMessage);
         stats = view.findViewById(R.id.sellerDashboardStats);
         analytics = view.findViewById(R.id.sellerDashboardAnalytics);

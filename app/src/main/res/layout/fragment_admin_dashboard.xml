@@ -50,6 +50,7 @@
                         android:text="Duyệt chiến dịch" app:strokeColor="@color/admin_campaigns"
                         app:iconTint="@color/admin_campaigns" app:backgroundTint="@color/admin_campaigns_soft" />
                 </com.rescuefarm.ui.common.ResponsiveActionLayout>
+                <include layout="@layout/view_rescue_programs_entry" />
                 <LinearLayout android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
                 <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminDashboardBackButton"

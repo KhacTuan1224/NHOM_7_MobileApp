@@ -18,6 +18,7 @@ function createNotificationsApi({db, admin, authenticate}) {
       const found = candidates.filter(c => c.exists);
       if (found.length === 1) type = found[0].type;
     }
+    if (type === 'RESCUE_OFFER') return {destination: 'rescueHubFragment', args: referenceId ? {offerId: referenceId} : {tab: 'subscriptions'}};
     if (!type || !referenceId) return {destination: 'notificationFragment', args: {}, message: 'Thông báo cũ chưa có thông tin điều hướng cụ thể.'};
     if (!Object.hasOwn(collections, type)) return {destination: 'notificationFragment', args: {}, message: 'Nội dung thông báo không còn khả dụng.'};
     const source = await db.collection(collections[type]).doc(referenceId).get();

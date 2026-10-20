@@ -80,6 +80,8 @@ The GitHub workflow creates a debug-signed APK for development/demo installation
 
 ## Backend and Firebase setup
 
+- **Giải cứu mở rộng:** xem [hướng dẫn setup và vận hành sáu phương thức](docs/rescue-programs-setup.md): hộp bí ẩn, mua chung, định kỳ, sỉ B2B, quyên góp và giờ chót. Module có giao diện Guest/Customer/Seller/Admin, giữ tồn kho từ lô thật và dùng scheduler thông báo hiện có.
+
 - **Render backend:** follow [`functions/README.md`](functions/README.md). Render needs `FIREBASE_SERVICE_ACCOUNT_JSON` as a server-side secret. Never add it to Android or commit it. Check the deployed service at `/health`.
 - **Cloudinary uploads:** follow [`cloudinary-worker/README.md`](cloudinary-worker/README.md). Keep `CLOUDINARY_API_SECRET` in Cloudflare Worker secrets; configure only the Cloud name and Worker URL in Android.
 - **Firestore rules and indexes:** from the repository root, deploy with an authenticated Firebase CLI:

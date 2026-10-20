@@ -4,6 +4,15 @@
     android:id="@+id/main_navigation"
     app:startDestination="@id/launchLoadingFragment">
 
+    <fragment android:id="@+id/rescueHubFragment"
+        android:name="com.rescuefarm.ui.rescue.RescueHubFragment" android:label="@string/rescue_hub_title">
+        <argument android:name="offerId" app:argType="string" android:defaultValue="" />
+        <argument android:name="tab" app:argType="string" android:defaultValue="" />
+        <deepLink app:uri="rescuefarm://rescue/{offerId}" />
+    </fragment>
+    <fragment android:id="@+id/rescueOfferEditorFragment"
+        android:name="com.rescuefarm.ui.rescue.RescueOfferEditorFragment" android:label="@string/rescue_create" />
+
     <fragment
         android:id="@+id/launchLoadingFragment"
         android:name="com.rescuefarm.ui.auth.LaunchLoadingFragment"

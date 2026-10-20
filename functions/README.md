@@ -13,6 +13,8 @@ This folder replaces Firebase Cloud Functions with an Express API. The Firebase 
 
 ## Routes
 
+- **Expanded rescue programs:** `/rescue/*` provides stock-backed mystery boxes, group pledges, recurring opt-in reminders, private business quotes, verified charity pickup and nearby flash alerts. These use cash-at-pickup with explicit buyer receipt, not prepayment/refunds or unattended recurring purchases. See [setup, API and operation guide](../docs/rescue-programs-setup.md). Deploy the new indexes and keep the existing notification worker heartbeat configured; `/health` exposes `rescueProgramsVersion: 1`.
+
 Password recovery uses Firebase Authentication's native email service directly from Android. It needs no Render reset endpoint, mail API key, Firestore reset collection or backend deployment. See `docs/password-reset.md` in the repository root for the audited project configuration, limits and end-to-end tests.
 
 - `POST /promotions/catalog`: paginated public promotion cards; `mine: true` requires Customer authentication and returns only the caller's saved offers.

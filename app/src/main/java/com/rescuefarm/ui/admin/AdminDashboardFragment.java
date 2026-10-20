@@ -42,6 +42,8 @@ public final class AdminDashboardFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        view.findViewById(R.id.openRescueProgramsButton).setOnClickListener(v ->
+                Navigation.findNavController(v).navigate(R.id.rescueHubFragment));
         progress = view.findViewById(R.id.adminDashboardProgress);
         message = view.findViewById(R.id.adminDashboardMessage);
         stats = view.findViewById(R.id.adminDashboardStats);

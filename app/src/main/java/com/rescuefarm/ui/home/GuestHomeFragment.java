@@ -93,6 +93,8 @@ public class GuestHomeFragment extends Fragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state); renderer = new HomeCardRenderer(this);
+        view.findViewById(R.id.openRescueProgramsButton).setOnClickListener(v ->
+                Navigation.findNavController(v).navigate(R.id.rescueHubFragment));
         message = view.findViewById(R.id.homeMessage); progress = view.findViewById(R.id.homeProgress);
         greeting = view.findViewById(R.id.homeGreeting);
         locationLabel = view.findViewById(R.id.homeLocationLabel);
