@@ -101,6 +101,9 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
     protected final void section(int id) { form = requireView().findViewById(id); }
     protected final void setDateTime(String key, long value) {
         times.put(key, value); fields.get(key).setText(date(value));
+        fields.get(key).setError(null);
+        message.setText("");
+        model.clearMessage();
     }
     protected final void addPickup(@Nullable Bundle state) {
         text(form, "Lấy GPS tại nơi giao nông sản cho khách. Địa chỉ tự điền và có thể bổ sung số nhà, tên cửa hàng hoặc hướng dẫn.", false);
@@ -158,19 +161,17 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
     }
     private void chooseDateTime(String key, String label) {
         if (datePicker != null && datePicker.isShowing() || timePicker != null && timePicker.isShowing()) return;
-        Calendar selectedTime = Calendar.getInstance(); selectedTime.setTimeInMillis(times.get(key));
+        Calendar selectedTime = RescueTime.calendar(times.get(key));
         datePicker = new DatePickerDialog(requireContext(), (picker, year, month, day) -> {
             if (getView() == null) return;
             timePicker = new TimePickerDialog(requireContext(), (clock, hour, minute) -> {
                 if (getView() == null) return;
                 selectedTime.set(year, month, day, hour, minute, 0); selectedTime.set(Calendar.MILLISECOND, 0);
-                times.put(key, selectedTime.getTimeInMillis()); fields.get(key).setText(date(selectedTime.getTimeInMillis()));
+                setDateTime(key, selectedTime.getTimeInMillis());
             }, selectedTime.get(Calendar.HOUR_OF_DAY), selectedTime.get(Calendar.MINUTE), true);
-            timePicker.setTitle(label + " · Chọn giờ"); timePicker.show();
+            timePicker.setTitle(label + " · Giờ Việt Nam"); timePicker.show();
         }, selectedTime.get(Calendar.YEAR), selectedTime.get(Calendar.MONTH), selectedTime.get(Calendar.DAY_OF_MONTH));
-        Calendar today = Calendar.getInstance(); today.set(Calendar.HOUR_OF_DAY, 0); today.set(Calendar.MINUTE, 0);
-        today.set(Calendar.SECOND, 0); today.set(Calendar.MILLISECOND, 0);
-        datePicker.getDatePicker().setMinDate(today.getTimeInMillis());
+        datePicker.getDatePicker().setMinDate(RescueTime.pickerMinDate(System.currentTimeMillis()));
         datePicker.setTitle(label + " · Chọn ngày"); datePicker.show();
     }
     private void requestPickupLocation() {
@@ -280,6 +281,11 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
     }
     private void submit() {
         try {
+            if ("FLASH".equals(offerType()) && times.get("closesAt") - System.currentTimeMillis() > 2 * 3600000L) {
+                fields.get("closesAt").setError("Chọn hạn đóng đặt trong 2 giờ tới.");
+                message.setText("Hạn đóng nhận đặt vượt 2 giờ tính từ hiện tại. Giờ hiển thị là giờ Việt Nam (UTC+7); bấm 15/30/60 phút để đặt nhanh.");
+                return;
+            }
             if (locating) { message.setText("Đang lấy vị trí điểm nhận, vui lòng chờ."); return; }
             if (pickupLatitude == null || pickupLongitude == null) { message.setText("Bấm lấy GPS tại điểm nhận trước khi tạo gói."); return; }
             if (value("pickupAddress").length() < 5) { fields.get("pickupAddress").setError("Bổ sung địa chỉ hoặc hướng dẫn để khách tìm được điểm nhận."); return; }

@@ -27,6 +27,11 @@ public final class RescueProgramsViewModel extends ViewModel {
     private JSONObject query = new JSONObject(), value = new JSONObject();
     public RescueProgramsViewModel(SavedStateHandle saved) { this.saved = saved; }
     public LiveData<State> state() { return state; }
+    public void clearMessage() {
+        State previous = state.getValue();
+        if (previous != null && !previous.message.isEmpty())
+            state.setValue(new State(previous.loading, previous.screen, previous.value, ""));
+    }
     public String requestId() {
         String id = saved.get("createRequestId");
         if (id == null) { id = java.util.UUID.randomUUID().toString(); saved.set("createRequestId", id); }

@@ -78,6 +78,11 @@ public final class RescueHubFragment extends Fragment {
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle saved) {
         super.onViewCreated(view, saved);
         actor = uid(); content = view.findViewById(R.id.rescueContent); type = view.findViewById(R.id.rescueType); tabs = view.findViewById(R.id.rescueTabs);
+        if (getArguments() != null && getArguments().getBoolean("standalone")) {
+            view.setBackgroundColor(0xFFFFFFFF);
+            ((TextView) view.findViewById(R.id.rescueHeading)).setText("Chi tiết gói");
+            view.findViewById(R.id.rescueIntroduction).setVisibility(View.GONE);
+        }
         model = new ViewModelProvider(this).get(RescueProgramsViewModel.class);
         location = LocationProviderFactory.create(requireContext());
         if (saved != null) {
@@ -85,7 +90,8 @@ public final class RescueHubFragment extends Fragment {
             if (saved.containsKey("latitude")) { latitude = saved.getDouble("latitude"); longitude = saved.getDouble("longitude"); }
         }
         view.findViewById(R.id.rescueBack).setOnClickListener(v -> {
-            if (model.state().getValue() != null && "detail".equals(model.state().getValue().screen)) browse("catalog");
+            if (getArguments() != null && getArguments().getBoolean("standalone")) NavHostFragment.findNavController(this).navigateUp();
+            else if (model.state().getValue() != null && "detail".equals(model.state().getValue().screen)) browse("catalog");
             else NavHostFragment.findNavController(this).navigateUp();
         });
         view.findViewById(R.id.rescueRefresh).setOnClickListener(v -> model.refresh());
@@ -114,6 +120,9 @@ public final class RescueHubFragment extends Fragment {
         });
         String offerId = getArguments() == null ? "" : getArguments().getString("offerId", "");
         if (saved == null && !offerId.isEmpty()) openOffer(offerId);
+        else if (saved == null && getArguments() != null && "mine".equals(getArguments().getString("initialTab"))) {
+            if (tabs.getTabCount() > 1) tabs.selectTab(tabs.getTabAt(1)); else browse("catalog");
+        }
         else model.restore();
     }
     private void configureTabs() {
@@ -164,6 +173,7 @@ public final class RescueHubFragment extends Fragment {
         TextView message = root.findViewById(R.id.rescueMessage);
         message.setText(state.message); message.setVisibility(state.message.isEmpty() ? View.GONE : View.VISIBLE);
         boolean catalog = state.screen.equals("catalog");
+        tabs.setVisibility(getArguments() != null && getArguments().getBoolean("standalone") ? View.GONE : View.VISIBLE);
         type.setVisibility(catalog ? View.VISIBLE : View.GONE);
         root.findViewById(R.id.rescueActions).setVisibility(catalog ? View.VISIBLE : View.GONE);
         ((TextView) root.findViewById(R.id.rescueNearby)).setText(nearby ? "Xem tất cả khu vực" : getString(R.string.rescue_nearby));

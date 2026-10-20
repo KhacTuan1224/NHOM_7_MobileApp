@@ -13,14 +13,14 @@
             <com.google.android.material.button.MaterialButton android:id="@+id/rescueBack"
                 style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:text="Quay lại" />
-            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            <TextView android:id="@+id/rescueHeading" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                 android:text="@string/rescue_hub_title" android:fontFamily="@font/ibm_plex_sans"
                 android:textAppearance="@style/TextAppearance.Material3.TitleLarge" android:textColor="@color/rescue_primary" />
             <com.google.android.material.button.MaterialButton android:id="@+id/rescueRefresh"
                 style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:text="@string/refresh_action" />
         </com.rescuefarm.ui.common.ResponsiveActionLayout>
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TextView android:id="@+id/rescueIntroduction" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/rescue_hub_intro" android:textSize="18sp" android:textStyle="bold"
             android:paddingTop="12dp" android:textColor="@color/rescue_on_surface" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"

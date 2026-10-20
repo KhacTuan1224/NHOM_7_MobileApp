@@ -3,6 +3,7 @@ package com.rescuefarm.ui.rescue;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import com.rescuefarm.R;
+import static com.rescuefarm.ui.rescue.RescueUi.text;
 
 /** Builds the box-specific form; no method switch or unrelated plan fields. */
 public final class MysteryBoxEditorFragment extends BaseRescueOfferEditorFragment {
@@ -24,6 +25,7 @@ public final class MysteryBoxEditorFragment extends BaseRescueOfferEditorFragmen
         add("totalUnits", "Số hộp có thể chuẩn bị", true, "10", state);
         add("maxUnitsPerClaim", "Số hộp tối đa mỗi khách", true, "1", state);
         section(R.id.mysteryPickup);
+        text(form, "Lịch nhận theo giờ Việt Nam (UTC+7).", false);
         long now = System.currentTimeMillis();
         addDateTime("closesAt", "Ngừng nhận đặt hộp", now + 3600000, state);
         addDateTime("pickupStartAt", "Khách bắt đầu nhận hộp", now + 3600000, state);

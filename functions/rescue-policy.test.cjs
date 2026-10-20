@@ -11,6 +11,15 @@ test('both supported types validate with explicit stock and pickup windows', () 
   assert.deepEqual(P.TYPES, ['MYSTERY_BOX', 'FLASH']);
   for (const type of P.TYPES) assert.equal(P.validateOffer(offer({type, unitPrice: 20000}), now).type, type);
 });
+test('Vietnam flash pickup timestamps keep their UTC instant and the two-hour limit', () => {
+  const clock = Date.parse('2026-10-20T14:00:00Z');
+  const input = offer({type: 'FLASH', closesAt: Date.parse('2026-10-20T21:30:00+07:00'),
+    pickupStartAt: Date.parse('2026-10-20T21:01:00+07:00'), pickupEndAt: Date.parse('2026-10-20T22:00:00+07:00')});
+  assert.equal(P.validateOffer(input, clock).closesAt - clock, 30 * 60000);
+  assert.throws(() => P.validateOffer({...input, closesAt: input.closesAt + 7 * 3600000,
+    pickupStartAt: input.pickupStartAt + 7 * 3600000, pickupEndAt: input.pickupEndAt + 7 * 3600000}, clock), /2 giờ/);
+});
+
 test('free offers, invalid windows, duplicate batches and fractions are rejected', () => {
   for (const bad of [{unitPrice: 0}, {pickupEndAt: now}, {latitude: 100},
     {totalUnits: 1.5}, {type: 'FLASH', closesAt: now + 3 * 3600000},

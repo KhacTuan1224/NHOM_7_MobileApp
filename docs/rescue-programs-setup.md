@@ -2,7 +2,16 @@
 
 ## Phạm vi đã triển khai
 
-Mở **Giải cứu mở rộng** từ Home của Guest/Customer hoặc dashboard Seller/Admin. Đây là module Android Java theo MVVM, dùng API Express trên Render và giao dịch Firestore. Không thêm nền tảng mới, không thay đổi checkout/SePay hiện tại, không cần Room migration.
+Home Guest/Customer có hai icon riêng **Flash Sale** và **Hộp bí ẩn**. Seller/Admin tiếp tục dùng **Giải cứu mở rộng** trong dashboard để tạo và quản lý gói. Đây là module Android Java theo MVVM, dùng API Express trên Render và giao dịch Firestore. Không thay đổi checkout/SePay hiện tại, không cần Room migration.
+
+### Hai trang khám phá dành cho khách
+
+- **Flash Sale:** danh sách riêng, ảnh nông sản (khi có), giá gốc/giá giảm, phần trăm giảm tính từ giá thật, số suất còn lại, giờ nhận và đếm ngược theo `closesAt`. Sắp xếp theo hạn gần nhất hoặc giá thấp, tải thêm theo cursor. Nút **Chớp ngay** mở chi tiết để xác nhận số suất. Khi hết giờ, nút bị khóa và danh sách được làm mới.
+- **Hộp bí ẩn:** nền trắng và ba hộp vẽ bằng Canvas. Idle có chuyển động nổi và nghiêng nhẹ; chạm hộp sẽ tiến về giữa, rung, bật nắp, phát sáng và tung hạt giấy, sau đó hiện thông tin gói. Hộp chưa có gói thật được làm mờ và có nút **Mở thử**, kết thúc bằng thông báo sắp lên kệ thay vì thẻ mua hàng. Có thể dùng các nút Hộp 1/2/3, mở hộp khác hoặc đổi bộ hộp nếu có hơn ba gói. Animation dừng khi rời màn hình và tôn trọng cài đặt tắt animation của hệ thống.
+- Mở animation không tạo đăng ký, không trừ tiền, không giữ kho. Giá và giờ nhận hiển thị trước khi xác nhận suất; nguồn thành phần của hộp vẫn được backend giữ riêng đến khi nhận hàng.
+- **Suất của tôi** mở luồng đăng ký hiện có. Chi tiết và các thao tác nhận/hủy/chuẩn bị hàng tiếp tục dùng API kiểm tra quyền và tồn kho hiện tại.
+
+Cài APK mới để có giao diện. Deploy backend mới để bổ sung `imageUrl` cho thẻ Flash Sale; APK vẫn dùng được backend cũ với icon thay ảnh. Không cần thêm biến môi trường, SDK animation, Firestore index hoặc dịch vụ trả phí. Đồ họa hộp và hiệu ứng đều chạy native trên thiết bị.
 
 | Phương thức | Luồng có thể dùng |
 | --- | --- |
@@ -146,7 +155,7 @@ $env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=D:\NHOM_7_MobileApp\build\
 3. Dashboard Seller → Giải cứu mở rộng → **Tạo gói giải cứu**. Chọn một trong hai phương thức; mỗi phương thức mở một màn riêng:
    - **Hộp bí ẩn:** giới thiệu hộp → thành phần từng hộp → giá/số hộp → lịch và điểm nhận.
    - **Giờ chót:** khung bán ngắn và nút chọn nhanh 15/30/60 phút → GPS điểm nhận → hàng cần bán nhanh → giá và số phần còn lại.
-4. Điền phương thức, phân loại, thông tin thành phần/dị ứng, số suất, giới hạn mỗi khách, giá trị gốc và giá giải cứu. Chạm từng mốc thời gian để chọn ngày trên lịch, rồi chọn giờ; không nhập chuỗi ngày giờ.
+4. Điền phương thức, phân loại, thông tin thành phần/dị ứng, số suất, giới hạn mỗi khách, giá trị gốc và giá giải cứu. Chạm từng mốc thời gian để chọn ngày trên lịch, rồi chọn giờ; không nhập chuỗi ngày giờ. Phần giải cứu hiển thị và chọn theo **giờ Việt Nam (UTC+7)**, kể cả emulator dùng GMT; khi gửi API vẫn dùng timestamp UTC, không cộng thêm 7 giờ vào timestamp. Nút 15/30/60 phút tính từ lúc bấm, cập nhật cả ba mốc; hạn đóng đặt phải trong 2 giờ tính từ lúc tạo. Khi đổi lịch, thông báo lỗi cũ được xóa để tránh hiểu nhầm là yêu cầu mới vẫn thất bại.
    Tại điểm nhận, bấm **Lấy vị trí hiện tại bằng GPS** và cấp quyền vị trí khi dùng ứng dụng. App tự lưu vị trí bản đồ và tìm địa chỉ để điền sẵn, không yêu cầu nhập vĩ độ/kinh độ. Kiểm tra hoặc bổ sung số nhà/tên cửa hàng/hướng dẫn; nếu dịch vụ tìm địa chỉ không khả dụng, có thể nhập phần địa chỉ mô tả trong khi vẫn giữ vị trí GPS đã lấy. GPS dùng để chỉ đường, địa chỉ giúp khách nhận biết đúng nơi nhận. Nếu đổi sang điểm nhận khác, lấy GPS lại tại điểm mới.
 5. Thêm lô, nhập lượng **trong một suất**. Ví dụ 0,5 kg rau + 0,2 kg củ mỗi hộp, 10 hộp sẽ giữ 5 kg rau và 2 kg củ.
 6. Kiểm tra tổng lượng cần giữ không vượt tồn khả dụng. Giá trị gốc mỗi suất không được lớn hơn tổng giá gốc các thành phần. Tạo gói.

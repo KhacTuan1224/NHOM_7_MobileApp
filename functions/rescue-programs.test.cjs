@@ -140,6 +140,18 @@ test('retired recurring offers release reserved stock at cutoff without generati
   assert.equal((await inventory()).availableQuantity, 10);
 });
 
+test('flash marketplace can show source images while mystery contents remain private', async () => {
+  await db.doc('products/p').update({imageUrls: ['https://example.com/vegetables.jpg']});
+  await create({requestId: 'flash-card', type: 'FLASH', totalUnits: 2});
+  await create({requestId: 'mystery-card', totalUnits: 2});
+  const catalog = (await post('catalog', {}, '')).body.items;
+  assert.equal(catalog.find(o => o.type === 'FLASH').imageUrl, 'https://example.com/vegetables.jpg');
+  assert.equal(catalog.find(o => o.type === 'MYSTERY_BOX').imageUrl, undefined);
+  for (const card of catalog) assert.equal(card.components, undefined);
+  await db.doc('products/p').update({status: 'HIDDEN'});
+  assert.equal((await post('catalog', {type: 'FLASH'}, '')).body.items[0].imageUrl, '');
+});
+
 test('creation atomically holds physical stock, redacts mystery contents and replays after cutoff', async () => {
   const request = input(); assert.equal((await post('create', request)).status, 200);
   assert.equal((await inventory()).availableQuantity, 0); assert.equal((await inventory()).reservedQuantity, 10);
