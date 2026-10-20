@@ -33,6 +33,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
   }
 
   async function audience(event) {
+    if (event.resourceType === 'RESCUE_OFFER' && !text(event.resourceId)) return [];
     if (event.kind === 'RESCUE_NEARBY') return await nearbyAllowed(event.recipientUid, event.resourceId) ? [event.recipientUid] : [];
     if (event.kind === 'DIRECT') return [event.recipientUid];
     if (event.kind === 'ORDER_PAYMENT') {
@@ -119,6 +120,10 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     });
     const inbox = db.collection('notifications').doc(delivery.id);
     try {
+      if (delivery.resourceType === 'RESCUE_OFFER' && !text(delivery.referenceId)) {
+        await ownedUpdate({status: 'SKIPPED', lastError: 'Thông báo không còn gói giải cứu để mở.', leaseUntil: ts(0)});
+        return {skipped: true};
+      }
       if (delivery.audiencePolicy === 'RESCUE_NEARBY' && !await nearbyAllowed(delivery.userId, delivery.referenceId)) {
         await ownedUpdate({status: 'SKIPPED', lastError: 'Đã tắt nhắc, hết hạn vị trí hoặc gói không còn phù hợp.', leaseUntil: ts(0)});
         return {skipped: true};

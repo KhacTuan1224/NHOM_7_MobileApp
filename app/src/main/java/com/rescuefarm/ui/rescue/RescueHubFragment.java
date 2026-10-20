@@ -44,7 +44,7 @@ public final class RescueHubFragment extends Fragment {
     private TabLayout tabs;
     private LocationProvider location;
     private Double latitude, longitude;
-    private String subscriptionId = "", actor = "";
+    private String actor = "";
     private boolean nearby, enablingAlerts;
     private boolean configuringTabs;
     private UserRole configuredRole;
@@ -81,7 +81,7 @@ public final class RescueHubFragment extends Fragment {
         model = new ViewModelProvider(this).get(RescueProgramsViewModel.class);
         location = LocationProviderFactory.create(requireContext());
         if (saved != null) {
-            nearby = saved.getBoolean("nearby"); subscriptionId = saved.getString("subscriptionId", "");
+            nearby = saved.getBoolean("nearby");
             if (saved.containsKey("latitude")) { latitude = saved.getDouble("latitude"); longitude = saved.getDouble("longitude"); }
         }
         view.findViewById(R.id.rescueBack).setOnClickListener(v -> {
@@ -113,10 +113,8 @@ public final class RescueHubFragment extends Fragment {
             if (configuredRole != value) { configureTabs(); view.findViewById(R.id.rescueCreate).setVisibility(seller() ? View.VISIBLE : View.GONE); model.refresh(); }
         });
         String offerId = getArguments() == null ? "" : getArguments().getString("offerId", "");
-        if (saved == null && !offerId.isEmpty()) openOffer(offerId, "");
-        else if (saved == null && getArguments() != null && "subscriptions".equals(getArguments().getString("tab")) && !seller() && !admin()) {
-            tabs.selectTab(tabs.getTabAt(2));
-        } else model.restore();
+        if (saved == null && !offerId.isEmpty()) openOffer(offerId);
+        else model.restore();
     }
     private void configureTabs() {
         configuredRole = role(); configuringTabs = true;
@@ -124,7 +122,7 @@ public final class RescueHubFragment extends Fragment {
         tabs.removeAllTabs();
         String[] names = admin() ? new String[]{"Khám phá"}
                 : seller() ? new String[]{"Khám phá", "Gói cửa hàng", "Tác động"}
-                : new String[]{"Khám phá", "Suất của tôi", "Gói định kỳ"};
+                : new String[]{"Khám phá", "Suất của tôi"};
         for (String name : names) tabs.addTab(tabs.newTab().setText(name));
         tabs.selectTab(tabs.getTabAt(Math.min(position, names.length - 1))); configuringTabs = false;
     }
@@ -145,21 +143,19 @@ public final class RescueHubFragment extends Fragment {
         else if (login()) {
             if (position == 1) browse("mine");
             else if (seller()) browse("impact");
-            else browse("subscriptions");
         }
     }
     private void browse(String screen) {
-        String path = screen.equals("subscriptions") ? "subscriptions/list" : screen;
         JSONObject query = body();
         if (screen.equals("catalog")) {
             query = body("type", TYPES[type.getSelectedItemPosition()]);
             if (nearby && latitude != null) query = body("type", TYPES[type.getSelectedItemPosition()], "nearby", true,
                     "latitude", latitude, "longitude", longitude, "radiusKm", 5);
         } else if (screen.equals("impact")) query = body("sellerId", uid());
-        model.load(screen, path, query);
+        model.load(screen, screen, query);
     }
-    private void openOffer(String id, String subscription) {
-        subscriptionId = subscription; model.load("detail", "detail", body("offerId", id));
+    private void openOffer(String id) {
+        model.load("detail", "detail", body("offerId", id));
     }
     private void render(RescueProgramsViewModel.State state) {
         View root = getView(); if (root == null) return;
@@ -180,8 +176,7 @@ public final class RescueHubFragment extends Fragment {
             JSONArray items = state.value.optJSONArray("items");
             if (items != null) for (int i = 0; i < items.length(); i++) {
                 JSONObject value = items.optJSONObject(i); if (value == null) continue;
-                if (state.screen.equals("subscriptions")) subscription(value);
-                else if (state.screen.equals("mine") && !seller()) claim(value, value.optJSONObject("offer"), false);
+                if (state.screen.equals("mine") && !seller()) claim(value, value.optJSONObject("offer"), false);
                 else offerCard(value);
             }
             if (state.value.optBoolean("hasMore")) button(content, "Xem thêm", model::more).setEnabled(!state.loading);
@@ -197,7 +192,7 @@ public final class RescueHubFragment extends Fragment {
                 + " · còn " + offer.optInt("availableUnits") + " suất", false);
         text(card, "Nhận: " + date(offer.optLong("pickupStartAt")) + " – " + date(offer.optLong("pickupEndAt")), false);
         if (offer.has("distanceKm")) text(card, String.format(java.util.Locale.forLanguageTag("vi-VN"), "Cách bạn %.1f km", offer.optDouble("distanceKm")), false);
-        button(card, "Xem gói giải cứu", () -> openOffer(offer.optString("id"), ""));
+        button(card, "Xem gói giải cứu", () -> openOffer(offer.optString("id")));
     }
     private void detail(JSONObject offer, JSONObject response) {
         LinearLayout card = card(content);
@@ -226,11 +221,6 @@ public final class RescueHubFragment extends Fragment {
                 if (login()) quantity(offer);
             });
         }
-        if (customer() && offer.optString("type").equals("SUBSCRIPTION")) button(card, "Theo dõi gói định kỳ", () ->
-                new MaterialAlertDialogBuilder(requireContext()).setTitle("Chu kỳ nhắc nhận nông sản")
-                        .setMessage("Mỗi kỳ bạn xác nhận suất và giá mới trước khi đặt. Không tự tạo đơn hoặc trừ tiền.")
-                        .setPositiveButton("Mỗi 7 ngày", (d, w) -> subscribe(offer, 7))
-                        .setNeutralButton("Mỗi 30 ngày", (d, w) -> subscribe(offer, 30)).setNegativeButton("Đóng", null).show());
         if (claims != null) for (int i = 0; i < claims.length(); i++) if (claims.optJSONObject(i) != null) claim(claims.optJSONObject(i), offer, true);
         JSONObject impact = response.optJSONObject("impact");
         JSONArray received = response.optJSONArray("receivedContents");
@@ -253,7 +243,6 @@ public final class RescueHubFragment extends Fragment {
             try {
                 int units = Integer.parseInt(quantity.getText().toString().trim());
                 JSONObject body = body("offerId", offer.optString("id"), "units", units);
-                if (!subscriptionId.isEmpty()) body.put("subscriptionId", subscriptionId);
                 dialog.dismiss(); model.action("join", body, model::refresh);
             } catch (Exception e) { quantity.setError("Nhập số suất nguyên hợp lệ."); }
         })); dialog.show();
@@ -270,21 +259,8 @@ public final class RescueHubFragment extends Fragment {
                 () -> model.action("claims/action", body("claimId", claim.optString("id"), "action", "COMPLETE", "confirmReceived", true, "confirmPaid", true), model::refresh)));
         if (customer() && (state.equals("RESERVED") || state.equals("READY"))) button(card, "Hủy đăng ký", () -> confirm("Hủy đăng ký?", "Suất sẽ được trả lại cho người cần giải cứu khác.",
                 () -> model.action("claims/action", body("claimId", claim.optString("id"), "action", "CANCEL"), model::refresh)));
-        if (!inDetail) button(card, "Mở gói và quản lý nhận hàng", () -> openOffer(offer.optString("id"), ""));
+        if (!inDetail) button(card, "Mở gói và quản lý nhận hàng", () -> openOffer(offer.optString("id")));
         if (state.equals("COMPLETED")) text(card, "Đã ghi nhận nhận hàng" + (claim.optDouble("totalAmount") > 0 ? " và khách xác nhận trả tiền tại điểm." : "."), false);
-    }
-    private void subscribe(JSONObject offer, int days) { model.action("subscriptions/save", body("offerId", offer.optString("id"), "cadenceDays", days), () -> browse("subscriptions")); }
-    private void subscription(JSONObject value) {
-        LinearLayout card = card(content); text(card, value.optString("title"), true);
-        text(card, status(value.optString("status")) + " · mỗi " + value.optInt("cadenceDays") + " ngày\nKỳ tiếp theo: " + date(value.optLong("nextDueAt")), false);
-        text(card, "Mỗi kỳ chọn gói còn hàng và xác nhận lại giá. Cửa hàng cần bổ sung gói mới theo cùng mã định kỳ.", false);
-        JSONObject offer = value.optJSONObject("currentOffer");
-        if (offer != null && value.optString("status").equals("ACTIVE") && value.optLong("nextDueAt") <= System.currentTimeMillis()) button(card,
-                "Xem và đặt suất kỳ này", () -> openOffer(offer.optString("id"), value.optString("id")));
-        else text(card, "Chưa đến kỳ hoặc cửa hàng chưa có gói mới phù hợp.", false);
-        String next = value.optString("status").equals("ACTIVE") ? "PAUSED" : "ACTIVE";
-        button(card, next.equals("PAUSED") ? "Tạm dừng nhắc định kỳ" : "Tiếp tục đăng ký", () -> model.action("subscriptions/pause",
-                body("subscriptionId", value.optString("id"), "status", next), model::refresh));
     }
     private void impact(JSONObject value) {
         LinearLayout card = card(content); text(card, "Tác động đã được xác nhận", true);
@@ -341,7 +317,7 @@ public final class RescueHubFragment extends Fragment {
     @Override public void onStart() { super.onStart(); FirebaseAuth.getInstance().addAuthStateListener(auth); clock.postDelayed(tick, 60000); }
     @Override public void onStop() { clock.removeCallbacks(tick); FirebaseAuth.getInstance().removeAuthStateListener(auth); super.onStop(); }
     @Override public void onSaveInstanceState(@NonNull Bundle out) {
-        super.onSaveInstanceState(out); out.putBoolean("nearby", nearby); out.putString("subscriptionId", subscriptionId);
+        super.onSaveInstanceState(out); out.putBoolean("nearby", nearby);
         if (latitude != null) { out.putDouble("latitude", latitude); out.putDouble("longitude", longitude); }
     }
     @Override public void onDestroyView() { if (location != null) location.close(); location = null; content = null; super.onDestroyView(); }

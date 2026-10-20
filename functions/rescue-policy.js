@@ -1,4 +1,4 @@
-const TYPES = ['MYSTERY_BOX', 'SUBSCRIPTION', 'FLASH'];
+const TYPES = ['MYSTERY_BOX', 'FLASH'];
 const DAY = 86400000;
 const fail = (status, message) => Object.assign(new Error(message), {status});
 const text = value => typeof value === 'string' ? value.trim() : '';
@@ -53,7 +53,7 @@ function validateOffer(body, now) {
     unitLabel: string(body.unitLabel, 1, 24, 'Đơn vị suất'), pickupAddress: string(body.pickupAddress, 5, 300, 'Địa chỉ nhận'),
     ...coordinates(body.latitude, body.longitude), totalUnits, unitPrice, originalUnitPrice, closesAt, pickupStartAt, pickupEndAt,
     maxUnitsPerClaim: number(body.maxUnitsPerClaim ?? totalUnits, 1, totalUnits, 'Giới hạn mỗi khách', true),
-    planKey: body.type === 'SUBSCRIPTION' ? string(body.planKey, 2, 64, 'Mã gói định kỳ') : '', components};
+    components};
 }
 function assertBatch(batch, product, sellerId, now, pickupEndAt) {
   if (!batch || !product || product.sellerId !== sellerId || product.status !== 'ACTIVE'

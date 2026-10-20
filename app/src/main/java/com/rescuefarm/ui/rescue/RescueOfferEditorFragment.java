@@ -20,7 +20,6 @@ public final class RescueOfferEditorFragment extends Fragment {
         super.onViewCreated(view, state);
         view.findViewById(R.id.rescueEditorBack).setOnClickListener(v -> NavHostFragment.findNavController(this).navigateUp());
         view.findViewById(R.id.rescueChooseMystery).setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.mysteryBoxEditorFragment));
-        view.findViewById(R.id.rescueChooseSubscription).setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.subscriptionOfferEditorFragment));
         view.findViewById(R.id.rescueChooseFlash).setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.flashRescueEditorFragment));
     }
 }
