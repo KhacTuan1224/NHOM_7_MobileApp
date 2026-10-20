@@ -338,6 +338,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.flashSaleFragment
+                || destinationId == R.id.mysteryBoxFragment
                 || destinationId == R.id.rescueOfferEditorFragment
                 || destinationId == R.id.mysteryBoxEditorFragment
                 || destinationId == R.id.flashRescueEditorFragment
@@ -401,6 +403,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.flashSaleFragment
+                || destinationId == R.id.mysteryBoxFragment
                 || destinationId == R.id.rescueOfferEditorFragment
                 || destinationId == R.id.mysteryBoxEditorFragment
                 || destinationId == R.id.flashRescueEditorFragment

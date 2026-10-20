@@ -4,9 +4,13 @@
     android:id="@+id/main_navigation"
     app:startDestination="@id/launchLoadingFragment">
 
+    <fragment android:id="@+id/flashSaleFragment" android:name="com.rescuefarm.ui.rescue.FlashSaleFragment" android:label="Flash Sale" />
+    <fragment android:id="@+id/mysteryBoxFragment" android:name="com.rescuefarm.ui.rescue.MysteryBoxFragment" android:label="Hộp bí ẩn" />
     <fragment android:id="@+id/rescueHubFragment"
         android:name="com.rescuefarm.ui.rescue.RescueHubFragment" android:label="@string/rescue_hub_title">
         <argument android:name="offerId" app:argType="string" android:defaultValue="" />
+        <argument android:name="initialTab" app:argType="string" android:defaultValue="" />
+        <argument android:name="standalone" app:argType="boolean" android:defaultValue="false" />
         <deepLink app:uri="rescuefarm://rescue/{offerId}" />
     </fragment>
     <fragment android:id="@+id/rescueOfferEditorFragment"

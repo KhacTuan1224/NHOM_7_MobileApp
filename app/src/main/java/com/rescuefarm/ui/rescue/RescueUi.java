@@ -12,8 +12,6 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.rescuefarm.R;
 import org.json.JSONObject;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 
 final class RescueUi {
@@ -42,7 +40,7 @@ final class RescueUi {
         }
     }
     static String money(double amount) { return NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(amount); }
-    static String date(long value) { return new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("vi-VN")).format(new Date(value)); }
+    static String date(long value) { return RescueTime.format(value); }
     static int dp(Context context, int value) { return Math.round(value * context.getResources().getDisplayMetrics().density); }
     static LinearLayout column(Context context) {
         LinearLayout result = new LinearLayout(context); result.setOrientation(LinearLayout.VERTICAL); return result;

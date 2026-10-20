@@ -46,7 +46,7 @@
                 <Spinner android:id="@+id/sellerStatsPeriodSpinner" android:layout_width="match_parent"
                     android:layout_height="@dimen/touch_target_min"
                     android:contentDescription="@string/seller_stats_period_label" />
-                <include layout="@layout/view_rescue_programs_entry" />
+                <include layout="@layout/view_rescue_management_entry" />
                 <LinearLayout android:id="@+id/sellerDashboardStats" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
 

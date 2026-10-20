@@ -78,6 +78,23 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
   function publicOffer(offer) {
     return Object.fromEntries(publicKeys.filter(key => offer[key] !== undefined).map(key => [key, offer[key]]));
   }
+  async function publicTile(offer, imageCache) {
+    const visible = publicOffer(offer);
+    // Flash produce is public; mystery-box source contents stay undisclosed.
+    const batchId = offer.type === 'FLASH' && offer.components?.[0]?.batchId;
+    if (batchId && id(batchId)) {
+      if (!imageCache.has(batchId)) imageCache.set(batchId, (async () => {
+        const batch = await ref('productBatches', batchId).get();
+        if (!batch.exists || !id(batch.get('productId'))) return '';
+        const product = await ref('products', batch.get('productId')).get();
+        if (!product.exists || product.get('sellerId') !== offer.sellerId || product.get('status') !== 'ACTIVE') return '';
+        const urls = product.get('imageUrls');
+        return Array.isArray(urls) ? urls.find(url => typeof url === 'string' && /^https:\/\//.test(url)) || '' : '';
+      })());
+      visible.imageUrl = await imageCache.get(batchId);
+    }
+    return visible;
+  }
   async function page(collection, body, field, value) {
     let query = db.collection(collection);
     if (field) query = query.where(field, '==', value);
@@ -133,10 +150,13 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       if (!seller || seller.role !== 'SELLER' || seller.status !== 'ACTIVE' || seller.sellerStatus !== 'APPROVED') continue;
       const distanceKm = point ? P.distanceKm(point, offer) : null;
       if (point && distanceKm > (body.radiusKm ?? 5)) continue;
-      items.push({...publicOffer(offer), ...(point ? {distanceKm} : {})});
+      items.push({...offer, ...(point ? {distanceKm} : {})});
     }
     if (point) items.sort((a, b) => a.distanceKm - b.distanceKm);
-    return {items, cursor: result.cursor, hasMore: result.hasMore};
+    const imageCache = new Map();
+    const visible = await Promise.all(items.map(async offer => ({...await publicTile(offer, imageCache),
+      ...(point ? {distanceKm: offer.distanceKm} : {})})));
+    return {items: visible, cursor: result.cursor, hasMore: result.hasMore};
   });
   route('mine', ['SELLER', 'CUSTOMER', 'ADMIN'], async (body, caller) => {
     if (caller.role === 'SELLER') {
