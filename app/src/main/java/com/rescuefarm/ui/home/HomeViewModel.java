@@ -103,6 +103,29 @@ public class HomeViewModel extends ViewModel {
     public List<Category> getCategoriesSnapshot() { return new ArrayList<>(categories); }
     public DiscoveryQuery getQuery() { return query; }
     public List<Product> getProductsSnapshot() { return new ArrayList<>(products); }
+    /** Category content is independent of the search/filter state saved by Home. */
+    public List<DiscoveryResult> getCategoryContent(String categoryId) {
+        if (categoryId == null || categoryId.trim().isEmpty()) return new ArrayList<>();
+        DiscoveryQuery category = new DiscoveryQuery("", categoryId, "", null, null, null,
+                DiscoveryQuery.Sort.RELEVANCE);
+        return discoveryEngine.search(products, campaigns, productBatches, category,
+                null, null, new Date());
+    }
+    public List<Product> getCategoryCampaignProducts(RescueCampaign campaign, List<Product> categoryProducts) {
+        List<Product> related = new ArrayList<>();
+        for (Product product : categoryProducts) {
+            List<ProductBatch> batches = productBatches.get(product.getId());
+            if (batches == null) continue;
+            for (ProductBatch batch : batches) {
+                if (campaign.getId().equals(batch.getActiveCampaignId())
+                        && campaign.getBatchTargets().containsKey(batch.getId())) {
+                    related.add(product);
+                    break;
+                }
+            }
+        }
+        return related;
+    }
     public boolean isAuthenticated() { return authRepository.isAuthenticated(); }
 
     private void loadGreetingName() {

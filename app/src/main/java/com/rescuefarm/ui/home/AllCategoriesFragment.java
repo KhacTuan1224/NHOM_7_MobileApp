@@ -66,9 +66,8 @@ public class AllCategoriesFragment extends Fragment {
             View tile = renderer.category(category, v -> {
                 Bundle args = new Bundle();
                 args.putString("categoryId", category.getId());
-                DiscoveryBottomSheet bottomSheet = new DiscoveryBottomSheet();
-                bottomSheet.setArguments(args);
-                bottomSheet.show(getChildFragmentManager(), "DiscoveryBottomSheet");
+                args.putString("categoryName", category.getName());
+                Navigation.findNavController(v).navigate(R.id.categoryDetailFragment, args);
             });
             
             categoryGrid.addView(tile, new LinearLayout.LayoutParams(-1, -2));

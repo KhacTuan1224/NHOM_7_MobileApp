@@ -19,11 +19,11 @@ import java.util.List;
 import java.util.Locale;
 
 /** Public campaign article card; title, story and rescue operation are one object. */
-final class CampaignFeedCardRenderer {
+public final class CampaignFeedCardRenderer {
     private final Fragment fragment;
-    CampaignFeedCardRenderer(Fragment fragment) { this.fragment = fragment; }
+    public CampaignFeedCardRenderer(Fragment fragment) { this.fragment = fragment; }
 
-    View card(RescueCampaign campaign, List<Product> products, View.OnClickListener listener) {
+    public View card(RescueCampaign campaign, List<Product> products, View.OnClickListener listener) {
         MaterialCardView card = new MaterialCardView(fragment.requireContext());
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
         cardParams.bottomMargin = dp(12); card.setLayoutParams(cardParams);
