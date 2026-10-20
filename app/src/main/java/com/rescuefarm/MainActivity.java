@@ -186,6 +186,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
     public UserRole getResolvedActorRole() { return currentRole; }
     @Override protected void onNewIntent(android.content.Intent intent) {
         super.onNewIntent(intent); setIntent(intent); captureNotificationIntent(intent);
+        if (intent.getData() != null && "rescuefarm".equals(intent.getData().getScheme())
+                && "rescue".equals(intent.getData().getHost())) navController.handleDeepLink(intent);
         if (currentRole == null && FirebaseAuth.getInstance().getCurrentUser() != null) restoreActorRole(); else openPendingNotification();
     }
     private void captureNotificationIntent(android.content.Intent intent) {
@@ -253,6 +255,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
             case "reviewFragment": return R.id.reviewFragment;
             case "profileFragment": return R.id.profileFragment;
             case "notificationFragment": return R.id.notificationFragment;
+            case "rescueHubFragment": return R.id.rescueHubFragment;
             default: return 0;
         }
     }
@@ -334,6 +337,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 // Home related
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.categoryDetailFragment
+                || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.rescueOfferEditorFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment
@@ -393,6 +398,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.mobileRescueFragment
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.categoryDetailFragment
+                || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.rescueOfferEditorFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment

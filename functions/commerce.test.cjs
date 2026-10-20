@@ -45,6 +45,7 @@ before(async () => {
   const app = express(); app.use(express.json({verify: (req, res, bytes) => { req.rawBody = Buffer.from(bytes); }}));
   app.use(createSePayApi({db, admin, env: testEnv}).router);
   app.use(campaignLifecycle.router); app.use(commerce.router);
+  app.use(require('./rescue-programs').createRescuePrograms({db, admin, authenticate}).router);
   app.use(createNotificationsApi({db, admin, authenticate}).router);
   app.use((error, req, res, next) => res.status(error.status || 500).json({error: error.message}));
   server = await new Promise(resolve => { const value = app.listen(0, '127.0.0.1', () => resolve(value)); });
@@ -80,6 +81,25 @@ async function post(path, data, uid = '') {
     ...(uid ? {Authorization: `Bearer ${uid}`} : {})}, body: JSON.stringify(data)});
   return {status: result.status, body: await result.json()};
 }
+
+test('expanded rescue and normal checkout share one stock ledger without releasing each other reservations', async () => {
+  const now = Date.now(), offer = {requestId: 'shared-stock', type: 'MYSTERY_BOX', title: 'Hộp rau',
+    description: 'Rau cải giải cứu nhận tại cửa hàng', categoryLabel: 'Rau củ', contentsDisclosure: 'Một suất rau cải còn ăn tốt',
+    totalUnits: 6, unitLabel: 'hộp', unitPrice: 10000, originalUnitPrice: 40000,
+    closesAt: now + 3600000, pickupStartAt: now + 3600000, pickupEndAt: now + 7200000,
+    pickupAddress: '10 đường A, TP HCM', latitude: 10.8, longitude: 106.7,
+    components: [{batchId: 'batch-a', quantityPerUnit: 1}]};
+  assert.equal((await post('/rescue/create', offer, 'seller')).status, 200);
+  const order = request(); assert.equal((await post('/checkoutCustomer', order, 'customer-a')).status, 200);
+  let stock = (await db.doc('productBatches/batch-a').get()).data();
+  assert.equal(stock.availableQuantity, 1); assert.equal(stock.reservedQuantity, 9);
+  assert.equal((await post('/rescue/close', {offerId: offer.requestId}, 'seller')).status, 200);
+  stock = (await db.doc('productBatches/batch-a').get()).data();
+  assert.equal(stock.availableQuantity, 7); assert.equal(stock.reservedQuantity, 3);
+  assert.equal((await post('/orders/transition', {orderId: order.requestId, targetStatus: 'CANCELLED'}, 'seller')).status, 200);
+  stock = (await db.doc('productBatches/batch-a').get()).data();
+  assert.equal(stock.availableQuantity, 10); assert.equal(stock.reservedQuantity, 0);
+});
 
 test('Customer checkout reserves stock, writes snapshots/payment and removes only bought cart quantities', async () => {
   const data = request(); const result = await post('/checkoutCustomer', {...data, totalAmount: 1, ownerId: 'customer-b'}, 'customer-a');

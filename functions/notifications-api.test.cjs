@@ -9,6 +9,13 @@ function fixture(type, role, source = {}) {
   const api = createNotificationsApi({db, admin, authenticate: async () => ({uid: 'recipient', role})});
   return {db, resolve: () => api.resolve({uid: 'recipient', role}, 'n'), api};
 }
+test('rescue notifications open offer details or the subscription list, only for the inbox owner', async () => {
+  const f = fixture('RESCUE_OFFER', 'CUSTOMER');
+  assert.deepEqual(await f.resolve(), {destination: 'rescueHubFragment', args: {offerId: 'record'}});
+  await f.db.runTransaction(async tx => { const ref = f.db.collection('notifications').doc('n'); await tx.get(ref); tx.update(ref, {referenceId: ''}); });
+  assert.deepEqual(await f.resolve(), {destination: 'rescueHubFragment', args: {tab: 'subscriptions'}});
+  await assert.rejects(() => f.api.resolve({uid: 'other', role: 'CUSTOMER'}, 'n'), /không thuộc/);
+});
 for (const [type, section] of [['CAMPAIGN', 'CAMPAIGNS'], ['SELLER_APPLICATION', 'SELLER_APPLICATIONS'], ['REPORT', 'REPORTS'], ['ORDER', 'ORDERS']]) {
   test('Admin notification opens the exact ' + type + ' resource', async () => {
     const f = fixture(type, 'ADMIN'); const result = await f.resolve();

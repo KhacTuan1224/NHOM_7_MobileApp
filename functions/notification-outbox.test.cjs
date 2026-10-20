@@ -16,6 +16,24 @@ async function event(f, id = 'event', extra = {}) {
   await f.db.runTransaction(async tx => enqueueNotification(tx, f.db, admin, id,
     {kind: 'DIRECT', resourceType: 'ORDER', resourceId: 'order', recipientUid: 'customer', decision: 'CONFIRMED', ...extra}));
 }
+
+test('nearby rescue push rechecks opt-in at expansion and again before delivery', async () => {
+  const future = Date.now() + 86400000;
+  const seed = {'rescueNearbyPreferences/customer': {enabled: true, latitude: 10.8, longitude: 106.7, radiusKm: 5, expiresAt: new Timestamp(future)},
+    'rescueOffers/flash': {status: 'OPEN', sellerId: 'seller', latitude: 10.8, longitude: 106.7, availableUnits: 1, closesAt: future},
+    'users/seller': {status: 'ACTIVE', sellerStatus: 'APPROVED'}};
+  const f = fixture(seed);
+  await event(f, 'nearby', {kind: 'RESCUE_NEARBY', resourceType: 'RESCUE_OFFER', resourceId: 'flash'});
+  await f.worker.expand(await f.db.collection('notificationOutbox').doc('nearby').get());
+  const delivery = (await f.db.collection('notificationDeliveries').get()).docs[0];
+  assert.equal(delivery.get('type'), 'SYSTEM');
+  await f.db.collection('rescueNearbyPreferences').doc('customer').delete();
+  await f.worker.deliver(delivery.ref);
+  assert.equal(f.sends(), 0); assert.equal((await delivery.ref.get()).get('status'), 'SKIPPED');
+  await event(f, 'nearby2', {kind: 'RESCUE_NEARBY', resourceType: 'RESCUE_OFFER', resourceId: 'flash'});
+  await f.worker.expand(await f.db.collection('notificationOutbox').doc('nearby2').get());
+  assert.equal((await f.db.collection('notificationOutbox').doc('nearby2').get()).get('recipientCount'), 0);
+});
 test('FCM failure after inbox creation retries durably without duplicating the inbox', async () => {
   const f = fixture(); await event(f); f.fail(); await f.worker.runOnce();
   let rows = await f.db.collection('notificationDeliveries').get();

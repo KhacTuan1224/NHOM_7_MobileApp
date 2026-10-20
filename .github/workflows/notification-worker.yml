@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Process due notifications and scheduled promotions
+      - name: Process notifications, rescue deadlines and subscription reminders
         env:
           BACKEND_URL: ${{ vars.RENDER_BACKEND_URL }}
           WORKER_SECRET: ${{ secrets.NOTIFICATION_WORKER_SECRET }}

@@ -37,6 +37,12 @@ Tests run sequentially because they share one isolated
 emulator project. These checks
 validate emulator behavior, not deployment status or live Android UI behavior.
 
+The suite also runs `functions/rescue-programs.test.cjs`: atomic stock-backed offers,
+group thresholds/deadlines, pickup receipt, donation verification, private quote
+revisions, opt-in recurring reminders, and time-limited nearby alerts. Rules deny all
+direct client access to the rescue ledgers; use the trusted API. Normal checkout
+and rescue offers are tested together against the same batch reservations.
+
 To publish the reviewed rules, run from the repository root with an authorized
 Firebase account:
 

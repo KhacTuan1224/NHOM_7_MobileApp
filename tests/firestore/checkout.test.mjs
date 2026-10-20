@@ -875,7 +875,20 @@ test('Admin catalog accepts uploaded and external HTTPS images while rejecting u
   await assertFails(updateDoc(doc(env.authenticatedContext('customer-a').firestore(), 'categories/no-image'), {...moderation, name: 'Giả mạo'}));
 });
 
- test('retired Post collection is denied for every client role', async () => {
+test('rescue ledgers, business quotes, charity evidence and nearby coordinates are backend-only', async () => {
+  const names = ['rescueOffers', 'rescueClaims', 'rescueQuotes', 'rescueSubscriptions', 'rescueOrganizations', 'rescueNearbyPreferences', 'rescueImpact'];
+  for (const name of names) {
+    await seed({[name + '/private']: {sellerId: 'seller', customerId: 'customer-a', status: 'OPEN'}});
+    for (const uid of ['customer-a', 'seller', 'admin']) {
+      const db = env.authenticatedContext(uid).firestore();
+      await assertFails(getDoc(doc(db, name, 'private')));
+      await assertFails(setDoc(doc(db, name, 'forged'), {status: 'VERIFIED'}));
+    }
+    await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), name)));
+  }
+});
+
+test('retired Post collection is denied for every client role', async () => {
   await seed({'posts/retired': {status: 'PUBLISHED', sellerId: 'seller'}});
   for (const uid of ['customer-a', 'seller', 'admin']) {
     const db = env.authenticatedContext(uid).firestore();
