@@ -158,7 +158,7 @@ app.post("/admin/dashboard", async (req, res, next) => {
     const [pendingSellers, pendingCampaigns, pendingReviews, pendingReport,
       inReviewReport, deliveredRevenue, activeCampaigns, criticalCampaigns, recentLocations,
       kgTotals] = await Promise.all([
-      count(db.collection("sellerApplications").where("status", "==", "PENDING")),
+      count(db.collection("users").where("role", "==", "SELLER").where("sellerStatus", "==", "PENDING_APPROVAL")),
       count(db.collection("campaigns").where("status", "==", "PENDING_APPROVAL")),
       count(db.collection("reviews").where("status", "==", "PENDING")),
       count(db.collection("reports").where("status", "==", "PENDING")),
