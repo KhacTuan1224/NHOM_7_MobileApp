@@ -57,7 +57,7 @@ public final class RescueOfferEditorFragment extends Fragment {
         add("totalUnits", "Tổng số suất (nguyên)", true, "10", state);
         add("maxUnitsPerClaim", "Số suất tối đa mỗi khách", true, "1", state);
         add("originalUnitPrice", "Giá trị gốc mỗi suất (VND)", true, "100000", state);
-        add("unitPrice", "Giá giải cứu mỗi suất (quyên góp nhập 0)", true, "20000", state);
+        add("unitPrice", "Giá giải cứu mỗi suất (VND)", true, "20000", state);
         text(form, "Giờ nhận theo múi giờ của thiết bị. Định dạng ngày/tháng/năm giờ:phút (24 giờ). Flash tối đa 2 giờ; mua chung bắt đầu nhận sau hạn gom.", false);
         long now = System.currentTimeMillis();
         add("closesAt", "Hạn đăng ký (dd/MM/yyyy HH:mm)", false, date(now + 3600000), state);

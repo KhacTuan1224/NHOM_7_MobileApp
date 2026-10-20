@@ -875,8 +875,8 @@ test('Admin catalog accepts uploaded and external HTTPS images while rejecting u
   await assertFails(updateDoc(doc(env.authenticatedContext('customer-a').firestore(), 'categories/no-image'), {...moderation, name: 'Giả mạo'}));
 });
 
-test('rescue ledgers, business quotes, charity evidence and nearby coordinates are backend-only', async () => {
-  const names = ['rescueOffers', 'rescueClaims', 'rescueQuotes', 'rescueSubscriptions', 'rescueOrganizations', 'rescueNearbyPreferences', 'rescueImpact'];
+test('rescue ledgers and nearby coordinates are backend-only', async () => {
+  const names = ['rescueOffers', 'rescueClaims', 'rescueSubscriptions', 'rescueNearbyPreferences', 'rescueImpact'];
   for (const name of names) {
     await seed({[name + '/private']: {sellerId: 'seller', customerId: 'customer-a', status: 'OPEN'}});
     for (const uid of ['customer-a', 'seller', 'admin']) {

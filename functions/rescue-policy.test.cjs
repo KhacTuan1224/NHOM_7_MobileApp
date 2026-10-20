@@ -7,12 +7,12 @@ const offer = overrides => ({requestId: 'offer-1', type: 'MYSTERY_BOX', title: '
   unitPrice: 20000, originalUnitPrice: 100000, closesAt: now + 3600000, pickupStartAt: now + 3600000,
   pickupEndAt: now + 7200000, latitude: 10.8, longitude: 106.7, pickupAddress: '10 đường A, TP HCM',
   components: [{batchId: 'b', quantityPerUnit: 0.5}], ...overrides});
-test('all six types validate with explicit stock and pickup windows', () => {
+test('all four types validate with explicit stock and pickup windows', () => {
   for (const type of P.TYPES) assert.equal(P.validateOffer(offer({type, minPeople: 2, minUnits: 2, planKey: 'weekly',
-    unitPrice: type === 'DONATION' ? 0 : 20000}), now).type, type);
+    unitPrice: 20000}), now).type, type);
 });
 test('free offers, invalid windows, duplicate batches, fractions and inconsistent group thresholds are rejected', () => {
-  for (const bad of [{unitPrice: 0}, {type: 'DONATION'}, {pickupEndAt: now}, {latitude: 100},
+  for (const bad of [{unitPrice: 0}, {pickupEndAt: now}, {latitude: 100},
     {type: 'GROUP_BUY', minPeople: 2, minUnits: 1}, {totalUnits: 1.5}, {type: 'FLASH', closesAt: now + 3 * 3600000},
     {components: [{batchId: 'b', quantityPerUnit: 1}, {batchId: 'b', quantityPerUnit: 2}]},
     {components: [{batchId: 'b', quantityPerUnit: 0.0000001}]}]) assert.throws(() => P.validateOffer(offer(bad), now));

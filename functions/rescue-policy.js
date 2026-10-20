@@ -1,4 +1,4 @@
-const TYPES = ['MYSTERY_BOX', 'GROUP_BUY', 'SUBSCRIPTION', 'BULK', 'DONATION', 'FLASH'];
+const TYPES = ['MYSTERY_BOX', 'GROUP_BUY', 'SUBSCRIPTION', 'FLASH'];
 const DAY = 86400000;
 const fail = (status, message) => Object.assign(new Error(message), {status});
 const text = value => typeof value === 'string' ? value.trim() : '';
@@ -28,10 +28,10 @@ function distanceKm(a, b) {
 function validateOffer(body, now) {
   if (!id(body.requestId) || !TYPES.includes(body.type)) throw fail(400, 'Mã yêu cầu hoặc phương thức giải cứu không hợp lệ.');
   const totalUnits = number(body.totalUnits, 1, 100000, 'Số suất', true);
-  const unitPrice = number(body.unitPrice, 0, 1e9, 'Giá mỗi suất', true);
+  const unitPrice = number(body.unitPrice, 1, 1e9, 'Giá mỗi suất', true);
   const originalUnitPrice = number(body.originalUnitPrice, 1, 1e9, 'Giá trị gốc', true);
-  if (unitPrice > originalUnitPrice || (body.type === 'DONATION') !== (unitPrice === 0))
-    throw fail(400, 'Chỉ gói quyên góp có giá 0 đồng; giá giải cứu không vượt giá trị gốc.');
+  if (unitPrice > originalUnitPrice)
+    throw fail(400, 'Giá giải cứu không được vượt giá trị gốc.');
   const closesAt = number(body.closesAt, now + 60000, now + 30 * DAY, 'Hạn đăng ký');
   const pickupStartAt = number(body.pickupStartAt, now, now + 30 * DAY, 'Bắt đầu nhận');
   const pickupEndAt = number(body.pickupEndAt, Math.max(pickupStartAt + 60000, closesAt), now + 31 * DAY, 'Kết thúc nhận');

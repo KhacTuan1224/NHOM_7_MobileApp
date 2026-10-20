@@ -7,9 +7,9 @@
     <string name="rescue_nearby">Tìm quanh tôi</string>
     <string name="rescue_alerts">Thông báo giờ chót</string>
     <string name="rescue_empty">Chưa có nội dung phù hợp trong phần đã tải.</string>
-    <string name="rescue_entry_description">Hộp bí ẩn, mua chung, gói định kỳ, mua sỉ, quyên góp và giải cứu giờ chót.</string>
+    <string name="rescue_entry_description">Hộp bí ẩn, mua chung, gói định kỳ, giải cứu giờ chót.</string>
     <string-array name="rescue_type_labels">
         <item>Tất cả phương thức</item><item>Hộp bí ẩn</item><item>Mua chung</item><item>Gói định kỳ</item>
-        <item>Thương lượng sỉ</item><item>Quyên góp 0 đồng</item><item>Giờ chót</item>
+        <item>Giờ chót</item>
     </string-array>
 </resources>
