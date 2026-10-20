@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.Locale;
 
 final class RescueUi {
-    static final String[] TYPES = {"", "MYSTERY_BOX", "GROUP_BUY", "SUBSCRIPTION", "BULK", "DONATION", "FLASH"};
+    static final String[] TYPES = {"", "MYSTERY_BOX", "GROUP_BUY", "SUBSCRIPTION", "FLASH"};
     static JSONObject body(Object... values) {
         JSONObject result = new JSONObject();
         try { for (int i = 0; i < values.length; i += 2) result.put((String) values[i], values[i + 1]); }
@@ -27,8 +27,8 @@ final class RescueUi {
     static String type(String type) {
         switch (type) {
             case "MYSTERY_BOX": return "Hộp bí ẩn"; case "GROUP_BUY": return "Mua chung";
-            case "SUBSCRIPTION": return "Gói định kỳ"; case "BULK": return "Thương lượng sỉ";
-            case "DONATION": return "Quyên góp 0 đồng"; case "FLASH": return "Giải cứu giờ chót";
+            case "SUBSCRIPTION": return "Gói định kỳ";
+            case "FLASH": return "Giải cứu giờ chót";
             default: return type;
         }
     }
@@ -38,11 +38,9 @@ final class RescueUi {
             case "FAILED": return "Nhóm chưa đạt ngưỡng"; case "EXPIRED": return "Đã hết giờ nhận";
             case "CANCELLED": return "Đã hủy"; case "PLEDGED": return "Đang chờ đủ nhóm";
             case "RESERVED": return "Đã giữ suất"; case "READY": return "Sẵn sàng nhận";
-            case "COMPLETED": return "Đã nhận nông sản"; case "REQUESTED": return "Đang chờ báo giá";
-            case "PROPOSED": return "Có báo giá mới"; case "ACCEPTED": return "Đã chấp nhận";
+            case "COMPLETED": return "Đã nhận nông sản";
             case "ACTIVE": return "Đang đăng ký"; case "PAUSED": return "Đã tạm dừng";
-            case "PENDING": return "Chờ xác minh"; case "VERIFIED": return "Đã xác thực";
-            case "REJECTED": return "Chưa được xác thực"; default: return value;
+            default: return value;
         }
     }
     static String money(double amount) { return NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(amount); }

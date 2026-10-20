@@ -1338,13 +1338,11 @@ service cloud.firestore {
       allow get, list: if isAdmin();
     }
 
-    // Stock-backed programs, business quotes, charity evidence and nearby coordinates
+    // Stock-backed programs and nearby coordinates
     // are served only through the role-checked Render API. No client ledger writes.
     match /rescueOffers/{document=**} { allow read, write: if false; }
     match /rescueClaims/{document=**} { allow read, write: if false; }
-    match /rescueQuotes/{document=**} { allow read, write: if false; }
     match /rescueSubscriptions/{document=**} { allow read, write: if false; }
-    match /rescueOrganizations/{document=**} { allow read, write: if false; }
     match /rescueNearbyPreferences/{document=**} { allow read, write: if false; }
     match /rescueImpact/{document=**} { allow read, write: if false; }
     match /{document=**} {

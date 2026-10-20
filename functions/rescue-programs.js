@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('node:crypto');
 const P = require('./rescue-policy');
 const {enqueueNotification, digest} = require('./notification-outbox');
-const {fail, text, id, time, round, number, string, DAY} = P;
+const {fail, text, id, time, round, number, DAY} = P;
 
 /** Stock-backed pickup programs. Money is collected in person, never captured for a pledge. */
 function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
@@ -123,7 +123,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     const sellers = new Map();
     for (const doc of result.docs) {
       const offer = data(doc);
-      if (offer.closesAt <= now() || offer.availableUnits <= 0 || (offer.claimCount || 0) >= 100 || body.type && offer.type !== body.type) continue;
+      if (!P.TYPES.includes(offer.type) || offer.closesAt <= now() || offer.availableUnits <= 0 || (offer.claimCount || 0) >= 100 || body.type && offer.type !== body.type) continue;
       if (!sellers.has(offer.sellerId)) sellers.set(offer.sellerId, data(await ref('users', offer.sellerId).get()));
       const seller = sellers.get(offer.sellerId);
       if (!seller || seller.role !== 'SELLER' || seller.status !== 'ACTIVE' || seller.sellerStatus !== 'APPROVED') continue;
@@ -137,29 +137,26 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
   route('mine', ['SELLER', 'CUSTOMER', 'ADMIN'], async (body, caller) => {
     if (caller.role === 'SELLER') {
       const result = await page('rescueOffers', body, 'sellerId', caller.uid);
-      return {items: result.docs.map(doc => data(doc)), cursor: result.cursor, hasMore: result.hasMore};
+      return {items: result.docs.map(doc => data(doc)).filter(offer => P.TYPES.includes(offer.type)), cursor: result.cursor, hasMore: result.hasMore};
     }
     const result = await page('rescueClaims', body, 'customerId', caller.uid), items = [];
     for (const doc of result.docs) {
       const claim = data(doc), offer = data(await ref('rescueOffers', claim.offerId).get());
-      if (offer) items.push({...claim, status: P.claimState(offer, claim), offer: publicOffer(offer)});
+      if (offer && P.TYPES.includes(offer.type)) items.push({...claim, status: P.claimState(offer, claim), offer: publicOffer(offer)});
     }
     return {items, cursor: result.cursor, hasMore: result.hasMore};
   });
   route('detail', null, async (body, unused, req) => {
     const offer = data(await ref('rescueOffers', body.offerId).get());
-    if (!offer) throw fail(404, 'Không tìm thấy gói giải cứu.');
+    if (!offer || !P.TYPES.includes(offer.type)) throw fail(404, 'Không tìm thấy gói giải cứu.');
     const caller = req.get('authorization') ? await authenticate(req, ['CUSTOMER', 'SELLER', 'ADMIN']) : null;
-    let claims = [], quotes = [];
+    let claims = [];
     if (caller && (caller.role === 'CUSTOMER' || caller.uid === offer.sellerId)) {
       let claimQuery = db.collection('rescueClaims').where('offerId', '==', offer.id);
-      let quoteQuery = db.collection('rescueQuotes').where('offerId', '==', offer.id);
       if (caller.role === 'CUSTOMER') {
         claimQuery = claimQuery.where('customerId', '==', caller.uid);
-        quoteQuery = quoteQuery.where('customerId', '==', caller.uid);
       }
       claims = (await claimQuery.limit(100).get()).docs.map(doc => ({...data(doc), status: P.claimState(offer, data(doc))}));
-      quotes = (await quoteQuery.limit(100).get()).docs.map(data);
     }
     const impact = data(await ref('rescueImpact', offer.sellerId).get());
     const receivedContents = [];
@@ -173,7 +170,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
         }
       }
     }
-    return {offer: caller?.uid === offer.sellerId ? offer : publicOffer(offer), claims, quotes, impact, receivedContents};
+    return {offer: caller?.uid === offer.sellerId ? offer : publicOffer(offer), claims, impact, receivedContents};
   });
   route('batches', ['SELLER'], async (body, caller) => {
     const result = await page('products', body, 'sellerId', caller.uid), items = [];
@@ -189,15 +186,15 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     return {items, cursor: result.cursor, hasMore: result.hasMore};
   });
 
-  async function join(body, caller, quote = false) {
+  async function join(body, caller) {
     const offerRef = ref('rescueOffers', body.offerId), claimRef = ref('rescueClaims', digest(body.offerId + '|' + caller.uid));
     return db.runTransaction(async tx => {
       const buyer = await account(tx, caller, ['CUSTOMER']);
       const offer = data(await tx.get(offerRef));
       const previous = data(await tx.get(claimRef));
-      if (!offer) throw fail(404, 'Không tìm thấy gói giải cứu.');
+      if (!offer || !P.TYPES.includes(offer.type)) throw fail(404, 'Không tìm thấy gói giải cứu.');
       if (previous) {
-        if (previous.units !== body.units || quote && previous.quoteRevision !== body.revision || (offer.type === 'BULK') !== quote)
+        if (previous.units !== body.units)
           throw fail(409, 'Bạn đã đăng ký gói này với lựa chọn khác.');
         return {claim: {...previous, status: P.claimState(offer, previous)}, replay: true};
       }
@@ -206,18 +203,6 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       if (offer.availableUnits < units) throw fail(409, 'Không còn đủ suất.');
       if (offer.sellerId === caller.uid) throw fail(403, 'Không thể tự đăng ký.');
       await assertLive(tx, offer);
-      let unitPrice = offer.unitPrice, quoteRevision = 0;
-      if (offer.type === 'DONATION') {
-        const organization = data(await tx.get(ref('rescueOrganizations', caller.uid)));
-        if (!organization || organization.status !== 'VERIFIED') throw fail(403, 'Tổ chức cần được Admin xác thực trước khi nhận quyên góp.');
-      }
-      if (offer.type === 'BULK') {
-        if (!quote || buyer.customerType !== 'BUSINESS') throw fail(403, 'Gói sỉ yêu cầu tài khoản doanh nghiệp và báo giá đã được chấp nhận.');
-        const price = data(await tx.get(ref('rescueQuotes', digest(offer.id + '|' + caller.uid))));
-        if (!price || price.status !== 'PROPOSED' || price.revision !== body.revision || price.validUntil <= now() || price.units !== units)
-          throw fail(409, 'Báo giá đã thay đổi hoặc hết hạn; hãy tải lại và xác nhận.');
-        unitPrice = price.unitPrice; quoteRevision = price.revision;
-      } else if (quote) throw fail(400, 'Gói không sử dụng báo giá sỉ.');
       let subscription = null, subscriptionRef = null;
       if (body.subscriptionId || offer.type === 'SUBSCRIPTION') {
         subscriptionRef = ref('rescueSubscriptions', body.subscriptionId || digest(caller.uid + '|' + offer.sellerId + '|' + offer.planKey));
@@ -234,13 +219,12 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       const priorMembers = groupSucceeded && !offer.groupSucceeded
         ? await tx.get(db.collection('rescueClaims').where('offerId', '==', offer.id).limit(100)) : null;
       const claim = {id: claimRef.id, offerId: offer.id, customerId: caller.uid, sellerId: offer.sellerId,
-        customerName: text(buyer.fullName), units, unitPrice, totalAmount: unitPrice * units, quoteRevision,
-        status: 'RESERVED', paymentMethod: offer.type === 'DONATION' ? 'DONATION' : 'CASH_ON_PICKUP',
-        paymentStatus: offer.type === 'DONATION' ? 'NOT_REQUIRED' : 'UNPAID', createdAt: stamp(), updatedAt: stamp()};
+        customerName: text(buyer.fullName), units, unitPrice: offer.unitPrice, totalAmount: offer.unitPrice * units,
+        status: 'RESERVED', paymentMethod: 'CASH_ON_PICKUP',
+        paymentStatus: 'UNPAID', createdAt: stamp(), updatedAt: stamp()};
       tx.create(claimRef, claim);
       tx.update(offerRef, {availableUnits: offer.availableUnits - units, claimedUnits, participantCount,
         claimCount: (offer.claimCount || 0) + 1, groupSucceeded, updatedAt: stamp()});
-      if (quote) tx.update(ref('rescueQuotes', digest(offer.id + '|' + caller.uid)), {status: 'ACCEPTED', updatedAt: stamp()});
       if (subscription) tx.update(subscriptionRef, {nextDueAt: now() + subscription.cadenceDays * DAY,
         lastOfferId: offer.id, nextRunAt: ts(now() + subscription.cadenceDays * DAY), updatedAt: stamp()});
       notify(tx, claimRef.id + ':joined', caller.uid, offer.id, 'Đã đăng ký giải cứu',
@@ -253,11 +237,10 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     });
   }
   route('join', ['CUSTOMER'], (body, caller) => join(body, caller));
-  route('quotes/accept', ['CUSTOMER'], (body, caller) => join(body, caller, true));
 
   route('claims', ['SELLER', 'CUSTOMER'], async (body, caller) => {
     const offer = data(await ref('rescueOffers', body.offerId).get());
-    if (!offer) throw fail(404, 'Không tìm thấy gói.');
+    if (!offer || !P.TYPES.includes(offer.type)) throw fail(404, 'Không tìm thấy gói.');
     if (caller.role === 'SELLER' && offer.sellerId !== caller.uid) throw fail(403, 'Gói không thuộc cửa hàng.');
     let query = db.collection('rescueClaims').where('offerId', '==', offer.id);
     if (caller.role === 'CUSTOMER') query = query.where('customerId', '==', caller.uid);
@@ -271,7 +254,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     if (!claim || !(caller.role === 'CUSTOMER' && claim.customerId === caller.uid || caller.role === 'SELLER' && claim.sellerId === caller.uid))
       throw fail(403, 'Không có quyền xử lý đăng ký.');
     const offerRef = ref('rescueOffers', claim.offerId), offer = data(await tx.get(offerRef));
-    if (!offer) throw fail(404, 'Gói không còn tồn tại.');
+    if (!offer || !P.TYPES.includes(offer.type)) throw fail(404, 'Gói không còn tồn tại.');
     const effective = P.claimState(offer, claim);
     if (body.action === 'COMPLETE' && claim.status === 'COMPLETED' || body.action === 'CANCEL' && effective === 'CANCELLED') return {replay: true};
     if (['COMPLETED', 'CANCELLED'].includes(effective)) throw fail(409, 'Đăng ký đã kết thúc.');
@@ -289,18 +272,16 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       const rows = await assertLive(tx, offer);
       const statsRef = ref('rescueImpact', offer.sellerId), stats = data(await tx.get(statsRef)) || {};
       moveStock(tx, rows, claim.units, 'COMPLETE');
-      tx.update(claimRef, {status: 'COMPLETED', paymentStatus: claim.totalAmount > 0 ? 'BUYER_CONFIRMED_CASH' : 'NOT_REQUIRED',
+      tx.update(claimRef, {status: 'COMPLETED', paymentStatus: 'BUYER_CONFIRMED_CASH',
         receivedAt: stamp(), updatedAt: stamp()});
       tx.update(offerRef, {claimedUnits: offer.claimedUnits - claim.units, completedUnits: offer.completedUnits + claim.units, updatedAt: stamp()});
-      const quantities = {...(stats.quantityByUnit || {})}, donated = {...(stats.donatedByUnit || {})};
+      const quantities = {...(stats.quantityByUnit || {})};
       for (const row of rows) {
         const unit = text(row.component.unitSnapshot || row.product.unit), quantity = round(row.component.quantityPerUnit * claim.units);
         quantities[unit] = round((quantities[unit] || 0) + quantity);
-        if (offer.type === 'DONATION') donated[unit] = round((donated[unit] || 0) + quantity);
       }
       tx.set(statsRef, {sellerId: offer.sellerId, completedPickups: (stats.completedPickups || 0) + 1,
-        donationPickups: (stats.donationPickups || 0) + (offer.type === 'DONATION' ? 1 : 0), quantityByUnit: quantities,
-        donatedByUnit: donated, updatedAt: stamp()});
+        quantityByUnit: quantities, updatedAt: stamp()});
       notify(tx, claim.id + ':completed', offer.sellerId, offer.id, 'Khách đã xác nhận nhận nông sản', 'Lượt giải cứu đã được ghi nhận vào thống kê Giải cứu mở rộng.');
     } else if (body.action === 'CANCEL') {
       if (caller.role !== 'CUSTOMER' || offer.type === 'GROUP_BUY' && P.groupReady(offer))
@@ -343,68 +324,6 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     });
   }
   route('close', ['SELLER', 'ADMIN'], (body, caller) => settle(body.offerId, caller));
-
-  route('quotes/request', ['CUSTOMER'], async (body, caller) => db.runTransaction(async tx => {
-    const buyer = await account(tx, caller, ['CUSTOMER']);
-    const offer = data(await tx.get(ref('rescueOffers', body.offerId)));
-    if (buyer.customerType !== 'BUSINESS') throw fail(403, 'Chỉ tài khoản doanh nghiệp được thương lượng sỉ.');
-    if (!offer || offer.type !== 'BULK' || offer.status !== 'OPEN' || offer.closesAt <= now()) throw fail(409, 'Gói sỉ không còn nhận báo giá.');
-    const units = number(body.units, 1, Math.min(offer.maxUnitsPerClaim, offer.availableUnits), 'Số suất', true);
-    const quoteRef = ref('rescueQuotes', digest(offer.id + '|' + caller.uid)), previous = data(await tx.get(quoteRef));
-    if (previous && previous.status === 'ACCEPTED') throw fail(409, 'Báo giá đã được chấp nhận.');
-    if (!previous && (offer.quoteCount || 0) >= 100) throw fail(409, 'Gói đã đủ 100 đối tác thương lượng.');
-    const quote = {id: quoteRef.id, offerId: offer.id, customerId: caller.uid, sellerId: offer.sellerId,
-      companyName: text(buyer.companyName), units, buyerNote: string(body.note || 'Yêu cầu báo giá', 1, 500, 'Lời nhắn'),
-      status: 'REQUESTED', revision: (previous?.revision || 0) + 1, updatedAt: stamp()};
-    tx.set(quoteRef, quote);
-    if (!previous) tx.update(ref('rescueOffers', offer.id), {quoteCount: (offer.quoteCount || 0) + 1});
-    notify(tx, quote.id + ':request:' + quote.revision, offer.sellerId, offer.id, 'Yêu cầu báo giá sỉ', 'Một đối tác doanh nghiệp đang muốn thương lượng.');
-    return {quote};
-  }));
-  route('quotes/list', ['CUSTOMER', 'SELLER'], async (body, caller) => {
-    const offer = data(await ref('rescueOffers', body.offerId).get());
-    if (!offer || caller.role === 'SELLER' && offer.sellerId !== caller.uid) throw fail(403, 'Không có quyền xem báo giá.');
-    let query = db.collection('rescueQuotes').where('offerId', '==', offer.id);
-    if (caller.role === 'CUSTOMER') query = query.where('customerId', '==', caller.uid);
-    return {items: (await query.limit(100).get()).docs.map(data)};
-  });
-  route('quotes/propose', ['SELLER'], async (body, caller) => db.runTransaction(async tx => {
-    await account(tx, caller, ['SELLER']);
-    const quoteRef = ref('rescueQuotes', body.quoteId), quote = data(await tx.get(quoteRef));
-    if (!quote || quote.sellerId !== caller.uid || quote.status === 'ACCEPTED') throw fail(403, 'Không thể sửa báo giá.');
-    const offer = data(await tx.get(ref('rescueOffers', quote.offerId)));
-    if (!offer || offer.status !== 'OPEN' || offer.closesAt <= now()) throw fail(409, 'Gói đã hết hạn.');
-    const unitPrice = number(body.unitPrice, 1, offer.originalUnitPrice, 'Giá mỗi suất', true);
-    const validUntil = Math.min(offer.closesAt, now() + DAY), revision = quote.revision + 1;
-    tx.update(quoteRef, {unitPrice, validUntil, revision, status: 'PROPOSED', updatedAt: stamp()});
-    notify(tx, quote.id + ':proposed:' + revision, quote.customerId, offer.id, 'Đã nhận báo giá sỉ', 'Xem giá và xác nhận trước khi báo giá hết hạn.');
-    return {revision};
-  }));
-
-  route('organizations/apply', ['CUSTOMER'], async (body, caller) => db.runTransaction(async tx => {
-    await account(tx, caller, ['CUSTOMER']);
-    const organizationRef = ref('rescueOrganizations', caller.uid), previous = data(await tx.get(organizationRef));
-    if (previous?.status === 'VERIFIED') throw fail(409, 'Tổ chức đã được xác thực.');
-    tx.set(organizationRef, {id: caller.uid, name: string(body.name, 3, 160, 'Tên tổ chức'),
-      registration: string(body.registration, 3, 100, 'Mã đăng ký'), evidence: string(body.evidence, 10, 1000, 'Thông tin xác minh'),
-      contact: string(body.contact, 5, 200, 'Liên hệ'), status: 'PENDING', updatedAt: stamp()});
-    return {};
-  }));
-  route('organizations/list', ['CUSTOMER', 'ADMIN'], async (body, caller) => {
-    if (caller.role !== 'ADMIN') return {items: [data(await ref('rescueOrganizations', caller.uid).get())].filter(Boolean)};
-    const status = body.status || 'PENDING';
-    if (!['PENDING', 'VERIFIED', 'REJECTED'].includes(status)) throw fail(400, 'Trạng thái hồ sơ không hợp lệ.');
-    const result = await page('rescueOrganizations', body, 'status', status);
-    return {items: result.docs.map(data), cursor: result.cursor, hasMore: result.hasMore};
-  });
-  route('organizations/review', ['ADMIN'], async (body, caller) => db.runTransaction(async tx => {
-    await account(tx, caller, ['ADMIN']);
-    const organizationRef = ref('rescueOrganizations', body.organizationId), organization = data(await tx.get(organizationRef));
-    if (!organization || !['VERIFIED', 'REJECTED'].includes(body.status)) throw fail(400, 'Quyết định không hợp lệ.');
-    const reason = string(body.reason, 3, 500, 'Lý do xác minh');
-    tx.update(organizationRef, {status: body.status, reason, moderatedBy: caller.uid, moderatedAt: stamp(), updatedAt: stamp()});
-    return {};
-  }));
 
   route('subscriptions/save', ['CUSTOMER'], async (body, caller) => db.runTransaction(async tx => {
     await account(tx, caller, ['CUSTOMER']);
@@ -452,7 +371,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
   });
   route('impact', null, async body => {
     const stats = data(await ref('rescueImpact', body.sellerId).get());
-    return {impact: stats || {completedPickups: 0, donationPickups: 0, quantityByUnit: {}, donatedByUnit: {}}};
+    return {impact: stats || {completedPickups: 0, quantityByUnit: {}}};
   });
 
   let running = false;

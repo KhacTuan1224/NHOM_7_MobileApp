@@ -30,7 +30,7 @@ beforeEach(async () => {
   const fixtures = {
     'users/seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED', shopName: 'Vườn nhà'},
     'users/seller2': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'},
-    'users/a': {role: 'CUSTOMER', status: 'ACTIVE', fullName: 'Khách A', customerType: 'BUSINESS', companyName: 'Bếp xanh'},
+    'users/a': {role: 'CUSTOMER', status: 'ACTIVE', fullName: 'Khách A'},
     'users/b': {role: 'CUSTOMER', status: 'ACTIVE', fullName: 'Khách B'},
     'users/admin': {role: 'ADMIN', status: 'ACTIVE'},
     'products/p': {sellerId: 'seller', status: 'ACTIVE', name: 'Rau cải', unit: 'kg', originalPrice: 100000},
@@ -53,6 +53,24 @@ function input(overrides = {}) {
 }
 async function create(overrides) { const response = await post('create', input(overrides)); assert.equal(response.status, 200, JSON.stringify(response.body)); return response; }
 async function inventory() { return (await db.doc('productBatches/batch').get()).data(); }
+test('removed wholesale and donation types cannot be created, discovered or joined', async () => {
+  for (const type of ['BULK', 'DONATION']) {
+    assert.equal((await post('create', input({type, unitPrice: type === 'DONATION' ? 0 : 20000}))).status, 400);
+    await db.doc('rescueOffers/retired').set({...input(), id: 'retired', type, sellerId: 'seller', status: 'OPEN', availableUnits: 10});
+    assert.equal((await post('catalog', {}, '')).body.items.length, 0);
+    assert.equal((await post('detail', {offerId: 'retired'}, '')).status, 404);
+    assert.equal((await post('join', {offerId: 'retired', units: 1}, 'a')).status, 404);
+    assert.equal((await post('claims', {offerId: 'retired'}, 'a')).status, 404);
+    await db.doc('rescueClaims/retired-claim').set({offerId: 'retired', customerId: 'a', sellerId: 'seller', status: 'READY'});
+    assert.equal((await post('claims/action', {claimId: 'retired-claim', action: 'COMPLETE', confirmReceived: true, confirmPaid: true}, 'a')).status, 404);
+  }
+  for (const route of ['quotes/request', 'quotes/list', 'quotes/propose', 'quotes/accept',
+    'organizations/apply', 'organizations/list', 'organizations/review']) {
+    const response = await fetch(base + route, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+    assert.equal(response.status, 404);
+  }
+  assert.equal((await inventory()).reservedQuantity, 0);
+});
 test('creation atomically holds physical stock, redacts mystery contents and replays after cutoff', async () => {
   const request = input(); assert.equal((await post('create', request)).status, 200);
   assert.equal((await inventory()).availableQuantity, 0); assert.equal((await inventory()).reservedQuantity, 10);
@@ -128,26 +146,6 @@ test('successful group freezes pledge cancellation and releases only unclaimed s
   assert.equal((await inventory()).availableQuantity, 5); assert.equal((await inventory()).reservedQuantity, 5);
   now += 3600001; await api.settle('offer');
   assert.equal((await inventory()).availableQuantity, 10);
-});
-test('only a verified organization may receive donations and only admin can verify', async () => {
-  await create({type: 'DONATION', unitPrice: 0});
-  assert.equal((await post('join', {offerId: 'offer', units: 1}, 'b')).status, 403);
-  assert.equal((await post('organizations/apply', {name: 'Bếp ăn xanh', registration: 'ORG-123', contact: '0912345678', evidence: 'Hồ sơ tổ chức: thông tin xác minh'}, 'b')).status, 200);
-  assert.equal((await post('organizations/review', {organizationId: 'b', status: 'VERIFIED', reason: 'Đã xác minh'}, 'a')).status, 403);
-  assert.equal((await post('organizations/review', {organizationId: 'b', status: 'VERIFIED', reason: 'Đã xác minh hồ sơ'}, 'admin')).status, 200);
-  const claim = (await post('join', {offerId: 'offer', units: 1}, 'b')).body.claim;
-  assert.equal(claim.totalAmount, 0); assert.equal(claim.paymentStatus, 'NOT_REQUIRED');
-});
-test('bulk quotes are private, role restricted, versioned and never trust a client price', async () => {
-  await create({type: 'BULK'});
-  assert.equal((await post('quotes/request', {offerId: 'offer', units: 2}, 'b')).status, 403);
-  const quote = (await post('quotes/request', {offerId: 'offer', units: 2}, 'a')).body.quote;
-  assert.equal((await post('quotes/list', {offerId: 'offer'}, 'b')).body.items.length, 0);
-  const proposed = await post('quotes/propose', {quoteId: quote.id, unitPrice: 10000});
-  assert.equal((await post('quotes/accept', {offerId: 'offer', units: 2, revision: 1}, 'a')).status, 409);
-  const accepted = await post('quotes/accept', {offerId: 'offer', units: 2, revision: proposed.body.revision, unitPrice: 1}, 'a');
-  assert.equal(accepted.body.claim.totalAmount, 20000);
-  assert.equal((await post('quotes/propose', {quoteId: quote.id, unitPrice: 9999})).status, 403);
 });
 test('subscription reminders create no payment or unattended orders and pause stops reminders', async () => {
   await create({type: 'SUBSCRIPTION', planKey: 'weekly-veg'});

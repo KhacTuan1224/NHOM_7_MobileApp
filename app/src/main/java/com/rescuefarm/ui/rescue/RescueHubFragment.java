@@ -122,9 +122,9 @@ public final class RescueHubFragment extends Fragment {
         configuredRole = role(); configuringTabs = true;
         int position = Math.max(0, tabs.getSelectedTabPosition());
         tabs.removeAllTabs();
-        String[] names = admin() ? new String[]{"Khám phá", "Xác minh tổ chức"}
+        String[] names = admin() ? new String[]{"Khám phá"}
                 : seller() ? new String[]{"Khám phá", "Gói cửa hàng", "Tác động"}
-                : new String[]{"Khám phá", "Suất của tôi", "Gói định kỳ", "Tổ chức từ thiện"};
+                : new String[]{"Khám phá", "Suất của tôi", "Gói định kỳ"};
         for (String name : names) tabs.addTab(tabs.newTab().setText(name));
         tabs.selectTab(tabs.getTabAt(Math.min(position, names.length - 1))); configuringTabs = false;
     }
@@ -143,14 +143,13 @@ public final class RescueHubFragment extends Fragment {
     private void selectTab(int position) {
         if (position == 0) browse("catalog");
         else if (login()) {
-            if (admin()) browse("organizations");
-            else if (position == 1) browse("mine");
+            if (position == 1) browse("mine");
             else if (seller()) browse("impact");
-            else browse(position == 2 ? "subscriptions" : "organizations");
+            else browse("subscriptions");
         }
     }
     private void browse(String screen) {
-        String path = screen.equals("subscriptions") ? "subscriptions/list" : screen.equals("organizations") ? "organizations/list" : screen;
+        String path = screen.equals("subscriptions") ? "subscriptions/list" : screen;
         JSONObject query = body();
         if (screen.equals("catalog")) {
             query = body("type", TYPES[type.getSelectedItemPosition()]);
@@ -178,19 +177,13 @@ public final class RescueHubFragment extends Fragment {
         } else if (state.screen.equals("impact")) {
             JSONObject impact = state.value.optJSONObject("impact"); if (impact != null) impact(impact);
         } else {
-            if (state.screen.equals("organizations") && admin()) {
-                for (String filter : new String[]{"PENDING", "VERIFIED", "REJECTED"}) button(content, status(filter), () ->
-                        model.load("organizations", "organizations/list", body("status", filter)));
-            }
             JSONArray items = state.value.optJSONArray("items");
             if (items != null) for (int i = 0; i < items.length(); i++) {
                 JSONObject value = items.optJSONObject(i); if (value == null) continue;
                 if (state.screen.equals("subscriptions")) subscription(value);
-                else if (state.screen.equals("organizations")) organization(value);
                 else if (state.screen.equals("mine") && !seller()) claim(value, value.optJSONObject("offer"), false);
                 else offerCard(value);
             }
-            if (state.screen.equals("organizations") && customer()) button(content, "Gửi hồ sơ tổ chức / cập nhật hồ sơ", this::applyOrganization);
             if (state.value.optBoolean("hasMore")) button(content, "Xem thêm", model::more).setEnabled(!state.loading);
         }
         if (!state.loading && content.getChildCount() == 0 && state.message.isEmpty()) text(content, getString(R.string.rescue_empty), false);
@@ -234,8 +227,8 @@ public final class RescueHubFragment extends Fragment {
                 "Các suất chưa nhận sẽ bị hủy và trả tồn kho. Suất đã nhận được giữ trong lịch sử.",
                 () -> model.action("close", body("offerId", offer.optString("id")), model::refresh)));
         if (!owner && !admin() && "OPEN".equals(offer.optString("status")) && offer.optLong("closesAt") > System.currentTimeMillis() && !registered) {
-            button(card, offer.optString("type").equals("BULK") ? "Yêu cầu báo giá sỉ" : "Đăng ký nhận nông sản", () -> {
-                if (login()) quantity(offer, offer.optString("type").equals("BULK"));
+            button(card, "Đăng ký nhận nông sản", () -> {
+                if (login()) quantity(offer);
             });
         }
         if (customer() && offer.optString("type").equals("SUBSCRIPTION")) button(card, "Theo dõi gói định kỳ", () ->
@@ -244,8 +237,6 @@ public final class RescueHubFragment extends Fragment {
                         .setPositiveButton("Mỗi 7 ngày", (d, w) -> subscribe(offer, 7))
                         .setNeutralButton("Mỗi 30 ngày", (d, w) -> subscribe(offer, 30)).setNegativeButton("Đóng", null).show());
         if (claims != null) for (int i = 0; i < claims.length(); i++) if (claims.optJSONObject(i) != null) claim(claims.optJSONObject(i), offer, true);
-        JSONArray quotes = response.optJSONArray("quotes");
-        if (quotes != null) for (int i = 0; i < quotes.length(); i++) if (quotes.optJSONObject(i) != null) quote(quotes.optJSONObject(i), offer, owner);
         JSONObject impact = response.optJSONObject("impact");
         JSONArray received = response.optJSONArray("receivedContents");
         if (received != null && received.length() > 0) {
@@ -255,22 +246,20 @@ public final class RescueHubFragment extends Fragment {
                     text(content, item.optString("productName") + " · " + item.optDouble("quantityPerUnit") + " " + item.optString("unit"), false);
             }
         }
-        if (impact != null) text(content, "Cửa hàng: " + impact.optInt("completedPickups") + " lượt nhận giải cứu, " + impact.optInt("donationPickups") + " lượt quyên góp đã hoàn tất.", false);
+        if (impact != null) text(content, "Cửa hàng: " + impact.optInt("completedPickups") + " lượt nhận giải cứu đã hoàn tất.", false);
     }
-    private void quantity(JSONObject offer, boolean quote) {
+    private void quantity(JSONObject offer) {
         LinearLayout form = form(); EditText quantity = field(form, "Số suất (số nguyên)", true); quantity.setText("1");
-        EditText note = quote ? field(form, "Lời nhắn cho người bán", false) : null;
         text(form, "Giá hiện tại: " + money(offer.optDouble("unitPrice")) + " / " + offer.optString("unitLabel")
                 + ". Thanh toán tại điểm khi nhận. " + (offer.optString("type").equals("GROUP_BUY") ? "Cam kết chỉ có hiệu lực nhận hàng khi nhóm đạt ngưỡng." : ""), false);
-        android.app.Dialog dialog = new MaterialAlertDialogBuilder(requireContext()).setTitle(quote ? "Thương lượng sỉ" : "Đăng ký giải cứu")
+        android.app.Dialog dialog = new MaterialAlertDialogBuilder(requireContext()).setTitle("Đăng ký giải cứu")
                 .setView(scroll(form)).setNegativeButton("Đóng", null).setPositiveButton("Xác nhận", null).create();
         dialog.setOnShowListener(d -> ((androidx.appcompat.app.AlertDialog) dialog).getButton(-1).setOnClickListener(v -> {
             try {
                 int units = Integer.parseInt(quantity.getText().toString().trim());
                 JSONObject body = body("offerId", offer.optString("id"), "units", units);
-                if (quote) body.put("note", note.getText().toString());
-                else if (!subscriptionId.isEmpty()) body.put("subscriptionId", subscriptionId);
-                dialog.dismiss(); model.action(quote ? "quotes/request" : "join", body, model::refresh);
+                if (!subscriptionId.isEmpty()) body.put("subscriptionId", subscriptionId);
+                dialog.dismiss(); model.action("join", body, model::refresh);
             } catch (Exception e) { quantity.setError("Nhập số suất nguyên hợp lệ."); }
         })); dialog.show();
     }
@@ -282,30 +271,13 @@ public final class RescueHubFragment extends Fragment {
         String state = claim.optString("status");
         if (seller() && state.equals("RESERVED")) button(card, "Đã chuẩn bị, mời khách đến nhận", () -> model.action("claims/action", body("claimId", claim.optString("id"), "action", "READY"), model::refresh));
         if (customer() && state.equals("READY")) button(card, "Xác nhận đã nhận nông sản", () -> confirm("Bạn đã nhận nông sản?",
-                "Chỉ xác nhận sau khi đã nhận hàng thực tế" + (claim.optDouble("totalAmount") > 0 ? " và thanh toán " + money(claim.optDouble("totalAmount")) + " cho cửa hàng." : ". Gói quyên góp không thu tiền."),
+                "Chỉ xác nhận sau khi đã nhận hàng thực tế" + " và thanh toán " + money(claim.optDouble("totalAmount")) + " cho cửa hàng.",
                 () -> model.action("claims/action", body("claimId", claim.optString("id"), "action", "COMPLETE", "confirmReceived", true, "confirmPaid", true), model::refresh)));
         if (customer() && (state.equals("RESERVED") || state.equals("PLEDGED") || state.equals("READY"))
                 && (!offer.optString("type").equals("GROUP_BUY") || !offer.optBoolean("groupSucceeded"))) button(card, "Hủy đăng ký / rút cam kết", () -> confirm("Hủy đăng ký?", "Suất sẽ được trả lại cho người cần giải cứu khác.",
                 () -> model.action("claims/action", body("claimId", claim.optString("id"), "action", "CANCEL"), model::refresh)));
         if (!inDetail) button(card, "Mở gói và quản lý nhận hàng", () -> openOffer(offer.optString("id"), ""));
         if (state.equals("COMPLETED")) text(card, "Đã ghi nhận nhận hàng" + (claim.optDouble("totalAmount") > 0 ? " và khách xác nhận trả tiền tại điểm." : "."), false);
-    }
-    private void quote(JSONObject quote, JSONObject offer, boolean owner) {
-        LinearLayout card = card(content); text(card, "Báo giá · " + status(quote.optString("status")), true);
-        text(card, quote.optString("companyName") + " · " + quote.optInt("units") + " suất\n" + quote.optString("buyerNote"), false);
-        if (quote.has("unitPrice")) text(card, money(quote.optDouble("unitPrice")) + " / suất · tổng "
-                + money(quote.optDouble("unitPrice") * quote.optInt("units")) + "\nHiệu lực đến " + date(quote.optLong("validUntil")), false);
-        if (owner && !quote.optString("status").equals("ACCEPTED")) button(card, "Gửi / cập nhật giá đề nghị", () -> {
-            LinearLayout form = form(); EditText price = field(form, "Giá mỗi suất (VND, số nguyên)", true);
-            new MaterialAlertDialogBuilder(requireContext()).setTitle("Báo giá riêng cho đối tác").setView(scroll(form))
-                    .setPositiveButton("Gửi giá", (d, w) -> {
-                        try { model.action("quotes/propose", body("quoteId", quote.optString("id"), "unitPrice", Long.parseLong(price.getText().toString().trim())), model::refresh); }
-                        catch (NumberFormatException e) { tell("Giá không hợp lệ."); }
-                    }).setNegativeButton("Đóng", null).show();
-        });
-        if (customer() && quote.optString("status").equals("PROPOSED")) button(card, "Chấp nhận báo giá này", () -> confirm("Xác nhận báo giá?",
-                quote.optInt("units") + " suất · " + money(quote.optDouble("unitPrice") * quote.optInt("units")) + ". Thanh toán tại điểm nhận.",
-                () -> model.action("quotes/accept", body("offerId", offer.optString("id"), "units", quote.optInt("units"), "revision", quote.optInt("revision")), model::refresh)));
     }
     private void subscribe(JSONObject offer, int days) { model.action("subscriptions/save", body("offerId", offer.optString("id"), "cadenceDays", days), () -> browse("subscriptions")); }
     private void subscription(JSONObject value) {
@@ -320,32 +292,14 @@ public final class RescueHubFragment extends Fragment {
         button(card, next.equals("PAUSED") ? "Tạm dừng nhắc định kỳ" : "Tiếp tục đăng ký", () -> model.action("subscriptions/pause",
                 body("subscriptionId", value.optString("id"), "status", next), model::refresh));
     }
-    private void organization(JSONObject value) {
-        LinearLayout card = card(content); text(card, value.optString("name"), true);
-        text(card, status(value.optString("status")) + "\nMã đăng ký: " + value.optString("registration") + "\nLiên hệ: " + value.optString("contact")
-                + "\n" + value.optString("evidence") + "\n" + value.optString("reason"), false);
-        if (admin()) for (String decision : new String[]{"VERIFIED", "REJECTED"}) button(card, decision.equals("VERIFIED") ? "Xác thực tổ chức" : "Từ chối hồ sơ", () -> {
-            LinearLayout form = form(); EditText reason = field(form, "Kết quả kiểm tra hồ sơ thực tế", false);
-            new MaterialAlertDialogBuilder(requireContext()).setTitle("Duyệt tổ chức").setView(scroll(form)).setPositiveButton("Lưu quyết định", (d, w) -> model.action("organizations/review",
-                    body("organizationId", value.optString("id"), "status", decision, "reason", reason.getText().toString()), model::refresh)).setNegativeButton("Đóng", null).show();
-        });
-    }
-    private void applyOrganization() {
-        LinearLayout form = form(); EditText name = field(form, "Tên tổ chức", false), registration = field(form, "Mã đăng ký tổ chức", false),
-                contact = field(form, "Thông tin liên hệ", false), evidence = field(form, "Thông tin để Admin đối chiếu hồ sơ", false);
-        new MaterialAlertDialogBuilder(requireContext()).setTitle("Đăng ký nhận quyên góp").setView(scroll(form))
-                .setPositiveButton("Gửi hồ sơ", (d, w) -> model.action("organizations/apply", body("name", name.getText().toString(), "registration", registration.getText().toString(),
-                        "contact", contact.getText().toString(), "evidence", evidence.getText().toString()), model::refresh))
-                .setNegativeButton("Đóng", null).show();
-    }
     private void impact(JSONObject value) {
         LinearLayout card = card(content); text(card, "Tác động đã được xác nhận", true);
-        text(card, value.optInt("completedPickups") + " lượt nhận hoàn tất · " + value.optInt("donationPickups") + " lượt quyên góp", false);
-        for (String key : new String[]{"quantityByUnit", "donatedByUnit"}) {
-            JSONObject quantities = value.optJSONObject(key); text(card, key.equals("quantityByUnit") ? "Tổng nông sản đã nhận" : "Trong đó quyên góp", true);
+        text(card, value.optInt("completedPickups") + " lượt nhận hoàn tất", false);
+        for (String key : new String[]{"quantityByUnit"}) {
+            JSONObject quantities = value.optJSONObject(key); text(card, "Tổng nông sản đã nhận", true);
             if (quantities != null) { java.util.Iterator<String> keys = quantities.keys(); while (keys.hasNext()) { String unit = keys.next(); text(card, quantities.optDouble(unit) + " " + unit, false); } }
         }
-        text(card, "Thống kê riêng các gói Giải cứu mở rộng. Không cộng lẫn kg, hộp, quả; không tự quy đổi thành giảm phí hoặc chứng từ thuế.", false);
+        text(card, "Thống kê riêng các gói Giải cứu mở rộng. Không cộng lẫn kg, hộp, quả.", false);
     }
     private void map(JSONObject offer) {
         String point = offer.optDouble("latitude") + "," + offer.optDouble("longitude");
