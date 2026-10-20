@@ -391,10 +391,11 @@ service cloud.firestore {
     function validCampaignComment(data, campaignId) {
       return data.keys().hasOnly([
             'id', 'campaignId', 'userId', 'status', 'content', 'createdAt', 'updatedAt',
-            'moderatedBy', 'moderatedAt', 'moderationReason'
+            'moderatedBy', 'moderatedAt', 'moderationReason', 'moderationPreviousStatus'
           ])
           && data.id is string && data.campaignId == campaignId
           && data.userId is string
+          && data.get('moderationPreviousStatus', '') in ['', 'ACTIVE', 'EDITED']
           && data.status in ['ACTIVE', 'EDITED', 'DELETED', 'HIDDEN']
           && data.content is string
           && ((data.status == 'DELETED' && data.content == '')
@@ -691,8 +692,6 @@ service cloud.firestore {
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && validAdminCategory(request.resource.data, categoryId)
-          && (request.resource.data.active == true
-            || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
       allow delete: if false;
     }
@@ -760,8 +759,6 @@ service cloud.firestore {
             'moderationPreviousStatus', 'updatedAt'
           ])
           && validProduct(request.resource.data)
-          && (request.resource.data.status != 'HIDDEN'
-            || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data)
           && hasNoCredentialFields(request.resource.data))
         || validReviewSummaryChange(resource.data, request.resource.data, productId);
@@ -981,7 +978,7 @@ service cloud.firestore {
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                 'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
               ])
-              && (!(request.resource.data.status in ['REJECTED', 'STOPPED'])
+              && (request.resource.data.status != 'REJECTED'
                 || request.resource.data.moderationReason.size() >= 3)
               && hasAdminModerationFields(request.resource.data))
           )
@@ -1034,9 +1031,15 @@ service cloud.firestore {
             && request.resource.data.id == resource.data.id
             && request.resource.data.campaignId == resource.data.campaignId
             && request.resource.data.userId == resource.data.userId
-            && request.resource.data.status == 'HIDDEN'
+            && (((resource.data.status in ['ACTIVE', 'EDITED'])
+                && request.resource.data.status == 'HIDDEN'
+                && request.resource.data.moderationPreviousStatus == resource.data.status)
+              || (resource.data.status == 'HIDDEN'
+                && request.resource.data.status in ['ACTIVE', 'EDITED']
+                && request.resource.data.get('moderationPreviousStatus', '') == ''))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
+              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason',
+              'moderationPreviousStatus'
             ])
             && hasAdminModerationFields(request.resource.data)
             && validCampaignComment(request.resource.data, campaignId));
@@ -1079,8 +1082,6 @@ service cloud.firestore {
             'moderatedAt', 'moderationReason'
           ])
           && validAdminBanner(request.resource.data, bannerId)
-          && (request.resource.data.active == true
-            || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
       allow delete: if false;
     }
@@ -1171,7 +1172,7 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
           ])
-          && (!(request.resource.data.status in ['REJECTED', 'HIDDEN'])
+          && (request.resource.data.status != 'REJECTED'
             || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data)));
       allow delete: if false;

@@ -298,8 +298,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             callback.onError(ErrorCode.VALIDATION, "Chỉ category và banner hỗ trợ bật/tắt."); return;
         }
         String id = trim(resourceId), note = reason == null ? "" : reason.trim();
-        if (id.isEmpty() || (!active && note.length() < 3)) {
-            callback.onError(ErrorCode.VALIDATION, "Cần nhập lý do khi tắt nội dung."); return;
+        if (id.isEmpty()) {
+            callback.onError(ErrorCode.VALIDATION, "Không tìm thấy nội dung cần cập nhật."); return;
         }
         ensureAdmin(() -> {
             String adminId = auth.getCurrentUser().getUid();
@@ -374,9 +374,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 || name.length() < (section == Section.CATEGORIES ? 2 : 3) || name.length() > 120
                 || (section == Section.CATEGORIES && description.length() > 500)
                 || displayOrder < 0 || displayOrder > 10000
-                || (section == Section.BANNERS && active && imageUrl.isEmpty())
-                || (!active && note.length() < 3)) {
-            callback.onError(ErrorCode.VALIDATION, "Kiểm tra tên, thứ tự từ 0 đến 10000 và lý do khi tắt hiển thị. Banner đang hiển thị phải có ảnh."); return;
+                || (section == Section.BANNERS && active && imageUrl.isEmpty())) {
+            callback.onError(ErrorCode.VALIDATION, "Kiểm tra tên, thứ tự từ 0 đến 10000. Banner đang hiển thị phải có ảnh."); return;
         }
         Date startDate = input.get("startDate") instanceof Date ? (Date) input.get("startDate") : null;
         Date endDate = input.get("endDate") instanceof Date ? (Date) input.get("endDate") : null;
@@ -797,7 +796,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
             ActionCallback callback) {
         if (!online(callback)) return;
         String id = trim(reportId), note = reason == null ? "" : reason.trim();
-        if (id.isEmpty() || action == null || (action != ReportAction.MARK_IN_REVIEW && note.length() < 3)) {
+        if (id.isEmpty() || action == null || (requiresReportReason(action) && note.length() < 3)) {
             callback.onError(ErrorCode.VALIDATION, "Cần nhập lý do xử lý từ 3 ký tự."); return;
         }
         ensureAdmin(() -> db.collection("reports").document(id).get().addOnSuccessListener(report -> {
@@ -819,6 +818,10 @@ public final class FirebaseAdminRepository implements AdminRepository {
         }).addOnFailureListener(error -> fail(error, callback)), callback);
     }
 
+    private static boolean requiresReportReason(ReportAction action) {
+        return action == ReportAction.DISMISS || action == ReportAction.BLOCK_USER;
+    }
+
     private void runReportResolution(String reportId, ReportAction action, String note,
             DocumentReference commentRef, ActionCallback callback) {
         String adminId = auth.getCurrentUser().getUid();
@@ -827,7 +830,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             DocumentSnapshot report = tx.get(reportRef);
             if (!report.exists()) throw new IllegalStateException("REPORT_NOT_FOUND");
             String currentStatus = clean(report.getString("status"));
-            if (!currentStatus.equals("PENDING") && !currentStatus.equals("IN_REVIEW"))
+            boolean showTarget = action == ReportAction.SHOW_TARGET;
+            if (!showTarget && !currentStatus.equals("PENDING") && !currentStatus.equals("IN_REVIEW"))
                 throw new IllegalStateException("REPORT_ALREADY_CLOSED");
             if (action == ReportAction.MARK_IN_REVIEW && !currentStatus.equals("PENDING"))
                 throw new IllegalStateException("REPORT_TRANSITION_INVALID");
@@ -867,18 +871,21 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     throw new SecurityException("TARGET_USER_FORBIDDEN");
             }
             if (action == ReportAction.HIDE_TARGET) validateHideTarget(targetCollection, targetStatus);
+            if (showTarget && (!"comments".equals(targetCollection) || !"HIDDEN".equals(targetStatus)))
+                throw new IllegalStateException("REPORT_TARGET_CANNOT_BE_SHOWN");
             Map<String, Object> reportChanges = new HashMap<>();
             reportChanges.put("status", action == ReportAction.MARK_IN_REVIEW ? "IN_REVIEW"
                     : action == ReportAction.DISMISS ? "REJECTED" : "RESOLVED");
             reportChanges.put("resolvedBy", adminId); reportChanges.put("resolutionNote", note);
             reportChanges.put("updatedAt", FieldValue.serverTimestamp());
-            tx.update(reportRef, reportChanges);
+            if (!showTarget) tx.update(reportRef, reportChanges);
             String before = currentStatus;
-            String after = String.valueOf(reportChanges.get("status"));
+            String after = showTarget ? currentStatus : String.valueOf(reportChanges.get("status"));
             if (action == ReportAction.HIDE_TARGET) {
                 Map<String, Object> changes = moderation(adminId, note);
                 changes.put("status", "campaigns".equals(targetCollection) ? "STOPPED" : "HIDDEN");
                 if ("products".equals(targetCollection)) changes.put("moderationPreviousStatus", targetStatus);
+                if ("comments".equals(targetCollection)) changes.put("moderationPreviousStatus", targetStatus);
                 tx.update(targetRef, changes);
                 Map<String, Object> targetAudit = auditMap(adminId,
                         sectionForCollection(targetCollection), target.getId(), targetStatus,
@@ -899,6 +906,18 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     batchAudit.put("reportId", reportId);
                     tx.set(db.collection(AUDIT).document(), batchAudit);
                 }
+            } else if (showTarget) {
+                String previous = clean(target.getString("moderationPreviousStatus"));
+                if (!"ACTIVE".equals(previous) && !"EDITED".equals(previous)) previous = "ACTIVE";
+                Map<String, Object> changes = moderation(adminId, note);
+                changes.put("status", previous);
+                changes.put("moderationPreviousStatus", FieldValue.delete());
+                tx.update(targetRef, changes);
+                Map<String, Object> targetAudit = auditMap(adminId, "COMMENTS", target.getId(),
+                        "HIDDEN", previous, note);
+                targetAudit.put("resourcePath", targetRef.getPath());
+                targetAudit.put("reportId", reportId);
+                tx.set(db.collection(AUDIT).document(), targetAudit);
             } else if (action == ReportAction.BLOCK_USER) {
                 Map<String, Object> changes = moderation(adminId, note); changes.put("status", "BLOCKED");
                 tx.update(targetRef, changes);

@@ -43,8 +43,7 @@ public final class AdminTransitionPolicy {
 
     public boolean requiresReason(String target) {
         String value = clean(target);
-        return value.equals("REJECTED") || value.equals("HIDDEN") || value.equals("STOPPED")
-                || value.equals("BLOCKED");
+        return value.equals("REJECTED") || value.equals("BLOCKED");
     }
 
     public void validate(Section section, String current, String target, String reason) {

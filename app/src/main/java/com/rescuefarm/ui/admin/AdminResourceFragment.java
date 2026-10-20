@@ -52,7 +52,6 @@ public final class AdminResourceFragment extends Fragment {
     private AdminViewModel viewModel;
     private Section section;
     private TextView title, message;
-    private EditText reason;
     private ProgressBar progress;
     private LinearLayout container;
     private EditText searchInput;
@@ -102,7 +101,7 @@ public final class AdminResourceFragment extends Fragment {
         section = Section.from(raw);
         title = view.findViewById(R.id.adminResourceTitle);
         message = view.findViewById(R.id.adminResourceMessage);
-        reason = view.findViewById(R.id.adminModerationReason);
+        view.findViewById(R.id.adminModerationReason).setVisibility(View.GONE);
         progress = view.findViewById(R.id.adminResourceProgress);
         container = view.findViewById(R.id.adminResourceContainer);
         searchInput = view.findViewById(R.id.adminSearchInput);
@@ -125,13 +124,12 @@ public final class AdminResourceFragment extends Fragment {
             addCatalog.setOnClickListener(v -> showCatalogEditor(null));
         }
         if (section == Section.SHIPPING_SETTINGS) {
-            addCatalog.setVisibility(View.GONE); reason.setVisibility(View.GONE);
+            addCatalog.setVisibility(View.GONE);
             searchInput.setVisibility(View.GONE); statusFilter.setVisibility(View.GONE);
             view.findViewById(R.id.adminOrderDateFilters).setVisibility(View.GONE);
             loadMoreButton.setVisibility(View.GONE);
         }
-        reason.setVisibility(section == Section.CATEGORIES || section == Section.BANNERS
-                ? View.VISIBLE : View.GONE);
+        // Admin hide/show actions on catalog resources do not require a reason.
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
@@ -322,14 +320,30 @@ public final class AdminResourceFragment extends Fragment {
             actions.addView(upload);
             Button toggle = listButton(item.isActive() ? "Ẩn" : "Hiện", getString(item.isActive()
                     ? R.string.admin_disable_action : R.string.admin_enable_action));
-            toggle.setOnClickListener(v -> viewModel.setActive(item.getId(), !item.isActive(),
-                    reason.getText().toString().trim()));
+            toggle.setOnClickListener(v -> changeCatalogVisibility(item, toggle));
             actions.addView(toggle);
         }
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         cardParams.topMargin = listDp(6); cardParams.bottomMargin = listDp(6);
         container.addView(row, cardParams);
+    }
+
+    private void changeCatalogVisibility(AdminListItem item, Button toggle) {
+        boolean show = !item.isActive();
+        if (show) {
+            toggle.setEnabled(false);
+            viewModel.setActive(item.getId(), true, "");
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Ẩn nội dung")
+                .setMessage("Bạn có muốn ẩn nội dung này không?")
+                .setNegativeButton("Hủy", null)
+                .setPositiveButton("Ẩn", (d, which) -> {
+                    toggle.setEnabled(false);
+                    viewModel.setActive(item.getId(), false, "");
+                }).show();
     }
 
     private void addListText(LinearLayout parent, String value, int size, boolean bold) {

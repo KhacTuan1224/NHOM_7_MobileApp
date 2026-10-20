@@ -77,6 +77,9 @@ public interface ProductRepository {
         saveProduct(product, callback);
     }
     void hideProduct(String productId, ActionCallback callback);
+    default void showProduct(String productId, ActionCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, "Không thể hiện lại sản phẩm.");
+    }
     void saveBatch(ProductBatch batch, long expectedVersion, BatchCallback callback);
     void deleteBatch(String batchId, long expectedVersion, ActionCallback callback);
     void mutateStock(String batchId, long expectedVersion, StockMutation mutation,

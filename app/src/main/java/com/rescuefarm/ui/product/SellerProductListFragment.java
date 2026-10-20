@@ -83,7 +83,10 @@ public class SellerProductListFragment extends Fragment {
             row.action("Sửa", "Chỉnh sửa sản phẩm", v -> navigateEditor(product));
             row.action("Lô hàng", getString(R.string.manage_batches_action), v -> navigateBatches(product));
             row.action("Ưu đãi", getString(R.string.manage_promotion_action), v -> navigatePromotion(product));
-            row.action("Ẩn", getString(R.string.hide_product_action), v -> viewModel.hideProduct(product.getId()));
+            boolean hidden = product.getStatus() == com.rescuefarm.domain.enums.ProductStatus.HIDDEN;
+            row.action(hidden ? "Hiện" : "Ẩn", hidden ? "Hiện lại sản phẩm" : getString(R.string.hide_product_action),
+                    v -> { if (hidden) viewModel.showProduct(product.getId());
+                        else viewModel.hideProduct(product.getId()); });
         } else {
             row.action("Lô hàng", getString(R.string.open_product_batches_action), v -> navigateBatches(product));
         }

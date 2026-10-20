@@ -214,6 +214,11 @@ public class ProductViewModel extends ViewModel {
         repository.hideProduct(productId, actionCallback("Đã ẩn sản phẩm."));
     }
 
+    public void showProduct(String productId) {
+        state.setValue(ProductScreenState.loading());
+        repository.showProduct(productId, actionCallback("Đã hiện sản phẩm."));
+    }
+
     public void saveBatch(String id, String productId, String harvestDate, String expiryDate,
             String initialQuantity, long expectedVersion) {
         Date now = new Date();

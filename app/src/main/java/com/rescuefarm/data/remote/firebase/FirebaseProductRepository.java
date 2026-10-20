@@ -446,11 +446,37 @@ public class FirebaseProductRepository implements ProductRepository {
         firestore.runTransaction(transaction -> {
             DocumentSnapshot snapshot = transaction.get(reference);
             requireOwner(snapshot);
-            transaction.update(reference, "status", ProductStatus.HIDDEN.name(),
+            String before = snapshot.getString("status");
+            if (ProductStatus.HIDDEN.name().equals(before)) return null;
+            if (!java.util.Arrays.asList(ProductStatus.ACTIVE.name(), ProductStatus.INACTIVE.name(),
+                    ProductStatus.SOLD_OUT.name()).contains(before))
+                throw new IllegalStateException("PRODUCT_CANNOT_BE_HIDDEN");
+            transaction.update(reference, "sellerHiddenPreviousStatus", before,
+                    "status", ProductStatus.HIDDEN.name(),
                     "updatedAt", FieldValue.serverTimestamp());
             return null;
         }).addOnSuccessListener(unused -> {
             cacheExecutor.execute(() -> dao.deleteProduct(productId)); callback.onSuccess();
+        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+    }
+
+    @Override public void showProduct(String productId, ActionCallback callback) {
+        if (!online(callback, "Không thể hiện sản phẩm khi offline; thay đổi không được xếp hàng.")) return;
+        DocumentReference reference = firestore.collection(PRODUCTS).document(productId);
+        firestore.runTransaction(transaction -> {
+            DocumentSnapshot snapshot = transaction.get(reference);
+            requireOwner(snapshot);
+            if (!ProductStatus.HIDDEN.name().equals(snapshot.getString("status")))
+                throw new IllegalStateException("PRODUCT_NOT_HIDDEN");
+            String previous = snapshot.getString("sellerHiddenPreviousStatus");
+            if (!java.util.Arrays.asList(ProductStatus.ACTIVE.name(), ProductStatus.INACTIVE.name(),
+                    ProductStatus.SOLD_OUT.name()).contains(previous)) previous = ProductStatus.INACTIVE.name();
+            transaction.update(reference, "status", previous,
+                    "sellerHiddenPreviousStatus", FieldValue.delete(),
+                    "updatedAt", FieldValue.serverTimestamp());
+            return previous;
+        }).addOnSuccessListener(status -> {
+            callback.onSuccess();
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 

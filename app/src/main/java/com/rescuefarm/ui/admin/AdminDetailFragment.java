@@ -122,20 +122,24 @@ public final class AdminDetailFragment extends Fragment {
         reason = reasonEditor();
         String status = String.valueOf(detail.get("status"));
         String type = String.valueOf(detail.get("targetType"));
+        boolean open = "PENDING".equals(status) || "IN_REVIEW".equals(status);
         if ("PENDING".equals(status)) addReportButton(detail,
                 AdminRepository.ReportAction.MARK_IN_REVIEW, "Bắt đầu xử lý");
-        if (supportsHide(type, detail)) addReportButton(detail,
+        if (open && supportsHide(type, detail)) addReportButton(detail,
                 AdminRepository.ReportAction.HIDE_TARGET, "Ẩn nội dung và giải quyết");
-        if (hasTargetOwner(type, detail)) addReportButton(detail,
+        if (supportsShow(type, detail)) addReportButton(detail,
+                AdminRepository.ReportAction.SHOW_TARGET, "Hiện lại bình luận");
+        if (open && hasTargetOwner(type, detail)) addReportButton(detail,
                 AdminRepository.ReportAction.BLOCK_USER, "Khóa người tạo và giải quyết");
-        addReportButton(detail, AdminRepository.ReportAction.DISMISS, "Bác report");
+        if (open) addReportButton(detail, AdminRepository.ReportAction.DISMISS, "Bác report");
     }
 
     private void addReportButton(Map<String, Object> detail, AdminRepository.ReportAction action,
             String label) {
         addActionButton(label, () -> {
             String note = reason.getText().toString().trim();
-            if (action != AdminRepository.ReportAction.MARK_IN_REVIEW && note.length() < 3) {
+            if ((action == AdminRepository.ReportAction.DISMISS
+                    || action == AdminRepository.ReportAction.BLOCK_USER) && note.length() < 3) {
                 reason.setError("Nhập lý do xử lý tối thiểu 3 ký tự.");
                 return;
             }
@@ -204,6 +208,13 @@ public final class AdminDetailFragment extends Fragment {
                 || ("CAMPAIGN".equals(type) && "ACTIVE".equals(current))
                 || ("REVIEW".equals(type) && "PUBLISHED".equals(current))
                 || ("COMMENT".equals(type) && Arrays.asList("ACTIVE", "EDITED").contains(current));
+    }
+
+    private boolean supportsShow(String type, Map<String, Object> detail) {
+        Object raw = detail.get("target");
+        if (!(raw instanceof Map<?, ?>)) return false;
+        Object status = ((Map<?, ?>) raw).get("status");
+        return "COMMENT".equals(type) && status != null && "HIDDEN".equals(String.valueOf(status));
     }
 
     private boolean hasTargetOwner(String type, Map<String, Object> detail) {

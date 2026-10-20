@@ -74,6 +74,7 @@ public class OfflineProductRepository implements ProductRepository {
         callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
     }
     @Override public void hideProduct(String productId, ActionCallback callback) { unavailable(callback); }
+    @Override public void showProduct(String productId, ActionCallback callback) { unavailable(callback); }
     @Override public void saveBatch(ProductBatch batch, long expectedVersion, BatchCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
     }

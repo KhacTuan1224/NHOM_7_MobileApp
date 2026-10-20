@@ -362,7 +362,7 @@
         <item>90 ngày gần nhất</item>
         <item>Toàn bộ 50 đơn mới nhất</item>
     </string-array>
-    <string name="admin_reason_hint">Lý do kiểm duyệt (bắt buộc khi từ chối, ẩn, dừng hoặc khóa)</string>
+    <string name="admin_reason_hint">Lý do kiểm duyệt (bắt buộc khi từ chối hoặc khóa)</string>
     <string name="admin_disable_action">Tắt / ẩn</string>
     <string name="admin_enable_action">Bật lại</string>
     <string name="admin_add_catalog_resource">Thêm mới danh mục / banner</string>
