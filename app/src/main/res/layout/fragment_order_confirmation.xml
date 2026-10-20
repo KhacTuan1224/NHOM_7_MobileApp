@@ -59,5 +59,43 @@
             android:minHeight="@dimen/touch_target_min"
             android:text="@string/open_order_detail_action" />
 
+        <LinearLayout
+            android:id="@+id/recentGuestOrdersContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/recentGuestOrdersTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/ibm_plex_sans"
+                android:text="@string/recent_guest_orders_title"
+                android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
+                android:textColor="@color/rescue_on_surface"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/recentGuestOrdersHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/ibm_plex_sans"
+                android:text="@string/recent_guest_orders_hint"
+                android:textColor="@color/rescue_on_surface_variant"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/recentGuestOrdersList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
     </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareScrollView>
