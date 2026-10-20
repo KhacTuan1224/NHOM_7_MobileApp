@@ -8,15 +8,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Toast;
-import android.graphics.drawable.GradientDrawable;
-import android.view.Gravity;
-import android.util.TypedValue;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.bumptech.glide.Glide;
@@ -92,7 +89,7 @@ public final class PromotionWalletFragment extends Fragment {
                 }
                 cursor = result.optString("cursor"); more = result.optBoolean("hasMore");
                 if (more) {
-                    MaterialButton button = button(getString(R.string.pagination_more), false); button.setTag("more");
+                    MaterialButton button = button(getString(R.string.pagination_more)); button.setTag("more");
                     button.setOnClickListener(v -> { button.setEnabled(false); load(false); }); list.addView(button);
                 }
                 if (list.getChildCount() == 0) show(getString(mine ? R.string.promotion_wallet_empty : R.string.promotion_wallet_no_offers));
@@ -108,83 +105,64 @@ public final class PromotionWalletFragment extends Fragment {
         else RenderBackendClient.post("/promotions/catalog", body, callback);
     }
     private void addCard(JSONObject value) {
-        MaterialCardView card = new MaterialCardView(requireContext());
-        card.setCardBackgroundColor(requireContext().getColor(R.color.rescue_surface));
-        card.setCardElevation(dp(2)); card.setRadius(dp(12)); card.setStrokeWidth(dp(1));
-        card.setStrokeColor(requireContext().getColor(R.color.rescue_outline)); card.setClipToOutline(true);
-        LinearLayout.LayoutParams space = new LinearLayout.LayoutParams(-1, -2);
-        space.bottomMargin = dp(14); card.setLayoutParams(space);
-
-        LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER_VERTICAL);
-        card.addView(row);
-
-        LinearLayout coupon = new LinearLayout(requireContext());
-        coupon.setOrientation(LinearLayout.VERTICAL); coupon.setGravity(Gravity.CENTER);
-        coupon.setPadding(dp(6), dp(12), dp(6), dp(12)); coupon.setMinimumHeight(dp(190));
-        coupon.setBackground(greenCouponBackground());
-        LinearLayout.LayoutParams couponSize = new LinearLayout.LayoutParams(dp(78), -1);
-        couponSize.setMargins(dp(5), dp(5), dp(8), dp(5)); row.addView(coupon, couponSize);
-        TextView brand = text("RESCUEFARM", 8, true); brand.setTextColor(requireContext().getColor(R.color.rescue_on_primary));
-        brand.setGravity(Gravity.CENTER); coupon.addView(brand);
-        View perforation = new View(requireContext());
-        perforation.setBackgroundColor(0x99FFFFFF);
-        LinearLayout.LayoutParams perforationSize = new LinearLayout.LayoutParams(dp(34), dp(1));
-        perforationSize.topMargin = dp(8); perforationSize.bottomMargin = dp(8);
-        coupon.addView(perforation, perforationSize);
-        String shortDiscount = shortDiscount(value);
-        TextView valueLabel = text(shortDiscount, 20, true);
-        valueLabel.setMaxLines(2);
-        valueLabel.setAutoSizeTextTypeUniformWithConfiguration(12, 20, 1, TypedValue.COMPLEX_UNIT_SP);
-        valueLabel.setTextColor(requireContext().getColor(R.color.rescue_on_primary)); valueLabel.setGravity(Gravity.CENTER);
-        coupon.addView(valueLabel, new LinearLayout.LayoutParams(-1, -2));
-        TextView couponCaption = text("ƯU ĐÃI", 8, true); couponCaption.setTextColor(requireContext().getColor(R.color.rescue_on_primary));
-        couponCaption.setGravity(Gravity.CENTER); coupon.addView(couponCaption);
-
-        LinearLayout body = new LinearLayout(requireContext());
-        body.setOrientation(LinearLayout.VERTICAL); body.setPadding(0, dp(12), dp(11), dp(12));
-        row.addView(body, new LinearLayout.LayoutParams(0, -2, 1));
-        LinearLayout header = new LinearLayout(requireContext()); header.setGravity(Gravity.CENTER_VERTICAL);
-        if (!value.optString("imageUrl").isEmpty()) {
-            ImageView image = new ImageView(requireContext()); image.setContentDescription(value.optString("productName"));
-            image.setBackground(greenSoftBackground()); image.setClipToOutline(true);
-            LinearLayout.LayoutParams size = new LinearLayout.LayoutParams(dp(50), dp(50)); size.setMarginEnd(dp(8)); header.addView(image, size);
-            Glide.with(this).load(com.rescuefarm.service.media.SecureMediaUrl.from(value.optString("imageUrl"))).centerCrop().into(image);
-        }
-        TextView title = text(value.optString("productName"), 14, true);
-        title.setTextColor(requireContext().getColor(R.color.rescue_on_surface));
-        title.setMaxLines(2); title.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1)); body.addView(header);
-        if (value.optString("productId").equals(productFilter)) {
-            TextView match = text("Ưu đãi cho sản phẩm đang xem", 12, true);
-            match.setTextColor(requireContext().getColor(R.color.rescue_primary)); body.addView(match);
-        }
-        TextView details = text(discount(value), 14, true);
-        details.setTextColor(requireContext().getColor(R.color.rescue_primary));
-        body.addView(details);
-        if (!value.optString("sellerName").isEmpty()) body.addView(text("Người bán: " + value.optString("sellerName"), 13, false));
+        View card = getLayoutInflater().inflate(R.layout.item_promotion_voucher, list, false);
+        boolean saved = value.optBoolean("saved");
+        boolean eligible = value.optBoolean("eligible");
+        boolean available = value.optBoolean("productAvailable");
+        ImageView image = card.findViewById(R.id.voucherImage);
+        Glide.with(this).load(value.optString("imageUrl"))
+                .placeholder(R.drawable.ic_store).error(R.drawable.ic_store).centerCrop().into(image);
+        TextView title = card.findViewById(R.id.voucherProduct);
+        title.setText(value.optString("productName"));
+        com.rescuefarm.ui.common.AppTypography.title(title);
+        TextView amount = card.findViewById(R.id.voucherDiscount);
+        amount.setText("VOLUME".equals(value.optString("type")) ? "Giảm theo số lượng" : discount(value));
+        com.rescuefarm.ui.common.AppTypography.title(amount);
+        TextView seller = card.findViewById(R.id.voucherSeller);
+        seller.setText(value.optString("sellerName"));
+        seller.setVisibility(value.optString("sellerName").isEmpty() ? View.GONE : View.VISIBLE);
+        TextView status = card.findViewById(R.id.voucherStatus);
+        status.setText(!eligible ? R.string.promotion_wallet_unavailable : saved ? R.string.voucher_saved_label
+                : value.optString("productId").equals(productFilter) ? R.string.voucher_current_product : R.string.voucher_product_only);
+        status.setTextColor(requireContext().getColor(eligible ? R.color.rescue_primary : R.color.rescue_on_surface_variant));
         SimpleDateFormat date = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("vi-VN"));
-        if (value.optLong("endDate") > 0) body.addView(text(date.format(new Date(value.optLong("startDate"))) + " – " + date.format(new Date(value.optLong("endDate"))), 12, false));
-        if (!value.optBoolean("eligible")) {
-            TextView unavailable = text(getString(R.string.promotion_wallet_unavailable), 12, true);
-            unavailable.setTextColor(requireContext().getColor(R.color.rescue_critical)); body.addView(unavailable);
-        } else if (value.optBoolean("saved")) {
-            TextView saved = text("Đã lưu · Tự động áp dụng khi thanh toán", 12, true);
-            saved.setTextColor(requireContext().getColor(R.color.rescue_primary)); body.addView(saved);
+        TextView expiry = card.findViewById(R.id.voucherExpiry);
+        expiry.setVisibility(value.optLong("endDate") > 0 ? View.VISIBLE : View.GONE);
+        expiry.setText(getString(R.string.voucher_until, date.format(new Date(value.optLong("endDate")))));
+        MaterialButton action = card.findViewById(R.id.voucherAction);
+        action.setText(saved ? R.string.voucher_use : R.string.voucher_save);
+        action.setEnabled(saved ? eligible && available : eligible);
+        action.setOnClickListener(v -> { if (saved) openProduct(value); else changeSaved(value, action); });
+        MaterialButton remove = card.findViewById(R.id.voucherRemove);
+        remove.setVisibility(saved ? View.VISIBLE : View.GONE);
+        remove.setOnClickListener(v -> changeSaved(value, remove));
+        card.findViewById(R.id.voucherConditions).setOnClickListener(v -> {
+            String details = value.optString("productName") + "\n\n" + discount(value);
+            if (!value.optString("sellerName").isEmpty()) details += "\nNgười bán: " + value.optString("sellerName");
+            if (value.optLong("startDate") > 0 && value.optLong("endDate") > 0) {
+                details += "\n\n" + getString(R.string.voucher_period,
+                        date.format(new Date(value.optLong("startDate"))), date.format(new Date(value.optLong("endDate"))));
+            }
+            details += "\n\n" + getString(R.string.voucher_usage);
+            if (!eligible) details += "\n\n" + getString(R.string.promotion_wallet_unavailable);
+            MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.voucher_conditions).setMessage(details).setNegativeButton(android.R.string.cancel, null);
+            if (available) dialog.setPositiveButton(R.string.promotion_wallet_view_product, (d, which) -> openProduct(value));
+            dialog.show();
+        });
+        if (available) {
+            image.setOnClickListener(v -> openProduct(value));
+            image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+            image.setContentDescription(getString(R.string.promotion_wallet_view_product) + ": " + value.optString("productName"));
+            title.setOnClickListener(v -> openProduct(value));
         }
-        // ShopeeFood-style voucher action: light surface, slim green outline, green label.
-        MaterialButton save = button(getString(value.optBoolean("saved") ? R.string.promotion_wallet_remove : R.string.promotion_wallet_save), false);
-        save.setMinHeight(dp(38));
-        save.setTextSize(13);
-        save.setStrokeWidth(dp(1));
-        save.setStrokeColor(android.content.res.ColorStateList.valueOf(
-                requireContext().getColor(R.color.rescue_primary)));
-        save.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                requireContext().getColor(R.color.rescue_surface)));
-        save.setTextColor(requireContext().getColor(R.color.rescue_primary));
-        save.setPadding(dp(14), 0, dp(14), 0);
-        save.setEnabled(value.optBoolean("saved") || value.optBoolean("eligible"));
-        save.setOnClickListener(v -> {
+        list.addView(card);
+    }
+    private void openProduct(JSONObject value) {
+        Bundle args = new Bundle(); args.putString("productId", value.optString("productId"));
+        NavHostFragment.findNavController(this).navigate(R.id.productDetailFragment, args);
+    }
+    private void changeSaved(JSONObject value, MaterialButton save) {
             if (FirebaseAuth.getInstance().getCurrentUser() == null) { NavHostFragment.findNavController(this).navigate(R.id.loginFragment); return; }
             if (!customer()) { show("Chỉ tài khoản khách hàng có thể lưu khuyến mãi."); return; }
             save.setEnabled(false);
@@ -197,16 +175,6 @@ public final class PromotionWalletFragment extends Fragment {
                 }
                 @Override public void onError(String error) { if (getView() != null && request == generation) { save.setEnabled(true); show(error); } }
             });
-        });
-        LinearLayout.LayoutParams saveSpace = new LinearLayout.LayoutParams(-2, -2);
-        saveSpace.gravity = Gravity.END;
-        saveSpace.topMargin = dp(4); saveSpace.bottomMargin = dp(2); body.addView(save, saveSpace);
-        if (value.optBoolean("productAvailable")) {
-            MaterialButton product = button(getString(R.string.promotion_wallet_view_product), false);
-            product.setOnClickListener(v -> { Bundle args = new Bundle(); args.putString("productId", value.optString("productId")); NavHostFragment.findNavController(this).navigate(R.id.productDetailFragment, args); });
-            body.addView(product, new LinearLayout.LayoutParams(-1, -2));
-        }
-        list.addView(card);
     }
     private String discount(JSONObject value) {
         if ("PERCENT".equals(value.optString("type"))) return "Giảm " + format(value.optDouble("value")) + "%";
@@ -226,49 +194,10 @@ public final class PromotionWalletFragment extends Fragment {
         return label.toString();
     }
     private String format(double value) { return NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN")).format(value); }
-    private TextView text(String value, int size, boolean bold) {
-        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(size); text.setPadding(0, dp(4), 0, dp(4));
-        text.setTextColor(requireContext().getColor(R.color.rescue_on_surface));
-        if (bold) { text.setTypeface(text.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(text); }
-        return text;
+    private MaterialButton button(String value) {
+        MaterialButton button = new MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
+        button.setText(value); button.setAllCaps(false); button.setTextSize(15); return button;
     }
-    private String shortDiscount(JSONObject value) {
-        if ("PERCENT".equals(value.optString("type"))) return "−" + format(value.optDouble("value")) + "%";
-        if ("FIXED".equals(value.optString("type")))
-            return "−" + NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
-                    .format(value.optDouble("value"));
-        return "MUA NHIỀU";
-    }
-    private GradientDrawable greenCouponBackground() {
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(requireContext().getColor(R.color.rescue_primary));
-        background.setCornerRadius(dp(10));
-        return background;
-    }
-    private GradientDrawable greenSoftBackground() {
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(requireContext().getColor(R.color.rescue_primary_container));
-        background.setCornerRadius(dp(8)); return background;
-    }
-    private MaterialButton button(String value, boolean filled) {
-        int style = filled ? com.google.android.material.R.attr.materialButtonStyle
-                : com.google.android.material.R.attr.materialButtonOutlinedStyle;
-        MaterialButton button = new MaterialButton(requireContext(), null, style);
-        button.setText(value); button.setAllCaps(false); button.setTextSize(14);
-        button.setMinHeight(dp(42)); button.setInsetTop(0); button.setInsetBottom(0);
-        button.setCornerRadius(dp(22));
-        if (filled) {
-            button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                    requireContext().getColor(R.color.rescue_primary)));
-            button.setTextColor(requireContext().getColor(R.color.rescue_on_primary));
-        } else {
-            button.setStrokeColor(android.content.res.ColorStateList.valueOf(
-                    requireContext().getColor(R.color.rescue_outline)));
-            button.setTextColor(requireContext().getColor(R.color.rescue_primary));
-        }
-        return button;
-    }
-    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private void show(String value) { message.setText(value); message.setVisibility(View.VISIBLE); }
     @Override public void onDestroyView() { generation++; loading = false; list = null; super.onDestroyView(); }
 }

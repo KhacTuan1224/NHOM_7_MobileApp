@@ -2,41 +2,46 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:padding="16dp" android:background="@color/rescue_background">
-    <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content">
-        <com.google.android.material.button.MaterialButton android:id="@+id/promotionWalletBack"
-            style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:text="Quay lại" />
+    android:orientation="vertical" android:background="@color/rescue_background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:padding="8dp"
+        android:background="@color/rescue_surface">
+        <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/promotionWalletBack"
+            android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Quay lại"
+            app:srcCompat="@drawable/ic_arrow_back" app:tint="@color/rescue_primary" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:text="@string/promotion_wallet_title" android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
-    </com.rescuefarm.ui.common.ResponsiveActionLayout>
+            android:layout_marginStart="8dp" android:text="@string/promotion_wallet_title"
+            android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" android:textSize="24sp" />
+    </LinearLayout>
     <com.google.android.material.tabs.TabLayout android:id="@+id/promotionWalletTabs"
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="4dp" android:background="@android:color/transparent"
+        android:background="@color/rescue_surface"
         app:tabMode="fixed" app:tabGravity="fill"
         app:tabIndicatorColor="@color/rescue_primary" app:tabIndicatorHeight="3dp"
         app:tabSelectedTextColor="@color/rescue_primary"
         app:tabTextColor="@color/rescue_on_surface_variant" />
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="10dp" android:paddingHorizontal="4dp"
+        android:layout_marginTop="12dp" android:paddingHorizontal="16dp"
         android:text="@string/promotion_wallet_hint"
         android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium" />
     <com.google.android.material.button.MaterialButton android:id="@+id/promotionWalletRefresh"
         style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
-        android:layout_height="wrap_content" android:layout_gravity="end" android:text="@string/refresh_action"
+        android:layout_height="wrap_content" android:layout_gravity="end" android:layout_marginEnd="8dp" android:text="@string/refresh_action"
         android:textColor="@color/rescue_primary" />
     <ProgressBar android:id="@+id/promotionWalletProgress" android:layout_width="32dp" android:layout_height="32dp"
         android:layout_gravity="center_horizontal" android:visibility="gone" />
     <TextView android:id="@+id/promotionWalletMessage" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:paddingVertical="8dp" android:accessibilityLiveRegion="polite"
+        android:layout_height="wrap_content" android:paddingVertical="8dp" android:paddingHorizontal="16dp" android:accessibilityLiveRegion="polite"
         android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium" android:visibility="gone" />
     <com.google.android.material.button.MaterialButton android:id="@+id/promotionWalletLogin"
-        android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/login_action"
+        android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:text="@string/login_action"
         android:visibility="gone" />
     <com.rescuefarm.ui.common.NavigationAwareScrollView android:layout_width="match_parent"
         android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
         <com.rescuefarm.ui.common.ResponsiveContentLayout android:id="@+id/promotionWalletList"
             android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="center_horizontal"
-            android:orientation="vertical" app:maxContentWidth="@dimen/reading_max_width" />
+            android:orientation="vertical" android:paddingHorizontal="12dp" android:paddingBottom="16dp"
+            app:maxContentWidth="@dimen/reading_max_width" />
     </com.rescuefarm.ui.common.NavigationAwareScrollView>
 </LinearLayout>

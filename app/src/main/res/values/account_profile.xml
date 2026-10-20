@@ -1,0 +1,26 @@
+<resources>
+    <style name="Widget.RescueFarm.AccountProfilePrimary" parent="Widget.RescueFarm.ProfilePrimaryButton">
+        <item name="cornerRadius">22dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:elevation">0dp</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconTint">@color/rescue_on_primary</item>
+    </style>
+    <style name="Widget.RescueFarm.AccountProfileSecondary" parent="Widget.RescueFarm.ProfileOutlinedButton">
+        <item name="cornerRadius">22dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="android:elevation">0dp</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconTint">@color/rescue_primary</item>
+    </style>
+    <style name="Widget.RescueFarm.AccountProfileLogout" parent="Widget.RescueFarm.AccountProfileSecondary">
+        <item name="strokeColor">@color/rescue_critical</item>
+        <item name="android:textColor">@color/rescue_critical</item>
+        <item name="iconTint">@color/rescue_critical</item>
+    </style>
+</resources>

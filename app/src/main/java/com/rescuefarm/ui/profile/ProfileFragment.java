@@ -42,6 +42,9 @@ public class ProfileFragment extends Fragment {
         statusView = view.findViewById(R.id.profileStatus);
         avatarView = view.findViewById(R.id.profileAvatar);
         businessInfo = new TextView(requireContext()); businessInfo.setVisibility(View.GONE);
+        businessInfo.setTextSize(14);
+        businessInfo.setTextColor(requireContext().getColor(R.color.rescue_on_surface_variant));
+        businessInfo.setPadding(0, Math.round(8 * getResources().getDisplayMetrics().density), 0, 0);
         android.view.ViewGroup form = (android.view.ViewGroup)statusView.getParent(); form.addView(businessInfo, form.indexOfChild(statusView) + 1);
         progress = view.findViewById(R.id.profileProgress);
         addressButton = view.findViewById(R.id.addressesButton);
@@ -106,18 +109,20 @@ public class ProfileFragment extends Fragment {
         if (user == null) return;
         nameView.setText(user.getFullName()); emailView.setText(user.getEmail());
         String avatarUrl = user.getAvatarUrl();
+        android.graphics.drawable.Drawable person = androidx.core.content.ContextCompat.getDrawable(
+                requireContext(), R.drawable.ic_nav_profile).mutate();
+        androidx.core.graphics.drawable.DrawableCompat.setTint(person, android.graphics.Color.WHITE);
+        android.graphics.drawable.Drawable placeholder = new android.graphics.drawable.InsetDrawable(
+                person, Math.round(16 * getResources().getDisplayMetrics().density));
+        avatarView.setPadding(0, 0, 0, 0);
+        avatarView.setImageTintList(null);
         if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
-            avatarView.setPadding(0, 0, 0, 0);
-            avatarView.setImageTintList(null);
             Glide.with(this).load(avatarUrl.trim()).circleCrop()
-                    .placeholder(R.drawable.ic_nav_profile).error(R.drawable.ic_nav_profile)
+                    .placeholder(placeholder).error(placeholder)
                     .into(avatarView);
         } else {
             Glide.with(this).clear(avatarView);
-            avatarView.setPadding(16, 16, 16, 16);
-            avatarView.setImageResource(R.drawable.ic_nav_profile);
-            avatarView.setImageTintList(android.content.res.ColorStateList.valueOf(
-                    requireContext().getColor(R.color.rescue_primary)));
+            avatarView.setImageDrawable(placeholder);
         }
         businessInfo.setVisibility(View.GONE);
         if (user instanceof com.rescuefarm.domain.model.Customer && ((com.rescuefarm.domain.model.Customer)user).getCustomerType()

@@ -1,4 +1,14 @@
 <resources>
+    <string name="voucher_product_label">NÔNG SẢN</string>
+    <string name="voucher_conditions">Điều kiện</string>
+    <string name="voucher_save">Lưu</string>
+    <string name="voucher_use">Dùng ngay</string>
+    <string name="voucher_saved_label">Đã lưu · Áp dụng cho sản phẩm này</string>
+    <string name="voucher_product_only">Chỉ áp dụng cho sản phẩm này</string>
+    <string name="voucher_current_product">Ưu đãi cho sản phẩm bạn đang xem</string>
+    <string name="voucher_until">HSD: %1$s</string>
+    <string name="voucher_period">Hiệu lực: %1$s – %2$s</string>
+    <string name="voucher_usage">Lưu khuyến mãi trước khi mua. Ưu đãi tự động áp dụng khi thanh toán đúng sản phẩm trong thời gian hiệu lực.</string>
     <string name="promotion_wallet_title">Kho khuyến mãi</string>
     <string name="promotion_wallet_mine">Khuyến mãi của tôi</string>
     <string name="promotion_wallet_all">Tất cả khuyến mãi</string>
