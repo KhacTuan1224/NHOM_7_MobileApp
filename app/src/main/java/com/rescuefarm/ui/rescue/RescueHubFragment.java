@@ -209,11 +209,6 @@ public final class RescueHubFragment extends Fragment {
         text(card, "Còn " + offer.optInt("availableUnits") + " / " + offer.optInt("totalUnits") + " suất · giới hạn " + offer.optInt("maxUnitsPerClaim") + " suất/khách", false);
         text(card, "Hạn đăng ký: " + date(offer.optLong("closesAt")) + "\nNhận từ " + date(offer.optLong("pickupStartAt"))
                 + " đến " + date(offer.optLong("pickupEndAt")) + "\n" + offer.optString("pickupAddress"), false);
-        if (offer.optString("type").equals("GROUP_BUY")) text(card,
-                (offer.optBoolean("groupSucceeded") ? "Đã đạt ngưỡng!" : "Đang gom nhóm") + "\n"
-                        + offer.optInt("participantCount") + " / " + offer.optInt("minPeople") + " người · "
-                        + (offer.optInt("claimedUnits") + offer.optInt("completedUnits")) + " / " + offer.optInt("minUnits")
-                        + " suất\nKhi nhóm đạt ngưỡng, cam kết không thể tự rút. Chưa thu tiền trước.", false);
         button(card, "Mở điểm nhận trên bản đồ", () -> map(offer));
         button(card, "Chia sẻ gói giải cứu", () -> {
             Intent share = new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,
@@ -251,7 +246,7 @@ public final class RescueHubFragment extends Fragment {
     private void quantity(JSONObject offer) {
         LinearLayout form = form(); EditText quantity = field(form, "Số suất (số nguyên)", true); quantity.setText("1");
         text(form, "Giá hiện tại: " + money(offer.optDouble("unitPrice")) + " / " + offer.optString("unitLabel")
-                + ". Thanh toán tại điểm khi nhận. " + (offer.optString("type").equals("GROUP_BUY") ? "Cam kết chỉ có hiệu lực nhận hàng khi nhóm đạt ngưỡng." : ""), false);
+                + ". Thanh toán tại điểm khi nhận. ", false);
         android.app.Dialog dialog = new MaterialAlertDialogBuilder(requireContext()).setTitle("Đăng ký giải cứu")
                 .setView(scroll(form)).setNegativeButton("Đóng", null).setPositiveButton("Xác nhận", null).create();
         dialog.setOnShowListener(d -> ((androidx.appcompat.app.AlertDialog) dialog).getButton(-1).setOnClickListener(v -> {
@@ -273,8 +268,7 @@ public final class RescueHubFragment extends Fragment {
         if (customer() && state.equals("READY")) button(card, "Xác nhận đã nhận nông sản", () -> confirm("Bạn đã nhận nông sản?",
                 "Chỉ xác nhận sau khi đã nhận hàng thực tế" + " và thanh toán " + money(claim.optDouble("totalAmount")) + " cho cửa hàng.",
                 () -> model.action("claims/action", body("claimId", claim.optString("id"), "action", "COMPLETE", "confirmReceived", true, "confirmPaid", true), model::refresh)));
-        if (customer() && (state.equals("RESERVED") || state.equals("PLEDGED") || state.equals("READY"))
-                && (!offer.optString("type").equals("GROUP_BUY") || !offer.optBoolean("groupSucceeded"))) button(card, "Hủy đăng ký / rút cam kết", () -> confirm("Hủy đăng ký?", "Suất sẽ được trả lại cho người cần giải cứu khác.",
+        if (customer() && (state.equals("RESERVED") || state.equals("READY"))) button(card, "Hủy đăng ký", () -> confirm("Hủy đăng ký?", "Suất sẽ được trả lại cho người cần giải cứu khác.",
                 () -> model.action("claims/action", body("claimId", claim.optString("id"), "action", "CANCEL"), model::refresh)));
         if (!inDetail) button(card, "Mở gói và quản lý nhận hàng", () -> openOffer(offer.optString("id"), ""));
         if (state.equals("COMPLETED")) text(card, "Đã ghi nhận nhận hàng" + (claim.optDouble("totalAmount") > 0 ? " và khách xác nhận trả tiền tại điểm." : "."), false);
