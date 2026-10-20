@@ -205,13 +205,17 @@ public class CheckoutFragment extends Fragment {
             if (result.getStatus() == CheckoutState.Status.SUCCESS && vm.consumeCheckoutSuccessNavigation()) {
                 Order order = result.getOrder();
                 new com.rescuefarm.data.local.preferences.SharedPreferencesGuestSessionRepository(requireContext())
-                        .saveRecentGuestOrder(order.getId(), order.getOrderCode(), order.getReceiverPhone());
+                        .saveRecentGuestOrder(order.getId(), order.getOrderCode(), order.getReceiverPhone(),
+                                order.getTotalAmount(),
+                                order.getStatus() == null ? "PENDING" : order.getStatus().name(),
+                                order.getPaymentMethod() == null ? "COD" : order.getPaymentMethod().name());
                 Bundle args = new Bundle();
                 args.putString("orderId", order.getId());
                 args.putString("orderCode", order.getOrderCode());
                 args.putString("phone", order.getReceiverPhone());
                 args.putString("status", order.getStatus() == null ? "PENDING" : order.getStatus().name());
                 args.putString("paymentMethod", order.getPaymentMethod() == null ? "COD" : order.getPaymentMethod().name());
+                args.putDouble("totalAmount", order.getTotalAmount());
                 Navigation.findNavController(view).navigate(R.id.action_checkoutFragment_to_orderConfirmationFragment, args);
             } else if (result.getStatus() == CheckoutState.Status.ERROR) {
                 Toast.makeText(requireContext(), result.getMessage(), Toast.LENGTH_LONG).show();
