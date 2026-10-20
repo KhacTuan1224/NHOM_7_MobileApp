@@ -15,6 +15,7 @@ import com.rescuefarm.data.repository.AdminRepository;
 import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
 import com.rescuefarm.service.admin.AdminTransitionPolicy;
+import com.rescuefarm.service.admin.AdminSearchText;
 import com.rescuefarm.service.backend.RenderBackendClient;
 import org.json.JSONObject;
 import com.rescuefarm.service.network.NetworkStatusProvider;
@@ -112,6 +113,11 @@ public final class FirebaseAdminRepository implements AdminRepository {
                         }).addOnFailureListener(error -> fail(error, callback));
                 return;
             }
+            if (!search.isEmpty() && !isStructuredSearch(section, search)) {
+                loadNormalizedSearchPage(section, requestedFilter, search, trim(cursor),
+                        Math.max(1, Math.min(100, limit)), fromDate, throughDate, callback);
+                return;
+            }
             com.google.firebase.firestore.Query query = db.collection(section.getCollection());
             String field = search.isEmpty() ? "" : searchField(section, search);
             String value = search.isEmpty() ? "" : searchValue(section, search);
@@ -147,6 +153,82 @@ public final class FirebaseAdminRepository implements AdminRepository {
                             search.isEmpty() ? trim(cursor) : "", pageLimit, fromDate, throughDate, callback))
                     .addOnFailureListener(error -> fail(error, callback));
         }, callback);
+    }
+
+    private static boolean isStructuredSearch(Section section, String search) {
+        String lower = search.toLowerCase(java.util.Locale.ROOT);
+        return (section == Section.ORDERS && (lower.startsWith("seller:")
+                || lower.startsWith("customer:") || lower.startsWith("code:")))
+                || (section == Section.REPORTS && lower.startsWith("target:"));
+    }
+
+    private void loadNormalizedSearchPage(Section section, String filter, String search,
+            String cursor, int limit, Date fromDate, Date throughDate, PageCallback callback) {
+        List<DocumentSnapshot> documents = new ArrayList<>();
+        collectSearchDocuments(db.collection(section.getCollection()), null, documents, result -> {
+            if (result != null) { fail(result, callback); return; }
+            String term = normalizeSearch(search);
+            if (search.toLowerCase(java.util.Locale.ROOT).startsWith("title:"))
+                term = normalizeSearch(search.substring("title:".length()));
+            List<AdminListItem> matches = new ArrayList<>();
+            for (DocumentSnapshot document : documents) {
+                AdminListItem item = mapItem(section, document);
+                Date createdAt = document.getDate("createdAt");
+                boolean inDateRange = (fromDate == null || (createdAt != null && !createdAt.before(fromDate)))
+                        && (throughDate == null || (createdAt != null && createdAt.before(throughDate)));
+                if (inDateRange && matchesSectionFilter(section, filter, document, item)
+                        && matchesNormalizedSearch(section, document, item, term)) matches.add(item);
+            }
+            int start = 0;
+            if (!cursor.isEmpty()) for (int index = 0; index < matches.size(); index++)
+                if (matches.get(index).getId().equals(cursor)) { start = index + 1; break; }
+            int end = Math.min(matches.size(), start + limit);
+            List<AdminListItem> page = new ArrayList<>(matches.subList(start, end));
+            callback.onSuccess(page, end == 0 ? "" : matches.get(end - 1).getId(), end < matches.size());
+        });
+    }
+
+    private interface SearchDocumentsCallback { void onComplete(Exception error); }
+
+    private void collectSearchDocuments(com.google.firebase.firestore.Query base,
+            DocumentSnapshot last, List<DocumentSnapshot> documents, SearchDocumentsCallback callback) {
+        com.google.firebase.firestore.Query page = base.orderBy(
+                com.google.firebase.firestore.FieldPath.documentId()).limit(250);
+        if (last != null) page = page.startAfter(last);
+        page.get().addOnSuccessListener(snapshot -> {
+            documents.addAll(snapshot.getDocuments());
+            if (snapshot.size() == 250) collectSearchDocuments(base,
+                    snapshot.getDocuments().get(snapshot.size() - 1), documents, callback);
+            else callback.onComplete(null);
+        }).addOnFailureListener(callback::onComplete);
+    }
+
+    private static boolean matchesNormalizedSearch(Section section, DocumentSnapshot document,
+            AdminListItem item, String term) {
+        if (term.isEmpty()) return true;
+        if (containsNormalized(item.getTitle(), term) || containsNormalized(item.getSubtitle(), term)
+                || containsNormalized(item.getId(), term)) return true;
+        String[] fields;
+        switch (section) {
+            case CAMPAIGNS: case BANNERS: fields = new String[]{"title", "name"}; break;
+            case PRODUCTS: case CATEGORIES: fields = new String[]{"name", "title"}; break;
+            case SELLER_APPLICATIONS: fields = new String[]{"shopName", "representativeName", "email"}; break;
+            case USERS: fields = new String[]{"fullName", "shopName", "email"}; break;
+            case REVIEWS: fields = new String[]{"content", "productId"}; break;
+            case REPORTS: fields = new String[]{"reason", "targetId", "targetType"}; break;
+            case ORDERS: fields = new String[]{"orderCode", "sellerId", "ownerId"}; break;
+            default: fields = new String[0];
+        }
+        for (String field : fields) if (containsNormalized(text(document, field), term)) return true;
+        return false;
+    }
+
+    private static boolean containsNormalized(String value, String term) {
+        return AdminSearchText.contains(value, term);
+    }
+
+    private static String normalizeSearch(String value) {
+        return AdminSearchText.normalize(value);
     }
 
     private void fetchSectionPage(Section section, String filter, String search,
@@ -568,7 +650,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
         db.collection(USERS).whereEqualTo("role", "SELLER")
                 .orderBy(com.google.firebase.firestore.FieldPath.documentId()).get()
                 .addOnSuccessListener(snapshot -> {
-                    String needle = search.toLowerCase(java.util.Locale.ROOT);
+                    String needle = normalizeSearch(search);
                     if (needle.startsWith("id:")) needle = needle.substring(3).trim();
                     List<AdminListItem> sellers = new ArrayList<>();
                     for (DocumentSnapshot user : snapshot.getDocuments()) {
@@ -578,9 +660,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
                         String id = user.getId();
                         String title = first(user, "shopName", "representativeName", "fullName", "email");
                         String email = text(user, "email");
-                        if (!needle.isEmpty() && !(id.toLowerCase(java.util.Locale.ROOT).contains(needle)
-                                || title.toLowerCase(java.util.Locale.ROOT).contains(needle)
-                                || email.toLowerCase(java.util.Locale.ROOT).contains(needle))) continue;
+                        if (!needle.isEmpty() && !(containsNormalized(id, needle)
+                                || containsNormalized(title, needle)
+                                || containsNormalized(email, needle))) continue;
                         sellers.add(mapSellerAccount(user));
                     }
                     int start = 0;

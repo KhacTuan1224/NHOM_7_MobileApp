@@ -146,8 +146,8 @@ public final class AdminResourceFragment extends Fragment {
                 });
             } else dateFilters.setVisibility(View.GONE);
             if (section == Section.ORDERS) searchInput.setHint("orderCode / code: / seller: / customer: / id:");
-            else if (section == Section.REPORTS) searchInput.setHint("target ID hoặc target:...");
-            else searchInput.setHint("Tìm theo tên hoặc nhập id:<mã>");
+            else if (section == Section.REPORTS) searchInput.setHint("Tìm tiêu đề, nội dung hoặc target:<ID>");
+            else searchInput.setHint("Tìm theo tiêu đề, tên hoặc ID (không dấu cũng được)");
             statusFilter.setAdapter(new com.rescuefarm.ui.common.CodeLabelAdapter(requireContext(),
                     getResources().getStringArray(R.array.admin_status_filters)));
             statusFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
@@ -561,9 +561,10 @@ public final class AdminResourceFragment extends Fragment {
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, names);
                 list.setAdapter(adapter);
                 Runnable filter = () -> {
-                    String term = search.getText().toString().trim().toLowerCase(Locale.ROOT);
+                    String term = search.getText().toString().trim();
                     visible.clear(); names.clear();
-                    for (AdminListItem campaign : campaigns) if (campaign.getTitle().toLowerCase(Locale.ROOT).contains(term)) {
+                    for (AdminListItem campaign : campaigns) if (com.rescuefarm.service.admin.AdminSearchText
+                            .contains(campaign.getTitle(), term)) {
                         visible.add(campaign); names.add(campaign.getTitle());
                     }
                     adapter.notifyDataSetChanged();
