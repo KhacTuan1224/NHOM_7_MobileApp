@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         });
         profileButton.setOnClickListener(unused -> {
             if (!AuthRepositoryFactory.create(this).isAuthenticated()) {
-                navController.navigate(R.id.loginFragment);
+                navigateTo(navController, R.id.guestProfileFragment);
             } else {
                 navigateTo(navController, R.id.profileFragment);
             }
@@ -333,6 +333,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.orderConfirmationFragment
                 || destinationId == R.id.customerOrderListFragment
                 || destinationId == R.id.profileFragment
+                || destinationId == R.id.guestProfileFragment
                 || destinationId == R.id.sellerProfileFragment
                 // Home related
                 || destinationId == R.id.allCategoriesFragment
@@ -430,6 +431,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         
         // Highlight profile button for profile related
         boolean isProfileActive = destinationId == R.id.profileFragment
+                || destinationId == R.id.guestProfileFragment
                 || destinationId == R.id.editProfileFragment
                 || destinationId == R.id.addressListFragment
                 || destinationId == R.id.addressEditorFragment

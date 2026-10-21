@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rescue_background"
+    android:fillViewport="true">
+
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp"
+        app:maxContentWidth="@dimen/reading_max_width">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:fontFamily="@font/ibm_plex_sans"
+            android:text="@string/guest_profile_title"
+            android:textColor="@color/rescue_on_surface"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+        <!-- Guest Profile Header -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            app:cardBackgroundColor="@color/rescue_surface"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/rescue_outline"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/guestProfileName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/ibm_plex_sans"
+                            android:text="@string/guest_profile_name"
+                            android:textColor="@color/rescue_on_surface"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/guestProfileSubtitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="@font/ibm_plex_sans"
+                            android:text="@string/guest_profile_subtitle"
+                            android:textColor="@color/rescue_on_surface_variant"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/guestAvatar"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_marginStart="14dp"
+                        android:background="@drawable/bg_account_profile_avatar"
+                        android:clipToOutline="true"
+                        android:contentDescription="@string/guest_profile_name"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_nav_profile"
+                        app:tint="@color/rescue_primary" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/ibm_plex_sans"
+                    android:text="@string/guest_profile_desc"
+                    android:textColor="@color/rescue_on_surface_variant"
+                    android:textSize="13sp" />
+
+                <!-- Action Button [Đăng nhập / Đăng ký] -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/guestLoginRegisterButton"
+                    style="@style/Widget.RescueFarm.AccountProfilePrimary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/guest_login_register_action"
+                    app:icon="@drawable/ic_role_customer" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Utilities Section Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="12dp"
+            android:fontFamily="@font/ibm_plex_sans"
+            android:text="@string/guest_profile_utilities_title"
+            android:textColor="@color/rescue_on_surface"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Menu Item 1: Tra cứu đơn hàng -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/guestMenuTrackOrder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/rescue_surface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/rescue_outline"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_fixed_badge"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_home_search"
+                    app:tint="@color/rescue_primary" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_track_order_title"
+                        android:textColor="@color/rescue_on_surface"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_track_order_sub"
+                        android:textColor="@color/rescue_on_surface_variant"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow_forward"
+                    app:tint="@color/rescue_on_surface_variant" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Menu Item 2: Danh sách đơn đã đặt trên máy -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/guestMenuRecentOrders"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/rescue_surface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/rescue_outline"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_fixed_badge"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_nav_orders"
+                    app:tint="@color/rescue_primary" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_recent_orders_title"
+                        android:textColor="@color/rescue_on_surface"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_recent_orders_sub"
+                        android:textColor="@color/rescue_on_surface_variant"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/guestRecentOrdersCountBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_fixed_badge"
+                    android:fontFamily="@font/ibm_plex_sans"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:textColor="@color/rescue_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow_forward"
+                    app:tint="@color/rescue_on_surface_variant" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Menu Item 3: Cài đặt vị trí -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/guestMenuLocationSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/rescue_surface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/rescue_outline"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_fixed_badge"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_home_location"
+                    app:tint="@color/rescue_primary" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_location_title"
+                        android:textColor="@color/rescue_on_surface"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_location_sub"
+                        android:textColor="@color/rescue_on_surface_variant"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow_forward"
+                    app:tint="@color/rescue_on_surface_variant" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Menu Item 4: Trung tâm trợ giúp / Liên hệ cứu trợ -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/guestMenuHelpCenter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/rescue_surface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/rescue_outline"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_fixed_badge"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_splash_sprout"
+                    app:tint="@color/rescue_primary" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_help_title"
+                        android:textColor="@color/rescue_on_surface"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/ibm_plex_sans"
+                        android:text="@string/guest_menu_help_sub"
+                        android:textColor="@color/rescue_on_surface_variant"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow_forward"
+                    app:tint="@color/rescue_on_surface_variant" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
+</com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

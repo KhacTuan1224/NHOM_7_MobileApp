@@ -229,6 +229,14 @@
         <action android:id="@+id/action_profileFragment_to_notificationFragment" app:destination="@id/notificationFragment" />
         <action android:id="@+id/action_profileFragment_to_adminDashboardFragment" app:destination="@id/adminDashboardFragment" />
     </fragment>
+    <fragment android:id="@+id/guestProfileFragment"
+        android:name="com.rescuefarm.ui.profile.GuestProfileFragment"
+        android:label="@string/guest_profile_title">
+        <action android:id="@+id/action_guestProfileFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+        <action android:id="@+id/action_guestProfileFragment_to_orderConfirmationFragment"
+            app:destination="@id/orderConfirmationFragment" />
+    </fragment>
     <fragment android:id="@+id/editProfileFragment"
         android:name="com.rescuefarm.ui.profile.EditProfileFragment" android:label="@string/edit_profile_title" />
     <fragment android:id="@+id/addressListFragment"
