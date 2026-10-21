@@ -30,10 +30,15 @@ public final class SellerPromotionListFragment extends Fragment {
     private final Locale locale = Locale.forLanguageTag("vi-VN");
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup parent, @Nullable Bundle state) {
         LinearLayout root = CustomerUi.column(requireContext());
-        com.rescuefarm.ui.common.AppTypography.title(CustomerUi.text(root, "Khuyến mãi và giá sỉ")).setTextSize(24);
+        LinearLayout header = new LinearLayout(requireContext());
+        header.setGravity(Gravity.CENTER_VERTICAL); root.addView(header);
+        com.rescuefarm.ui.common.AppBackButton back = new com.rescuefarm.ui.common.AppBackButton(requireContext());
+        int target = Math.round(48 * getResources().getDisplayMetrics().density);
+        header.addView(back, new LinearLayout.LayoutParams(target, target));
+        back.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
+        TextView title = com.rescuefarm.ui.common.AppTypography.title(CustomerUi.text(header, "Khuyến mãi và giá sỉ"));
+        title.setTextSize(24); title.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
         CustomerUi.text(root, "Quản lý mức giảm giá, bậc số lượng và thời gian áp dụng theo từng sản phẩm.");
-        root.addView(SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PROMOTIONS, "Quay lại", "Quay lại cửa hàng"));
-        root.getChildAt(root.getChildCount() - 1).setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
         com.google.android.material.button.MaterialButton create = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PROMOTIONS, "Tạo ưu đãi", "Chọn sản phẩm để tạo hoặc sửa ưu đãi");
         root.addView(create);
         com.google.android.material.button.MaterialButton refresh = SellerUiStyles.button(requireContext(), SellerUiStyles.Section.PROMOTIONS, "Làm mới", "Tải lại ưu đãi");

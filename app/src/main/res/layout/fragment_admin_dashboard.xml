@@ -29,9 +29,12 @@
             <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:padding="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                    <com.rescuefarm.ui.common.AppBackButton android:id="@+id/adminDashboardBackButton" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
                     android:text="Tổng quan hệ thống" android:textAppearance="@style/TextAppearance.RescueFarm.Display"
                     android:paddingTop="4dp" />
+                </LinearLayout>
                 <TextView android:id="@+id/adminDashboardMessage" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:paddingTop="8dp" android:textColor="@color/rescue_on_surface_variant" />
                 <ProgressBar android:id="@+id/adminDashboardProgress" android:layout_width="wrap_content"
@@ -53,9 +56,7 @@
                 <include layout="@layout/view_rescue_management_entry" />
                 <LinearLayout android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
-                <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminDashboardBackButton"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:minHeight="48dp" android:layout_marginTop="16dp" android:text="Quay lại" />
+
             </com.rescuefarm.ui.common.ResponsiveContentLayout>
         </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
     </LinearLayout>
