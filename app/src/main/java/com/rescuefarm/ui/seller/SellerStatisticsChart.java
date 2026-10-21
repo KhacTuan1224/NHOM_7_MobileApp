@@ -9,17 +9,17 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 /** Charts use sp text, a responsive plot area and separate quantity units. */
-final class SellerStatisticsChart extends View {
-    enum Kind { LINE, COLUMN, HORIZONTAL, RING, PROGRESS }
+public final class SellerStatisticsChart extends View {
+    public enum Kind { LINE, COLUMN, HORIZONTAL, RING, PROGRESS }
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final String[] labels;
     private final double[] values;
     private final Kind kind;
     private final int[] colors = {Color.rgb(46,107,69), Color.rgb(89,114,211), Color.rgb(193,119,30), Color.rgb(144,95,185)};
-    SellerStatisticsChart(Context context, String[] labels, double[] values, boolean line) {
+    public SellerStatisticsChart(Context context, String[] labels, double[] values, boolean line) {
         this(context, labels, values, line ? Kind.LINE : Kind.COLUMN);
     }
-    SellerStatisticsChart(Context context, String[] labels, double[] values, Kind kind) {
+    public SellerStatisticsChart(Context context, String[] labels, double[] values, Kind kind) {
         super(context);
         if (labels.length != values.length) throw new IllegalArgumentException("Chart labels and values must match");
         this.labels = labels.clone(); this.values = values.clone(); this.kind = kind;

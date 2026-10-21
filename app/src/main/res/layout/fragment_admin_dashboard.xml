@@ -53,7 +53,6 @@
                         android:text="Duyệt chiến dịch" app:strokeColor="@color/admin_campaigns"
                         app:iconTint="@color/admin_campaigns" app:backgroundTint="@color/admin_campaigns_soft" />
                 </com.rescuefarm.ui.common.ResponsiveActionLayout>
-                <include layout="@layout/view_rescue_management_entry" />
                 <LinearLayout android:id="@+id/adminDashboardStats" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="vertical" />
 
@@ -61,9 +60,10 @@
         </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
     </LinearLayout>
 
-    <LinearLayout android:layout_width="304dp" android:layout_height="match_parent"
+    <com.rescuefarm.ui.common.NavigationAwareScrollView android:layout_width="304dp" android:layout_height="match_parent"
         android:layout_gravity="start" android:orientation="vertical" android:background="@color/rescue_surface"
-        android:elevation="16dp" android:padding="16dp">
+        android:elevation="16dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
         <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="RESCUEFARM" android:textSize="12sp" android:textStyle="bold"
             android:textColor="@color/rescue_primary" android:padding="12dp" />
@@ -83,9 +83,21 @@
         <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminReportsButton" android:layout_width="220dp" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Báo cáo vi phạm" app:icon="@drawable/ic_admin_report" app:iconGravity="textStart" app:strokeColor="@color/admin_reports" app:iconTint="@color/admin_reports" app:backgroundTint="@color/admin_reports_soft" />
         <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminOrdersButton" android:layout_width="220dp" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Đơn hàng" app:icon="@drawable/ic_nav_orders" app:iconGravity="textStart" app:strokeColor="@color/admin_orders" app:iconTint="@color/admin_orders" app:backgroundTint="@color/admin_orders_soft" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="GIẢI CỨU" android:textSize="11sp" android:textStyle="bold"
+            android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/adminRescuePrograms"
+            style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="220dp"
+            android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+            android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp"
+            android:gravity="start|center_vertical" android:text="Quản lý gói giải cứu"
+            app:icon="@drawable/ic_store" app:iconGravity="textStart"
+            app:strokeColor="@color/admin_campaigns" app:iconTint="@color/admin_campaigns"
+            app:backgroundTint="@color/admin_campaigns_soft" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="HỆ THỐNG" android:textSize="11sp" android:textStyle="bold"
             android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
         <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminAnalyticsButton" android:layout_width="220dp" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Phân tích" app:icon="@drawable/ic_nav_dashboard" app:iconGravity="textStart" app:strokeColor="@color/admin_analytics" app:iconTint="@color/admin_analytics" app:backgroundTint="@color/admin_analytics_soft" />
         <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminDrawerButton" android:id="@+id/adminShippingSettingsButton" android:layout_width="220dp" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical" android:text="Cấu hình phí giao hàng" app:icon="@drawable/ic_admin_shipping" app:iconGravity="textStart" app:strokeColor="@color/admin_shipping" app:iconTint="@color/admin_shipping" app:backgroundTint="@color/admin_shipping_soft" />
-    </LinearLayout>
+        </LinearLayout>
+    </com.rescuefarm.ui.common.NavigationAwareScrollView>
 </androidx.drawerlayout.widget.DrawerLayout>

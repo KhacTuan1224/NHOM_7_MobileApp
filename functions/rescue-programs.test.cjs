@@ -53,6 +53,27 @@ function input(overrides = {}) {
 }
 async function create(overrides) { const response = await post('create', input(overrides)); assert.equal(response.status, 200, JSON.stringify(response.body)); return response; }
 async function inventory() { return (await db.doc('productBatches/batch').get()).data(); }
+
+test('impact charts isolate sellers, recover legacy methods, and return aggregates without customer details', async () => {
+  await db.doc('rescueOffers/historical').set({sellerId: 'seller', type: 'FLASH'});
+  const write = db.batch();
+  for (const [key, row] of Object.entries({
+    legacy: {sellerId: 'seller', offerId: 'historical', status: 'COMPLETED'},
+    mystery: {sellerId: 'seller', offerType: 'MYSTERY_BOX', status: 'COMPLETED'},
+    unclassified: {sellerId: 'seller', offerId: 'deleted', status: 'COMPLETED'},
+    otherSeller: {sellerId: 'seller2', offerType: 'FLASH', status: 'COMPLETED'},
+    notReceived: {sellerId: 'seller', offerType: 'FLASH', status: 'READY'}
+  })) write.set(db.doc('rescueClaims/' + key), {...row, receivedAt: ts(now - 1000), customerId: 'private-customer', customerName: 'Private name'});
+  await write.commit();
+  const result = await post('impact', {sellerId: 'seller', days: 7});
+  assert.equal(result.status, 200, JSON.stringify(result.body));
+  assert.equal(result.body.impact.charts.completedPickups, 3);
+  assert.deepEqual(result.body.impact.charts.byType, {FLASH: 1, MYSTERY_BOX: 1, OTHER: 1});
+  assert.ok(!JSON.stringify(result.body).includes('private-customer'));
+  assert.ok(!JSON.stringify(result.body).includes('Private name'));
+  assert.equal((await post('impact', {sellerId: 'seller', days: 365})).status, 400);
+  assert.equal((await post('impact', {sellerId: 'seller2', days: 30})).body.impact.charts.completedPickups, 1);
+});
 test('batch picker pages past 30 products and 100 batches without losing or duplicating tomato stock', async () => {
   const write = db.batch(), baseBatch = await inventory();
   for (let i = 0; i < 31; i++) {
@@ -214,7 +235,12 @@ test('receipt requires owning buyer, seller readiness, actual pickup time and ex
   assert.equal((await inventory()).soldQuantity, 2);
   const receiptDetails = (await post('detail', {offerId: 'offer'}, 'a')).body;
   assert.equal(receiptDetails.receivedContents[0].productName, 'Rau cải');
-  assert.equal((await post('impact', {sellerId: 'seller'}, '')).body.impact.quantityByUnit.kg, 2);
+  const impact = (await post('impact', {sellerId: 'seller', days: 7}, '')).body.impact;
+  assert.equal(impact.quantityByUnit.kg, 2);
+  assert.equal(impact.charts.completedPickups, 1);
+  assert.equal(impact.charts.byType.MYSTERY_BOX, 1);
+  assert.equal(impact.charts.daily.reduce((sum, day) => sum + day.completedPickups, 0), 1);
+  assert.equal((await db.doc('rescueClaims/' + claim.id).get()).get('offerType'), 'MYSTERY_BOX');
   await api.settle('offer'); assert.equal((await inventory()).availableQuantity, 8);
 });
 test('nearby opt-in is private, bounded, deduplicated and expires', async () => {

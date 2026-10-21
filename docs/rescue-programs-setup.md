@@ -2,12 +2,12 @@
 
 ## Phạm vi đã triển khai
 
-Home Guest/Customer có hai icon riêng **Flash Sale** và **Hộp bí ẩn**. Seller/Admin tiếp tục dùng **Giải cứu mở rộng** trong dashboard để tạo và quản lý gói. Đây là module Android Java theo MVVM, dùng API Express trên Render và giao dịch Firestore. Không thay đổi checkout/SePay hiện tại, không cần Room migration.
+Home Guest/Customer có hai icon riêng **Flash Sale** và **Hộp bí ẩn**. Seller mở nhóm **GIẢI CỨU** trong drawer để khám phá, tạo gói, quản lý gói cửa hàng và xem tác động; Admin mở **Quản lý gói giải cứu** trong drawer. Dashboard không còn khối Giải cứu mở rộng. Đây là module Android Java theo MVVM, dùng API Express trên Render và giao dịch Firestore. Không thay đổi checkout/SePay hiện tại, không cần Room migration.
 
 ### Hai trang khám phá dành cho khách
 
 - **Flash Sale:** danh sách riêng, ảnh nông sản (khi có), giá gốc/giá giảm, phần trăm giảm tính từ giá thật, số suất còn lại, giờ nhận và đếm ngược theo `closesAt`. Sắp xếp theo hạn gần nhất hoặc giá thấp, tải thêm theo cursor. Nút **Chớp ngay** mở chi tiết để xác nhận số suất. Khi hết giờ, nút bị khóa và danh sách được làm mới.
-- **Hộp bí ẩn:** nền trắng và ba hộp vẽ bằng Canvas. Idle có chuyển động nổi và nghiêng nhẹ; chạm hộp sẽ tiến về giữa, rung, bật nắp, phát sáng và tung hạt giấy, sau đó hiện thông tin gói. Hộp chưa có gói thật được làm mờ và có nút **Mở thử**, kết thúc bằng thông báo sắp lên kệ thay vì thẻ mua hàng. Có thể dùng các nút Hộp 1/2/3, mở hộp khác hoặc đổi bộ hộp nếu có hơn ba gói. Animation dừng khi rời màn hình và tôn trọng cài đặt tắt animation của hệ thống.
+- **Hộp bí ẩn:** nền trắng và ba hộp vẽ bằng Canvas. Idle có chuyển động nổi và nghiêng nhẹ; chạm hộp sẽ tiến về giữa, rung, bật nắp, phát sáng và tung hạt giấy, sau đó hiện thông tin gói. Hộp chưa có gói thật cho phép chạm trực tiếp để mở thử, kết thúc bằng thông báo sắp lên kệ thay vì thẻ mua hàng. Không còn ba nút mở hộp bên dưới. Có thể mở hộp khác hoặc đổi bộ hộp nếu có hơn ba gói. Animation dừng khi rời màn hình và tôn trọng cài đặt tắt animation của hệ thống.
 - Mở animation không tạo đăng ký, không trừ tiền, không giữ kho. Giá và giờ nhận hiển thị trước khi xác nhận suất; nguồn thành phần của hộp vẫn được backend giữ riêng đến khi nhận hàng.
 - **Suất của tôi** mở luồng đăng ký hiện có. Chi tiết và các thao tác nhận/hủy/chuẩn bị hàng tiếp tục dùng API kiểm tra quyền và tồn kho hiện tại.
 
@@ -22,6 +22,29 @@ Các gói mới dùng **nhận tại điểm và trả tiền trực tiếp khi 
 
 
 Các lượt mới được quản lý trong **Suất của tôi / Gói cửa hàng**, lưu ở `rescueClaims`, chưa hợp nhất vào `orders`/danh sách đơn hàng thông thường. Phương thức vận chuyển hiện tại của module là PICKUP, chưa giao hàng tận nơi cho gói mới.
+
+## Drawer và biểu đồ Tác động (cập nhật 21/10/2026)
+
+- Seller: mở menu ba gạch → nhóm **GIẢI CỨU** → **Khám phá gói giải cứu**, **Tạo gói giải cứu**, **Gói cửa hàng** hoặc **Tác động đã xác nhận**. Mục Tác động mở thẳng tab **Tác động**; Gói cửa hàng mở thẳng tab cùng tên.
+- Admin: menu ba gạch → **GIẢI CỨU** → **Quản lý gói giải cứu**; giữ quyền xem và dừng gói hiện có. Drawer cuộn được để các mục cuối vẫn truy cập được.
+- Tab Tác động: tổng lượt nhận và lượng nông sản phía trên là **toàn thời gian**. Bộ chọn **7 ngày / 30 ngày / 90 ngày** áp dụng cho ba biểu đồ bên dưới: cột lượt nhận mỗi ngày, đường lũy kế từ đầu kỳ, biểu đồ tròn tỷ trọng lượt nhận theo Flash sale/Hộp bí ẩn.
+- Ngày tính theo giờ Việt Nam UTC+7, gồm ngày hôm nay. Chỉ `rescueClaims.status=COMPLETED`, thời điểm `receivedAt`, được tính; một lượt nhận nhiều suất vẫn là một lượt nhận. Ngày không có lượt nhận hiển thị 0. Không trộn đơn vị kg/hộp/quả vào phần trăm.
+- Dữ liệu cũ không cần nhập lại: phương thức được đọc từ gói gốc khi biên nhận chưa có `offerType`. Nếu gói gốc đã bị xóa hoặc không thuộc hai phương thức hiện tại, lượt nhận hiện ở **Chưa phân loại**. Không phục hồi tính năng cũ.
+
+### Setup bắt buộc để biểu đồ hoạt động
+
+1. Từ thư mục `D:\NHOM_7_MobileApp`, deploy index mới lên đúng Firebase project hiện tại:
+
+   ```powershell
+   .\tests\firestore\node_modules\.bin\firebase.cmd deploy --only firestore:indexes --project nhom7-rescuefarm
+   ```
+
+   Nếu máy chưa có Firebase CLI của bộ kiểm thử, chạy `npm --prefix tests/firestore ci` trước. Chờ composite index collection `rescueClaims` với ba trường `sellerId`, `status`, `receivedAt` (đều Ascending) chuyển sang **Enabled** trong Firebase Console → Firestore Database → Indexes.
+
+2. Deploy bản backend Render mới, gồm `functions/rescue-programs.js` và `functions/rescue-impact.js`. Root Directory vẫn `functions`, Build Command `npm ci`, Start Command `npm start`; không thêm biến môi trường, không sửa Firestore Rules.
+3. Cài APK mới. Seller mở drawer → Tác động đã xác nhận → chọn kỳ. Dùng nút **Làm mới** sau khi khách hoàn tất nhận hàng. Nếu còn backend cũ, tổng hiện có vẫn đọc được nhưng chưa có ba biểu đồ; cần hoàn tất bước 1–2.
+
+API `POST /rescue/impact` giữ dữ liệu tổng hiện có và bổ sung `impact.charts` khi gửi `{ "sellerId": "ID_SELLER", "days": 30 }`. Chỉ trả thống kê tổng hợp, không trả tên, ID khách hay từng đăng ký. Các biểu đồ không cần thêm thư viện Android.
 
 ## 1. Deploy backend
 
