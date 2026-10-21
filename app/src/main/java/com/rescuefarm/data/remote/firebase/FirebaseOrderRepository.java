@@ -227,7 +227,7 @@ public class FirebaseOrderRepository implements OrderRepository {
     @Override public void checkout(CheckoutRequest request, OrderCallback callback) {
         if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Đặt hàng cần kết nối mạng."); return; }
         try {
-            CheckoutPolicy.requireSingleSeller(request.items); validateRequest(request);
+            CheckoutPolicy.requireBasket(request.items); validateRequest(request);
             boolean guest = request.ownerType == OrderOwnerType.GUEST;
             JSONObject data = new JSONObject().put("requestId", request.requestId)
                     .put("receiverName", request.receiverName).put("receiverPhone", request.receiverPhone)
@@ -238,6 +238,7 @@ public class FirebaseOrderRepository implements OrderRepository {
             for (CartItem item : request.items) items.put(new JSONObject().put("productId", item.getProductId())
                     .put("batchId", item.getBatchId()).put("sellerId", item.getSellerId()).put("quantity", item.getQuantity()));
             data.put("items", items);
+            if (Double.isFinite(request.expectedQuantityDiscount)) data.put("expectedQuantityDiscount", request.expectedQuantityDiscount);
             if (Double.isFinite(request.expectedSubtotal)) data.put("expectedSubtotal", request.expectedSubtotal);
             if (Double.isFinite(request.expectedShippingFee)) data.put("expectedShippingFee", request.expectedShippingFee);
             if (guest) {
@@ -250,10 +251,18 @@ public class FirebaseOrderRepository implements OrderRepository {
                     try {
                         Order order = OrderJsonMapper.order(response.optJSONObject("order"));
                         boolean replay = response.optBoolean("replay");
-                        if (guest) guestSession.saveOrderAccessToken(order.getId(), response.optString("accessToken"));
+                        List<Order> placed = new ArrayList<>(); JSONArray rows = response.optJSONArray("orders");
+                        if (rows != null) for (int i = 0; i < rows.length(); i++) placed.add(OrderJsonMapper.order(rows.getJSONObject(i)));
+                        if (placed.isEmpty()) placed.add(order);
+                        order.setCheckoutOrders(placed);
+                        if (guest) for (Order child : placed) {
+                            guestSession.saveOrderAccessToken(child.getId(), response.optString("accessToken"));
+                            guestSession.saveRecentGuestOrder(child.getId(), child.getOrderCode(), child.getReceiverPhone(),
+                                    child.getTotalAmount(), child.getStatus().name(), child.getPaymentMethod().name());
+                        }
                         cacheExecutor.execute(() -> {
                             if (guest) consumeGuestCartOnce(request);
-                            orderDao.replaceOrder(OrderCacheMapper.toEntity(order, System.currentTimeMillis()));
+                            for (Order child : placed) orderDao.replaceOrder(OrderCacheMapper.toEntity(child, System.currentTimeMillis()));
                             callback.onSuccess(order, replay);
                         });
                     } catch (Exception invalid) { callback.onError(ErrorCode.UNKNOWN, "Không đọc được kết quả đặt hàng. Hãy thử lại cùng yêu cầu."); }
@@ -568,7 +577,7 @@ public class FirebaseOrderRepository implements OrderRepository {
     private Payment mapPayment(DocumentSnapshot d){Payment value=Payment.restore(d.getId(),d.getString("orderId"),enumValue(PaymentMethod.class,d.getString("method"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("status"),PaymentStatus.UNPAID),number(d,"amount"),d.getString("referenceCode"),date(d,"paidAt"));value.setBankDetails(d.getString("bankCode"),d.getString("bankAccountName"),d.getString("bankAccountNumber"));value.setQrUrl(d.getString("qrUrl"));value.setVerificationDetails(d.getString("verificationProvider"),d.getString("transferContent"));return value;}
     private Shipment mapShipment(DocumentSnapshot d){return Shipment.restore(d.getId(),d.getString("orderId"),d.getString("carrierName"),d.getString("trackingCode"),enumValue(ShipmentStatus.class,d.getString("status"),ShipmentStatus.PENDING),number(d,"distanceKm"),number(d,"shippingFee"));}
     private Map<String,Double> reservationMap(Object raw){Map<String,Double> result=new HashMap<>();if(raw instanceof Map<?,?>)for(Map.Entry<?,?> e:((Map<?,?>)raw).entrySet())if(e.getKey() instanceof String&&e.getValue() instanceof Number){double quantity=((Number)e.getValue()).doubleValue();if(quantity>0D)result.put((String)e.getKey(),quantity);}if(result.isEmpty())throw new IllegalStateException("RESERVATIONS_MISSING");return result;}
-    private Order mapOrder(DocumentSnapshot d,List<OrderItem> items){return Order.restore(d.getId(),enumValue(OrderOwnerType.class,d.getString("ownerType"),OrderOwnerType.GUEST),d.getString("ownerId"),d.getString("orderCode"),d.getString("sellerId"),d.getString("campaignId"),enumValue(FulfillmentType.class,d.getString("fulfillmentType"),FulfillmentType.PICKUP),d.getString("receiverName"),d.getString("receiverPhone"),d.getString("receiverAddress"),number(d,"receiverLatitude"),number(d,"receiverLongitude"),number(d,"subtotal"),number(d,"quantityDiscount"),number(d,"shippingFee"),number(d,"totalAmount"),enumValue(PaymentMethod.class,d.getString("paymentMethod"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("paymentStatus"),PaymentStatus.UNPAID),enumValue(OrderStatus.class,d.getString("status"),OrderStatus.PENDING),d.getString("note"),date(d,"createdAt"),date(d,"updatedAt"),items);}
+    private Order mapOrder(DocumentSnapshot d,List<OrderItem> items){return Order.restore(d.getId(),enumValue(OrderOwnerType.class,d.getString("ownerType"),OrderOwnerType.GUEST),d.getString("ownerId"),d.getString("orderCode"),d.getString("sellerId"),d.getString("campaignId"),enumValue(FulfillmentType.class,d.getString("fulfillmentType"),FulfillmentType.PICKUP),d.getString("receiverName"),d.getString("receiverPhone"),d.getString("receiverAddress"),number(d,"receiverLatitude"),number(d,"receiverLongitude"),number(d,"subtotal"),number(d,"quantityDiscount"),number(d,"shippingFee"),number(d,"totalAmount"),enumValue(PaymentMethod.class,d.getString("paymentMethod"),PaymentMethod.COD),enumValue(PaymentStatus.class,d.getString("paymentStatus"),PaymentStatus.UNPAID),enumValue(OrderStatus.class,d.getString("status"),OrderStatus.PENDING),d.getString("note"),date(d,"createdAt"),date(d,"updatedAt"),items).withVolumeDiscounts(number(d,"sellerVolumeDiscount"),number(d,"platformVolumeDiscount"));}
     private void cache(Order value){if(value!=null)cacheExecutor.execute(()->orderDao.replaceOrder(
             OrderCacheMapper.toEntity(value,System.currentTimeMillis())));}
     private List<OrderCacheEntity> toEntities(List<Order> values){List<OrderCacheEntity> result=new ArrayList<>();

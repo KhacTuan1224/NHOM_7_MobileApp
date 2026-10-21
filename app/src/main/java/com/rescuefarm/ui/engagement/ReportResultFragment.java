@@ -44,7 +44,7 @@ public final class ReportResultFragment extends Fragment {
         header.addView(back, new LinearLayout.LayoutParams(target, target));
         back.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
         TextView title = new TextView(requireContext());
-        title.setText(reportId.isEmpty() ? "Báo cáo của tôi" : "Kết quả báo cáo"); title.setTextSize(26);
+        title.setText(reportId.isEmpty() ? "Báo cáo của tôi" : "Kết quả báo cáo"); title.setTextAppearance(com.rescuefarm.R.style.TextAppearance_RescueFarm_Detail_PageTitle);
         title.setTextColor(requireContext().getColor(com.rescuefarm.R.color.rescue_on_surface));
         com.rescuefarm.ui.common.AppTypography.title(title);
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
@@ -60,7 +60,7 @@ public final class ReportResultFragment extends Fragment {
         button.setCornerRadius(Math.round(14 * getResources().getDisplayMetrics().density)); button.setAllCaps(false); return button;
     }
     private TextView addText(String value, int size) {
-        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(size); text.setPadding(0, 12, 0, 12);
+        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(size >= 18 ? 18 : 15); com.rescuefarm.ui.common.AppTypography.body(text); text.setPadding(0, 12, 0, 12);
         text.setTextColor(requireContext().getColor(com.rescuefarm.R.color.rescue_on_surface));
         content.addView(text); return text;
     }

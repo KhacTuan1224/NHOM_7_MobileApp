@@ -1,4 +1,5 @@
 const express = require("express");
+const {applyVolume, allocate} = require("./purchase-volume");
 const {paymentDetails, bankTransferCapability} = require('./sepay');
 const {availablePaymentMethods} = require('./seller-payment-options');
 const {normalizeUnit, campaignUnit} = require('./quantity-units');
@@ -33,7 +34,7 @@ function price(product, promotion, quantity, now) {
   return {unit, subtotal: money(unit * quantity), originalSubtotal: money(original * quantity)};
 }
 
-function validateSelection(data) {
+function validateSelection(data, allowMultiple = false) {
   if (!Array.isArray(data.items) || !data.items.length || data.items.length > 20) {
     throw error(400, "Chọn từ 1 đến 20 lô hàng để đặt đơn.");
   }
@@ -53,7 +54,8 @@ function validateSelection(data) {
     batches.add(item.batchId); sellers.add(item.sellerId);
     return {productId: item.productId, batchId: item.batchId, sellerId: item.sellerId, quantity: item.quantity};
   });
-  if (sellers.size !== 1) throw error(400, "Hãy đặt riêng từng cửa hàng.");
+  if (!allowMultiple && sellers.size !== 1) throw error(400, "Hãy đặt riêng từng cửa hàng.");
+  if (sellers.size > 5) throw error(400, "Mỗi lần thanh toán tối đa 5 cửa hàng.");
   return items;
 }
 
@@ -103,7 +105,10 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       const canUsePromotion = !!saved?.exists && saved.get('customerId') === identity.ownerId
         && saved.get('sellerId') === sellerId && promo.exists
         && promotionAvailable(promo.data(), p.data(), seller.data(), now);
-      const calculated = price(p.data(), canUsePromotion ? promo.data() : null, item.quantity, now);
+      const productQuantity = items.filter(row => row.productId === item.productId).reduce((sum, row) => sum + row.quantity, 0);
+      const calculated = price(p.data(), canUsePromotion ? promo.data() : null, productQuantity, now);
+      calculated.subtotal = money(calculated.unit * item.quantity);
+      calculated.originalSubtotal = money(p.get("originalPrice") * item.quantity);
       rows.push({item, product: p.data(), batch, batchRef: b.ref,
         promotionApplied: canUsePromotion && calculated.unit < money(p.get('rescuePrice')), price: calculated});
     }
@@ -186,6 +191,32 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         quoteIsEstimate: true}};
   }
 
+  async function basketQuote(read, data, now = Date.now(), identity = null) {
+    const items = validateSelection(data, true);
+    const sellerIds = [...new Set(items.map(item => item.sellerId))].sort();
+    const groups = [];
+    for (const sellerId of sellerIds) groups.push(await quote(read,
+      {...data, items: items.filter(item => item.sellerId === sellerId)}, now, identity));
+    const volume = applyVolume(groups.map(group => ({sellerId: group.sellerId, subtotal: group.public.subtotal})));
+    for (let i = 0; i < groups.length; i++) {
+      const group = groups[i], discount = volume.groups[i];
+      Object.assign(group.public, discount, {total: discount.netSubtotal + group.public.shippingFee,
+        productDiscount: group.public.totalDiscount,
+        totalDiscount: group.public.totalDiscount + discount.quantityDiscount});
+      const sellerParts = allocate(discount.sellerDiscount, group.rows.map(row => row.price.subtotal));
+      const platformParts = allocate(discount.platformDiscount, group.rows.map((row, j) => row.price.subtotal - sellerParts[j]));
+      group.rows.forEach((row, j) => { row.sellerVolumeDiscount = sellerParts[j]; row.platformVolumeDiscount = platformParts[j]; });
+      group.public.lines.forEach((line, j) => { line.sellerVolumeDiscount = sellerParts[j]; line.platformVolumeDiscount = platformParts[j]; });
+    }
+    const summary = {...groups[0].public, groups: groups.map(group => group.public), buyMorePolicy: volume.policy,
+      platformPercent: volume.platformPercent, sellerCount: sellerIds.length, lines: groups.flatMap(group => group.public.lines)};
+    for (const key of ['subtotal', 'originalSubtotal', 'productDiscount', 'sellerDiscount', 'platformDiscount', 'quantityDiscount', 'totalDiscount', 'shippingFee', 'total'])
+      summary[key] = groups.reduce((sum, group) => sum + group.public[key], 0);
+    summary.availablePaymentMethods = groups[0].public.availablePaymentMethods.filter(method =>
+      groups.every(group => group.public.availablePaymentMethods.includes(method)));
+    return {groups, public: summary};
+  }
+
   function guestIdentity(data) {
     if (!/^guest_[a-f0-9-]{36}$/i.test(text(data.guestId)) || !/^[a-f0-9]{64}$/i.test(text(data.guestToken))) {
       throw error(400, "Phiên mua hàng Guest không hợp lệ.");
@@ -193,44 +224,11 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     return {ownerType: 'GUEST', ownerId: data.guestId, tokenHash: hash(data.guestToken)};
   }
 
-  async function checkout(data, identity) {
-    const items = validateSelection(data), requestId = text(data.requestId);
-    if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(requestId)) throw error(400, "Mã yêu cầu đặt hàng không hợp lệ.");
-    const receiverPhone = phone(data.receiverPhone), receiverName = text(data.receiverName);
-    if (receiverName.length < 2 || receiverName.length > 100 || !/^0\d{8,11}$/.test(receiverPhone)
-        || text(data.receiverAddress).length > 500 || text(data.note).length > 1000
-        || (data.fulfillmentType === 'DELIVERY' && !text(data.receiverAddress))) throw error(400, "Kiểm tra tên, số điện thoại và địa chỉ nhận hàng.");
-    const normalized = {items: [...items].sort((a, b) => a.batchId.localeCompare(b.batchId)), receiverName,
-      receiverPhone, receiverAddress: text(data.receiverAddress), latitude: number(data.latitude, 0), longitude: number(data.longitude, 0),
-      fulfillmentType: data.fulfillmentType, paymentMethod: data.paymentMethod, note: text(data.note)};
-    if (normalized.latitude < -90 || normalized.latitude > 90 || normalized.longitude < -180 || normalized.longitude > 180) throw error(400, "Tọa độ nhận hàng chưa hợp lệ.");
-    const fingerprint = hash(JSON.stringify(normalized)), orderRef = db.collection('orders').doc(requestId);
+  function writeOrder(tx, normalized, identity, q, requestId, fingerprint, groupId, orderIds) {
+    const items = normalized.items, orderRef = db.collection('orders').doc(requestId);
     const receiptRef = db.collection('checkoutReceipts').doc(requestId);
-    await lifecycle.reconcileItems(items);
-    const result = await db.runTransaction(async tx => {
-      const existing = await tx.get(orderRef), receipt = await tx.get(receiptRef);
-      if (existing.exists) {
-        if (!receipt.exists || existing.get('ownerId') !== identity.ownerId || existing.get('ownerType') !== identity.ownerType
-            || receipt.get('fingerprint') !== fingerprint || (identity.ownerType === 'GUEST' && receipt.get('tokenHash') !== identity.tokenHash)) {
-          throw error(409, "Mã yêu cầu đã được dùng cho thông tin đặt hàng khác.");
-        }
-        return {order: existing.data(), replay: true};
-      }
-      // All reads precede writes, and inventory is re-read inside this transaction.
-      if (identity.ownerType === 'CUSTOMER') {
-        const account = await tx.get(db.collection('users').doc(identity.ownerId));
-        if (!account.exists || account.get('role') !== 'CUSTOMER' || account.get('status') !== 'ACTIVE') throw error(403, "Tài khoản Customer không còn hoạt động.");
-      }
-      const q = await quote(ref => tx.get(ref), normalized, Date.now(), identity);
-      const cartRef = db.collection('customerCarts').doc(identity.ownerId);
-      const cart = identity.ownerType === 'CUSTOMER' ? await tx.get(cartRef) : null;
-      const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
-      const code = identity.ownerType === 'GUEST' ? await tx.get(codeRef) : null;
-      if (code && code.exists) throw error(409, "Mã đơn bị trùng. Hãy thử lại.");
-      if (Number.isFinite(data.expectedSubtotal) && Math.abs(data.expectedSubtotal - q.public.subtotal) > 0.5
-          || Number.isFinite(data.expectedShippingFee) && Math.abs(data.expectedShippingFee - q.public.shippingFee) > 0.5) {
-        throw error(409, "QUOTE_CHANGED: Giá hoặc phí giao hàng đã thay đổi. Hãy kiểm tra báo giá mới.");
-      }
+    const receiverPhone = normalized.receiverPhone;
+    const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
       const paymentStatus = normalized.paymentMethod === 'BANK_TRANSFER' ? 'PENDING' : 'UNPAID';
       const bankTransfer = normalized.paymentMethod === 'BANK_TRANSFER'
         ? paymentDetails(q.sellerId, q.paymentProfile, env) : {verificationProvider: '', transferContent: ''};
@@ -238,7 +236,10 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         throw error(409, 'Cửa hàng chưa kết nối xác minh chuyển khoản SePay. Vui lòng chọn thanh toán khi nhận hàng hoặc chờ cửa hàng hoàn tất kết nối; chưa chuyển tiền.');
       const order = {id: requestId, requestId, ownerType: identity.ownerType, ownerId: identity.ownerId,
         orderCode: `RF-${requestId.replace(/-/g, '').toUpperCase()}`, sellerId: q.sellerId, campaignId: q.public.campaignId,
-        ...normalized, subtotal: q.public.subtotal, quantityDiscount: 0, shippingFee: q.public.shippingFee,
+        ...normalized, subtotal: q.public.subtotal, quantityDiscount: q.public.quantityDiscount,
+        sellerVolumeDiscount: q.public.sellerDiscount, platformVolumeDiscount: q.public.platformDiscount,
+        sellerReceivableAmount: q.public.subtotal - q.public.sellerDiscount + q.public.shippingFee,
+        volumePolicyVersion: 1, checkoutGroupId: groupId, shippingFee: q.public.shippingFee,
         totalAmount: q.public.total, paymentStatus, status: 'PENDING', campaignReservedQuantity: q.campaignQuantity,
         batchReservations: Object.fromEntries(items.map(item => [item.batchId, item.quantity])),
         campaignBatchReservations: Object.fromEntries(q.rows.filter(row => text(row.batch.activeCampaignId))
@@ -252,7 +253,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
           orderId: requestId, sellerId: q.sellerId, createdAt: stamp()
         });
       tx.create(receiptRef, {ownerId: identity.ownerId, ownerType: identity.ownerType, fingerprint,
-        tokenHash: identity.tokenHash || '', createdAt: stamp()});
+        tokenHash: identity.tokenHash || '', orderIds, createdAt: stamp()});
       const sellerNotificationId = `${requestId}_SELLER_PENDING`;
       tx.create(db.collection('notifications').doc(sellerNotificationId), {
         id: sellerNotificationId, userId: q.sellerId, type: 'ORDER',
@@ -266,7 +267,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
           productId: item.productId, batchId: item.batchId, productNameSnapshot: text(p.name),
           productImageSnapshot: Array.isArray(p.imageUrls) ? text(p.imageUrls[0]) : '', unitSnapshot: normalizeUnit(p.unit),
           originalPriceSnapshot: p.originalPrice, rescuePriceSnapshot: p.rescuePrice, finalPriceSnapshot: row.price.unit,
-          quantity: item.quantity, subtotal: row.price.subtotal, promotionApplied: row.promotionApplied,
+          quantity: item.quantity, subtotal: row.price.subtotal, sellerVolumeDiscount: row.sellerVolumeDiscount, platformVolumeDiscount: row.platformVolumeDiscount, promotionApplied: row.promotionApplied,
           promotionIdSnapshot: row.promotionApplied ? item.productId : ''});
         tx.update(row.batchRef, {availableQuantity: batch.availableQuantity - item.quantity,
           reservedQuantity: batch.reservedQuantity + item.quantity, status: 'RESERVED_PARTIAL',
@@ -293,16 +294,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         pickupLongitude: q.public.sellerLongitude, receiverAddress: normalized.receiverAddress,
         receiverLatitude: normalized.latitude, receiverLongitude: normalized.longitude,
         distanceKm: q.public.distanceKm, shippingFee: q.public.shippingFee, createdAt: stamp(), updatedAt: stamp()});
-      if (cart && cart.exists) {
-        const quantities = new Map(items.map(item => [`${item.productId}::${item.batchId}`, item.quantity]));
-        const remaining = (cart.get('items') || []).flatMap(item => {
-          const bought = quantities.get(item.id);
-          if (!bought) return [item];
-          if (!(number(item.quantity) >= bought)) throw error(409, "QUOTE_CHANGED: Giỏ hàng đã thay đổi.");
-          return item.quantity - bought > 0.000001 ? [{...item, quantity: item.quantity - bought}] : [];
-        });
-        tx.update(cartRef, {items: remaining, updatedAt: stamp()});
-      }
       if (identity.ownerType === 'CUSTOMER') tx.create(db.collection('notifications').doc(`${requestId}_PENDING`), {
         id: `${requestId}_PENDING`, userId: identity.ownerId, type: 'ORDER', title: 'Đã tiếp nhận đơn hàng',
         body: 'Đơn hàng đang chờ cửa hàng xác nhận.', referenceId: requestId, orderStatus: 'PENDING',
@@ -313,10 +304,80 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       enqueueNotification(tx, db, admin, `order_${requestId}_admins`, {kind: 'ADMINS', resourceType: 'ORDER', resourceId: requestId});
       if (identity.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${requestId}_PENDING`, {
         kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId, recipientUid: identity.ownerId, decision: 'PENDING', inboxId: `${requestId}_PENDING`});
-      return {order, replay: false};
+      if (q.public.platformDiscount > 0) tx.create(db.collection('platformDiscountClaims').doc(requestId), {
+        orderId: requestId, checkoutGroupId: groupId, sellerId: q.sellerId, amount: q.public.platformDiscount,
+        policyVersion: 1, settlementStatus: 'UNSETTLED', requiresOrderStatus: 'DELIVERED', createdAt: stamp()
+      });
+      return order;
+  }
+
+  async function checkout(data, identity) {
+    const items = validateSelection(data, true), requestId = text(data.requestId);
+    if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(requestId)) throw error(400, "Mã yêu cầu đặt hàng không hợp lệ.");
+    const receiverPhone = phone(data.receiverPhone), receiverName = text(data.receiverName);
+    if (receiverName.length < 2 || receiverName.length > 100 || !/^0\d{8,11}$/.test(receiverPhone)
+        || text(data.receiverAddress).length > 500 || text(data.note).length > 1000
+        || (data.fulfillmentType === 'DELIVERY' && !text(data.receiverAddress))) throw error(400, "Kiểm tra tên, số điện thoại và địa chỉ nhận hàng.");
+    const normalized = {items: [...items].sort((a, b) => a.batchId.localeCompare(b.batchId)), receiverName,
+      receiverPhone, receiverAddress: text(data.receiverAddress), latitude: number(data.latitude, 0), longitude: number(data.longitude, 0),
+      fulfillmentType: data.fulfillmentType, paymentMethod: data.paymentMethod, note: text(data.note)};
+    if (normalized.latitude < -90 || normalized.latitude > 90 || normalized.longitude < -180 || normalized.longitude > 180) throw error(400, "Tọa độ nhận hàng chưa hợp lệ.");
+    const fingerprint = hash(JSON.stringify(normalized)), orderRef = db.collection('orders').doc(requestId);
+    const receiptRef = db.collection('checkoutReceipts').doc(requestId);
+    await lifecycle.reconcileItems(items);
+    const result = await db.runTransaction(async tx => {
+      const existing = await tx.get(orderRef), receipt = await tx.get(receiptRef);
+      if (existing.exists) {
+        if (!receipt.exists || existing.get('ownerId') !== identity.ownerId || existing.get('ownerType') !== identity.ownerType
+            || receipt.get('fingerprint') !== fingerprint || (identity.ownerType === 'GUEST' && receipt.get('tokenHash') !== identity.tokenHash)) {
+          throw error(409, "Mã yêu cầu đã được dùng cho thông tin đặt hàng khác.");
+        }
+        return {order: existing.data(), orderIds: receipt.get("orderIds") || [requestId], replay: true};
+      }
+      // All reads precede writes, and inventory is re-read inside this transaction.
+      if (identity.ownerType === 'CUSTOMER') {
+        const account = await tx.get(db.collection('users').doc(identity.ownerId));
+        if (!account.exists || account.get('role') !== 'CUSTOMER' || account.get('status') !== 'ACTIVE') throw error(403, "Tài khoản Customer không còn hoạt động.");
+      }
+      const q = await basketQuote(ref => tx.get(ref), normalized, Date.now(), identity);
+      const orderIds = q.groups.map((group, index) => {
+        if (index === 0) return requestId;
+        const hex = hash(requestId + '|' + group.sellerId).slice(0, 32);
+        return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+      });
+      for (let i = 1; i < orderIds.length; i++) {
+        if ((await tx.get(db.collection('orders').doc(orderIds[i]))).exists
+            || (await tx.get(db.collection('guestOrderCodes').doc(`RF-${orderIds[i].replace(/-/g, '').toUpperCase()}`))).exists)
+          throw error(409, 'Mã đơn con bị trùng. Vui lòng thử lại.');
+      }
+      const cartRef = db.collection('customerCarts').doc(identity.ownerId);
+      const cart = identity.ownerType === 'CUSTOMER' ? await tx.get(cartRef) : null;
+      const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
+      const code = identity.ownerType === 'GUEST' ? await tx.get(codeRef) : null;
+      if (code && code.exists) throw error(409, "Mã đơn bị trùng. Hãy thử lại.");
+      if (Number.isFinite(data.expectedQuantityDiscount) && Math.abs(data.expectedQuantityDiscount - q.public.quantityDiscount) > 0.5
+          || Number.isFinite(data.expectedSubtotal) && Math.abs(data.expectedSubtotal - q.public.subtotal) > 0.5
+          || Number.isFinite(data.expectedShippingFee) && Math.abs(data.expectedShippingFee - q.public.shippingFee) > 0.5) {
+        throw error(409, "QUOTE_CHANGED: Giá hoặc phí giao hàng đã thay đổi. Hãy kiểm tra báo giá mới.");
+      }
+      const orders = q.groups.map((group, index) => writeOrder(tx,
+        {...normalized, items: normalized.items.filter(item => item.sellerId === group.sellerId)}, identity,
+        group, orderIds[index], fingerprint, requestId, orderIds));
+      if (cart && cart.exists) {
+        const quantities = new Map(items.map(item => [`${item.productId}::${item.batchId}`, item.quantity]));
+        const remaining = (cart.get('items') || []).flatMap(item => {
+          const bought = quantities.get(item.id);
+          if (!bought) return [item];
+          if (!(number(item.quantity) >= bought)) throw error(409, "QUOTE_CHANGED: Giỏ hàng đã thay đổi.");
+          return item.quantity - bought > 0.000001 ? [{...item, quantity: item.quantity - bought}] : [];
+        });
+        tx.update(cartRef, {items: remaining, updatedAt: stamp()});
+      }
+      return {order: orders[0], orderIds, replay: false};
     });
     // Re-read committed server timestamps; never serialize FieldValue sentinels to Android.
-    result.order = (await orderRef.get()).data();
+    result.orders = await Promise.all(result.orderIds.map(async id => (await db.collection('orders').doc(id).get()).data()));
+    result.order = result.orders[0];
     if (identity.ownerType === 'GUEST') result.accessToken = data.guestToken;
     return serialize(result);
   }
@@ -335,8 +396,8 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
   });
   router.use(createPromotionWallet({db, admin, authenticate, limit}).router);
   async function reconciledQuote(data, identity = null) {
-    await lifecycle.reconcileItems(validateSelection(data));
-    return (await quote(ref => ref.get(), data, Date.now(), identity)).public;
+    await lifecycle.reconcileItems(validateSelection(data, true));
+    return (await basketQuote(ref => ref.get(), data, Date.now(), identity)).public;
   }
   route('/quoteCustomerCheckout', async req => {
     const caller = await authenticate(req, ['CUSTOMER']);

@@ -140,6 +140,7 @@ public class CampaignDetailFragment extends Fragment {
     }
     
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.common.DetailTypography.bindHeader(this, view, "Chi tiết chiến dịch");
         campaignId = getArguments() == null ? "" : getArguments().getString("campaignId", "");
         locationProvider = LocationProviderFactory.create(requireContext());
         
@@ -527,7 +528,7 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private TextView commentText(String value) {
-        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(16); text.setPadding(8, 10, 8, 10); return text;
+        TextView text = new TextView(requireContext()); text.setText(value); com.rescuefarm.ui.common.DetailTypography.body(text); text.setPadding(8, 10, 8, 10); return text;
     }
 
     @Override public void onDestroy() {

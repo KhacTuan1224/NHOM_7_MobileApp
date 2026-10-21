@@ -66,6 +66,7 @@ public class OrderDetailFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.common.DetailTypography.bindHeader(this, view, "Chi tiết đơn hàng");
         if (state != null) {
             paymentSuccessShown = state.getBoolean("paymentSuccessShown");
             String previous = state.getString("previousPaymentStatus", "");
@@ -159,6 +160,11 @@ public class OrderDetailFragment extends Fragment {
             if (shipment != null && shipment.getDistanceKm() > 0D)
                 addInfoRow("Khoảng cách", String.format(Locale.getDefault(), "%.1f km", shipment.getDistanceKm()), false);
         }
+        addInfoRow("Tiền hàng sau KM sản phẩm", money.format(order.getSubtotal()), false);
+        if (order.getSellerVolumeDiscount() > 0 || order.getPlatformVolumeDiscount() > 0) {
+            addInfoRow("Giảm thêm cùng Seller", "−" + money.format(order.getSellerVolumeDiscount()), false);
+            addInfoRow("Nền tảng giảm nhiều Seller", "−" + money.format(order.getPlatformVolumeDiscount()), false);
+        } else if (order.getQuantityDiscount() > 0) addInfoRow("Ưu đãi mua nhiều", "−" + money.format(order.getQuantityDiscount()), false);
         addInfoRow("Tổng thanh toán", money.format(order.getTotalAmount()), true);
     }
 
@@ -170,12 +176,12 @@ public class OrderDetailFragment extends Fragment {
         row.setPadding(0, vertical, 0, vertical);
         TextView labelView = new TextView(requireContext());
         labelView.setText(label);
-        labelView.setTextSize(13);
+        com.rescuefarm.ui.common.DetailTypography.meta(labelView);
         labelView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                 R.color.rescue_on_surface_variant));
         TextView valueView = new TextView(requireContext());
         valueView.setText(value);
-        valueView.setTextSize(emphasized ? 15 : 14);
+        com.rescuefarm.ui.common.DetailTypography.body(valueView);
         valueView.setGravity(android.view.Gravity.END);
         valueView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                 emphasized ? R.color.rescue_primary : R.color.rescue_on_surface));
@@ -391,7 +397,7 @@ public class OrderDetailFragment extends Fragment {
                 : current ? (status == OrderStatus.DELIVERED ? R.string.order_timeline_finished
                 : R.string.order_timeline_current) : complete ? R.string.order_timeline_complete
                 : R.string.order_timeline_upcoming);
-        caption.setTextSize(12);
+        com.rescuefarm.ui.common.DetailTypography.meta(caption);
         caption.setTextColor(requireContext().getColor(R.color.rescue_on_surface_variant));
         text.addView(caption);
         row.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -419,14 +425,14 @@ public class OrderDetailFragment extends Fragment {
             row.setPadding(0, vertical, 0, vertical);
             TextView productName = new TextView(requireContext());
             productName.setText(item.getProductNameSnapshot());
-            productName.setTextSize(15);
+            com.rescuefarm.ui.common.DetailTypography.body(productName);
             productName.setTypeface(productName.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(productName);
             productName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                     R.color.rescue_on_surface));
             TextView productDetails = new TextView(requireContext());
             productDetails.setText(item.getQuantity() + " " + item.getUnitSnapshot() + "  ·  "
                     + NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(item.getSubtotal()));
-            productDetails.setTextSize(13);
+            com.rescuefarm.ui.common.DetailTypography.meta(productDetails);
             productDetails.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                     R.color.rescue_on_surface_variant));
             row.addView(productName);

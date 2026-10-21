@@ -15,3 +15,20 @@ Nguồn font chính thức:
 - Barlow: https://github.com/google/fonts/tree/main/ofl/barlow
 
 Giấy phép SIL Open Font License đi kèm tại docs/licenses/fonts và được đóng gói trong assets/licenses/fonts của APK.
+
+## Quy chuẩn màn chi tiết
+
+Các màn chi tiết dùng chung `TextAppearance.RescueFarm.Detail.*` trong `res/values/detail_typography.xml`:
+
+| Vai trò | Font | Cỡ chữ | Màu mặc định |
+| --- | --- | --- | --- |
+| PageTitle: tiêu đề trang | IBM Plex Sans Bold | 20sp | rescue_on_surface |
+| Name: tên nội dung chính | IBM Plex Sans Bold | 22sp | rescue_on_surface |
+| Section: tiêu đề mục | IBM Plex Sans Bold | 18sp | rescue_on_surface |
+| Body: nội dung | Barlow | 15sp | rescue_on_surface |
+| Meta: thông tin phụ | Barlow | 13sp | rescue_on_surface_variant |
+| Price: giá nổi bật | Barlow Bold | 20sp | rescue_primary |
+
+Tiêu đề trang đặt ở hàng đầu màn, căn trái cạnh icon quay lại 48dp và căn giữa theo chiều dọc; lề nội dung 16dp. Sản phẩm/chiến dịch/đơn hàng dùng `view_detail_header.xml`, gắn nhãn và điều hướng qua `DetailTypography.bindHeader`. Header sẵn có của quản trị/danh mục/cửa hàng/gói giải cứu dùng cùng vai trò PageTitle. Bố cục sản phẩm trên tablet vẫn có header toàn chiều rộng bên trên hai cột.
+
+Nội dung Java dùng `DetailTypography.body/meta/section` hoặc font tương ứng từ `AppTypography`. Giá, trạng thái và cảnh báo có thể ghi đè màu theo ý nghĩa; không thay toàn bộ thành một màu cố định. Các cỡ sp vẫn tôn trọng cài đặt phóng chữ của Android.

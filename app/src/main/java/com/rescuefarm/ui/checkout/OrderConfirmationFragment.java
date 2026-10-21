@@ -80,6 +80,21 @@ public class OrderConfirmationFragment extends Fragment {
                     orderCode,
                     OrderLabels.status(orderStatus, paymentMethod)));
 
+            java.util.ArrayList<String> ids = args.getStringArrayList("checkoutOrderIds");
+            java.util.ArrayList<String> codes = args.getStringArrayList("checkoutOrderCodes");
+            if (ids != null && codes != null && ids.size() > 1) {
+                output.append("\nĐã tạo " + ids.size() + " đơn cho các cửa hàng. Mỗi đơn được thanh toán và theo dõi riêng.");
+                android.widget.LinearLayout links = new android.widget.LinearLayout(requireContext());
+                links.setOrientation(android.widget.LinearLayout.VERTICAL);
+                ViewGroup parent = (ViewGroup) output.getParent(); parent.addView(links, parent.indexOfChild(output) + 1);
+                for (int i = 0; i < Math.min(ids.size(), codes.size()); i++) {
+                    final String childId = ids.get(i);
+                    com.google.android.material.button.MaterialButton button = new com.google.android.material.button.MaterialButton(requireContext());
+                    button.setText("Xem đơn " + (i + 1) + " · " + codes.get(i)); button.setAllCaps(false); links.addView(button);
+                    button.setOnClickListener(v -> { Bundle detail = new Bundle(); detail.putString("orderId", childId);
+                        Navigation.findNavController(v).navigate(R.id.orderDetailFragment, detail); });
+                }
+            }
             sessionRepo.saveRecentGuestOrder(orderId, orderCode, receiverPhone,
                     totalAmount, statusStr, methodStr);
         } else {

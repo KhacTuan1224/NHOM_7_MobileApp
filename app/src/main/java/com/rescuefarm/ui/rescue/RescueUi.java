@@ -55,8 +55,9 @@ final class RescueUi {
         card.addView(content); return content;
     }
     static TextView text(LinearLayout parent, String value, boolean title) {
-        TextView view = new TextView(parent.getContext()); view.setText(value); view.setTextSize(title ? 20 : 15);
-        view.setTextColor(parent.getContext().getColor(title ? R.color.rescue_on_surface : R.color.rescue_on_surface_variant));
+        TextView view = new TextView(parent.getContext()); view.setText(value); if (title) com.rescuefarm.ui.common.DetailTypography.section(view);
+        else com.rescuefarm.ui.common.DetailTypography.body(view);
+        view.setTextColor(parent.getContext().getColor(R.color.rescue_on_surface));
         view.setPadding(0, dp(parent.getContext(), 6), 0, dp(parent.getContext(), 6));
         if (title) { com.rescuefarm.ui.common.AppTypography.title(view); view.setAccessibilityHeading(true); }
         parent.addView(view, new LinearLayout.LayoutParams(-1, -2)); return view;

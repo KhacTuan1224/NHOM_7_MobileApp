@@ -177,6 +177,7 @@ public final class RescueHubFragment extends Fragment {
         TextView message = root.findViewById(R.id.rescueMessage);
         message.setText(state.message); message.setVisibility(state.message.isEmpty() ? View.GONE : View.VISIBLE);
         boolean catalog = state.screen.equals("catalog");
+        ((TextView) root.findViewById(R.id.rescueHeading)).setText(state.screen.equals("detail") ? "Chi tiết gói" : getString(R.string.rescue_hub_title));
         if (!state.screen.equals("detail")) {
             int selected = state.screen.equals("impact") && seller() ? 2 : state.screen.equals("mine") ? 1 : 0;
             if (selected < tabs.getTabCount() && tabs.getSelectedTabPosition() != selected) {
@@ -216,8 +217,8 @@ public final class RescueHubFragment extends Fragment {
     }
     private void detail(JSONObject offer, JSONObject response) {
         LinearLayout card = card(content);
-        text(card, type(offer.optString("type")) + " · " + status(offer.optString("status")), false);
-        text(card, offer.optString("title"), true); text(card, offer.optString("description"), false);
+        com.rescuefarm.ui.common.DetailTypography.meta(text(card, type(offer.optString("type")) + " · " + status(offer.optString("status")), false));
+        text(card, offer.optString("title"), true).setTextAppearance(R.style.TextAppearance_RescueFarm_Detail_Name); text(card, offer.optString("description"), false);
         text(card, "Phân loại: " + offer.optString("categoryLabel") + "\nThành phần / lưu ý: " + offer.optString("contentsDisclosure"), false);
         text(card, "Giá trị gốc: " + money(offer.optDouble("originalUnitPrice")) + "\nGiá giải cứu: "
                 + money(offer.optDouble("unitPrice")) + " / " + offer.optString("unitLabel"), false);

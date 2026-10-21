@@ -76,7 +76,7 @@ public final class AdminDetailRenderer {
 
     private void renderList(LinearLayout parent, String key, List<?> values) {
         if (values.isEmpty()) { empty(parent); return; }
-        TextView count = text(values.size() + " mục", 12, R.color.rescue_on_surface_variant);
+        TextView count = text(values.size() + " mục", 13, R.color.rescue_on_surface_variant);
         parent.addView(count, params());
         for (int i = 0; i < values.size(); i++) {
             Object value = values.get(i);
@@ -94,7 +94,7 @@ public final class AdminDetailRenderer {
     private void field(LinearLayout parent, String key, Object raw) { field(parent, key, raw, AdminDetailFormatter.label(key)); }
     private void field(LinearLayout parent, String key, Object raw, String label) {
         LinearLayout row = column(); row.setPadding(0, dp(8), 0, dp(8));
-        TextView caption = text(label, 12, R.color.rescue_on_surface_variant);
+        TextView caption = text(label, 13, R.color.rescue_on_surface_variant);
         row.addView(caption, params());
         Object value = raw instanceof com.google.firebase.Timestamp ? ((com.google.firebase.Timestamp) raw).toDate() : raw;
         boolean absent = value == null || value instanceof String && ((String) value).trim().isEmpty();
@@ -148,7 +148,7 @@ public final class AdminDetailRenderer {
                 toggle.setContentDescription(title + (expand ? ", thu gọn" : ", mở rộng"));
             });
         } else {
-            TextView heading = text(title, 14, R.color.rescue_primary); heading.setTypeface(heading.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(heading);
+            TextView heading = text(title, 18, R.color.rescue_on_surface); heading.setTypeface(heading.getTypeface(), Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(heading);
             heading.setAccessibilityHeading(true); com.rescuefarm.ui.common.AppTypography.title(heading); heading.setPadding(0, 0, 0, dp(4)); section.addView(heading, params());
         }
         section.addView(content, params()); return content;
@@ -181,7 +181,7 @@ public final class AdminDetailRenderer {
     }
     private void empty(LinearLayout parent) { parent.addView(text("Chưa có thông tin", 14, R.color.rescue_on_surface_variant), params()); }
     private TextView text(String value, int size, int color) {
-        TextView view = new TextView(context); view.setText(value); view.setTextSize(size); view.setTextColor(color(color)); return view;
+        TextView view = new TextView(context); view.setText(value); view.setTextSize(size); com.rescuefarm.ui.common.AppTypography.body(view); view.setTextColor(color(color)); return view;
     }
     private LinearLayout column() { LinearLayout view = new LinearLayout(context); view.setOrientation(LinearLayout.VERTICAL); return view; }
     private LinearLayout.LayoutParams params() { return new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); }

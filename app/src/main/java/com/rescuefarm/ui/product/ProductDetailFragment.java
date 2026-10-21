@@ -58,6 +58,7 @@ public class ProductDetailFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_product_detail, parent, false);
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.common.DetailTypography.bindHeader(this, view, "Chi tiết sản phẩm");
         productId = getArguments() == null ? "" : getArguments().getString("productId", "");
         view.findViewById(R.id.productPromotionWalletButton).setOnClickListener(v -> {
             Bundle args = new Bundle(); args.putString("productId", productId);

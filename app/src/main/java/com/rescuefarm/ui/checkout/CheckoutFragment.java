@@ -86,6 +86,7 @@ public class CheckoutFragment extends Fragment {
     private String paymentSellerId = "";
     private int bankLoadVersion;
     private boolean quoteReady;
+    private double quotedQuantityDiscount;
     private double quotedSubtotal;
     private double quotedShippingFee;
     private Cart currentCart;
@@ -210,6 +211,9 @@ public class CheckoutFragment extends Fragment {
                                 order.getStatus() == null ? "PENDING" : order.getStatus().name(),
                                 order.getPaymentMethod() == null ? "COD" : order.getPaymentMethod().name());
                 Bundle args = new Bundle();
+                java.util.ArrayList<String> orderIds = new java.util.ArrayList<>(), orderCodes = new java.util.ArrayList<>();
+                for (Order child : order.getCheckoutOrders()) { orderIds.add(child.getId()); orderCodes.add(child.getOrderCode()); }
+                args.putStringArrayList("checkoutOrderIds", orderIds); args.putStringArrayList("checkoutOrderCodes", orderCodes);
                 args.putString("orderId", order.getId());
                 args.putString("orderCode", order.getOrderCode());
                 args.putString("phone", order.getReceiverPhone());
@@ -248,7 +252,7 @@ public class CheckoutFragment extends Fragment {
             vm.submit(text(name), text(phone), deliveryAddress(), String.valueOf(receiverLatitude), String.valueOf(receiverLongitude),
                     (FulfillmentType) fulfillment.getSelectedItem(), (PaymentMethod) payment.getSelectedItem(),
                     text(note), quoteReady ? quotedSubtotal : Double.NaN,
-                    quoteReady ? quotedShippingFee : Double.NaN);
+                    quoteReady ? quotedShippingFee : Double.NaN, quotedQuantityDiscount);
         });
         submit.setEnabled(true);
         refreshPaymentMethods();
@@ -437,14 +441,15 @@ public class CheckoutFragment extends Fragment {
         RenderBackendClient.Callback quoteCallback = new RenderBackendClient.Callback() {
             @Override public void onSuccess(JSONObject quote) {
                 if (version != quoteVersion || !isAdded()) return;
-                if (!"SAVED_CUSTOMER_ONLY".equals(quote.optString("promotionPolicy"))) {
+                if (!"SAVED_CUSTOMER_ONLY".equals(quote.optString("promotionPolicy")) || !quote.has("buyMorePolicy")) {
                     quoteReady = false;
-                    String error = "Máy chủ cần cập nhật tính năng kho khuyến mãi trước khi thanh toán. Vui lòng thử lại sau.";
+                    String error = "Máy chủ cần cập nhật ưu đãi mua nhiều trước khi thanh toán. Vui lòng thử lại sau.";
                     estimate.setText(error); message.setText(error); message.setVisibility(View.VISIBLE);
                     return;
                 }
                 JSONArray methods = quote.optJSONArray("availablePaymentMethods");
                 if (methods != null) updatePaymentAvailability(methods);
+                quotedQuantityDiscount = quote.optDouble("quantityDiscount", 0);
                 quotedSubtotal = quote.optDouble("subtotal", Double.NaN);
                 quotedShippingFee = quote.optDouble("shippingFee", Double.NaN);
                 NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -457,20 +462,26 @@ public class CheckoutFragment extends Fragment {
                             .append(" · ").append(money.format(line.optDouble("subtotal")))
                             .append(line.optBoolean("promotionApplied") ? " · Đã áp dụng khuyến mãi đã lưu" : "").append('\n');
                 }
-                summary.append("Tiền hàng: ").append(money.format(quotedSubtotal))
-                        .append("\nGiảm giá: ").append(money.format(quote.optDouble("totalDiscount")))
+                summary.append("Tiền hàng sau KM sản phẩm: ").append(money.format(quotedSubtotal))
+                        .append("\nGiảm thêm cùng Seller: −").append(money.format(quote.optDouble("sellerDiscount")))
+                        .append("\nGiảm thêm nhiều Seller (nền tảng): −").append(money.format(quote.optDouble("platformDiscount")))
                         .append("\nPhí giao: ").append(money.format(quotedShippingFee))
-                        .append("\nTổng: ").append(money.format(quote.optDouble("total")));
-                if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY)
-                    summary.append("\nKhoảng cách GPS đường chim bay: ")
-                            .append(String.format(Locale.US, "%.2f km", quote.optDouble("distanceKm")));
-                String campaignId = quote.optString("campaignId", "");
-                if (!campaignId.isEmpty()) summary.append("\nChiến dịch: ").append(quote.optString("campaignTitle"));
-                if (fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE)
-                    summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"));
-                sellerAddress.setText(fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE
-                        ? "Điểm nhận tại chiến dịch: " + quote.optString("campaignLocationName")
-                        : quote.optString("sellerName") + "\n" + quote.optString("sellerAddress", "Chưa cập nhật"));
+                        .append("\nTổng cần trả: ").append(money.format(quote.optDouble("total")));
+                JSONArray sellerGroups = quote.optJSONArray("groups");
+                StringBuilder addresses = new StringBuilder();
+                if (sellerGroups != null) for (int i = 0; i < sellerGroups.length(); i++) {
+                    JSONObject group = sellerGroups.optJSONObject(i); if (group == null) continue;
+                    summary.append("\n\n").append(group.optString("sellerName")).append(": ").append(money.format(group.optDouble("total")))
+                            .append(" · phí giao ").append(money.format(group.optDouble("shippingFee")))
+                            .append("\n  Giảm cùng Seller: −").append(money.format(group.optDouble("sellerDiscount")))
+                            .append(" · nền tảng: −").append(money.format(group.optDouble("platformDiscount")));
+                    addresses.append(group.optString("sellerName")).append("\n").append(
+                            fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE
+                                    ? group.optString("campaignLocationName") : group.optString("sellerAddress")).append("\n");
+                }
+                summary.append("\n").append(com.rescuefarm.ui.cart.BuyMoreUi.explain(quote));
+                if (quote.optInt("sellerCount", 1) > 1) summary.append("\nMỗi cửa hàng có đơn, phí giao và thanh toán riêng. Đặt tất cả cùng lúc để giữ ưu đãi nhiều Seller.");
+                sellerAddress.setText(addresses.toString());
                 estimate.setText(summary.toString());
                 message.setText("");
                 quoteReady = Double.isFinite(quotedSubtotal)
@@ -535,6 +546,15 @@ public class CheckoutFragment extends Fragment {
         String sellerId = "";
         if (currentCart != null) for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems())
             if (item.isSelected()) { sellerId = item.getSellerId(); break; }
+        java.util.Set<String> selectedSellers = new java.util.HashSet<>();
+        if (currentCart != null) for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems())
+            if (item.isSelected()) selectedSellers.add(item.getSellerId());
+        if (selectedSellers.size() > 1) {
+            bankLoadVersion++; bankTransferAvailable = false; applyPaymentMethods();
+            paymentStatus.setVisibility(View.VISIBLE);
+            paymentStatus.setText("Phương thức chung được kiểm tra cho tất cả cửa hàng. Chuyển khoản từng đơn riêng nếu được hỗ trợ.");
+            scheduleShippingEstimate(); return;
+        }
         final String selectedSeller = sellerId;
         int version = ++bankLoadVersion;
         if (!selectedSeller.equals(paymentSellerId)) {
