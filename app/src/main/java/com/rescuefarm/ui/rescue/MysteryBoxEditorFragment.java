@@ -25,11 +25,12 @@ public final class MysteryBoxEditorFragment extends BaseRescueOfferEditorFragmen
         add("totalUnits", "Số hộp có thể chuẩn bị", true, "10", state);
         add("maxUnitsPerClaim", "Số hộp tối đa mỗi khách", true, "1", state);
         section(R.id.mysteryPickup);
-        text(form, "Lịch nhận theo giờ Việt Nam (UTC+7).", false);
+        text(form, "Lịch nhận theo giờ Việt Nam (UTC+7). Chọn nhanh 15, 30 hoặc 60 phút, hoặc chạm từng mốc để chọn ngày và giờ cụ thể.", false);
         long now = System.currentTimeMillis();
         addDateTime("closesAt", "Ngừng nhận đặt hộp", now + 3600000, state);
         addDateTime("pickupStartAt", "Khách bắt đầu nhận hộp", now + 3600000, state);
         addDateTime("pickupEndAt", "Nhận hộp muộn nhất", now + 7200000, state);
+        addQuickPickupTimes();
         addPickup(state);
     }
 }

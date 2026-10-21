@@ -72,8 +72,12 @@ public final class MysteryBoxFragment extends RescueMarketFragment {
             showResult(); return;
         }
         hint.setText("Bạn đã tìm thấy một cơ hội giải cứu!"); result.removeAllViews();
-        LinearLayout reward = panel(result, 0xFFFFFAED, 20);
-        label(reward, "DÀNH CHO BẠN", 10, PURPLE, true).setLetterSpacing(.16f);
+        LinearLayout reward = col(requireContext());
+        int padding = dp(requireContext(), 20);
+        reward.setPadding(padding, padding, padding, padding);
+        LinearLayout.LayoutParams rewardParams = new LinearLayout.LayoutParams(-1, -2);
+        rewardParams.topMargin = dp(requireContext(), 14);
+        result.addView(reward, rewardParams);
         heading(reward, offer.optString("title"), 25, INK);
         label(reward, offer.optString("categoryLabel") + " • " + offer.optString("sellerName"), 13, MUTED, false);
         label(reward, RescueUi.money(offer.optDouble("unitPrice")) + " / " + offer.optString("unitLabel"), 27, PURPLE, true);

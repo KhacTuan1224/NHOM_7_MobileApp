@@ -77,7 +77,7 @@
                 android:text="04 · Hẹn nhận hộp" android:textSize="20sp" android:paddingBottom="8dp"
                 android:textColor="@color/rescue_on_surface" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Chọn ngày, giờ và lấy GPS tại điểm giao hộp. Mọi lô phải còn hạn sau giờ nhận cuối." android:textSize="15sp" android:paddingBottom="8dp"
+                android:text="Chọn nhanh 15, 30 hoặc 60 phút, hoặc chạm từng mốc để chọn ngày và giờ. Lấy GPS tại điểm giao hộp; mọi lô phải còn hạn sau giờ nhận cuối." android:textSize="15sp" android:paddingBottom="8dp"
                 android:textColor="@color/rescue_on_surface_variant" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
