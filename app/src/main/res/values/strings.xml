@@ -327,6 +327,11 @@
     <string name="guest_help_guide_summary">Nông sản tại RescueFarm được chuyển trực tiếp từ các nhà vườn gặp khó khăn đầu ra. Hãy cùng chung tay ủng hộ nhà vườn với giá giải cứu tốt nhất!</string>
     <string name="close_action">Đóng</string>
 
+    <string name="guest_notification_dialog_title">Đăng nhập để xem thông báo</string>
+    <string name="guest_notification_dialog_message">Bạn đang trải nghiệm với vai trò Khách vãng lai. Vui lòng đăng nhập hoặc đăng ký tài khoản để xem thông báo chiến dịch giải cứu và cập nhật đơn hàng.</string>
+    <string name="guest_notification_dialog_positive">Đăng nhập / Đăng ký</string>
+    <string name="guest_notification_dialog_negative">Để sau</string>
+
     <string name="order_detail_title">Thanh toán &amp; giao nhận</string>
     <string name="order_detail_format">Đơn %1$s\nTrạng thái đơn: %2$s\nNhận hàng: %3$s\nPhương thức: %4$s\nThanh toán: %5$s\nShipment: %6$s\nTổng: %7$s</string>
     <string name="shipment_not_required">Không tạo shipment (nhận tại điểm)</string>
