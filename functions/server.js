@@ -80,6 +80,12 @@ async function auth(req, roles = []) {
   if (roles.length && !roles.includes(role)) throw httpError(403, "Role is not allowed");
   return {uid: decoded.uid, role};
 }
+
+app.get('/', (req, res) => {
+  res.status(200).send('RescueFarm API Service is running!');
+});
+
+
 app.get("/health", (_, res) => {
   let sepayStatus;
   try { sepayStatus = Object.keys(require('./sepay').merchants()).length ? 'CONFIGURED' : 'NOT_CONFIGURED'; }
