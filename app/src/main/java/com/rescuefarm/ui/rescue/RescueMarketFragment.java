@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import com.google.android.material.button.MaterialButton;
 import com.rescuefarm.R;
+import com.rescuefarm.ui.common.AppTypography;
 import com.rescuefarm.ui.common.NavigationAwareNestedScrollView;
 import com.rescuefarm.ui.common.ResponsiveContentLayout;
 import org.json.JSONArray;
@@ -61,15 +62,14 @@ abstract class RescueMarketFragment extends Fragment {
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle saved) {
         android.content.Context c = requireContext(); LinearLayout root = col(c); root.setBackgroundColor(0xFFFFFFFF);
         LinearLayout bar = row(c); bar.setPadding(dp(c, 8), dp(c, 4), dp(c, 8), dp(c, 4)); root.addView(bar);
-        MaterialButton back = new MaterialButton(c, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-        back.setStrokeWidth(0); back.setPadding(0, 0, 0, 0); back.setTextColor(INK);
-        back.setText("‹"); back.setTextSize(30); back.setContentDescription("Quay lại"); back.setMinWidth(0);
-        bar.addView(back, new LinearLayout.LayoutParams(dp(c, 48), dp(c, 52)));
+        com.rescuefarm.ui.common.AppBackButton back = new com.rescuefarm.ui.common.AppBackButton(c);
+        bar.addView(back, new LinearLayout.LayoutParams(dp(c, 48), dp(c, 48)));
         back.setOnClickListener(v -> NavHostFragment.findNavController(this).navigateUp());
         TextView title = new TextView(c); title.setText(pageTitle()); title.setTextSize(19); title.setTextColor(INK);
-        title.setTypeface(null, android.graphics.Typeface.BOLD); bar.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        title.setTypeface(AppTypography.titleTypeface(c), android.graphics.Typeface.BOLD); bar.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         MaterialButton mine = new MaterialButton(c, null, com.google.android.material.R.attr.materialButtonOutlinedStyle); mine.setStrokeWidth(0);
         mine.setText("Suất của tôi"); mine.setTextSize(12); mine.setAllCaps(false); bar.addView(mine);
+        AppTypography.body(mine);
         mine.setOnClickListener(v -> { Bundle args = new Bundle(); args.putString("initialTab", "mine");
             NavHostFragment.findNavController(this).navigate(R.id.rescueHubFragment, args); });
         NavigationAwareNestedScrollView scroll = new NavigationAwareNestedScrollView(c); scroll.setFillViewport(true);
@@ -84,13 +84,15 @@ abstract class RescueMarketFragment extends Fragment {
         more = action(body, "Xem thêm", offerType().equals("FLASH") ? RED : PURPLE, () -> model.more());
         MaterialButton refresh = new MaterialButton(c, null, com.google.android.material.R.attr.materialButtonOutlinedStyle); refresh.setStrokeWidth(0);
         refresh.setText("Làm mới danh sách"); refresh.setAllCaps(false); body.addView(refresh);
+        AppTypography.body(refresh);
         refresh.setOnClickListener(v -> model.refresh()); return root;
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle saved) {
         model = new ViewModelProvider(this).get(RescueProgramsViewModel.class); owner = uid();
         model.state().observe(getViewLifecycleOwner(), state -> {
             progress.setVisibility(state.loading ? View.VISIBLE : View.GONE);
-            status.setText(state.message.isEmpty() ? state.loading ? "Đang cập nhật nông sản…" : "Nhận tại điểm • Thanh toán khi nhận" : state.message);
+            status.setText(state.message.isEmpty() ? state.loading ? "Đang cập nhật nông sản…" : "" : state.message);
+            status.setVisibility(state.loading || !state.message.isEmpty() ? View.VISIBLE : View.GONE);
             more.setVisibility(state.value.optBoolean("hasMore") ? View.VISIBLE : View.GONE); more.setEnabled(!state.loading);
             if (!state.loading) {
                 offers = state.value.optJSONArray("items"); if (offers == null) offers = new JSONArray();

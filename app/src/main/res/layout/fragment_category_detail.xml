@@ -10,11 +10,8 @@
         android:padding="@dimen/space_md" app:maxContentWidth="@dimen/content_max_width">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:gravity="center_vertical">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/categoryBackButton" style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minHeight="@dimen/touch_target_min" android:text="@string/category_detail_back" />
-            <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <com.rescuefarm.ui.common.AppBackButton android:id="@+id/categoryBackButton" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Danh mục nông sản" android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/categoryRefreshButton" style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"

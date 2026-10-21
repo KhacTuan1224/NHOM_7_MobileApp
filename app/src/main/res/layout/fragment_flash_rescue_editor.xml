@@ -5,9 +5,7 @@
     <com.rescuefarm.ui.common.ResponsiveContentLayout android:id="@+id/rescueEditorForm"
         android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
         android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
-        <com.google.android.material.button.MaterialButton android:id="@+id/rescueEditorBack"
-            style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:text="Quay lại" />
+
         <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
             android:layout_height="wrap_content" app:cardCornerRadius="22dp" app:cardElevation="0dp"
             app:cardBackgroundColor="@color/admin_products_soft" android:layout_marginBottom="12dp">
@@ -16,9 +14,12 @@
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="GIẢI CỨU GIỜ CHÓT · TỐI ĐA 2 GIỜ" android:textSize="12sp" android:paddingBottom="8dp"
                 android:textColor="@color/rescue_secondary" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Mở đợt nhận nhanh" android:textSize="26sp" android:paddingBottom="8dp"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <com.rescuefarm.ui.common.AppBackButton android:id="@+id/rescueEditorBack" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
+                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                android:text="Mở đợt nhận nhanh" android:textSize="26sp"
                 android:textColor="@color/rescue_secondary" android:textStyle="bold" android:fontFamily="@font/ibm_plex_sans" android:accessibilityHeading="true" />
+            </LinearLayout>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="Ưu tiên nông sản đang cần đẩy trong thời gian ngắn. Khách gần điểm nhận có thể khám phá và chủ động bật thông báo." android:textSize="15sp" android:paddingBottom="8dp"
                 android:textColor="@color/rescue_secondary" />

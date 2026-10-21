@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.rescuefarm.ui.common.AppTypography;
 
 final class RescueMarketUi {
     static final int INK = 0xFF20252A, MUTED = 0xFF778087, RED = 0xFFDE442C,
@@ -20,15 +21,20 @@ final class RescueMarketUi {
     static TextView label(LinearLayout parent, String text, int size, int color, boolean bold) {
         TextView v = new TextView(parent.getContext()); v.setText(text); v.setTextSize(size); v.setTextColor(color);
         v.setIncludeFontPadding(false); v.setLineSpacing(dp(v.getContext(), 3), 1);
-        if (bold) v.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        v.setTypeface(AppTypography.bodyTypeface(v.getContext()), bold ? Typeface.BOLD : Typeface.NORMAL);
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2); p.topMargin = dp(v.getContext(), 7);
         parent.addView(v, p); return v;
+    }
+    static TextView heading(LinearLayout parent, String text, int size, int color) {
+        TextView view = label(parent, text, size, color, true);
+        AppTypography.title(view); view.setAccessibilityHeading(true); return view;
     }
     static GradientDrawable background(int color, float radius, Context c) {
         GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(dp(c, radius)); return d;
     }
     static MaterialButton action(LinearLayout parent, String text, int color, Runnable click) {
         Context c = parent.getContext(); MaterialButton b = new MaterialButton(c); b.setText(text); b.setAllCaps(false);
+        AppTypography.body(b);
         b.setTextSize(14); b.setCornerRadius(dp(c, 14)); b.setMinHeight(dp(c, 48));
         b.setBackgroundTintList(ColorStateList.valueOf(color)); b.setTextColor(0xFFFFFFFF);
         b.setOnClickListener(v -> click.run()); parent.addView(b, new LinearLayout.LayoutParams(-1, -2)); return b;

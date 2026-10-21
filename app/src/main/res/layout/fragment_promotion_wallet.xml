@@ -6,10 +6,7 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:gravity="center_vertical" android:padding="8dp"
         android:background="@color/rescue_surface">
-        <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/promotionWalletBack"
-            android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp"
-            android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Quay lại"
-            app:srcCompat="@drawable/ic_arrow_back" app:tint="@color/rescue_primary" />
+        <com.rescuefarm.ui.common.AppBackButton android:id="@+id/promotionWalletBack" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
             android:layout_marginStart="8dp" android:text="@string/promotion_wallet_title"
             android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" android:textSize="24sp" />

@@ -12,7 +12,14 @@ import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.view.MotionEvent;
+import android.view.KeyEvent;
 import android.view.View;
+import android.graphics.Rect;
+import android.os.Bundle;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+import androidx.customview.widget.ExploreByTouchHelper;
+import java.util.List;
 import android.view.animation.LinearInterpolator;
 import java.util.function.IntConsumer;
 
@@ -29,26 +36,55 @@ public final class GiftRevealView extends View {
     private IntConsumer listener;
     private int pressed = -1;
     private float downX, downY;
+    private final ExploreByTouchHelper boxAccessibility;
     private final int[][] colors = {{0xFF9F7ADD, 0xFF6840AB}, {0xFFF5B76C, 0xFFDF7E45}, {0xFF71C5AD, 0xFF348B79}};
     public GiftRevealView(Context c) {
         super(c); setClickable(true);
-        setContentDescription("Ba hộp quà đang chuyển động. Chọn hộp bằng cách chạm hoặc dùng các nút Hộp 1, Hộp 2, Hộp 3 bên dưới.");
+        setContentDescription("Ba hộp quà đang chuyển động. Chạm trực tiếp vào một hộp để mở.");
+        boxAccessibility = new ExploreByTouchHelper(this) {
+            @Override protected int getVirtualViewAt(float x, float y) {
+                if (getWidth() == 0) return INVALID_ID;
+                float scale = getWidth() / 360f;
+                if (y / scale < 105 || y / scale > 285) return INVALID_ID;
+                int index = Math.max(0, Math.min(2, (int) ((x / scale - 15) / 110)));
+                return available[index] || preview[index] ? index : INVALID_ID;
+            }
+            @Override protected void getVisibleVirtualViews(List<Integer> ids) {
+                for (int i = 0; i < 3; i++) if (available[i] || preview[i]) ids.add(i);
+            }
+            @Override protected void onPopulateNodeForVirtualView(int id, AccessibilityNodeInfoCompat node) {
+                float scale = getWidth() / 360f;
+                node.setBoundsInParent(new Rect(Math.round((15 + id * 110) * scale), Math.round(105 * scale),
+                        Math.round((125 + id * 110) * scale), Math.round(285 * scale)));
+                node.setContentDescription((available[id] ? "Mở hộp " : "Mở thử hộp ") + (id + 1));
+                node.setClassName("android.widget.Button");
+                node.setEnabled(selected < 0);
+                node.setClickable(selected < 0);
+                if (selected < 0) node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK);
+            }
+            @Override protected boolean onPerformActionForVirtualView(int id, int action, Bundle args) {
+                return action == AccessibilityNodeInfoCompat.ACTION_CLICK && open(id);
+            }
+        };
+        ViewCompat.setAccessibilityDelegate(this, boxAccessibility);
+        setFocusable(true);
         idle = ValueAnimator.ofFloat(0, (float) (Math.PI * 2)); idle.setDuration(3400); idle.setRepeatCount(ValueAnimator.INFINITE);
         idle.setInterpolator(new LinearInterpolator()); idle.addUpdateListener(a -> { phase = (float) a.getAnimatedValue(); invalidate(); });
     }
-    void setAvailable(int count) { for (int i = 0; i < 3; i++) available[i] = i < count; invalidate(); }
-    void setPreview(int index, boolean enabled) { preview[index] = enabled; }
-    void setSlotAvailable(int index, boolean enabled) { if (available[index] != enabled) { available[index] = enabled; invalidate(); } }
+    void setAvailable(int count) { for (int i = 0; i < 3; i++) available[i] = i < count; boxAccessibility.invalidateRoot(); invalidate(); }
+    void setPreview(int index, boolean enabled) { preview[index] = enabled; boxAccessibility.invalidateRoot(); }
+    void setSlotAvailable(int index, boolean enabled) { if (available[index] != enabled) { available[index] = enabled; boxAccessibility.invalidateRoot(); invalidate(); } }
     @Override protected void onMeasure(int widthSpec, int heightSpec) {
         int width = MeasureSpec.getSize(widthSpec);
         setMeasuredDimension(width, resolveSize(Math.round(width * 330f / 360f), heightSpec));
     }
     void setOnOpened(IntConsumer listener) { this.listener = listener; }
     boolean isOpening() { return reveal != null && reveal.isRunning(); }
-    void reset() { if (reveal != null) reveal.cancel(); selected = -1; progress = 0; invalidate(); }
+    void reset() { if (reveal != null) reveal.cancel(); selected = -1; progress = 0; boxAccessibility.invalidateRoot(); invalidate(); }
     boolean open(int index) {
         if (index < 0 || index >= 3 || !available[index] && !preview[index] || selected != -1) return false;
         selected = index; progress = 0;
+        boxAccessibility.invalidateRoot();
         if (!ValueAnimator.areAnimatorsEnabled()) { progress = 1; invalidate(); if (listener != null) listener.accept(index); return true; }
         reveal = ValueAnimator.ofFloat(0, 1); reveal.setDuration(2250); reveal.setInterpolator(new LinearInterpolator());
         reveal.addUpdateListener(a -> { progress = (float) a.getAnimatedValue(); invalidate(); });
@@ -80,6 +116,16 @@ public final class GiftRevealView extends View {
         return true;
     }
     @Override public boolean performClick() { super.performClick(); return true; }
+    @Override public boolean dispatchHoverEvent(MotionEvent event) {
+        return boxAccessibility.dispatchHoverEvent(event) || super.dispatchHoverEvent(event);
+    }
+    @Override public boolean dispatchKeyEvent(KeyEvent event) {
+        return boxAccessibility.dispatchKeyEvent(event) || super.dispatchKeyEvent(event);
+    }
+    @Override protected void onFocusChanged(boolean focused, int direction, Rect previous) {
+        super.onFocusChanged(focused, direction, previous);
+        boxAccessibility.onFocusChanged(focused, direction, previous);
+    }
     @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); updateAnimation(); }
     @Override protected void onWindowVisibilityChanged(int visibility) {
         super.onWindowVisibilityChanged(visibility); updateAnimation();
