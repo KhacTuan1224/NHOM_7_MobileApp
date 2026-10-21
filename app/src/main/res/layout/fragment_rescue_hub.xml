@@ -13,7 +13,7 @@
             <com.rescuefarm.ui.common.AppBackButton android:id="@+id/rescueBack" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
             <TextView android:id="@+id/rescueHeading" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                 android:text="@string/rescue_hub_title" android:fontFamily="@font/ibm_plex_sans"
-                android:textAppearance="@style/TextAppearance.Material3.TitleLarge" android:textColor="@color/rescue_primary" />
+                android:textAppearance="@style/TextAppearance.RescueFarm.Detail.PageTitle" />
             <com.google.android.material.button.MaterialButton android:id="@+id/rescueRefresh"
                 style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:text="@string/refresh_action" />

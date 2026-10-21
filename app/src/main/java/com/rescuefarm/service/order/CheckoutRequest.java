@@ -12,6 +12,7 @@ public final class CheckoutRequest {
     public final String receiverName; public final String receiverPhone; public final String receiverAddress;
     public final double latitude; public final double longitude; public final FulfillmentType fulfillmentType;
     public final PaymentMethod paymentMethod; public final String note; public final List<CartItem> items;
+    public double expectedQuantityDiscount = Double.NaN;
     public final double expectedSubtotal; public final double expectedShippingFee;
     public CheckoutRequest(String requestId, OrderOwnerType ownerType, String ownerId, String receiverName,
             String receiverPhone, String receiverAddress, double latitude, double longitude,

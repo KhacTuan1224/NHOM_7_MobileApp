@@ -17,11 +17,15 @@ public void submit(String name,String phone,String address,String latText,String
 }
 public void submit(String name,String phone,String address,String latText,String lngText,FulfillmentType fulfillment,
         PaymentMethod payment,String note,double expectedSubtotal,double expectedShippingFee){
+    submit(name,phone,address,latText,lngText,fulfillment,payment,note,expectedSubtotal,expectedShippingFee,Double.NaN);
+}
+public void submit(String name,String phone,String address,String latText,String lngText,FulfillmentType fulfillment,
+        PaymentMethod payment,String note,double expectedSubtotal,double expectedShippingFee,double expectedQuantityDiscount){
     if(submitting||state.getValue()!=null&&state.getValue().getStatus()==CheckoutState.Status.LOADING)return;
     Cart value=cart.getValue();List<CartItem> selected=new ArrayList<>();
     if(value!=null)for(CartItem i:value.getItems())if(i.isSelected())selected.add(i);
     try{
-        CheckoutPolicy.requireSingleSeller(selected);
+        CheckoutPolicy.requireBasket(selected);
         double lat=parseCoordinate(latText),lng=parseCoordinate(lngText);
         if(fulfillment==FulfillmentType.DELIVERY&&!com.rescuefarm.service.location.GpsCoordinates.isValid(lat,lng))
             throw new IllegalArgumentException("Chưa xác định được vị trí nhận hàng. Vui lòng kiểm tra địa chỉ đã chọn.");
@@ -32,14 +36,14 @@ public void submit(String name,String phone,String address,String latText,String
         OrderOwnerType owner=cartRepo.getOwnerType()==CartOwnerType.GUEST?OrderOwnerType.GUEST:OrderOwnerType.CUSTOMER;
         CheckoutRequest req=new CheckoutRequest(requestId,owner,cartRepo.getOwnerKey(),name,phone,address,
                 lat,lng,fulfillment,payment,note,selected,expectedSubtotal,expectedShippingFee);
+        req.expectedQuantityDiscount=expectedQuantityDiscount;
         submitting=true;state.setValue(CheckoutState.loading());
         orderRepo.checkout(req,new OrderRepository.OrderCallback(){
             public void onSuccess(Order o,boolean replay){submitting=false;state.postValue(CheckoutState.success(o,replay));}
             public void onError(OrderRepository.ErrorCode e,String m){submitting=false;state.postValue(CheckoutState.error(m));}
         });
     }catch(IllegalArgumentException e){
-        state.setValue(CheckoutState.error("MULTI_SELLER".equals(e.getMessage())
-                ?"Hãy checkout riêng từng seller.":e.getMessage()));
+        state.setValue(CheckoutState.error(e.getMessage()));
     }
 }
 private double parseCoordinate(String v){if(clean(v).isEmpty())return 0D;double n=Double.parseDouble(clean(v));if(!Double.isFinite(n))throw new IllegalArgumentException("Tọa độ không hợp lệ.");return n;}private String clean(String v){return v==null?"":v.trim();}@Override protected void onCleared(){cartRepo.close();orderRepo.close();super.onCleared();}}

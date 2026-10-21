@@ -287,7 +287,7 @@
     <string name="checkout_gps_success">Đã tự động điền địa chỉ từ vị trí hiện tại.</string>
     <string name="receiver_name_hint">Tên người nhận</string><string name="receiver_phone_hint">Số điện thoại người nhận</string><string name="receiver_address_hint">Địa chỉ nhận hàng</string>
     <string name="fulfillment_label">Hình thức nhận hàng</string><string name="payment_method_label">Phương thức thanh toán</string><string name="order_note_hint">Ghi chú đơn hàng</string>
-    <string name="place_order_action">Đặt hàng</string><string name="checkout_summary_format">%1$d sản phẩm • %2$d người bán\nTổng tiền: %3$s</string>
+    <string name="place_order_action">Đặt hàng</string><string name="checkout_summary_format">%1$d sản phẩm • %2$d người bán\nTiền hàng tạm tính trước ưu đãi mua nhiều: %3$s</string>
     <string name="order_confirmation_title">Xác nhận đơn hàng</string><string name="guest_tracking_title">Tra cứu bằng mã đơn + số điện thoại</string><string name="order_code_hint">Mã đơn RF-…</string><string name="track_order_action">Tra cứu đơn</string>
     <string name="order_created_format">Đã tạo đơn %1$s • %2$s. Hàng đã được giữ; số lượng giải cứu được ghi nhận khi hoàn tất đơn.</string>
     <string name="order_tracking_format">Đơn %1$s\nTrạng thái: %2$s\nThanh toán: %3$s\nTổng: %4$.0f ₫</string>

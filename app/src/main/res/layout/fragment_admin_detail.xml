@@ -4,21 +4,20 @@
     android:background="@color/rescue_background" android:fillViewport="true"
     android:clipToPadding="false" xmlns:app="http://schemas.android.com/apk/res-auto">
     <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
+        android:orientation="vertical" android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
             <com.rescuefarm.ui.common.AppBackButton android:id="@+id/adminDetailBackButton" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
-            <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/adminDetailTitle" android:layout_width="0dp" android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium" />
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.PageTitle" android:id="@+id/adminDetailTitle" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="wrap_content" />
         </LinearLayout>
-        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/adminDetailSubtitle" android:layout_width="match_parent"
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Meta" android:id="@+id/adminDetailSubtitle" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xs"
             android:textColor="@color/rescue_on_surface_variant" />
         <ProgressBar android:id="@+id/adminDetailProgress" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:layout_gravity="center_horizontal"
             android:layout_marginTop="@dimen/space_md" />
-        <TextView android:id="@+id/adminDetailMessage" android:layout_width="match_parent"
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body" android:id="@+id/adminDetailMessage" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
             android:textColor="@color/rescue_on_surface_variant" />
         <com.google.android.material.button.MaterialButton android:id="@+id/adminDetailRetryButton"

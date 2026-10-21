@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.rescuefarm.ui.common.NavigationAwareNestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" 
-    android:layout_height="match_parent" 
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/rescue_background"
     android:fillViewport="true">
-    
+
     <com.rescuefarm.ui.common.ResponsiveContentLayout
-        android:layout_width="match_parent" 
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingBottom="80dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
-        
+
+        <include layout="@layout/view_detail_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginTop="16dp" />
+
         <!-- Image only in card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -21,16 +23,16 @@
             app:cardElevation="2dp"
             app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/rescue_surface">
-            
-            <ImageView 
-                android:id="@+id/productDetailImage" 
+
+            <ImageView
+                android:id="@+id/productDetailImage"
                 android:layout_width="match_parent"
-                android:layout_height="280dp" 
+                android:layout_height="280dp"
                 android:contentDescription="@string/product_image_description"
-                android:scaleType="centerCrop" 
+                android:scaleType="centerCrop"
                 android:background="@color/rescue_outline" />
         </com.google.android.material.card.MaterialCardView>
-        
+
         <!-- Product info directly on background -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -39,54 +41,48 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:paddingBottom="16dp">
-            
-            <TextView 
-                android:id="@+id/productDetailName" 
+
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Name"
+                android:id="@+id/productDetailName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Price"
+                android:id="@+id/productDetailPrice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.RescueFarm.HeadlineMedium"
-                android:textColor="@color/rescue_on_surface" />
-            
-            <TextView 
-                android:id="@+id/productDetailPrice" 
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" 
-                android:layout_marginTop="8dp" 
-                android:textSize="24sp"
-                android:textColor="@color/rescue_primary" 
+                android:layout_marginTop="8dp"
+                android:textColor="@color/rescue_primary"
                 android:textStyle="bold" />
-            
-            <TextView 
-                android:id="@+id/productDiscount" 
+
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
+                android:id="@+id/productDiscount"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" 
+                android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textColor="@color/rescue_critical"
                 android:textStyle="bold" />
-            
-            <TextView 
-                android:id="@+id/productDetailOrigin" 
+
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
+                android:id="@+id/productDetailOrigin"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" 
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
-                android:textColor="@color/rescue_on_surface_variant" />
-            
-            <TextView 
-                android:id="@+id/productStock" 
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" 
-                android:layout_marginTop="4dp" 
-                android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
                 android:textColor="@color/rescue_on_surface_variant" />
 
-            <TextView
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Meta"
+                android:id="@+id/productStock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/rescue_on_surface_variant" />
+
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Meta"
                 android:id="@+id/productBatchLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:text="Chọn lô nông sản"
-                android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall"
                 android:textColor="@color/rescue_on_surface_variant" />
 
             <Spinner
@@ -95,15 +91,14 @@
                 android:layout_height="@dimen/touch_target_min"
                 android:layout_marginTop="4dp" />
 
-            <TextView
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Meta"
                 android:id="@+id/productBatchHint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/rescue_on_surface_variant"
-                android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall" />
+                android:textColor="@color/rescue_on_surface_variant" />
         </LinearLayout>
-        
+
         <!-- Price calculator in one simple card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -115,120 +110,114 @@
             app:cardElevation="2dp"
             app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/rescue_surface">
-            
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
-                
-                <TextView
+
+                <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Tính giá"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
-                    android:textColor="@color/rescue_on_surface"
                     android:layout_marginBottom="12dp" />
-                
+
                 <com.rescuefarm.ui.common.ResponsiveActionLayout
-                    android:layout_width="match_parent" 
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal" 
+                    android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="12dp">
-                    
-                    <EditText 
-                        android:id="@+id/pricingQuantityInput" 
+
+                    <EditText
+                        android:id="@+id/pricingQuantityInput"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
-                        android:hint="@string/pricing_quantity_hint" 
+                        android:hint="@string/pricing_quantity_hint"
                         android:inputType="numberDecimal"
                         android:text="1"
                         android:background="@color/rescue_primary_container"
                         android:padding="12dp" />
-                    
-                    <com.google.android.material.button.MaterialButton 
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/recalculatePriceButton"
-                        android:layout_width="wrap_content" 
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                         android:text="@string/recalculate_price_action"
                         style="@style/Widget.Material3.Button.TonalButton" />
                 </com.rescuefarm.ui.common.ResponsiveActionLayout>
-                
-                <TextView 
-                    android:id="@+id/priceBreakdownText" 
+
+                <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Meta"
+                    android:id="@+id/priceBreakdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="12dp" 
+                    android:padding="12dp"
                     android:background="@color/rescue_primary_container"
-                    android:textColor="@color/rescue_on_primary_container"
-                    android:textAppearance="@style/TextAppearance.RescueFarm.BodySmall" />
+                    android:textColor="@color/rescue_on_primary_container" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-        
+
         <!-- Buttons directly on background -->
         <com.rescuefarm.ui.common.ResponsiveActionLayout
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:layout_marginBottom="16dp">
-            
-            <com.google.android.material.button.MaterialButton 
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/addToCartButton"
-                android:layout_width="0dp" 
+                android:layout_width="0dp"
                 android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
                 android:text="@string/add_to_cart_action" />
-            
-            <com.google.android.material.button.MaterialButton 
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/openCartButton"
-                style="@style/Widget.Material3.Button.OutlinedButton" 
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                 android:text="@string/open_cart_action" />
         </com.rescuefarm.ui.common.ResponsiveActionLayout>
-        
+
         <!-- Description directly on background -->
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Mô tả sản phẩm"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
-            android:textColor="@color/rescue_on_surface"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:layout_marginBottom="8dp" />
-        
-        <TextView 
-            android:id="@+id/productDetailDescription" 
+
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
+            android:id="@+id/productDetailDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.BodyMedium"
             android:textColor="@color/rescue_on_surface_variant"
             android:lineSpacingExtra="4dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:layout_marginBottom="16dp" />
-        
+
         <!-- Action buttons directly on background -->
-        <com.google.android.material.button.MaterialButton 
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/favoriteProductButton"
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/add_favorite_action"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp" />
-        
-        <com.google.android.material.button.MaterialButton 
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/openReviewsButton"
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/reviews_title"
             style="@style/Widget.Material3.Button.OutlinedButton"
@@ -242,22 +231,22 @@
             android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp" android:text="Xem cửa hàng người bán" />
-        
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/productPromotionWalletButton"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="8dp" android:layout_marginBottom="12dp"
             android:text="@string/promotion_wallet_for_product" android:textAllCaps="false" />
-        <com.google.android.material.button.MaterialButton 
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/reportProductButton"
-            android:layout_width="match_parent" 
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
             android:text="@string/report_action"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp" />
-        
+
     </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

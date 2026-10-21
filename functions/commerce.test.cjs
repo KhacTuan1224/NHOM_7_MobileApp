@@ -448,3 +448,91 @@ test('committed checkout delivers inbox/push without opening any Android screen;
   assert.equal(opened.status, 200); assert.equal(opened.body.destination, 'orderDetailFragment');
   assert.equal((await post('/notifications/resolve', {notificationId: customerInbox.docs[0].id}, 'customer-b')).status, 403);
 });
+async function multiSellerRequest(overrides = {}) {
+  const batch = db.batch();
+  batch.set(db.doc('users/seller-two'), {role:'SELLER',status:'ACTIVE',sellerStatus:'APPROVED',fullName:'Vườn thứ hai'});
+  batch.set(db.doc('sellerPublicProfiles/seller-two'), {latitude:10.81,longitude:106.71,address:'Điểm nhận thứ hai'});
+  batch.set(db.doc('products/product-two'), {sellerId:'seller-two',status:'ACTIVE',name:'Hộp trái cây',unit:'hộp',originalPrice:80000,rescuePrice:60000});
+  batch.set(db.doc('productBatches/batch-two'), {productId:'product-two',status:'AVAILABLE',initialQuantity:10,availableQuantity:10,reservedQuantity:0,soldQuantity:0,inventoryVersion:1,harvestDate:past(),expiryDate:future()});
+  batch.set(db.doc('customerCarts/customer-a'), {items:[
+    {id:'product-a::batch-a',productId:'product-a',batchId:'batch-a',quantity:10,selected:true},
+    {id:'product-two::batch-two',productId:'product-two',batchId:'batch-two',quantity:5,selected:true}]});
+  await batch.commit();
+  return request({items:[{productId:'product-a',batchId:'batch-a',sellerId:'seller',quantity:10},
+    {productId:'product-two',batchId:'batch-two',sellerId:'seller-two',quantity:5}], ...overrides});
+}
+
+test('multi-seller discounts combine after product pricing and atomically create separate customer orders',async()=>{
+  const input = await multiSellerRequest();
+  const quote=await post('/quoteCustomerCheckout',input,'customer-a');
+  assert.equal(quote.status,200,JSON.stringify(quote.body));
+  assert.equal(quote.body.subtotal,600000);assert.equal(quote.body.sellerDiscount,18000);
+  assert.equal(quote.body.platformDiscount,11640);assert.equal(quote.body.total,570360);
+  assert.equal(quote.body.availablePaymentMethods.includes('BANK_TRANSFER'),false);
+  const result=await post('/checkoutCustomer',{...input,expectedSubtotal:600000,expectedQuantityDiscount:29640,expectedShippingFee:0},'customer-a');
+  assert.equal(result.status,200,JSON.stringify(result.body));assert.equal(result.body.orders.length,2);
+  assert.deepEqual(result.body.orders.map(o=>o.totalAmount),[285180,285180]);
+  assert.equal(result.body.orders.reduce((s,o)=>s+o.quantityDiscount,0),29640);
+  assert.equal((await db.doc('productBatches/batch-two').get()).get('reservedQuantity'),5);
+  assert.deepEqual((await db.doc('customerCarts/customer-a').get()).get('items'),[]);
+  for(const order of result.body.orders) {
+    assert.equal((await db.doc('payments/'+order.id).get()).get('amount'),order.totalAmount);
+    assert.equal(order.sellerReceivableAmount,291000);
+    assert.equal((await db.doc('platformDiscountClaims/'+order.id).get()).get('amount'),5820);
+    const items=await db.collection('orders/'+order.id+'/items').get();
+    assert.equal(items.docs.reduce((s,d)=>s+d.get('platformVolumeDiscount'),0),5820);
+  }
+  const retry=await post('/checkoutCustomer',input,'customer-a');
+  assert.equal(retry.status,200);assert.equal(retry.body.replay,true);
+  assert.deepEqual(retry.body.orderIds,result.body.orderIds);
+  assert.equal((await db.collection('orders').get()).size,2);
+});
+
+test('one unavailable seller or a stale discount aborts the complete basket without partial reservations',async()=>{
+  const input=await multiSellerRequest();
+  await db.doc('productBatches/batch-two').update({availableQuantity:0,reservedQuantity:10});
+  const result=await post('/checkoutCustomer',input,'customer-a');assert.equal(result.status,409);
+  assert.equal((await db.collection('orders').get()).size,0);
+  assert.equal((await db.doc('productBatches/batch-a').get()).get('reservedQuantity'),0);
+  await db.doc('productBatches/batch-two').update({availableQuantity:10,reservedQuantity:0});
+  const stale=await post('/checkoutCustomer',{...input,expectedQuantityDiscount:0},'customer-a');
+  assert.equal(stale.status,409);assert.match(stale.body.error,/QUOTE_CHANGED/);
+  assert.equal((await db.collection('orders').get()).size,0);
+});
+
+test('Guest receives both orders, separate protected lookup codes and idempotent replay',async()=>{
+  const input={...await multiSellerRequest(),...guest()};
+  const result=await post('/checkoutGuest',input);assert.equal(result.status,200,JSON.stringify(result.body));
+  assert.equal(result.body.orders.length,2);
+  for(const order of result.body.orders) {
+    const details=await post('/guestOrderDetails',{orderId:order.id,accessToken:input.guestToken});
+    assert.equal(details.status,200);
+    // Protected retrieval is checked through the existing lookup endpoint with phone verification.
+    const lookup=await post('/lookupGuestOrder',{orderCode:order.orderCode,receiverPhone:input.receiverPhone});
+    assert.equal(lookup.status,200,JSON.stringify(lookup.body));
+    assert.equal(lookup.body.order.id,order.id);
+  }
+  const replay=await post('/checkoutGuest',input);assert.equal(replay.body.replay,true);
+  assert.equal((await db.collection('orders').get()).size,2);
+});
+
+test('saved product promotion remains first, then seller volume and platform volume use reduced thresholds',async()=>{
+  const input=await multiSellerRequest();await seedWalletPromotion('PERCENT',10);
+  assert.equal((await post('/promotions/save',{productId:'product-a'},'customer-a')).status,200);
+  const q=await post('/quoteCustomerCheckout',input,'customer-a');assert.equal(q.status,200);
+  assert.equal(q.body.subtotal,570000);assert.equal(q.body.sellerDiscount,17100);
+  assert.equal(q.body.platformDiscount,11058);assert.equal(q.body.total,541842);
+  const guestQuote=await post('/quoteGuestCheckout',input);
+  assert.equal(guestQuote.body.subtotal,600000); // Existing saved-customer-only voucher contract is preserved.
+});
+
+test('two batches of one product reach its existing quantity tier without double-counting subtotal',async()=>{
+  await seedWalletPromotion('PERCENT',10,{'4':10});
+  assert.equal((await post('/promotions/save',{productId:'product-a'},'customer-a')).status,200);
+  const batch=await db.doc('productBatches/batch-a').get();
+  await db.doc('productBatches/batch-a2').set({...batch.data(),id:'batch-a2'});
+  const input=request({items:[{productId:'product-a',batchId:'batch-a',sellerId:'seller',quantity:2},
+    {productId:'product-a',batchId:'batch-a2',sellerId:'seller',quantity:2}]});
+  const q=await post('/quoteCustomerCheckout',input,'customer-a');assert.equal(q.status,200);
+  assert.equal(q.body.subtotal,97200);assert.equal(q.body.lines[0].finalUnitPrice,24300);
+});

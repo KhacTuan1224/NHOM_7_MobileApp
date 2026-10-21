@@ -11,6 +11,17 @@ import java.util.Date;
 import java.util.List;
 
 public class Order {
+    private double sellerVolumeDiscount, platformVolumeDiscount;
+    public Order withVolumeDiscounts(double seller, double platform) {
+        sellerVolumeDiscount = Math.max(0, seller); platformVolumeDiscount = Math.max(0, platform); return this;
+    }
+    public double getSellerVolumeDiscount() { return sellerVolumeDiscount; }
+    public double getPlatformVolumeDiscount() { return platformVolumeDiscount; }
+    private java.util.List<Order> checkoutOrders;
+    public void setCheckoutOrders(java.util.List<Order> values) { checkoutOrders = new java.util.ArrayList<>(values); }
+    public java.util.List<Order> getCheckoutOrders() {
+        return checkoutOrders == null ? java.util.Collections.singletonList(this) : new java.util.ArrayList<>(checkoutOrders);
+    }
     private String id;
     private OrderOwnerType ownerType;
     private String ownerId;

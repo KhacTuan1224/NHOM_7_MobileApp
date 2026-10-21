@@ -10,24 +10,19 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/space_lg" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
+        android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/reading_max_width">
 
-        <TextView android:fontFamily="@font/ibm_plex_sans"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/order_detail_title"
-            android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+        <include layout="@layout/view_detail_header" />
 
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
             android:id="@+id/orderDetailCode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md"
             android:textColor="@color/rescue_on_surface"
-            android:textSize="16sp"
             android:textStyle="bold" />
 
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
             android:id="@+id/orderDetailStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -45,12 +40,9 @@
             android:layout_marginTop="16dp" android:orientation="vertical"
             android:background="@drawable/bg_quantity_stepper" android:padding="16dp"
             android:visibility="gone">
-            <TextView android:id="@+id/orderPaymentVerificationTitle"
-                style="@style/TextAppearance.RescueFarm.TitleMedium"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/rescue_primary" android:accessibilityHeading="true" />
-            <TextView android:id="@+id/orderPaymentVerificationMessage"
-                style="@style/TextAppearance.RescueFarm.BodyMedium"
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section" android:id="@+id/orderPaymentVerificationTitle"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:accessibilityHeading="true" />
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body" android:id="@+id/orderPaymentVerificationMessage"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="8dp" />
             <ProgressBar android:id="@+id/orderPaymentVerificationProgress"
@@ -60,12 +52,11 @@
                 android:visibility="gone" />
         </LinearLayout>
 
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
-            android:text="Thông tin đơn hàng"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
+            android:text="Thông tin đơn hàng" />
 
         <LinearLayout
             android:id="@+id/orderDetailInfoContainer"
@@ -74,12 +65,11 @@
             android:layout_marginTop="@dimen/space_sm"
             android:orientation="vertical" />
 
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
-            android:text="Tiến trình đơn hàng"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
+            android:text="Tiến trình đơn hàng" />
 
         <LinearLayout
             android:id="@+id/orderStatusTimeline"
@@ -88,22 +78,21 @@
             android:layout_marginTop="@dimen/space_md"
             android:orientation="vertical" />
 
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
             android:id="@+id/paymentInstructionsText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md"
             android:background="@color/rescue_primary_container"
-            android:padding="@dimen/space_md"
+            android:padding="16dp"
             android:textColor="@color/rescue_on_primary_container" />
 
-        <TextView android:fontFamily="@font/ibm_plex_sans"
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
             android:id="@+id/orderItemsTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
-            android:text="Sản phẩm trong đơn"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium" />
+            android:text="Sản phẩm trong đơn" />
 
         <LinearLayout
             android:id="@+id/orderItemsContainer"
@@ -112,13 +101,13 @@
             android:orientation="vertical"
             android:paddingTop="@dimen/space_xs" />
 
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
             android:id="@+id/orderBankInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md"
             android:background="@color/rescue_primary_container"
-            android:padding="@dimen/space_md"
+            android:padding="16dp"
             android:visibility="gone" />
 
         <ImageView
@@ -130,13 +119,12 @@
             android:scaleType="fitCenter"
             android:visibility="gone" />
 
-        <TextView android:fontFamily="@font/ibm_plex_sans"
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
             android:id="@+id/shipmentManagementTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
             android:text="@string/shipment_management_title"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
             android:visibility="gone" />
 
         <Spinner
@@ -162,13 +150,12 @@
             android:text="@string/save_shipment_details_action"
             android:visibility="gone" />
 
-        <TextView android:fontFamily="@font/ibm_plex_sans"
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
             android:id="@+id/orderStatusActionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
             android:text="Cập nhật trạng thái đơn"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
             android:visibility="gone" />
 
         <Spinner
@@ -184,13 +171,12 @@
             android:text="@string/update_order_status_action"
             android:visibility="gone" />
 
-        <TextView android:fontFamily="@font/ibm_plex_sans"
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section"
             android:id="@+id/bankTransferActionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
             android:text="Xác nhận thanh toán"
-            android:textAppearance="@style/TextAppearance.RescueFarm.TitleMedium"
             android:visibility="gone" />
 
         <EditText
@@ -213,7 +199,7 @@
             android:minHeight="@dimen/touch_target_min" android:layout_marginTop="16dp"
             android:text="Đã nhận hàng" android:visibility="gone" />
 
-        <TextView
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body"
             android:id="@+id/orderLifecycleMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

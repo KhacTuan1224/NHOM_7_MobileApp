@@ -35,10 +35,13 @@ import java.util.Map;
 public class CartFragment extends Fragment {
     private CartViewModel viewModel;
     private LinearLayout groups;
-    private TextView summary;
+    private TextView summary, buyMore;
+    private int volumeVersion;
+    private final android.os.Handler volumeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private View noticeCard;
     private TextView noticeText;
     private boolean initialRevalidation;
+    private final Map<String, TextView> quotedUnitViews = new HashMap<>(), quotedTotalViews = new HashMap<>();
     private final Map<String, Product> productMap = new HashMap<>();
     private final Map<String, TextView> sellerTitles = new HashMap<>();
     private final NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -63,6 +66,7 @@ public class CartFragment extends Fragment {
         view.findViewById(R.id.cartPromotionWalletButton).setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         summary = view.findViewById(R.id.cartSummaryText);
+        buyMore = view.findViewById(R.id.cartBuyMoreSummary);
         noticeCard = view.findViewById(R.id.cartNoticeCard);
         noticeText = view.findViewById(R.id.cartNoticeText);
 
@@ -156,6 +160,8 @@ public class CartFragment extends Fragment {
     }
 
     private void render(Cart cart) {
+        quoteVolume(cart);
+        quotedUnitViews.clear(); quotedTotalViews.clear();
         groups.removeAllViews();
         sellerTitles.clear();
         if (cart == null || cart.getItems().isEmpty()) {
@@ -228,6 +234,7 @@ public class CartFragment extends Fragment {
         TextView title = row.findViewById(R.id.cartItemTitle);
         TextView unitPrice = row.findViewById(R.id.cartItemUnitPrice);
         TextView total = row.findViewById(R.id.cartItemTotal);
+        quotedUnitViews.put(item.getId(), unitPrice); quotedTotalViews.put(item.getId(), total);
         TextView quantity = row.findViewById(R.id.cartItemQuantity);
         ImageView btnDecrease = row.findViewById(R.id.cartItemDecrease);
         ImageView btnIncrease = row.findViewById(R.id.cartItemIncrease);
@@ -280,6 +287,48 @@ public class CartFragment extends Fragment {
         return row;
     }
 
+    private void quoteVolume(Cart cart) {
+        final int generation = ++volumeVersion;
+        volumeHandler.removeCallbacksAndMessages(null);
+        org.json.JSONArray items = new org.json.JSONArray();
+        if (cart != null) for (CartItem item : cart.getItems()) if (item.isSelected()) {
+            try { items.put(new org.json.JSONObject().put("productId", item.getProductId()).put("batchId", item.getBatchId())
+                    .put("sellerId", item.getSellerId()).put("quantity", item.getQuantity())); }
+            catch (org.json.JSONException ignored) { }
+        }
+        if (items.length() == 0) { buyMore.setText("Càng mua càng giảm: chọn sản phẩm để xem ưu đãi cùng Seller và nhiều Seller."); return; }
+        buyMore.setText("Đang tính ưu đãi mua nhiều cho các sản phẩm đã chọn…");
+        volumeHandler.postDelayed(() -> {
+            org.json.JSONObject request = new org.json.JSONObject();
+            try { request.put("items", items).put("fulfillmentType", "PICKUP").put("paymentMethod", "CASH_ON_SITE"); }
+            catch (org.json.JSONException ignored) { return; }
+            com.rescuefarm.service.backend.RenderBackendClient.Callback callback = new com.rescuefarm.service.backend.RenderBackendClient.Callback() {
+                public void onSuccess(org.json.JSONObject quote) {
+                    if (generation != volumeVersion || getView() == null) return;
+                    org.json.JSONArray quotedLines = quote.optJSONArray("lines");
+                    if (quotedLines != null) for (int i = 0; i < quotedLines.length(); i++) {
+                        org.json.JSONObject line = quotedLines.optJSONObject(i); if (line == null) continue;
+                        String key = line.optString("productId") + "::" + line.optString("batchId");
+                        TextView price = quotedUnitViews.get(key), total = quotedTotalViews.get(key);
+                        if (price != null) price.setText(money.format(line.optDouble("finalUnitPrice")) + " / " + line.optString("unit"));
+                        if (total != null) total.setText(money.format(line.optDouble("subtotal")));
+                    }
+                    summary.setText(getString(R.string.cart_summary_format, quotedLines == null ? 0 : quotedLines.length(),
+                            quote.optInt("sellerCount", 1), money.format(quote.optDouble("subtotal"))));
+                    buyMore.setText("Giảm cùng Seller: −" + money.format(quote.optDouble("sellerDiscount"))
+                            + "\nGiảm nhiều Seller (nền tảng): −" + money.format(quote.optDouble("platformDiscount"))
+                            + "\nTiền hàng dự kiến: " + money.format(quote.optDouble("subtotal") - quote.optDouble("quantityDiscount"))
+                            + " · chưa gồm phí giao\n" + BuyMoreUi.explain(quote));
+                }
+                public void onError(String error) {
+                    if (generation == volumeVersion && getView() != null) buyMore.setText("Chưa tính được ưu đãi: " + error + "\nKiểm tra lại mặt hàng đã chọn hoặc thử lại khi có mạng.");
+                }
+            };
+            if (viewModel.isGuestCart()) com.rescuefarm.service.backend.RenderBackendClient.postGuest("/quoteGuestCheckout", request, callback);
+            else com.rescuefarm.service.backend.RenderBackendClient.post("/quoteCustomerCheckout", request, callback);
+        }, 450);
+    }
+
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
@@ -297,6 +346,8 @@ public class CartFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        volumeVersion++; volumeHandler.removeCallbacksAndMessages(null);
+        quotedUnitViews.clear(); quotedTotalViews.clear();
         sellerTitles.clear();
         super.onDestroyView();
     }
