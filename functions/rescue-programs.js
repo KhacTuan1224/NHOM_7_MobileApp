@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('node:crypto');
 const P = require('./rescue-policy');
 const {enqueueNotification, digest} = require('./notification-outbox');
+const {impactWindow, summarizeImpact} = require('./rescue-impact');
 const {fail, text, id, time, round, number, DAY} = P;
 
 /** Stock-backed pickup programs. Money is collected in person at pickup. */
@@ -315,7 +316,7 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
       const rows = await assertLive(tx, offer);
       const statsRef = ref('rescueImpact', offer.sellerId), stats = data(await tx.get(statsRef)) || {};
       moveStock(tx, rows, claim.units, 'COMPLETE');
-      tx.update(claimRef, {status: 'COMPLETED', paymentStatus: 'BUYER_CONFIRMED_CASH',
+      tx.update(claimRef, {status: 'COMPLETED', offerType: offer.type, paymentStatus: 'BUYER_CONFIRMED_CASH',
         receivedAt: stamp(), updatedAt: stamp()});
       tx.update(offerRef, {claimedUnits: offer.claimedUnits - claim.units, completedUnits: offer.completedUnits + claim.units, updatedAt: stamp()});
       const quantities = {...(stats.quantityByUnit || {})};
@@ -376,8 +377,24 @@ function createRescuePrograms({db, admin, authenticate, now = Date.now}) {
     return {expiresAt: now() + DAY};
   });
   route('impact', null, async body => {
-    const stats = data(await ref('rescueImpact', body.sellerId).get());
-    return {impact: stats || {completedPickups: 0, quantityByUnit: {}}};
+    const sellerId = body.sellerId;
+    const snapshotAt = now(), days = body.days ?? 30, window = impactWindow(snapshotAt, days);
+    const [statsSnapshot, claimsSnapshot] = await Promise.all([
+      ref('rescueImpact', sellerId).get(),
+      db.collection('rescueClaims').where('sellerId', '==', sellerId).where('status', '==', 'COMPLETED')
+        .where('receivedAt', '>=', ts(window.startAt)).where('receivedAt', '<', ts(window.nextDayAt)).get()
+    ]);
+    const claims = claimsSnapshot.docs.map(doc => doc.data());
+    // Older receipts did not snapshot the method; read each source offer once.
+    const missing = [...new Set(claims.filter(claim => !claim.offerType && id(claim.offerId)).map(claim => claim.offerId))];
+    const types = new Map();
+    for (let i = 0; i < missing.length; i += 100) {
+      const offers = await db.getAll(...missing.slice(i, i + 100).map(key => ref('rescueOffers', key)));
+      for (const offer of offers) if (offer.exists && offer.get('sellerId') === sellerId) types.set(offer.id, offer.get('type'));
+    }
+    for (const claim of claims) if (!claim.offerType) claim.offerType = types.get(claim.offerId);
+    const stats = data(statsSnapshot);
+    return {impact: {...(stats || {completedPickups: 0, quantityByUnit: {}}), charts: summarizeImpact(claims, snapshotAt, days)}};
   });
 
   let running = false;

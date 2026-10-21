@@ -49,8 +49,6 @@ public class SellerDashboardFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle savedState) {
-        view.findViewById(R.id.openRescueProgramsButton).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.rescueHubFragment));
         message = view.findViewById(R.id.sellerDashboardMessage);
         stats = view.findViewById(R.id.sellerDashboardStats);
         analytics = view.findViewById(R.id.sellerDashboardAnalytics);
@@ -76,6 +74,10 @@ public class SellerDashboardFragment extends Fragment {
         view.findViewById(R.id.sellerDashboardMenuButton).setOnClickListener(unused ->
                 drawer.openDrawer(androidx.core.view.GravityCompat.START));
         view.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(unused -> viewModel.refresh());
+        bindRescue(view, R.id.dashboardRescueExplore, "catalog", false, SellerUiStyles.Section.CAMPAIGNS, R.drawable.ic_store);
+        bindRescue(view, R.id.dashboardRescueCreate, "", true, SellerUiStyles.Section.PROMOTIONS, R.drawable.ic_rescue_gift_plain);
+        bindRescue(view, R.id.dashboardRescueOffers, "mine", false, SellerUiStyles.Section.ORDERS, R.drawable.ic_nav_orders);
+        bindRescue(view, R.id.dashboardRescueImpact, "impact", false, SellerUiStyles.Section.ANALYTICS, R.drawable.ic_nav_dashboard);
         bind(view, R.id.dashboardProductsButton, "products");
         bind(view, R.id.dashboardBatchesButton, "batches");
         bind(view, R.id.dashboardPromotionsButton, "promotions");
@@ -88,6 +90,15 @@ public class SellerDashboardFragment extends Fragment {
         SellerUiStyles.styleButton(view.findViewById(R.id.sellerHomeOrdersButton), SellerUiStyles.Section.ORDERS);
         view.findViewById(R.id.sellerHomeOrdersButton).setOnClickListener(unused ->
                 navigate(SellerRoutePolicy.Destination.ORDERS, "orders"));
+    }
+
+    private void bindRescue(View root, int id, String tab, boolean create, SellerUiStyles.Section section, int icon) {
+        SellerUiStyles.drawerButton(root.findViewById(id), section, icon);
+        root.findViewById(id).setOnClickListener(v -> {
+            closeDrawer();
+            Bundle args = new Bundle(); args.putString("initialTab", tab);
+            Navigation.findNavController(v).navigate(create ? R.id.rescueOfferEditorFragment : R.id.rescueHubFragment, args);
+        });
     }
 
     private void bind(View root, int id, String key) {
@@ -142,7 +153,8 @@ public class SellerDashboardFragment extends Fragment {
         for (int id : new int[]{R.id.dashboardProductsButton, R.id.dashboardBatchesButton,
                 R.id.dashboardPromotionsButton, R.id.dashboardCampaignsButton, R.id.dashboardMobileButton,
                 R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
-                R.id.dashboardStatisticsButton, R.id.dashboardProfileButton, R.id.sellerHomeOrdersButton})
+                R.id.dashboardStatisticsButton, R.id.dashboardProfileButton, R.id.sellerHomeOrdersButton,
+                R.id.dashboardRescueExplore, R.id.dashboardRescueCreate, R.id.dashboardRescueOffers, R.id.dashboardRescueImpact})
             requireView().findViewById(id).setEnabled(enabled);
         if (value.getSnapshot() == null) {
             stats.removeAllViews(); analytics.removeAllViews(); recent.removeAllViews(); return;

@@ -42,8 +42,6 @@ public final class AdminDashboardFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
-        view.findViewById(R.id.openRescueProgramsButton).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.rescueHubFragment));
         progress = view.findViewById(R.id.adminDashboardProgress);
         message = view.findViewById(R.id.adminDashboardMessage);
         stats = view.findViewById(R.id.adminDashboardStats);
@@ -54,6 +52,10 @@ public final class AdminDashboardFragment extends Fragment {
         view.findViewById(R.id.adminDashboardBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
         view.findViewById(R.id.adminDashboardMenuButton).setOnClickListener(v -> drawer.openDrawer(androidx.core.view.GravityCompat.START));
         view.findViewById(R.id.refreshAdminDashboardButton).setOnClickListener(v -> viewModel.refreshDashboard());
+        view.findViewById(R.id.adminRescuePrograms).setOnClickListener(v -> {
+            drawer.closeDrawer(androidx.core.view.GravityCompat.START);
+            Navigation.findNavController(v).navigate(R.id.rescueHubFragment);
+        });
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminHomeSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminHomeCampaignsButton, Section.CAMPAIGNS);

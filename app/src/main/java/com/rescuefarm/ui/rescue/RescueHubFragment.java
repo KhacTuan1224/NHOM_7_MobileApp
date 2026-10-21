@@ -47,6 +47,7 @@ public final class RescueHubFragment extends Fragment {
     private String actor = "";
     private boolean nearby, enablingAlerts;
     private boolean configuringTabs;
+    private int impactDays = 30;
     private UserRole configuredRole;
     private final Handler clock = new Handler(Looper.getMainLooper());
     private final Runnable tick = new Runnable() {
@@ -86,6 +87,7 @@ public final class RescueHubFragment extends Fragment {
         model = new ViewModelProvider(this).get(RescueProgramsViewModel.class);
         location = LocationProviderFactory.create(requireContext());
         if (saved != null) {
+            impactDays = saved.getInt("impactDays", 30);
             nearby = saved.getBoolean("nearby");
             if (saved.containsKey("latitude")) { latitude = saved.getDouble("latitude"); longitude = saved.getDouble("longitude"); }
         }
@@ -120,8 +122,10 @@ public final class RescueHubFragment extends Fragment {
         });
         String offerId = getArguments() == null ? "" : getArguments().getString("offerId", "");
         if (saved == null && !offerId.isEmpty()) openOffer(offerId);
-        else if (saved == null && getArguments() != null && "mine".equals(getArguments().getString("initialTab"))) {
-            if (tabs.getTabCount() > 1) tabs.selectTab(tabs.getTabAt(1)); else browse("catalog");
+        else if (saved == null && getArguments() != null && !getArguments().getString("initialTab", "").isEmpty()) {
+            String initial = getArguments().getString("initialTab", "");
+            int target = "impact".equals(initial) && seller() ? 2 : "mine".equals(initial) ? 1 : 0;
+            if (tabs.getTabCount() > target) tabs.selectTab(tabs.getTabAt(target)); else browse("catalog");
         }
         else model.restore();
     }
@@ -160,7 +164,7 @@ public final class RescueHubFragment extends Fragment {
             query = body("type", TYPES[type.getSelectedItemPosition()]);
             if (nearby && latitude != null) query = body("type", TYPES[type.getSelectedItemPosition()], "nearby", true,
                     "latitude", latitude, "longitude", longitude, "radiusKm", 5);
-        } else if (screen.equals("impact")) query = body("sellerId", uid());
+        } else if (screen.equals("impact")) query = body("sellerId", uid(), "days", impactDays);
         model.load(screen, screen, query);
     }
     private void openOffer(String id) {
@@ -173,6 +177,12 @@ public final class RescueHubFragment extends Fragment {
         TextView message = root.findViewById(R.id.rescueMessage);
         message.setText(state.message); message.setVisibility(state.message.isEmpty() ? View.GONE : View.VISIBLE);
         boolean catalog = state.screen.equals("catalog");
+        if (!state.screen.equals("detail")) {
+            int selected = state.screen.equals("impact") && seller() ? 2 : state.screen.equals("mine") ? 1 : 0;
+            if (selected < tabs.getTabCount() && tabs.getSelectedTabPosition() != selected) {
+                configuringTabs = true; tabs.selectTab(tabs.getTabAt(selected)); configuringTabs = false;
+            }
+        }
         tabs.setVisibility(getArguments() != null && getArguments().getBoolean("standalone") ? View.GONE : View.VISIBLE);
         type.setVisibility(catalog ? View.VISIBLE : View.GONE);
         root.findViewById(R.id.rescueActions).setVisibility(catalog ? View.VISIBLE : View.GONE);
@@ -273,13 +283,9 @@ public final class RescueHubFragment extends Fragment {
         if (state.equals("COMPLETED")) text(card, "Đã ghi nhận nhận hàng" + (claim.optDouble("totalAmount") > 0 ? " và khách xác nhận trả tiền tại điểm." : "."), false);
     }
     private void impact(JSONObject value) {
-        LinearLayout card = card(content); text(card, "Tác động đã được xác nhận", true);
-        text(card, value.optInt("completedPickups") + " lượt nhận hoàn tất", false);
-        for (String key : new String[]{"quantityByUnit"}) {
-            JSONObject quantities = value.optJSONObject(key); text(card, "Tổng nông sản đã nhận", true);
-            if (quantities != null) { java.util.Iterator<String> keys = quantities.keys(); while (keys.hasNext()) { String unit = keys.next(); text(card, quantities.optDouble(unit) + " " + unit, false); } }
-        }
-        text(card, "Thống kê riêng các gói Giải cứu mở rộng. Không cộng lẫn kg, hộp, quả.", false);
+        RescueImpactPanel.render(content, value, impactDays, days -> {
+            impactDays = days; browse("impact");
+        });
     }
     private void map(JSONObject offer) {
         String point = offer.optDouble("latitude") + "," + offer.optDouble("longitude");
@@ -328,6 +334,7 @@ public final class RescueHubFragment extends Fragment {
     @Override public void onStop() { clock.removeCallbacks(tick); FirebaseAuth.getInstance().removeAuthStateListener(auth); super.onStop(); }
     @Override public void onSaveInstanceState(@NonNull Bundle out) {
         super.onSaveInstanceState(out); out.putBoolean("nearby", nearby);
+        out.putInt("impactDays", impactDays);
         if (latitude != null) { out.putDouble("latitude", latitude); out.putDouble("longitude", longitude); }
     }
     @Override public void onDestroyView() { if (location != null) location.close(); location = null; content = null; super.onDestroyView(); }
