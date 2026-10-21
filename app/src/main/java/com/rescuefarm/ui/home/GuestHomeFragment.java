@@ -144,10 +144,13 @@ public class GuestHomeFragment extends Fragment {
         setupSearch(view, state);
         com.rescuefarm.ui.common.NotificationBadge.bind(this,
                 view.findViewById(R.id.notificationButton), view.findViewById(R.id.homeNotificationBadge));
-        view.findViewById(R.id.notificationButton).setOnClickListener(unused ->
-                Navigation.findNavController(view).navigate(viewModel.isAuthenticated()
-                        ? R.id.action_guestHomeFragment_to_notificationFragment
-                        : R.id.action_guestHomeFragment_to_loginFragment));
+        view.findViewById(R.id.notificationButton).setOnClickListener(unused -> {
+            if (viewModel.isAuthenticated()) {
+                Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_notificationFragment);
+            } else {
+                showGuestNotificationLoginDialog(view);
+            }
+        });
         view.findViewById(R.id.refreshHomeButton).setOnClickListener(v -> {
             for (com.rescuefarm.ui.common.ListPagination page : sectionPages.values()) page.reset();
             viewModel.refresh();
@@ -306,6 +309,17 @@ public class GuestHomeFragment extends Fragment {
     @Override public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean("home.searchOpen", searchOpen);
+    }
+
+    private void showGuestNotificationLoginDialog(View view) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.guest_notification_dialog_title)
+                .setMessage(R.string.guest_notification_dialog_message)
+                .setIcon(R.drawable.ic_home_notifications)
+                .setPositiveButton(R.string.guest_notification_dialog_positive, (dialog, which) ->
+                        Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_loginFragment))
+                .setNegativeButton(R.string.guest_notification_dialog_negative, null)
+                .show();
     }
 
     private void showLocationPicker() {
