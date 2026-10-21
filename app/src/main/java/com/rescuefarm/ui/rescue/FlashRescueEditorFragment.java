@@ -1,9 +1,7 @@
 package com.rescuefarm.ui.rescue;
 
 import android.os.Bundle;
-import android.widget.LinearLayout;
 import androidx.annotation.Nullable;
-import com.google.android.material.button.MaterialButton;
 import com.rescuefarm.R;
 import static com.rescuefarm.ui.rescue.RescueUi.*;
 
@@ -19,21 +17,7 @@ public final class FlashRescueEditorFragment extends BaseRescueOfferEditorFragme
         addDateTime("closesAt", "Đóng nhận đặt lúc", now + 30 * 60000, state);
         addDateTime("pickupStartAt", "Có thể nhận từ", now + 5 * 60000, state);
         addDateTime("pickupEndAt", "Cần nhận xong trước", now + 60 * 60000, state);
-        text(form, "Thiết lập nhanh khung bán và nhận", false);
-        text(form, "Các nút bên dưới tính từ thời điểm bấm và cập nhật cả ba mốc giờ.", false);
-        com.rescuefarm.ui.common.ResponsiveActionLayout durations = new com.rescuefarm.ui.common.ResponsiveActionLayout(requireContext());
-        form.addView(durations, new LinearLayout.LayoutParams(-1, -2));
-        for (int minutes : new int[]{15, 30, 60}) {
-            MaterialButton option = new MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-            option.setText(minutes + " phút"); option.setAllCaps(false);
-            durations.addView(option, new LinearLayout.LayoutParams(0, -2, 1));
-            option.setOnClickListener(v -> {
-                long start = System.currentTimeMillis();
-                setDateTime("closesAt", start + minutes * 60000L);
-                setDateTime("pickupStartAt", start + 60000L);
-                setDateTime("pickupEndAt", start + (minutes + 30) * 60000L);
-            });
-        }
+        addQuickPickupTimes();
         section(R.id.flashLocation);
         addPickup(state);
         section(R.id.flashProduce);

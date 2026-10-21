@@ -159,6 +159,23 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
         layout.setEndIconOnClickListener(v -> chooseDateTime(key, label));
         form.addView(layout, new LinearLayout.LayoutParams(-1, -2)); fields.put(key, input);
     }
+    protected final void addQuickPickupTimes() {
+        text(form, "Thiết lập nhanh khung bán và nhận", false);
+        text(form, "Các nút bên dưới tính từ thời điểm bấm và cập nhật cả ba mốc giờ. Khách có thể nhận sau 1 phút; giờ nhận cuối muộn hơn giờ đóng đặt 30 phút.", false);
+        com.rescuefarm.ui.common.ResponsiveActionLayout durations = new com.rescuefarm.ui.common.ResponsiveActionLayout(requireContext());
+        form.addView(durations, new LinearLayout.LayoutParams(-1, -2));
+        for (int minutes : new int[]{15, 30, 60}) {
+            MaterialButton option = new MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
+            option.setText(minutes + " phút"); option.setAllCaps(false);
+            durations.addView(option, new LinearLayout.LayoutParams(0, -2, 1));
+            option.setOnClickListener(v -> {
+                RescueTime.PickupWindow window = RescueTime.quickWindow(System.currentTimeMillis(), minutes);
+                setDateTime("closesAt", window.closesAt);
+                setDateTime("pickupStartAt", window.pickupStartAt);
+                setDateTime("pickupEndAt", window.pickupEndAt);
+            });
+        }
+    }
     private void chooseDateTime(String key, String label) {
         if (datePicker != null && datePicker.isShowing() || timePicker != null && timePicker.isShowing()) return;
         Calendar selectedTime = RescueTime.calendar(times.get(key));

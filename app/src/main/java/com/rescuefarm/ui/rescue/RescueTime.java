@@ -10,6 +10,21 @@ import java.util.TimeZone;
 final class RescueTime {
     private RescueTime() { }
 
+    static final class PickupWindow {
+        final long closesAt, pickupStartAt, pickupEndAt;
+        PickupWindow(long now, int minutes) {
+            closesAt = now + minutes * 60000L;
+            pickupStartAt = now + 60000L;
+            pickupEndAt = now + (minutes + 30) * 60000L;
+        }
+    }
+
+    static PickupWindow quickWindow(long now, int minutes) {
+        if (minutes != 15 && minutes != 30 && minutes != 60)
+            throw new IllegalArgumentException("Chọn khung 15, 30 hoặc 60 phút.");
+        return new PickupWindow(now, minutes);
+    }
+
     static Calendar calendar(long epochMillis) {
         Calendar result = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         result.setTimeInMillis(epochMillis);
