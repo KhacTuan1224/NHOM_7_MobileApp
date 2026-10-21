@@ -181,21 +181,21 @@ public class GuestProfileFragment extends Fragment {
     }
 
     private void showHelpCenterDialog() {
-        String content = getString(R.string.guest_help_guide_summary) + "\n\n"
-                + "📞 " + getString(R.string.guest_help_hotline_label) + " " + getString(R.string.guest_help_hotline_val) + "\n"
-                + "✉️ " + getString(R.string.guest_help_email_label) + " " + getString(R.string.guest_help_email_val);
+        String content =
+                 getString(R.string.guest_help_hotline_label) + " " + getString(R.string.guest_help_hotline_val) + "\n"
+                + getString(R.string.guest_help_email_label) + " " + getString(R.string.guest_help_email_val);
 
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.guest_help_dialog_title)
                 .setMessage(content)
                 .setPositiveButton(R.string.guest_help_call_action, (dialog, which) -> {
                     Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:19006868"));
+                    intent.setData(Uri.parse("tel:0399746618"));
                     startActivity(intent);
                 })
                 .setNeutralButton(R.string.guest_help_email_action, (dialog, which) -> {
                     Intent intent = new Intent(Intent.ACTION_SENDTO);
-                    intent.setData(Uri.parse("mailto:cuutro@rescuefarm.vn"));
+                    intent.setData(Uri.parse("mailto:datruong.work@gmail.com"));
                     intent.putExtra(Intent.EXTRA_SUBJECT, "[Hỗ trợ khách vãng lai] Cần giải đáp về nông sản giải cứu");
                     startActivity(intent);
                 })

@@ -14,7 +14,7 @@
                 android:text="☰" android:textSize="24sp" android:textColor="@color/rescue_on_surface"
                 android:contentDescription="Mở menu cửa hàng" />
             <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                android:text="RescueFarm · Cửa hàng" android:textStyle="bold" android:textSize="16sp"
+                android:text="Quản trị Cửa hàng" android:textStyle="bold" android:textSize="16sp"
                 android:textColor="@color/rescue_on_surface" android:paddingStart="8dp" />
             <com.google.android.material.button.MaterialButton android:id="@+id/refreshSellerDashboardButton"
                 style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="48dp"
@@ -28,9 +28,7 @@
             android:clipToPadding="false">
             <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:padding="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="TỔNG QUAN CỬA HÀNG" android:textAllCaps="true" android:textSize="12sp"
-                    android:textStyle="bold" android:textColor="@color/rescue_primary" />
+
                 <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="@string/seller_dashboard_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"
                     android:paddingTop="4dp" />
