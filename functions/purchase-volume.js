@@ -1,6 +1,6 @@
 // Thresholds are VND after existing product promotions; physical units are never added together.
-const POLICY = Object.freeze({version: 1, seller: [{minimum: 200000, percent: 3}, {minimum: 500000, percent: 5}],
-  platform: [{minimum: 500000, percent: 2}, {minimum: 1000000, percent: 4}]});
+const POLICY = Object.freeze({version: 2, seller: [{minimum: 50000, percent: 3}, {minimum: 120000, percent: 5}],
+  platform: [{minimum: 80000, percent: 2}, {minimum: 180000, percent: 4}]});
 function tier(amount, tiers) { return tiers.filter(row => amount >= row.minimum).at(-1)?.percent || 0; }
 function allocate(total, weights) {
   const sum = weights.reduce((a, b) => a + b, 0);

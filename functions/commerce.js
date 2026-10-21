@@ -200,7 +200,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     const volume = applyVolume(groups.map(group => ({sellerId: group.sellerId, subtotal: group.public.subtotal})));
     for (let i = 0; i < groups.length; i++) {
       const group = groups[i], discount = volume.groups[i];
-      Object.assign(group.public, discount, {total: discount.netSubtotal + group.public.shippingFee,
+      Object.assign(group.public, discount, {volumePolicyVersion: volume.policy.version, total: discount.netSubtotal + group.public.shippingFee,
         productDiscount: group.public.totalDiscount,
         totalDiscount: group.public.totalDiscount + discount.quantityDiscount});
       const sellerParts = allocate(discount.sellerDiscount, group.rows.map(row => row.price.subtotal));
@@ -239,7 +239,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         ...normalized, subtotal: q.public.subtotal, quantityDiscount: q.public.quantityDiscount,
         sellerVolumeDiscount: q.public.sellerDiscount, platformVolumeDiscount: q.public.platformDiscount,
         sellerReceivableAmount: q.public.subtotal - q.public.sellerDiscount + q.public.shippingFee,
-        volumePolicyVersion: 1, checkoutGroupId: groupId, shippingFee: q.public.shippingFee,
+        volumePolicyVersion: q.public.volumePolicyVersion, checkoutGroupId: groupId, shippingFee: q.public.shippingFee,
         totalAmount: q.public.total, paymentStatus, status: 'PENDING', campaignReservedQuantity: q.campaignQuantity,
         batchReservations: Object.fromEntries(items.map(item => [item.batchId, item.quantity])),
         campaignBatchReservations: Object.fromEntries(q.rows.filter(row => text(row.batch.activeCampaignId))
@@ -306,7 +306,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId, recipientUid: identity.ownerId, decision: 'PENDING', inboxId: `${requestId}_PENDING`});
       if (q.public.platformDiscount > 0) tx.create(db.collection('platformDiscountClaims').doc(requestId), {
         orderId: requestId, checkoutGroupId: groupId, sellerId: q.sellerId, amount: q.public.platformDiscount,
-        policyVersion: 1, settlementStatus: 'UNSETTLED', requiresOrderStatus: 'DELIVERED', createdAt: stamp()
+        policyVersion: q.public.volumePolicyVersion, settlementStatus: 'UNSETTLED', requiresOrderStatus: 'DELIVERED', createdAt: stamp()
       });
       return order;
   }

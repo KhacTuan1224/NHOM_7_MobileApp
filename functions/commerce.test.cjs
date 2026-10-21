@@ -104,7 +104,7 @@ test('expanded rescue and normal checkout share one stock ledger without releasi
 test('Customer checkout reserves stock, writes snapshots/payment and removes only bought cart quantities', async () => {
   const data = request(); const result = await post('/checkoutCustomer', {...data, totalAmount: 1, ownerId: 'customer-b'}, 'customer-a');
   assert.equal(result.status, 200); assert.equal(result.body.order.ownerId, 'customer-a');
-  assert.equal(result.body.order.totalAmount, 90000);
+  assert.equal(result.body.order.totalAmount, 87300);
   const stock = (await db.doc('productBatches/batch-a').get()).data();
   assert.equal(stock.availableQuantity, 7); assert.equal(stock.reservedQuantity, 3); assert.equal(stock.soldQuantity, 0);
   const line = (await db.doc(`orders/${data.requestId}/items/batch-a`).get()).data();
@@ -266,7 +266,7 @@ test('Guest DELIVERY/COD creates a shipment; Guest PICKUP transfer snapshots the
   const pickup = request({...g, paymentMethod: 'BANK_TRANSFER'});
   const second = await post('/checkoutGuest', pickup); assert.equal(second.status, 200);
   const payment = (await db.doc(`payments/${pickup.requestId}`).get()).data();
-  assert.equal(payment.status, 'PENDING'); assert.equal(payment.bankCode, 'VCB'); assert.equal(payment.amount, 90000);
+  assert.equal(payment.status, 'PENDING'); assert.equal(payment.bankCode, 'VCB'); assert.equal(payment.amount, 87300);
   assert.equal((await db.doc(`shipments/${pickup.requestId}`).get()).exists, false);
 });
 
@@ -455,32 +455,33 @@ async function multiSellerRequest(overrides = {}) {
   batch.set(db.doc('products/product-two'), {sellerId:'seller-two',status:'ACTIVE',name:'Hộp trái cây',unit:'hộp',originalPrice:80000,rescuePrice:60000});
   batch.set(db.doc('productBatches/batch-two'), {productId:'product-two',status:'AVAILABLE',initialQuantity:10,availableQuantity:10,reservedQuantity:0,soldQuantity:0,inventoryVersion:1,harvestDate:past(),expiryDate:future()});
   batch.set(db.doc('customerCarts/customer-a'), {items:[
-    {id:'product-a::batch-a',productId:'product-a',batchId:'batch-a',quantity:10,selected:true},
-    {id:'product-two::batch-two',productId:'product-two',batchId:'batch-two',quantity:5,selected:true}]});
+    {id:'product-a::batch-a',productId:'product-a',batchId:'batch-a',quantity:2,selected:true},
+    {id:'product-two::batch-two',productId:'product-two',batchId:'batch-two',quantity:1,selected:true}]});
   await batch.commit();
-  return request({items:[{productId:'product-a',batchId:'batch-a',sellerId:'seller',quantity:10},
-    {productId:'product-two',batchId:'batch-two',sellerId:'seller-two',quantity:5}], ...overrides});
+  return request({items:[{productId:'product-a',batchId:'batch-a',sellerId:'seller',quantity:2},
+    {productId:'product-two',batchId:'batch-two',sellerId:'seller-two',quantity:1}], ...overrides});
 }
 
 test('multi-seller discounts combine after product pricing and atomically create separate customer orders',async()=>{
   const input = await multiSellerRequest();
   const quote=await post('/quoteCustomerCheckout',input,'customer-a');
   assert.equal(quote.status,200,JSON.stringify(quote.body));
-  assert.equal(quote.body.subtotal,600000);assert.equal(quote.body.sellerDiscount,18000);
-  assert.equal(quote.body.platformDiscount,11640);assert.equal(quote.body.total,570360);
+  assert.equal(quote.body.subtotal,120000);assert.equal(quote.body.sellerDiscount,3600);
+  assert.equal(quote.body.platformDiscount,2328);assert.equal(quote.body.total,114072);
   assert.equal(quote.body.availablePaymentMethods.includes('BANK_TRANSFER'),false);
-  const result=await post('/checkoutCustomer',{...input,expectedSubtotal:600000,expectedQuantityDiscount:29640,expectedShippingFee:0},'customer-a');
+  const result=await post('/checkoutCustomer',{...input,expectedSubtotal:120000,expectedQuantityDiscount:5928,expectedShippingFee:0},'customer-a');
   assert.equal(result.status,200,JSON.stringify(result.body));assert.equal(result.body.orders.length,2);
-  assert.deepEqual(result.body.orders.map(o=>o.totalAmount),[285180,285180]);
-  assert.equal(result.body.orders.reduce((s,o)=>s+o.quantityDiscount,0),29640);
-  assert.equal((await db.doc('productBatches/batch-two').get()).get('reservedQuantity'),5);
+  assert.ok(result.body.orders.every(order => order.volumePolicyVersion === 2));
+  assert.deepEqual(result.body.orders.map(o=>o.totalAmount),[57036,57036]);
+  assert.equal(result.body.orders.reduce((s,o)=>s+o.quantityDiscount,0),5928);
+  assert.equal((await db.doc('productBatches/batch-two').get()).get('reservedQuantity'),1);
   assert.deepEqual((await db.doc('customerCarts/customer-a').get()).get('items'),[]);
   for(const order of result.body.orders) {
     assert.equal((await db.doc('payments/'+order.id).get()).get('amount'),order.totalAmount);
-    assert.equal(order.sellerReceivableAmount,291000);
-    assert.equal((await db.doc('platformDiscountClaims/'+order.id).get()).get('amount'),5820);
+    assert.equal(order.sellerReceivableAmount,58200);
+    assert.equal((await db.doc('platformDiscountClaims/'+order.id).get()).get('amount'),1164);
     const items=await db.collection('orders/'+order.id+'/items').get();
-    assert.equal(items.docs.reduce((s,d)=>s+d.get('platformVolumeDiscount'),0),5820);
+    assert.equal(items.docs.reduce((s,d)=>s+d.get('platformVolumeDiscount'),0),1164);
   }
   const retry=await post('/checkoutCustomer',input,'customer-a');
   assert.equal(retry.status,200);assert.equal(retry.body.replay,true);
@@ -520,10 +521,10 @@ test('saved product promotion remains first, then seller volume and platform vol
   const input=await multiSellerRequest();await seedWalletPromotion('PERCENT',10);
   assert.equal((await post('/promotions/save',{productId:'product-a'},'customer-a')).status,200);
   const q=await post('/quoteCustomerCheckout',input,'customer-a');assert.equal(q.status,200);
-  assert.equal(q.body.subtotal,570000);assert.equal(q.body.sellerDiscount,17100);
-  assert.equal(q.body.platformDiscount,11058);assert.equal(q.body.total,541842);
+  assert.equal(q.body.subtotal,114000);assert.equal(q.body.sellerDiscount,3420);
+  assert.equal(q.body.platformDiscount,2212);assert.equal(q.body.total,108368);
   const guestQuote=await post('/quoteGuestCheckout',input);
-  assert.equal(guestQuote.body.subtotal,600000); // Existing saved-customer-only voucher contract is preserved.
+  assert.equal(guestQuote.body.subtotal,120000); // Existing saved-customer-only voucher contract is preserved.
 });
 
 test('two batches of one product reach its existing quantity tier without double-counting subtotal',async()=>{

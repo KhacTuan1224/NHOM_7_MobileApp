@@ -1,20 +1,22 @@
 # Càng mua càng giảm và các phương thức giải cứu
 
-## Chính sách đã chốt
+## Chính sách đã chốt (phiên bản 2, hạ ngưỡng ngày 21/10/2026)
 
 Áp dụng cho Customer và Guest trong **giỏ hàng/checkout sản phẩm thường và sản phẩm thuộc chiến dịch**. Không gộp lịch sử mua nhiều ngày; chỉ các dòng được chọn trong cùng một lần đặt hàng. Không cộng kg, hộp, quả hoặc số dòng để suy ra cùng một số lượng.
 
 1. Giữ giá giải cứu và chính sách khuyến mãi sản phẩm hiện có. Customer vẫn cần lưu khuyến mãi còn hiệu lực; Guest không được hưởng voucher riêng trong ví Customer. Bậc số lượng của một sản phẩm được xét trên tổng lượng của chính sản phẩm đó qua các lô đã chọn, không trộn đơn vị của sản phẩm khác.
-2. Cộng tiền hàng sau khuyến mãi theo từng Seller: từ **200.000đ giảm 3%**, từ **500.000đ giảm 5%**. Chọn bậc cao nhất, không cộng 3% với 5%. Một sản phẩm mua nhiều hoặc nhiều sản phẩm cùng Seller đều đóng góp vào ngưỡng tiền này. Phần giảm này do Seller chịu theo chính sách nền tảng đã chốt.
-3. Cộng tiền hàng sau bước 2 của các Seller có tiền hàng lớn hơn 0. Có ít nhất **2 Seller** và từ **500.000đ giảm 2%**, từ **1.000.000đ giảm 4%**. Chọn bậc cao nhất; phần này do nền tảng tài trợ.
+2. Cộng tiền hàng sau khuyến mãi theo từng Seller: từ **50.000đ giảm 3%**, từ **120.000đ giảm 5%**. Chọn bậc cao nhất, không cộng 3% với 5%. Một sản phẩm mua nhiều hoặc nhiều sản phẩm cùng Seller đều đóng góp vào ngưỡng tiền này. Phần giảm này do Seller chịu theo chính sách nền tảng đã chốt.
+3. Cộng tiền hàng sau bước 2 của các Seller có tiền hàng lớn hơn 0. Có ít nhất **2 Seller** và từ **80.000đ giảm 2%**, từ **180.000đ giảm 4%**. Chọn bậc cao nhất; phần này do nền tảng tài trợ.
 4. Phí giao không tính vào ngưỡng và không được giảm. Mỗi Seller vẫn có phí giao/điểm nhận và thanh toán riêng. Không hứa một chuyến giao chung.
 
-Ví dụ: sau khuyến mãi sản phẩm, Seller A có 300.000đ và Seller B có 300.000đ:
+Đơn đã tạo giữ nguyên số tiền, phần giảm và phiên bản chính sách đã chụp; không áp dụng hồi tố ngưỡng mới cho đơn cũ. Giỏ hàng và checkout đọc ngưỡng trực tiếp từ backend nên không hardcode mức tiền trong APK.
 
-- Mỗi Seller giảm 9.000đ, còn 291.000đ; cộng lại 582.000đ.
-- Đủ bậc nền tảng 2%: giảm tiếp 11.640đ, phân bổ 5.820đ cho mỗi đơn.
-- Người mua trả tiền hàng **570.360đ**, mỗi đơn **285.180đ**, cộng phí giao riêng nếu có.
-- Nếu mỗi Seller có 500.000đ, sau giảm cùng Seller tổng còn 950.000đ: chỉ đạt bậc nhiều Seller 2%, chưa đạt 4%.
+Ví dụ: sau khuyến mãi sản phẩm, Seller A có 60.000đ và Seller B có 60.000đ:
+
+- Mỗi Seller giảm 1.800đ, còn 58.200đ; cộng lại 116.400đ.
+- Đủ bậc nền tảng 2%: giảm tiếp 2.328đ, phân bổ 1.164đ cho mỗi đơn.
+- Người mua trả tiền hàng **114.072đ**, mỗi đơn **57.036đ**, cộng phí giao riêng nếu có.
+- Nếu mỗi Seller có 90.000đ, sau giảm cùng Seller tổng còn 174.600đ: chỉ đạt bậc nhiều Seller 2%, chưa đạt 4%.
 
 ## Giao diện và tính toàn vẹn
 
@@ -38,7 +40,7 @@ Ví dụ: sau khuyến mãi sản phẩm, Seller A có 300.000đ và Seller B c�
 
 1. Deploy backend Render gồm `commerce.js`, `purchase-volume.js` và các file backend hiện có. Root Directory `functions`, Build Command `npm ci`, Start Command `npm start`. Không cần thêm env, Firestore index hay thay Rules cho cơ chế mua nhiều này. Mức mặc định trong `purchase-volume.js` là các mức đã được duyệt ở trên.
 2. Cài APK mới. APK mới cần backend có `buyMorePolicy`; nếu chưa cập nhật, checkout sẽ yêu cầu cập nhật máy chủ thay vì hứa mức giảm chưa có.
-3. Thử giỏ một Seller đạt 200.000đ/500.000đ; tiếp tục thử hai Seller mỗi bên 300.000đ. Kiểm tra báo giá từng Seller, hai đơn được tạo, tiền thanh toán từng đơn và kho được giữ đúng. Với Customer, thử lưu/bỏ lưu voucher để kiểm tra mức tiền xét ngưỡng thay đổi.
+3. Thử giỏ một Seller đạt 50.000đ/120.000đ; tiếp tục thử hai Seller mỗi bên 60.000đ. Kiểm tra báo giá từng Seller, hai đơn được tạo, tiền thanh toán từng đơn và kho được giữ đúng. Với Customer, thử lưu/bỏ lưu voucher để kiểm tra mức tiền xét ngưỡng thay đổi.
 4. Quyền lợi nhiều Seller do nền tảng tài trợ nên vận hành chi trả theo mục trên trước khi công bố bán thật.
 
 Kiểm thử: `node --test functions/purchase-volume.test.cjs`; bộ integration commerce chạy trên Firestore emulator demo qua `tests/firestore`.
