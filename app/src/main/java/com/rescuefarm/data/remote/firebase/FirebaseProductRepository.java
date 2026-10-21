@@ -486,22 +486,6 @@ public class FirebaseProductRepository implements ProductRepository {
         DocumentReference batchRef = clean(batch.getId()).isEmpty()
                 ? firestore.collection(BATCHES).document()
                 : firestore.collection(BATCHES).document(batch.getId());
-        if (clean(batch.getId()).isEmpty()) {
-            ProductBatch saved = ProductBatch.restore(batchRef.getId(), batch.getProductId(), null,
-                    batch.getHarvestDate(), batch.getExpiryDate(), batch.getInitialQuantity(),
-                    batch.getInitialQuantity(), 0D, 0D, batch.getStatus(), 1L);
-            saved.updateDetails(batch.getHarvestDate(), batch.getExpiryDate(),
-                    batch.getInitialQuantity(), new Date());
-            Map<String, Object> data = batchMap(saved);
-            data.put("updatedAt", FieldValue.serverTimestamp());
-            data.put("createdAt", FieldValue.serverTimestamp());
-            batchRef.set(data).addOnSuccessListener(unused -> {
-                cacheExecutor.execute(() -> dao.replaceBatch(CatalogCacheMapper.toEntity(
-                        saved, System.currentTimeMillis())));
-                callback.onSuccess(saved);
-            }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
-            return;
-        }
         firestore.runTransaction(transaction -> {
             DocumentSnapshot productSnapshot = transaction.get(productRef);
             DocumentSnapshot existing = transaction.get(batchRef);
@@ -534,6 +518,10 @@ public class FirebaseProductRepository implements ProductRepository {
             } else {
                 data.put("createdAt", FieldValue.serverTimestamp());
                 transaction.set(batchRef, data);
+                // Only stock exhaustion is reversible by restocking; never undo deliberate hiding.
+                if (ProductStatus.SOLD_OUT.name().equals(productSnapshot.getString("status"))
+                        && saved.isSellable(new Date())) transaction.update(productRef,
+                        "status", ProductStatus.ACTIVE.name(), "updatedAt", FieldValue.serverTimestamp());
             }
             return saved;
         }).addOnSuccessListener(saved -> {

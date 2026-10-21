@@ -41,6 +41,7 @@ public final class StorefrontFragment extends Fragment {
             com.rescuefarm.ui.common.AppTypography.title(CustomerUi.text(root,"Sản phẩm và đánh giá")).setTextSize(20);
             products=CustomerUi.column(requireContext()); root.addView(products);
             HomeViewModel home=new ViewModelProvider(this,new HomeViewModelFactory(requireContext())).get(HomeViewModel.class);
+            com.rescuefarm.ui.common.ExpiryUiRefresh.bind(this, home::refreshTimeSensitiveContent);
             home.getHomeState().observe(getViewLifecycleOwner(),state->{
                 products.removeAllViews();
                 for(com.rescuefarm.domain.model.Product product:home.getProductsSnapshot()) {

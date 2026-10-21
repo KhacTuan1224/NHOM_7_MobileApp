@@ -771,6 +771,7 @@ service cloud.firestore {
           && ownsProduct(request.resource.data.productId)
           && request.resource.data.id == batchId
           && request.resource.data.inventoryVersion == 1
+          && request.resource.data.expiryDate > request.time
           && request.resource.data.get('activeCampaignId', '') in ['', null]
           && validBatch(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
@@ -787,6 +788,10 @@ service cloud.firestore {
             && request.resource.data.soldQuantity == 0
             && request.resource.data.availableQuantity == request.resource.data.initialQuantity
             && (!resource.data.get('everOrdered', false)
+              || (request.resource.data.status == 'ARCHIVED'
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'inventoryVersion', 'updatedAt'])))
+            && ((resource.data.expiryDate > request.time
+                && !(resource.data.status in ['EXPIRED', 'ARCHIVED']))
               || (request.resource.data.status == 'ARCHIVED'
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'inventoryVersion', 'updatedAt'])))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -1265,6 +1270,12 @@ service cloud.firestore {
           && request.resource.data.readAt == request.time
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
       allow delete: if false;
+    }
+
+    match /batchExpiryEvents/{batchId} {
+      allow read: if isAdmin() || (isApprovedSeller(request.auth.uid)
+          && resource.data.sellerId == request.auth.uid);
+      allow write: if false;
     }
 
     match /adminAuditLogs/{auditId} {

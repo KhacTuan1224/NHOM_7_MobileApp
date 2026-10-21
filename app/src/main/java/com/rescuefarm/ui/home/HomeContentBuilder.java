@@ -101,7 +101,10 @@ public final class HomeContentBuilder {
 
         List<Product> valueProducts = new ArrayList<>();
         if (productSource != null) for (Product value : productSource) {
-            if (value != null && value.isAvailable() && value.calculateDiscountPercent() > 0D) {
+            if (value != null && value.isAvailable() && value.calculateDiscountPercent() > 0D
+                    && batchesByProduct != null && batchesByProduct.get(value.getId()) != null
+                    && batchesByProduct.get(value.getId()).stream().anyMatch(batch -> batch != null
+                        && value.getId().equals(batch.getProductId()) && batch.isSellable(safeNow))) {
                 valueProducts.add(value);
             }
         }

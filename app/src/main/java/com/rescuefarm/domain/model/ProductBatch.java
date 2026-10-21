@@ -49,6 +49,9 @@ public class ProductBatch {
     }
 
     public void updateDetails(Date harvestDate, Date expiryDate, double newInitialQuantity, Date now) {
+        if (status == BatchStatus.ARCHIVED || status == BatchStatus.EXPIRED || isExpired(now)) {
+            throw new IllegalStateException("Lô đã hết hạn hoặc lưu trữ không được sửa. Hãy nhập một lô mới.");
+        }
         requirePositive(newInitialQuantity, "Initial quantity");
         if (harvestDate == null || expiryDate == null || now == null) {
             throw new IllegalArgumentException("Harvest, expiry and current dates are required");
@@ -75,8 +78,20 @@ public class ProductBatch {
         return expiryDate != null && now != null && !expiryDate.after(now);
     }
     public boolean isSellable(Date now) {
-        return now != null && !isExpired(now) && availableQuantity > QUANTITY_TOLERANCE
+        return now != null && expiryDate != null && !isExpired(now) && availableQuantity > QUANTITY_TOLERANCE
                 && (status == BatchStatus.AVAILABLE || status == BatchStatus.RESERVED_PARTIAL);
+    }
+    /** Effective stock for sale; physical expired stock remains availableQuantity for reconciliation. */
+    public double getSellableQuantity(Date now) { return isSellable(now) ? availableQuantity : 0D; }
+    public static boolean hasSellableBatch(String productId, java.util.List<ProductBatch> batches, Date now) {
+        if (batches != null) for (ProductBatch batch : batches)
+            if (batch != null && productId.equals(batch.getProductId()) && batch.isSellable(now)) return true;
+        return false;
+    }
+    public static java.util.Comparator<ProductBatch> expiryOrder() {
+        return java.util.Comparator.comparing(ProductBatch::getExpiryDate,
+                java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                .thenComparing(ProductBatch::getId);
     }
     public boolean hasAvailableStock(double requestedQuantity) {
         return requestedQuantity > 0.0 && availableQuantity + QUANTITY_TOLERANCE >= requestedQuantity;

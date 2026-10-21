@@ -17,6 +17,25 @@ import org.junit.Test;
 
 public class ProductViewModelTest {
     @Rule public final InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
+    @Test public void publicListRequiresLiveBatchAndReappearsAfterNewBatchArrives() {
+        FakeProductRepository repository = new FakeProductRepository();
+        ProductViewModel viewModel = new ProductViewModel(repository, new FakeAuthRepository());
+        viewModel.getPublicProducts().observeForever(products -> { });
+        Product product = new Product("product", "seller", "vegetables", "Rau", "", 100, 80, "kg", "", "",
+            new ArrayList<>(), com.rescuefarm.domain.enums.ProductStatus.ACTIVE);
+        repository.products.setValue(java.util.Collections.singletonList(product));
+        assertTrue(viewModel.getPublicProductsSnapshot().isEmpty());
+        long now = System.currentTimeMillis();
+        ProductBatch old = ProductBatch.restore("old", "product", null, new java.util.Date(1), new java.util.Date(now - 1000),
+            10, 10, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        repository.batches.setValue(java.util.Collections.singletonList(old));
+        assertTrue(viewModel.getPublicProductsSnapshot().isEmpty());
+        ProductBatch fresh = ProductBatch.restore("fresh", "product", null, new java.util.Date(now), new java.util.Date(now + 3600000),
+            10, 10, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        repository.batches.setValue(java.util.Arrays.asList(old, fresh));
+        assertEquals(1, viewModel.getPublicProducts().getValue().size());
+        assertEquals(10, old.getAvailableQuantity(), 0);
+    }
 
     @Test public void invalidPrice_isRejectedBeforeRepository() {
         FakeProductRepository repository = new FakeProductRepository();

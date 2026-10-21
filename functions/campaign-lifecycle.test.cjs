@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const {MemoryFirestore, Timestamp, admin} = require('./test-support/memory-firestore.cjs');
 const {createCampaignLifecycle, readAllocations} = require('./campaign-lifecycle');
 const {createCommerce} = require('./commerce');
+const {createBatchExpiry} = require('./batch-expiry');
 const ts = delta => new Timestamp(Date.now() + delta);
 const seller = {uid: 'seller', role: 'SELLER'}, moderator = {uid: 'admin', role: 'ADMIN'};
 function setup(overrides = {}) {
@@ -39,6 +40,63 @@ async function finish(fixture, id) {
   for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'DELIVERED'])
     await fixture.lifecycle.transitionOrder(targetStatus === 'DELIVERED' ? buyer : seller, {orderId: id, targetStatus});
 }
+
+function expireA(f) {
+  f.db.documents.set('productBatches/a', {...f.db.snapshot('productBatches/a').data(), expiryDate: ts(-1000)});
+}
+
+test('expired batches block forward order transitions atomically including pickup receipt', async () => {
+  const f = setup(), request = data();
+  await f.commerce.checkout(request, identity);
+  for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'])
+    await f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus});
+  expireA(f);
+  await assert.rejects(() => f.lifecycle.transitionOrder(buyer, {orderId: request.requestId, targetStatus: 'DELIVERED'}), /hết hạn/);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 10);
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 0);
+  assert.equal(f.db.snapshot(`orders/${request.requestId}`).get('status'), 'READY_FOR_PICKUP');
+});
+
+test('expiry sweep cancels unpaid cash orders once, records detection and preserves physical stock', async () => {
+  const f = setup(); await activate(f); const request = data();
+  await f.commerce.checkout(request, identity); expireA(f);
+  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle});
+  await worker.reconcile(); await worker.reconcile();
+  const batch = f.db.snapshot('productBatches/a').data();
+  assert.equal(batch.status, 'EXPIRED'); assert.equal(batch.availableQuantity, 200);
+  assert.equal(batch.reservedQuantity, 0); assert.equal(batch.soldQuantity, 0);
+  assert.equal(batch.initialQuantity, batch.availableQuantity + batch.reservedQuantity + batch.soldQuantity);
+  assert.equal(f.db.snapshot(`orders/${request.requestId}`).get('cancellationReason'), 'BATCH_EXPIRED');
+  assert.equal(f.db.snapshot('campaigns/campaign').get('reservedByBatch').a, 0);
+  assert.equal((await f.db.collection('batchExpiryEvents').get()).size, 1);
+  assert.equal(f.db.snapshot('batchExpiryEvents/a').get('availableQuantityAtDetection'), 190);
+});
+
+test('expiry sweep retains paid orders for review without fabricated refunds or consumed stock', async () => {
+  const f = setup(), request = data(); await legacyBankCheckout(f, request);
+  await f.lifecycle.confirmBankTransfer(seller, {orderId: request.requestId, referenceCode: 'BANK-EXPIRY'});
+  expireA(f);
+  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle});
+  await worker.reconcile(); await worker.reconcile();
+  const order = f.db.snapshot(`orders/${request.requestId}`).data();
+  assert.equal(order.paymentStatus, 'PAID'); assert.equal(order.status, 'CONFIRMED');
+  assert.equal(order.expiryReviewRequired, true);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 10);
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 0);
+  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'PREPARING'}), /hết hạn/);
+});
+
+test('expiry pagination eventually visits later batches, preserves archived status and completed history', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); await finish(f, request.requestId);
+  expireA(f);
+  f.db.documents.set('productBatches/b', {...f.db.snapshot('productBatches/b').data(), expiryDate: ts(-500), status: 'ARCHIVED'});
+  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle, pageSize: 1});
+  await worker.reconcile(); await worker.reconcile(); await worker.reconcile();
+  assert.equal((await f.db.collection('batchExpiryEvents').get()).size, 2);
+  assert.equal(f.db.snapshot('productBatches/b').get('status'), 'ARCHIVED');
+  assert.equal(f.db.snapshot(`orders/${request.requestId}`).get('status'), 'DELIVERED');
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+});
 
 test('approval links batches atomically, initializes allocation maps, and is idempotent', async () => {
   const f = setup(); await activate(f);

@@ -42,16 +42,39 @@ public class ProductViewModel extends ViewModel {
     private final androidx.lifecycle.MediatorLiveData<List<Product>> publicProducts = new androidx.lifecycle.MediatorLiveData<>();
     private boolean publicSourceBound;
     private boolean publicPageLoading;
+    private List<Product> publicCandidates = new ArrayList<>();
+    private final Map<String, LiveData<List<ProductBatch>>> publicBatchSources = new HashMap<>();
+    private final Map<String, List<ProductBatch>> publicBatches = new HashMap<>();
     public LiveData<List<Product>> getPublicProducts() {
         if (!publicSourceBound) {
             publicSourceBound = true;
-            publicProducts.addSource(repository.observePublicProductPage(), publicProducts::setValue);
+            publicProducts.addSource(repository.observePublicProductPage(), values -> {
+                publicCandidates = values == null ? new ArrayList<>() : new ArrayList<>(values);
+                java.util.Set<String> needed = new java.util.HashSet<>();
+                for (Product product : publicCandidates) if (product != null && product.isAvailable()) needed.add(product.getId());
+                for (String id : new ArrayList<>(publicBatchSources.keySet())) if (!needed.contains(id)) {
+                    publicProducts.removeSource(publicBatchSources.remove(id)); publicBatches.remove(id);
+                }
+                for (String id : needed) if (!publicBatchSources.containsKey(id)) {
+                    LiveData<List<ProductBatch>> source = repository.observeBatches(id);
+                    publicBatchSources.put(id, source);
+                    publicProducts.addSource(source, batches -> { publicBatches.put(id, batches); refreshPublicAvailability(); });
+                }
+                refreshPublicAvailability();
+            });
         }
         return publicProducts;
     }
     public List<Product> getPublicProductsSnapshot() {
-        return publicProducts.getValue() == null ? java.util.Collections.emptyList() : publicProducts.getValue();
+        return sellablePublicProducts();
     }
+    private List<Product> sellablePublicProducts() {
+        List<Product> result = new ArrayList<>(); Date now = new Date();
+        for (Product product : publicCandidates) if (product != null && product.isAvailable()
+                && ProductBatch.hasSellableBatch(product.getId(), publicBatches.get(product.getId()), now)) result.add(product);
+        return result;
+    }
+    public void refreshPublicAvailability() { publicProducts.setValue(sellablePublicProducts()); }
     public boolean hasMorePublicProducts() { return repository.hasMorePublicProducts(); }
     public boolean isPublicPageLoading() { return publicPageLoading; }
     public void refreshPublicPage(boolean reset) {

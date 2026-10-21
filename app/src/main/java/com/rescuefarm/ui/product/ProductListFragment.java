@@ -33,6 +33,7 @@ public class ProductListFragment extends Fragment {
         viewModel = new ViewModelProvider(this, new ProductViewModelFactory(requireContext()))
                 .get(ProductViewModel.class);
         viewModel.getPublicProducts().observe(getViewLifecycleOwner(), this::renderProducts);
+        com.rescuefarm.ui.common.ExpiryUiRefresh.bind(this, viewModel::refreshPublicAvailability);
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             renderProducts(viewModel.getPublicProductsSnapshot());
             if (value.getStatus() == ProductScreenState.Status.ERROR) {

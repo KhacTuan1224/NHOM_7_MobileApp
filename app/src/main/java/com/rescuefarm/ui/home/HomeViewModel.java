@@ -102,7 +102,13 @@ public class HomeViewModel extends ViewModel {
     public LiveData<String> getGreetingName() { return greetingName; }
     public List<Category> getCategoriesSnapshot() { return new ArrayList<>(categories); }
     public DiscoveryQuery getQuery() { return query; }
-    public List<Product> getProductsSnapshot() { return new ArrayList<>(products); }
+    public List<Product> getProductsSnapshot() {
+        List<Product> visible = new ArrayList<>();
+        Date now = new Date();
+        for (Product product : products) if (product != null && product.isAvailable()
+                && ProductBatch.hasSellableBatch(product.getId(), productBatches.get(product.getId()), now)) visible.add(product);
+        return visible;
+    }
     /** Category content is independent of the search/filter state saved by Home. */
     public List<DiscoveryResult> getCategoryContent(String categoryId) {
         if (categoryId == null || categoryId.trim().isEmpty()) return new ArrayList<>();
@@ -399,6 +405,10 @@ public class HomeViewModel extends ViewModel {
     public void refreshTimeSensitiveContent() { publish(); }
     public long nextPromotionChangeDelay() {
         long now=System.currentTimeMillis(),next=Long.MAX_VALUE;
+        for (List<ProductBatch> batches : productBatches.values()) if (batches != null)
+            for (ProductBatch batch : batches) if (batch != null && batch.getExpiryDate() != null
+                    && batch.getExpiryDate().getTime() > now)
+                next = Math.min(next, batch.getExpiryDate().getTime());
         for(com.rescuefarm.domain.model.Promotion promo:promotions.values()) if(promo!=null&&promo.isActive()) {
             if(promo.getStartDate()!=null&&promo.getStartDate().getTime()>now)next=Math.min(next,promo.getStartDate().getTime());
             if(promo.getEndDate()!=null&&promo.getEndDate().getTime()>now)next=Math.min(next,promo.getEndDate().getTime());

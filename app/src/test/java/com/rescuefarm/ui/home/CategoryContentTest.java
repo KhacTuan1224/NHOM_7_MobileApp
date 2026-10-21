@@ -79,7 +79,10 @@ public class CategoryContentTest {
                         case "observeCategories": return new MutableLiveData<>(Collections.emptyList());
                         case "observePromotion": return new MutableLiveData<>();
                         case "observeBatches": return new MutableLiveData<>("mango".equals(args[0])
-                                ? Collections.singletonList(batch) : Collections.emptyList());
+                                ? Collections.singletonList(batch) : "carrot".equals(args[0])
+                                ? Collections.singletonList(ProductBatch.restore("carrot-batch", "carrot", null,
+                                    new Date(now - 60000), new Date(now + 3600000), 10, 10, 0, 0, BatchStatus.AVAILABLE, 1))
+                                : Collections.emptyList());
                         case "close": return null;
                         default: throw new AssertionError(method.getName());
                     }

@@ -55,6 +55,29 @@ async function seed(values) {
   });
 }
 
+test('Expired batch cannot extend dates or replenish stock but can be archived without deleting history', async () => {
+  const path = 'productBatches/batch-a';
+  await seed({[path]: {id: 'batch-a', productId: 'product-a', activeCampaignId: '',
+    harvestDate: Timestamp.fromMillis(now - 2 * 86400000), expiryDate: past,
+    initialQuantity: 80, availableQuantity: 80, reservedQuantity: 0, soldQuantity: 0,
+    inventoryVersion: 2, status: 'AVAILABLE', createdAt: past, updatedAt: past, everOrdered: false}});
+  const db = env.authenticatedContext('seller').firestore(), ref = doc(db, path);
+  await assertFails(updateDoc(ref, {expiryDate: future, inventoryVersion: 3, updatedAt: serverTimestamp()}));
+  await assertFails(updateDoc(ref, {initialQuantity: 100, availableQuantity: 100, inventoryVersion: 3, updatedAt: serverTimestamp()}));
+  await assertSucceeds(updateDoc(ref, {status: 'ARCHIVED', inventoryVersion: 3, updatedAt: serverTimestamp()}));
+  assert.equal((await getDoc(ref)).data().availableQuantity, 80);
+  await assertFails(deleteDoc(ref));
+});
+
+test('Batch expiry detection ledger is private to seller and admin and never client-writable', async () => {
+  const path = 'batchExpiryEvents/batch-a';
+  await seed({[path]: {batchId: 'batch-a', productId: 'product-a', sellerId: 'seller', availableQuantityAtDetection: 80}});
+  await assertSucceeds(getDoc(doc(env.authenticatedContext('seller').firestore(), path)));
+  await assertFails(getDoc(doc(env.authenticatedContext('customer-a').firestore(), path)));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), path)));
+  await assertFails(updateDoc(doc(env.authenticatedContext('seller').firestore(), path), {availableQuantityAtDetection: 0}));
+});
+
 test('Favorite state query handles first use, add and remove without leaking another customer', async () => {
   const db = env.authenticatedContext('customer-a').firestore();
   const stateQuery = query(collection(db, 'favorites'),

@@ -274,7 +274,13 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       if (!payment.exists || shipment && !shipment.exists) throw fail(409, 'Thiếu dữ liệu thanh toán/vận chuyển.');
       if (payment.get('status') !== order.paymentStatus) throw fail(409, 'Trạng thái thanh toán chưa nhất quán; cần đối soát trước khi xử lý.');
       const terminal = terminalOrders.has(target), reservations = quantityMap(order.batchReservations || {}, true);
-      const batches = terminal ? await Promise.all(Object.keys(reservations).map(batch => tx.get(db.collection('productBatches').doc(batch)))) : [];
+      const batches = await Promise.all(Object.keys(reservations).map(batch => tx.get(db.collection('productBatches').doc(batch))));
+      const expired = batches.some(batch => !batch.exists || millis(batch.get('expiryDate')) <= Date.now()
+        || ['EXPIRED', 'ARCHIVED'].includes(batch.get('status')));
+      if (target !== 'CANCELLED' && expired)
+        throw fail(409, 'Lô của đơn đã hết hạn hoặc không còn hợp lệ. Không thể tiếp tục giao/nhận; cần đối soát với cửa hàng.');
+      if (data.cancelReason === 'BATCH_EXPIRED' && (caller.role !== 'ADMIN' || !expired))
+        throw fail(409, 'Chỉ hệ thống được hủy đơn có lô hết hạn.');
       const campaignRef = text(order.campaignId) ? db.collection('campaigns').doc(order.campaignId) : null;
       const campaignSnap = terminal && campaignRef ? await tx.get(campaignRef) : null;
       if (terminal && order.campaignReservedQuantity > 0 && (!campaignSnap || !campaignSnap.exists))
@@ -301,7 +307,7 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       }
       // No more reads below this point. Inventory and per-batch allocations commit together.
       const unlinkIds = new Set(closedBatches.filter(b => b.exists && b.get('activeCampaignId') === order.campaignId).map(b => b.id));
-      for (const batch of batches) {
+      for (const batch of terminal ? batches : []) {
         if (!batch.exists) throw fail(409, 'Không tìm thấy lô hàng của đơn.');
         const b = batch.data(), quantity = reservations[batch.id];
         if (![b.initialQuantity, b.availableQuantity, b.reservedQuantity, b.soldQuantity].every(Number.isFinite)
@@ -323,6 +329,8 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       const paymentStatus = target === 'DELIVERED' && order.paymentMethod !== 'BANK_TRANSFER' ? 'PAID'
         : target === 'CANCELLED' ? 'FAILED' : order.paymentStatus;
       tx.update(orderRef, {status: target, paymentStatus, updatedAt: stamp(),
+        ...(target === 'CANCELLED' && data.cancelReason === 'BATCH_EXPIRED'
+          ? {cancellationReason: 'BATCH_EXPIRED', expiryReviewRequired: false} : {}),
         ...(terminal ? {inventoryFinalized: true, finalizedStatus: target} : {}),
         ...(target === 'DELIVERED' ? {deliveredAt: stamp(), receivedAt: stamp(), receivedBy: caller.uid || order.ownerId} : {})});
       if (terminal) tx.update(paymentRef, {status: paymentStatus, updatedAt: stamp(),
