@@ -5,6 +5,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 const {createCommerce, price} = require('./commerce');
 const {createCampaignLifecycle} = require('./campaign-lifecycle');
+const {createBatchExpiry} = require('./batch-expiry');
 const {createNotificationWorker} = require('./notification-outbox');
 const {createNotificationsApi} = require('./notifications-api');
 const {createSePayApi} = require('./sepay');
@@ -99,6 +100,21 @@ test('expanded rescue and normal checkout share one stock ledger without releasi
   assert.equal((await post('/orders/transition', {orderId: order.requestId, targetStatus: 'CANCELLED'}, 'seller')).status, 200);
   stock = (await db.doc('productBatches/batch-a').get()).data();
   assert.equal(stock.availableQuantity, 10); assert.equal(stock.reservedQuantity, 0);
+});
+
+test('Batch expiry real Firestore sweep preserves stock, cancels cash hold and records one private event', async () => {
+  const data = request();
+  assert.equal((await post('/checkoutCustomer', data, 'customer-a')).status, 200);
+  await db.doc('productBatches/batch-a').update({expiryDate: past()});
+  const worker = createBatchExpiry({db, admin, campaignLifecycle, pageSize: 1});
+  for (let i = 0; i < 5; i++) await worker.reconcile();
+  const stock = (await db.doc('productBatches/batch-a').get()).data();
+  assert.equal(stock.status, 'EXPIRED'); assert.equal(stock.availableQuantity, 10);
+  assert.equal(stock.reservedQuantity, 0); assert.equal(stock.soldQuantity, 0);
+  const order = (await db.doc(`orders/${data.requestId}`).get()).data();
+  assert.equal(order.status, 'CANCELLED'); assert.equal(order.cancellationReason, 'BATCH_EXPIRED');
+  assert.equal((await db.collection('batchExpiryEvents').get()).size, 1);
+  assert.equal((await db.doc('batchExpiryEvents/batch-a').get()).get('sellerId'), 'seller');
 });
 
 test('Customer checkout reserves stock, writes snapshots/payment and removes only bought cart quantities', async () => {

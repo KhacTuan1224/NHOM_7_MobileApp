@@ -14,6 +14,23 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 public class HomeContentBuilderTest {
+    @Test public void discountedProductsDisappearAtExpiryAndReturnWithFreshStock() {
+        Date now = new Date(TimeUnit.DAYS.toMillis(100));
+        HomeContentBuilder builder = new HomeContentBuilder();
+        java.util.Map<String, java.util.List<com.rescuefarm.domain.model.ProductBatch>> batches =
+                Collections.singletonMap("a", Collections.singletonList(batch("old", "a", now, 0,
+                    com.rescuefarm.domain.enums.BatchStatus.AVAILABLE)));
+        HomeViewState expired = builder.build(Collections.emptyList(), Collections.singletonList(product("a")),
+            Collections.emptyList(), Collections.emptyList(), batches, null, null, now,
+            HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertTrue(expired.getValueProducts().isEmpty());
+        batches = Collections.singletonMap("a", Collections.singletonList(batch("new", "a", now, 2,
+                    com.rescuefarm.domain.enums.BatchStatus.AVAILABLE)));
+        HomeViewState fresh = builder.build(Collections.emptyList(), Collections.singletonList(product("a")),
+            Collections.emptyList(), Collections.emptyList(), batches, null, null, now,
+            HomeViewState.LocationState.PERMISSION_REQUIRED, false, "", HomeViewState.DataFreshness.FRESH);
+        assertEquals(1, fresh.getValueProducts().size());
+    }
     @Test public void sectionOrder_includesBatchExpiryBeforeValueProducts() {
         assertEquals(11, HomeViewState.SECTION_ORDER.size());
         assertEquals(HomeViewState.Section.NEAR_EXPIRY, HomeViewState.SECTION_ORDER.get(5));

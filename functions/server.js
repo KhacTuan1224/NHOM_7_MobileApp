@@ -92,6 +92,7 @@ app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: aut
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
 app.use(require('./seller-payment-options').createSellerPaymentOptionsApi({db}).router);
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
+const batchExpiry = require('./batch-expiry').createBatchExpiry({db, admin, campaignLifecycle});
 app.use(campaignLifecycle.router);
 app.use(require('./seller-analytics').createSellerAnalytics({db, admin, authenticate: auth}).router);
 const campaignMedia = require('./campaign-media').createCampaignMedia({db, admin, authenticate: auth});
@@ -230,7 +231,7 @@ migrateSellerPaymentProfiles().then(() => campaignMedia.migrateReferences()).the
     if (reconciling) return;
     reconciling = true;
     try {
-      const jobs = await Promise.allSettled([campaignLifecycle.reconcileExpired(), worker.runOnce(), campaignMedia.reconcile(), rescuePrograms.reconcile()]);
+      const jobs = await Promise.allSettled([campaignLifecycle.reconcileExpired(), batchExpiry.reconcile(), worker.runOnce(), campaignMedia.reconcile(), rescuePrograms.reconcile()]);
       for (const result of jobs) if (result.status === 'rejected') console.error('Backend reconciliation:', result.reason.message);
     }
     catch (error) { console.error('Campaign reconciliation failed:', error.message); }

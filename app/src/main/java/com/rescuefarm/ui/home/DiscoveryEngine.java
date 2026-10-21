@@ -56,7 +56,7 @@ public final class DiscoveryEngine {
             List<ProductBatch> productBatches = batches.get(product.getId());
             ProductBatch candidate = selectBatch(product, productBatches, q, at, campaignById);
             boolean needsBatch = q.needsBatchData();
-            if (needsBatch && candidate == null) continue;
+            if (candidate == null) continue;
             if (needsBatch && q.getMinStock() > 0D
                     && available(productBatches, at, q, campaignById) < q.getMinStock()) continue;
 
@@ -121,11 +121,7 @@ public final class DiscoveryEngine {
                     && (campaign == null || !matchesProvince(campaign.getLocationName(), q.getProvince()))) continue;
             candidates.add(batch);
         }
-        candidates.sort(Comparator
-                .comparingInt((ProductBatch batch) -> urgencyRank(campaigns.get(batch.getActiveCampaignId())))
-                .thenComparingLong(batch -> batch.getExpiryDate() == null
-                        ? Long.MAX_VALUE : batch.getExpiryDate().getTime())
-                .thenComparing(ProductBatch::getId));
+        candidates.sort(ProductBatch.expiryOrder());
         return candidates.isEmpty() ? null : candidates.get(0);
     }
 

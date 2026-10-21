@@ -78,6 +78,7 @@ public class OnSiteRescueFlowTest {
 
     @Test public void cancelledOnSiteOrder_releasesBatchAndCampaignReservation() {
         ProductBatch batch = new ProductBatch("batch-2", "product-2", 5D);
+        batch.updateDetails(new java.util.Date(1), new java.util.Date(Long.MAX_VALUE), 5, new java.util.Date());
         RescueCampaign campaign = new RescueCampaign("campaign-2", "seller-1", 5D);
         InventoryService inventory = new InventoryService();
         OrderLifecycleService lifecycle = new OrderLifecycleService();

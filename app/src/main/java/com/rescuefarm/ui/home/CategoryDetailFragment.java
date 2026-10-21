@@ -56,6 +56,7 @@ public class CategoryDetailFragment extends Fragment {
         });
         viewModel.getHomeState().observe(getViewLifecycleOwner(), this::render);
         viewModel.ensureLoaded();
+        com.rescuefarm.ui.common.ExpiryUiRefresh.bind(this, viewModel::refreshTimeSensitiveContent);
     }
 
     private void render(HomeViewState state) {

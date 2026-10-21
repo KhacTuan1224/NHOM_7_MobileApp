@@ -71,6 +71,7 @@ public class DiscoveryFragment extends Fragment {
         view.findViewById(R.id.clearFilterButton).setOnClickListener(v -> clear());
         view.findViewById(R.id.discoveryLocationButton).setOnClickListener(v -> requestLocation());
         viewModel.refresh();
+        com.rescuefarm.ui.common.ExpiryUiRefresh.bind(this, viewModel::refreshTimeSensitiveContent);
     }
     private void setupCategories(List<Category> values) {
         String selectedId = viewModel.getQuery().getCategoryId();
