@@ -44,6 +44,7 @@ public class CartViewModel extends ViewModel {
     public LiveData<Cart> getCart() { return cart; }
     public LiveData<List<Product>> getProducts() { return productRepository.observeProducts(); }
     public LiveData<CartScreenState> getState() { return state; }
+    public void showMigrationPending(String message) { state.postValue(CartScreenState.of(CartScreenState.Status.ERROR, message)); }
     public LiveData<Map<String, String>> getSellerNames() { return sellerNames; }
 
     public void loadSellerNames(Set<String> sellerIds) {

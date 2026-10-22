@@ -26,6 +26,7 @@ public final class OrderListRow {
         View row = LayoutInflater.from(context).inflate(R.layout.item_order_row, parent, false);
         ((TextView) row.findViewById(R.id.orderRowCode)).setText(order.getOrderCode());
         String status = OrderLabels.status(order.getStatus(), order.getPaymentMethod());
+        if (order.isExpiryReviewRequired()) status += "\nCần đối soát";
         if (showPaymentStatus) status += "\n" + context.getString(R.string.order_row_payment_status,
                 EnumLabels.label(order.getPaymentStatus()));
         ((TextView) row.findViewById(R.id.orderRowStatus)).setText(status);

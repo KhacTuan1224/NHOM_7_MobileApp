@@ -16,7 +16,7 @@ final class RescueMarketUi {
             PURPLE = 0xFF7751BB, BORDER = 0xFFF0ECE8, CREAM = 0xFFFFF5EE;
     private RescueMarketUi() { }
     static int dp(Context c, float value) { return Math.round(c.getResources().getDisplayMetrics().density * value); }
-    static LinearLayout col(Context c) { LinearLayout l = new LinearLayout(c); l.setOrientation(1); return l; }
+    static LinearLayout col(Context c) { LinearLayout l = new LinearLayout(c); l.setOrientation(LinearLayout.VERTICAL); return l; }
     static LinearLayout row(Context c) { LinearLayout l = new LinearLayout(c); l.setGravity(Gravity.CENTER_VERTICAL); return l; }
     static TextView label(LinearLayout parent, String text, int size, int color, boolean bold) {
         TextView v = new TextView(parent.getContext()); v.setText(text); v.setTextSize(size); v.setTextColor(color);

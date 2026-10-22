@@ -1,5 +1,7 @@
 {
   "indexes": [
+    {"collectionGroup":"orders","queryScope":"COLLECTION","fields":[{"fieldPath":"sellerId","order":"ASCENDING"},{"fieldPath":"expiryReviewRequired","order":"ASCENDING"}]},
+    {"collectionGroup":"orders","queryScope":"COLLECTION","fields":[{"fieldPath":"ownerId","order":"ASCENDING"},{"fieldPath":"expiryReviewRequired","order":"ASCENDING"}]},
     {"collectionGroup": "rescueClaims", "queryScope": "COLLECTION", "fields": [{"fieldPath": "sellerId", "order": "ASCENDING"}, {"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "receivedAt", "order": "ASCENDING"}]},
     {"collectionGroup":"rescueOffers","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"nextActionAt","order":"ASCENDING"}]},
     {"collectionGroup":"rescueOffers","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"type","order":"ASCENDING"},{"fieldPath":"closesAt","order":"ASCENDING"}]},

@@ -45,6 +45,58 @@ function expireA(f) {
   f.db.documents.set('productBatches/a', {...f.db.snapshot('productBatches/a').data(), expiryDate: ts(-1000)});
 }
 
+const resolution = (orderId, mode = 'REFUND_CANCEL') => ({orderId, mode, requestId: 'resolution-1', reason: 'Đã đối chiếu chứng từ thực tế',
+  evidenceUrl: 'https://example.test/proof.png', refundReference: 'REFUND-001', confirmRefunded: true});
+function markPaid(f, id) {
+  for (const path of ['orders/' + id, 'payments/' + id]) f.db.documents.set(path,
+    {...f.db.snapshot(path).data(), ...(path.startsWith('orders') ? {paymentStatus: 'PAID', expiryReviewRequired: true} : {status: 'PAID'})});
+}
+test('admin full-refund reconciliation returns stock and campaign allocation once and preserves payment proof', async () => {
+  const f = setup(); await activate(f); const request = data(); await f.commerce.checkout(request, identity);
+  markPaid(f, request.requestId); expireA(f);
+  const command = {...resolution(request.requestId), refundAmount: f.db.snapshot('orders/' + request.requestId).get('totalAmount')};
+  await assert.rejects(f.lifecycle.resolveOrder(seller, command), e => e.status === 403);
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, {...command, refundAmount: 1}));
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 10);
+  await f.lifecycle.resolveOrder(moderator, command);
+  assert.equal((await f.lifecycle.resolveOrder(moderator, command)).replay, true);
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, {...command, reason: 'changed'}), e => e.status === 409);
+  assert.equal(f.db.snapshot('orders/' + request.requestId).get('status'), 'CANCELLED');
+  assert.equal(f.db.snapshot('orders/' + request.requestId).get('expiryReviewRequired'), false);
+  assert.equal(f.db.snapshot('payments/' + request.requestId).get('status'), 'REFUNDED');
+  assert.equal(f.db.snapshot('productBatches/a').get('availableQuantity'), 200);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 0);
+  assert.equal(f.db.snapshot('campaigns/campaign').get('reservedByBatch').a, 0);
+});
+test('late receipt requires server-recorded pre-expiry handover and buyer acknowledgment; no backdating', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); markPaid(f, request.requestId); expireA(f);
+  const command = resolution(request.requestId, 'LATE_RECEIPT');
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, command));
+  const orderPath = 'orders/' + request.requestId;
+  f.db.documents.set(orderPath, {...f.db.snapshot(orderPath).data(), handoverRecordedAt: ts(-5000), handoverEvidenceUrl: 'https://example.test/handover', buyerReceiptAcknowledgedAt: ts(-1)});
+  await f.lifecycle.resolveOrder(moderator, command);
+  assert.equal(f.db.snapshot(orderPath).get('status'), 'DELIVERED');
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 0);
+});
+test('shipped or handed-over stock cannot be released by refund resolution without recorded physical return', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); markPaid(f, request.requestId); expireA(f);
+  const orderPath = 'orders/' + request.requestId;
+  f.db.documents.set(orderPath, {...f.db.snapshot(orderPath).data(), handoverRecordedAt: ts(-5000)});
+  const command = {...resolution(request.requestId), refundAmount: f.db.snapshot(orderPath).get('totalAmount'), confirmReturned: true};
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, command));
+  f.db.documents.set(orderPath, {...f.db.snapshot(orderPath).data(), returnRecordedAt: ts(-100), returnEvidenceUrl: 'https://example.test/returned'});
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, {...command, mode: 'LATE_RECEIPT'}), e => e.status === 409);
+  await f.lifecycle.resolveOrder(moderator, command);
+  assert.equal(f.db.snapshot(orderPath).get('status'), 'CANCELLED');
+});
+test('reconciliation never reports success for a legacy terminal order without a matching resolution record', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); await finish(f, request.requestId);
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, resolution(request.requestId, 'LATE_RECEIPT')), e => e.status === 409);
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+  assert.equal((await f.db.collection('orderReconciliationEvents').get()).size, 0);
+});
+
 test('expired batches block forward order transitions atomically including pickup receipt', async () => {
   const f = setup(), request = data();
   await f.commerce.checkout(request, identity);
@@ -83,7 +135,7 @@ test('expiry sweep retains paid orders for review without fabricated refunds or 
   assert.equal(order.expiryReviewRequired, true);
   assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 10);
   assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 0);
-  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'PREPARING'}), /hết hạn/);
+  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'PREPARING'}), /đối soát/);
 });
 
 test('expiry pagination eventually visits later batches, preserves archived status and completed history', async () => {

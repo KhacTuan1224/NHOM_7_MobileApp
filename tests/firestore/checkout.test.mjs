@@ -646,7 +646,7 @@ test('Admin can moderate Campaign comments while Customer cannot bypass moderati
   });
   const owner = env.authenticatedContext('customer-a').firestore();
   const admin = env.authenticatedContext('admin').firestore();
-  const moderation = {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+  const moderation = {status: 'HIDDEN', moderationPreviousStatus: 'ACTIVE', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
     moderationReason: 'Inappropriate content', updatedAt: serverTimestamp()};
   await assertFails(updateDoc(doc(owner, path), moderation));
   await assertSucceeds(updateDoc(doc(admin, path), moderation));
@@ -839,7 +839,7 @@ test('Admin can hide the exact Campaign comment and audit its parent without cha
   await seed({'campaigns/p': {status: 'ACTIVE'}, 'campaigns/c': {status: 'ACTIVE'},
     'campaigns/p/comments/same': {...common, campaignId: 'p'}, 'campaigns/c/comments/same': {...common, campaignId: 'c'}});
   const db = env.authenticatedContext('admin').firestore(), batch = writeBatch(db);
-  batch.update(doc(db, 'campaigns/p/comments/same'), {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+  batch.update(doc(db, 'campaigns/p/comments/same'), {status: 'HIDDEN', moderationPreviousStatus: 'ACTIVE', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
     moderationReason: 'Violation', updatedAt: serverTimestamp()});
   batch.set(doc(db, 'adminAuditLogs/legacy-hide'), {adminId: 'admin', resourceType: 'COMMENTS', resourceId: 'same',
     resourcePath: 'campaigns/p/comments/same', fromState: 'ACTIVE', toState: 'HIDDEN', reason: 'Violation', createdAt: serverTimestamp()});
@@ -920,7 +920,7 @@ test('Admin edits legacy category metadata while preserving seed image and missi
   const saved = (await getDoc(doc(db, 'categories/cat-grains'))).data();
   assert.equal(saved.name, 'Củ và Hạt'); assert.equal(saved.imageUrl, oldImage); assert.equal(saved.displayOrder, 4);
   await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, imageUrl: 'https://example.com/replacement.png'}));
-  await assertFails(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false}));
+  await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false}));
   await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false, moderationReason: 'Tạm ngừng danh mục'}));
   await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: true,
     imageUrl: 'https://res.cloudinary.com/demo/image/upload/category.png'}));

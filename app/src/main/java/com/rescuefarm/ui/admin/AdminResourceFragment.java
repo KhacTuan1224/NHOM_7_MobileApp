@@ -104,6 +104,7 @@ public final class AdminResourceFragment extends Fragment {
         view.findViewById(R.id.adminModerationReason).setVisibility(View.GONE);
         progress = view.findViewById(R.id.adminResourceProgress);
         container = view.findViewById(R.id.adminResourceContainer);
+        if (section == Section.ORDERS) com.rescuefarm.ui.order.OrderReconciliationFragment.addEntry(this, container, "Đơn cần đối soát", "");
         searchInput = view.findViewById(R.id.adminSearchInput);
         statusFilter = view.findViewById(R.id.adminStatusFilter);
         loadMoreButton = view.findViewById(R.id.loadMoreAdminItemsButton);
@@ -331,6 +332,11 @@ public final class AdminResourceFragment extends Fragment {
 
     private void changeCatalogVisibility(AdminListItem item, Button toggle) {
         boolean show = !item.isActive();
+        if (section == Section.CATEGORIES) {
+            toggle.setEnabled(false);
+            viewModel.setActive(item.getId(), show, "");
+            return;
+        }
         if (show) {
             toggle.setEnabled(false);
             viewModel.setActive(item.getId(), true, "");
@@ -427,7 +433,8 @@ public final class AdminResourceFragment extends Fragment {
                 chooseBannerCampaign(campaignField, selectedCampaignId));
         final EditText startField = start, endField = end;
         CheckBox active = new CheckBox(requireContext()); active.setText("Đang hiển thị"); active.setChecked(true); fields.addView(active);
-        EditText note = editor("Lý do quản trị (bắt buộc khi tắt) "); note.setMinLines(2); fields.addView(note);
+        EditText note = editor("Lý do quản trị (bắt buộc khi tắt) "); note.setMinLines(2);
+        if (!category) fields.addView(note);
         final boolean[] detailLoaded = {!editing};
         upload.setEnabled(!editing);
         if (editing) {
@@ -485,14 +492,14 @@ public final class AdminResourceFragment extends Fragment {
             String resourceId = id.getText().toString().trim();
             String resourceName = name.getText().toString().trim();
             String displayImage = image.getText().toString().trim();
-            String reasonText = note.getText().toString().trim();
+            String reasonText = category ? "" : note.getText().toString().trim();
             if (!com.rescuefarm.service.admin.CatalogImagePolicy.isAllowed(displayImage, originalImageUrl[0])) {
                 image.setVisibility(View.VISIBLE); image.setError("Nhập đường dẫn ảnh HTTPS hợp lệ."); return;
             }
             if (resourceName.length() < (category ? 2 : 3) || resourceName.length() > 120) {
                 name.setError(category ? "Tên danh mục phải có từ 2 đến 120 ký tự." : "Tiêu đề phải có từ 3 đến 120 ký tự."); return;
             }
-            if (!active.isChecked() && reasonText.length() < 3) {
+            if (!category && !active.isChecked() && reasonText.length() < 3) {
                 note.setError("Nhập lý do tắt hiển thị (ít nhất 3 ký tự)."); return;
             }
             int displayOrder;

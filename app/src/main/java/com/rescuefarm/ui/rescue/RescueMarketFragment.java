@@ -74,7 +74,7 @@ abstract class RescueMarketFragment extends Fragment {
             NavHostFragment.findNavController(this).navigate(R.id.rescueHubFragment, args); });
         NavigationAwareNestedScrollView scroll = new NavigationAwareNestedScrollView(c); scroll.setFillViewport(true);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        ResponsiveContentLayout content = new ResponsiveContentLayout(c); content.setOrientation(1);
+        ResponsiveContentLayout content = new ResponsiveContentLayout(c); content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(c, 18), 0, dp(c, 18), dp(c, 28));
         scroll.addView(content, new android.widget.FrameLayout.LayoutParams(-1, -2, android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL));
         body = content; buildPage();

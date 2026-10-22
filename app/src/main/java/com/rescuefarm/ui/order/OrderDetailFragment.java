@@ -76,6 +76,8 @@ public class OrderDetailFragment extends Fragment {
         orderCodeView = view.findViewById(R.id.orderDetailCode);
         orderStatusView = view.findViewById(R.id.orderDetailStatus);
         orderInfo = view.findViewById(R.id.orderDetailInfoContainer);
+        OrderReconciliationFragment.addEntry(this, orderInfo, "Bằng chứng giao nhận / Đối soát",
+            getArguments() == null ? "" : getArguments().getString("orderId", ""));
         instructions = view.findViewById(R.id.paymentInstructionsText);
         message = view.findViewById(R.id.orderLifecycleMessage); bankInfo = view.findViewById(R.id.orderBankInfo);
         qrImage = view.findViewById(R.id.orderBankQr); items = view.findViewById(R.id.orderItemsContainer);
@@ -231,6 +233,12 @@ public class OrderDetailFragment extends Fragment {
         orderCodeView.setText("Mã đơn " + order.getOrderCode());
         orderStatusView.setText(paymentStatusLabel(order.getStatus(), payment));
         renderOrderInfo(order, payment, shipment);
+        if (order.isExpiryReviewRequired()) {
+            addInfoRow("Cần đối soát", "Lô hàng hết hạn hoặc đơn có yêu cầu đối soát. Mở Bằng chứng giao nhận / Đối soát để xử lý.", false);
+        }
+        if (!order.getCancellationReason().isEmpty()) addInfoRow("Lý do hủy", order.getCancellationReason().equals("BATCH_EXPIRED")
+            ? "Lô hàng hết hạn trước khi nhận" : order.getCancellationReason().startsWith("RECONCILIATION_")
+            ? "Đơn đã được Admin đối soát và chốt hủy" : order.getCancellationReason(), false);
         renderTimeline(order, payment);
         instructions.setText(paymentInstructions(payment));
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
@@ -243,7 +251,7 @@ public class OrderDetailFragment extends Fragment {
             displayedTargets = nextStatuses;
             target.setAdapter(new EnumLabelAdapter<>(requireContext(), nextStatuses));
         }
-        boolean canTransition = seller && !nextStatuses.isEmpty();
+        boolean canTransition = seller && !nextStatuses.isEmpty() && !order.isExpiryReviewRequired();
         transitionButton.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         statusActionTitle.setVisibility(canTransition ? View.VISIBLE : View.GONE);
@@ -266,13 +274,13 @@ public class OrderDetailFragment extends Fragment {
             if (!shipmentTracking.hasFocus()) shipmentTracking.setText(shipment.getTrackingCode());
         }
         boolean buyer = (!uid.isEmpty() && uid.equals(order.getOwnerId())) || vm.canConfirmGuestReceipt(order.getId());
-        boolean canReceive = buyer && !seller && lifecycleService.canConfirmReceipt(
+        boolean canReceive = buyer && !seller && !order.isExpiryReviewRequired() && lifecycleService.canConfirmReceipt(
                 order.getFulfillmentType(), order.getStatus(), payment.getMethod(), payment.getStatus());
         receiptButton.setVisibility(canReceive ? View.VISIBLE : View.GONE);
         receiptButton.setText(payment.getMethod() == PaymentMethod.COD ? "Đã thanh toán và nhận đơn" : "Đã nhận hàng");
         boolean customer = !uid.isEmpty() && uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
         renderItems(order, customer);
-        if (bank && payment.usesAutomaticVerification() && !seller && payment.getStatus() == PaymentStatus.PENDING
+        if (bank && !order.isExpiryReviewRequired() && payment.usesAutomaticVerification() && !seller && payment.getStatus() == PaymentStatus.PENDING
                 && order.getStatus() != OrderStatus.CANCELLED) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
     }
@@ -500,6 +508,8 @@ public class OrderDetailFragment extends Fragment {
     }
 
     private String paymentInstructions(Payment payment) {
+        if (payment.getStatus() == PaymentStatus.REFUNDED)
+            return "Đã ghi nhận hoàn đủ tiền theo kết quả đối soát của Admin. Mở Bằng chứng giao nhận / Đối soát để xem kết quả.";
         if (payment.getMethod() == PaymentMethod.BANK_TRANSFER && payment.usesAutomaticVerification()) {
             if (payment.getStatus() == PaymentStatus.PAID)
                 return "Hệ thống đã xác minh chuyển khoản thành công. Người mua xác nhận Đã nhận hàng sau khi nhận đủ hàng.";
