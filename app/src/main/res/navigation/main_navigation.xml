@@ -404,4 +404,5 @@
         android:label="@string/promotion_wallet_title">
         <argument android:name="productId" app:argType="string" android:defaultValue="" />
     </fragment>
+    <fragment android:id="@+id/orderReconciliationFragment" android:name="com.rescuefarm.ui.order.OrderReconciliationFragment" android:label="Đối soát đơn hàng" />
 </navigation>

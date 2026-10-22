@@ -225,7 +225,9 @@ function createCampaignLifecycle({db, admin, authenticate}) {
     });
   }
 
-  async function transitionOrder(caller, data) {
+  async function transitionOrder(caller, data, resolution = null) {
+    const {validateResolution, resolutionFingerprint} = require('./order-reconciliation');
+    if (resolution && caller.role !== 'ADMIN') throw fail(403, 'Chỉ Admin được chốt đối soát.');
     if (!['SELLER', 'ADMIN', 'CUSTOMER', 'GUEST'].includes(caller.role)) throw fail(403, 'Bạn không có quyền xử lý đơn.');
     const id = text(data.orderId), target = text(data.targetStatus);
     if (!validId(id) || !['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'SHIPPING', 'DELIVERED', 'CANCELLED'].includes(target))
@@ -234,6 +236,13 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       const orderRef = db.collection('orders').doc(id), snap = await tx.get(orderRef);
       if (!snap.exists) throw fail(404, 'Không tìm thấy đơn.');
       const order = snap.data();
+      if (resolution && order.reconciliationResolution) {
+        if (order.reconciliationResolution.requestId === resolution.requestId
+            && order.reconciliationResolution.fingerprint === resolutionFingerprint(resolution)) return {ok: true, replay: true};
+        throw fail(409, 'Đơn đã được đối soát bằng yêu cầu khác.');
+      }
+      if (resolution && (order.inventoryFinalized || terminalOrders.has(order.status)))
+        throw fail(409, 'Đơn đã kết thúc trước yêu cầu đối soát này. Không có kết quả đối soát mới được ghi.');
       if (caller.role === 'SELLER') {
         const seller = await tx.get(db.collection('users').doc(caller.uid));
         if (order.sellerId !== caller.uid || !seller.exists || seller.get('status') !== 'ACTIVE'
@@ -255,17 +264,22 @@ function createCampaignLifecycle({db, admin, authenticate}) {
           buyer = Boolean(ownerAccess || lookupAccess);
         }
       }
-      if ((target === 'DELIVERED' && !buyer) || (target !== 'DELIVERED' && ['CUSTOMER', 'GUEST'].includes(caller.role)))
+      if ((target === 'DELIVERED' && !buyer && !resolution) || (target !== 'DELIVERED' && ['CUSTOMER', 'GUEST'].includes(caller.role)))
         throw fail(403, 'Chỉ người mua của đơn hàng được xác nhận đã nhận hàng.');
       if (order.status === target) return {ok: true, replay: true};
+      if (!resolution && order.expiryReviewRequired && target !== 'CANCELLED')
+        throw fail(409, 'Đơn đang chờ đối soát. Mở Bằng chứng giao nhận / Đối soát để xử lý.');
+      if (!resolution && target === 'CANCELLED' && order.handoverRecordedAt
+          && (!order.returnRecordedAt || millis(order.returnRecordedAt) < millis(order.handoverRecordedAt)))
+        throw fail(409, 'Cần ghi nhận đã thu hồi hàng thực tế trước khi trả kho.');
       if (order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus !== 'PAID'
           && !['CANCELLED', 'DELIVERED'].includes(target))
         throw fail(409, 'Cần nhập mã giao dịch và xác nhận đã nhận tiền trước khi xử lý đơn chuyển khoản.');
       const allowed = {PENDING: ['CONFIRMED', 'CANCELLED'], CONFIRMED: ['PREPARING', 'CANCELLED'],
         PREPARING: ['CANCELLED', order.fulfillmentType === 'DELIVERY' ? 'SHIPPING' : order.fulfillmentType === 'PICKUP' ? 'READY_FOR_PICKUP' : 'DELIVERED'],
         READY_FOR_PICKUP: ['DELIVERED', 'CANCELLED'], SHIPPING: ['DELIVERED']};
-      if (order.inventoryFinalized || !(allowed[order.status] || []).includes(target)) throw fail(409, 'Chuyển trạng thái đơn không hợp lệ.');
-      if (target === 'CANCELLED' && order.paymentStatus === 'PAID') throw fail(409, 'Đơn đã thanh toán cần quy trình hoàn tiền.');
+      if (order.inventoryFinalized || !resolution && !(allowed[order.status] || []).includes(target)) throw fail(409, 'Chuyển trạng thái đơn không hợp lệ.');
+      if (target === 'CANCELLED' && order.paymentStatus === 'PAID' && !resolution) throw fail(409, 'Đơn đã thanh toán cần quy trình hoàn tiền.');
       if (target === 'DELIVERED' && order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus !== 'PAID')
         throw fail(409, 'Cần xác nhận chuyển khoản trước khi hoàn tất.');
       const paymentRef = db.collection('payments').doc(id), payment = await tx.get(paymentRef);
@@ -275,9 +289,11 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       if (payment.get('status') !== order.paymentStatus) throw fail(409, 'Trạng thái thanh toán chưa nhất quán; cần đối soát trước khi xử lý.');
       const terminal = terminalOrders.has(target), reservations = quantityMap(order.batchReservations || {}, true);
       const batches = await Promise.all(Object.keys(reservations).map(batch => tx.get(db.collection('productBatches').doc(batch))));
+      const outcome = resolution ? validateResolution(order, payment.data(), batches, resolution) : null;
+      if (outcome && outcome.target !== target) throw fail(400, 'Kết quả không khớp trạng thái đối soát.');
       const expired = batches.some(batch => !batch.exists || millis(batch.get('expiryDate')) <= Date.now()
         || ['EXPIRED', 'ARCHIVED'].includes(batch.get('status')));
-      if (target !== 'CANCELLED' && expired)
+      if (target !== 'CANCELLED' && expired && !resolution)
         throw fail(409, 'Lô của đơn đã hết hạn hoặc không còn hợp lệ. Không thể tiếp tục giao/nhận; cần đối soát với cửa hàng.');
       if (data.cancelReason === 'BATCH_EXPIRED' && (caller.role !== 'ADMIN' || !expired))
         throw fail(409, 'Chỉ hệ thống được hủy đơn có lô hết hạn.');
@@ -326,16 +342,26 @@ function createCampaignLifecycle({db, admin, authenticate}) {
       for (const batch of closedBatches) if (unlinkIds.has(batch.id)) tx.update(batch.ref,
         {activeCampaignId: null, inventoryVersion: (batch.get('inventoryVersion') || 0) + 1, updatedAt: stamp()});
       if (campaignUpdate) tx.update(campaignRef, campaignUpdate);
-      const paymentStatus = target === 'DELIVERED' && order.paymentMethod !== 'BANK_TRANSFER' ? 'PAID'
+      const paymentStatus = outcome ? outcome.paymentStatus : target === 'DELIVERED' && order.paymentMethod !== 'BANK_TRANSFER' ? 'PAID'
         : target === 'CANCELLED' ? 'FAILED' : order.paymentStatus;
       tx.update(orderRef, {status: target, paymentStatus, updatedAt: stamp(),
+        ...(resolution ? {expiryReviewRequired: false, reconciliationResolution: {requestId: resolution.requestId,
+          fingerprint: resolutionFingerprint(resolution), mode: resolution.mode, reason: text(resolution.reason),
+          evidenceUrl: text(resolution.evidenceUrl), refundReference: paymentStatus === 'REFUNDED' ? text(resolution.refundReference) : '',
+          refundAmount: paymentStatus === 'REFUNDED' ? resolution.refundAmount : 0, resolvedBy: caller.uid, resolvedAt: stamp()},
+          cancellationReason: target === 'CANCELLED' ? 'RECONCILIATION_' + resolution.mode : ''} : {}),
         ...(target === 'CANCELLED' && data.cancelReason === 'BATCH_EXPIRED'
           ? {cancellationReason: 'BATCH_EXPIRED', expiryReviewRequired: false} : {}),
-        ...(terminal ? {inventoryFinalized: true, finalizedStatus: target} : {}),
-        ...(target === 'DELIVERED' ? {deliveredAt: stamp(), receivedAt: stamp(), receivedBy: caller.uid || order.ownerId} : {})});
+        ...(terminal ? {inventoryFinalized: true, finalizedStatus: target, expiryReviewRequired: false} : {}),
+        ...(target === 'DELIVERED' ? {deliveredAt: resolution ? order.handoverRecordedAt : stamp(), receivedAt: stamp(), receivedBy: resolution ? order.ownerId : caller.uid || order.ownerId} : {})});
       if (terminal) tx.update(paymentRef, {status: paymentStatus, updatedAt: stamp(),
+        ...(paymentStatus === 'REFUNDED' ? {refundedAt: stamp(), refundReference: text(resolution.refundReference), refundedAmount: resolution.refundAmount} : {}),
         ...(paymentStatus === 'PAID' && payment.get('status') !== 'PAID' ? {paidAt: stamp()} : {})});
       if (shipment) tx.update(shipmentRef, {status: ({PREPARING: 'READY', SHIPPING: 'SHIPPING', DELIVERED: 'DELIVERED', CANCELLED: 'CANCELLED'})[target] || 'PENDING', updatedAt: stamp()});
+      if (resolution) tx.create(db.collection('orderReconciliationEvents').doc(id + '_' + resolution.requestId), {
+        orderId: id, actorId: caller.uid, action: resolution.mode, reason: text(resolution.reason), evidenceUrl: text(resolution.evidenceUrl),
+        refundReference: paymentStatus === 'REFUNDED' ? text(resolution.refundReference) : '',
+        refundAmount: paymentStatus === 'REFUNDED' ? resolution.refundAmount : 0, createdAt: stamp()});
       const recipients = [...new Set([...(order.ownerType === 'CUSTOMER' ? [order.ownerId] : []),
         ...(buyer ? [order.sellerId] : [])])];
       for (const recipient of recipients) {
@@ -432,7 +458,9 @@ function createCampaignLifecycle({db, admin, authenticate}) {
     try { res.json(await transitionOrder({role: 'GUEST', accessToken: text(req.body && req.body.accessToken)},
       {orderId: req.body && req.body.orderId, targetStatus: 'DELIVERED'})); } catch (error) { next(error); }
   });
-  return {router, moderate, confirmBankTransfer, transitionOrder, reconcileItems, reconcileAll, reconcileExpired, reconcileCampaign};
+  const resolveOrder = (caller, body) => transitionOrder(caller, {orderId: body.orderId,
+    targetStatus: body.mode === 'LATE_RECEIPT' ? 'DELIVERED' : 'CANCELLED'}, body);
+  return {router, moderate, confirmBankTransfer, transitionOrder, resolveOrder, reconcileItems, reconcileAll, reconcileExpired, reconcileCampaign};
 }
 
 module.exports = {createCampaignLifecycle, readAllocations, orderAllocations, validateProgress, quantityMap, sum, isLive, nextClosedStatus};

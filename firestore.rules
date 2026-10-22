@@ -1277,6 +1277,11 @@ service cloud.firestore {
           && resource.data.sellerId == request.auth.uid);
       allow write: if false;
     }
+    match /orderReconciliationEvents/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /cartMigrationReceipts/{receiptId} { allow read, write: if false; }
 
     match /adminAuditLogs/{auditId} {
       allow get, list: if isAdmin();

@@ -11,6 +11,13 @@ import java.util.Date;
 import java.util.List;
 
 public class Order {
+    private boolean expiryReviewRequired;
+    private String cancellationReason = "";
+    public Order withExpiryReview(boolean required, String reason) {
+        expiryReviewRequired = required; cancellationReason = reason == null ? "" : reason; return this;
+    }
+    public boolean isExpiryReviewRequired() { return expiryReviewRequired; }
+    public String getCancellationReason() { return cancellationReason; }
     private double sellerVolumeDiscount, platformVolumeDiscount;
     public Order withVolumeDiscounts(double seller, double platform) {
         sellerVolumeDiscount = Math.max(0, seller); platformVolumeDiscount = Math.max(0, platform); return this;

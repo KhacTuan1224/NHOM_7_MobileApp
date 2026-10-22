@@ -169,7 +169,8 @@ public class AuthViewModel extends ViewModel {
             @Override
             public void onSuccess(User user) {
                 String currentGuestId = guestSessionRepository.getOrCreateGuestId();
-                if (migrationService != null && currentGuestId != null && !currentGuestId.trim().isEmpty() && user != null) {
+                if (migrationService != null && currentGuestId != null && !currentGuestId.trim().isEmpty() && user != null
+                        && user.getRole() == com.rescuefarm.domain.enums.UserRole.CUSTOMER) {
                     migrationService.migrateGuestCartToUser(currentGuestId, user.getId(), new com.rescuefarm.data.repository.CartRepository.ActionCallback() {
                         @Override
                         public void onSuccess() {

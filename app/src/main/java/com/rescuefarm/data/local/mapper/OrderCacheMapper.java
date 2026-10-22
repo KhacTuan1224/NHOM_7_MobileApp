@@ -26,6 +26,7 @@ public final class OrderCacheMapper {
         entity.totalAmount = value.getTotalAmount(); entity.paymentMethod = value.getPaymentMethod().name();
         entity.paymentStatus = value.getPaymentStatus().name(); entity.status = value.getStatus().name();
         entity.note = value.getNote(); entity.createdAtEpochMillis = millis(value.getCreatedAt());
+        entity.expiryReviewRequired = value.isExpiryReviewRequired(); entity.cancellationReason = value.getCancellationReason();
         entity.updatedAtEpochMillis = millis(value.getUpdatedAt()); entity.cachedAtEpochMillis = cachedAt;
         return entity;
     }
@@ -40,7 +41,8 @@ public final class OrderCacheMapper {
                 value(PaymentMethod.class, entity.paymentMethod, PaymentMethod.COD),
                 value(PaymentStatus.class, entity.paymentStatus, PaymentStatus.UNPAID),
                 value(OrderStatus.class, entity.status, OrderStatus.PENDING), entity.note,
-                date(entity.createdAtEpochMillis), date(entity.updatedAtEpochMillis), new ArrayList<>());
+                date(entity.createdAtEpochMillis), date(entity.updatedAtEpochMillis), new ArrayList<>())
+                .withExpiryReview(entity.expiryReviewRequired, entity.cancellationReason);
     }
 
     public static List<Order> orders(List<OrderCacheEntity> entities) {

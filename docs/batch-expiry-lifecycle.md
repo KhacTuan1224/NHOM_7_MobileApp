@@ -27,7 +27,7 @@ Không xóa lô, không đặt số tồn thực tế về 0, không tự ghi h�
 - Đơn COD/CASH_ON_SITE còn UNPAID, chưa giao (PENDING/CONFIRMED/PREPARING/READY_FOR_PICKUP): tác vụ nền yêu cầu hủy qua transaction hiện có, trả đúng phần giữ, cập nhật phân bổ chiến dịch và không trả kho hai lần.
 - Đơn chuyển khoản (kể cả đang chờ tiền), đơn đã thanh toán hoặc SHIPPING: giữ nguyên thanh toán và lượng giữ, đánh dấu `expiryReviewRequired`, thông báo Seller/Customer cần đối soát. Không giả lập hoàn tiền hoặc coi hàng đang vận chuyển đã trở về kho.
 - DELIVERED/CANCELLED đã hoàn tất giữ nguyên lịch sử; replay xác nhận nhận thành công trước đó vẫn idempotent.
-- Hiện chưa có bằng chứng bàn giao thực tế độc lập với thao tác xác nhận nhận. Do đó khách xác nhận sau hạn bị chặn và cần đối soát; không dùng ngày khách tự nhập hoặc thời điểm bắt đầu SHIPPING làm bằng chứng hàng đã giao trước hạn. Nghiệp vụ xác nhận bàn giao/hoàn tiền thủ công riêng không được thêm trong thay đổi này.
+- Đã bổ sung bản ghi bàn giao bằng timestamp server trước hạn, xác nhận thực nhận của đúng người mua, bằng chứng thu hồi và Admin chốt đối soát. Khách xác nhận sau hạn đi qua trang đối soát; không dùng ngày tự nhập hay thời điểm bắt đầu SHIPPING làm bằng chứng đã nhận. Ghi nhận hoàn tiền chỉ sau khi Admin đối chiếu hoàn tiền thực tế; không tự thực hiện lệnh chuyển tiền. Xem [hướng dẫn UI và triển khai](audits/audit-fixes-setup-2026-10-22.md).
 
 ## Tác vụ nền và triển khai
 

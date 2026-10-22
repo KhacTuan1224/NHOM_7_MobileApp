@@ -82,7 +82,7 @@ async function auth(req, roles = []) {
 }
 
 app.get('/', (req, res) => {
-  res.status(200).send('RescueFarm API Service is running!');
+  res.status(200).send('Backend của ứng dụng đang chạy =))))');
 });
 
 
@@ -100,6 +100,8 @@ app.use(require('./seller-payment-options').createSellerPaymentOptionsApi({db}).
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
 const batchExpiry = require('./batch-expiry').createBatchExpiry({db, admin, campaignLifecycle});
 app.use(campaignLifecycle.router);
+app.use(require('./cart-migration').createCartMigration({db, admin, authenticate: auth}).router);
+app.use(require('./order-reconciliation').createOrderReconciliation({db, admin, authenticate: auth, campaignLifecycle}).router);
 app.use(require('./seller-analytics').createSellerAnalytics({db, admin, authenticate: auth}).router);
 const campaignMedia = require('./campaign-media').createCampaignMedia({db, admin, authenticate: auth});
 app.use(campaignMedia.router);

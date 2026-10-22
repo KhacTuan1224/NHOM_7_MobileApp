@@ -80,6 +80,8 @@ The GitHub workflow creates a debug-signed APK for development/demo installation
 
 ## Backend and Firebase setup
 
+- **Hoàn thiện audit/đối soát đơn:** xem [hướng dẫn ngày 22/10/2026](docs/audits/audit-fixes-setup-2026-10-22.md) cho trang đối soát, chứng từ/hoàn tiền đã thực hiện, Room 11, chuyển giỏ Guest chống lặp và hai index mới. Luồng QR/webhook SePay tự động được giữ nguyên.
+
 - **Giải cứu mở rộng:** xem [hướng dẫn setup và vận hành hai phương thức](docs/rescue-programs-setup.md): hộp bí ẩn và giờ chót. Module có giao diện Guest/Customer/Seller/Admin, giữ tồn kho từ lô thật và dùng scheduler thông báo hiện có.
 
 - **Render backend:** follow [`functions/README.md`](functions/README.md). Render needs `FIREBASE_SERVICE_ACCOUNT_JSON` as a server-side secret. Never add it to Android or commit it. Check the deployed service at `/health`.

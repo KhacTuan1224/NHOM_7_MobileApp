@@ -93,6 +93,7 @@ public final class AdminDetailFragment extends Fragment {
     private void renderDetail(Map<String, Object> detail) {
         new AdminDetailRenderer(requireContext()).render(content, item, detail);
         if (section == Section.ORDERS) addOrderWarnings(content, detail);
+        if (section == Section.ORDERS) com.rescuefarm.ui.order.OrderReconciliationFragment.addEntry(this, content, "Mở đối soát đơn hàng", item.getId());
         if (section == Section.REPORTS) addReportActions(detail);
         else if (section != Section.ORDERS && section != Section.CATEGORIES
                 && section != Section.BANNERS && section != Section.ANALYTICS

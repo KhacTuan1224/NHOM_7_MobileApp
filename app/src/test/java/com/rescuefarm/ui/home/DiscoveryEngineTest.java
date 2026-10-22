@@ -17,6 +17,20 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 public class DiscoveryEngineTest {
+    @Test public void minimumStockUsesTotalEligibleBatchesAndStillExcludesExpiredStock() {
+        Product p = Product.restore("p", "s", "fruit", "Xoài", "", 50, 30, "kg", "", "",
+            Collections.emptyList(), 0, 0, ProductStatus.ACTIVE);
+        Date now = new Date(2000);
+        com.rescuefarm.domain.model.ProductBatch a = com.rescuefarm.domain.model.ProductBatch.restore(
+            "a", "p", null, new Date(1), new Date(3000), 6, 6, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        com.rescuefarm.domain.model.ProductBatch b = com.rescuefarm.domain.model.ProductBatch.restore(
+            "b", "p", null, new Date(1), new Date(4000), 6, 6, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        DiscoveryQuery q = new DiscoveryQuery("", "", "", null, null, null, DiscoveryQuery.Sort.RELEVANCE, 0, Double.MAX_VALUE, 0, 0, 10);
+        java.util.Map<String, List<com.rescuefarm.domain.model.ProductBatch>> batches = Collections.singletonMap("p", Arrays.asList(a,b));
+        DiscoveryEngine engine = new DiscoveryEngine();
+        assertEquals(1, engine.search(Collections.singletonList(p), Collections.emptyList(), batches, q, null, null, now).size());
+        assertTrue(engine.search(Collections.singletonList(p), Collections.emptyList(), batches, q, null, null, new Date(3000)).isEmpty());
+    }
     @Test public void catalogProvinceNames_matchShortSavedNames_andStayAppliedWhileTyping() {
         Product mango = Product.restore("mango", "s", "fruit", "Xoài cát", "Nông sản",
                 50D, 30D, "kg", "Vườn nhà", "Đồng Tháp", Collections.emptyList(),
