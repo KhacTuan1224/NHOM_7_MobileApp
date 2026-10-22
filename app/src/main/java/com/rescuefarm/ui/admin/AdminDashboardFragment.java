@@ -50,10 +50,15 @@ public final class AdminDashboardFragment extends Fragment {
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
         view.findViewById(R.id.adminDashboardBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
-        view.findViewById(R.id.adminDashboardMenuButton).setOnClickListener(v -> drawer.openDrawer(androidx.core.view.GravityCompat.START));
+        View menuButton = view.findViewById(R.id.adminDashboardMenuButton);
+        // Wide layouts keep navigation beside the dashboard instead of in a modal drawer.
+        menuButton.setVisibility(drawer == null ? View.GONE : View.VISIBLE);
+        menuButton.setOnClickListener(v -> {
+            if (drawer != null) drawer.openDrawer(androidx.core.view.GravityCompat.START);
+        });
         view.findViewById(R.id.refreshAdminDashboardButton).setOnClickListener(v -> viewModel.refreshDashboard());
         view.findViewById(R.id.adminRescuePrograms).setOnClickListener(v -> {
-            drawer.closeDrawer(androidx.core.view.GravityCompat.START);
+            closeNavigationDrawer();
             Navigation.findNavController(v).navigate(R.id.rescueHubFragment);
         });
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
@@ -73,11 +78,15 @@ public final class AdminDashboardFragment extends Fragment {
 
     private void bind(View root, int id, Section section) {
         root.findViewById(id).setOnClickListener(view -> {
-            if (drawer != null && drawer.isDrawerOpen(androidx.core.view.GravityCompat.START)) drawer.closeDrawer(androidx.core.view.GravityCompat.START);
+            closeNavigationDrawer();
             Bundle args = new Bundle(); args.putString("section", section.name());
             Navigation.findNavController(view).navigate(
                     R.id.action_adminDashboardFragment_to_adminResourceFragment, args);
         });
+    }
+
+    private void closeNavigationDrawer() {
+        if (drawer != null) drawer.closeDrawer(androidx.core.view.GravityCompat.START);
     }
 
     private void render(AdminScreenState state) {
