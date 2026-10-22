@@ -80,7 +80,8 @@ beforeEach(async () => {
 async function post(path, data, uid = '') {
   const result = await fetch(base + path, {method: 'POST', headers: {'Content-Type': 'application/json',
     ...(uid ? {Authorization: `Bearer ${uid}`} : {})}, body: JSON.stringify(data)});
-  return {status: result.status, body: await result.json()};
+  const body = await result.text();
+  return {status: result.status, body: body.startsWith("{") ? JSON.parse(body) : {error: body}};
 }
 
 test('expanded rescue and normal checkout share one stock ledger without releasing each other reservations', async () => {
@@ -120,7 +121,7 @@ test('Batch expiry real Firestore sweep preserves stock, cancels cash hold and r
 test('Customer checkout reserves stock, writes snapshots/payment and removes only bought cart quantities', async () => {
   const data = request(); const result = await post('/checkoutCustomer', {...data, totalAmount: 1, ownerId: 'customer-b'}, 'customer-a');
   assert.equal(result.status, 200); assert.equal(result.body.order.ownerId, 'customer-a');
-  assert.equal(result.body.order.totalAmount, 87300);
+  assert.equal(result.body.order.totalAmount, 90000);
   const stock = (await db.doc('productBatches/batch-a').get()).data();
   assert.equal(stock.availableQuantity, 7); assert.equal(stock.reservedQuantity, 3); assert.equal(stock.soldQuantity, 0);
   const line = (await db.doc(`orders/${data.requestId}/items/batch-a`).get()).data();
@@ -165,97 +166,6 @@ for (const kind of ['expired', 'archived', 'no-stock', 'unapproved-seller']) {
   });
 }
 
-async function seedWalletPromotion(type = 'PERCENT', value = 10, tiers = {}) {
-  await db.doc('promotions/product-a').set({id: 'product-a', productId: 'product-a', sellerId: 'seller',
-    active: true, type, value, quantityDiscountTiers: tiers, startDate: past(), endDate: future()});
-}
-
-for (const [type, value, tiers, expected] of [['PERCENT', 10, {}, 81000], ['FIXED', 1000, {}, 87000], ['VOLUME', 0, {'3': 20}, 72000]]) {
-  test(`saved ${type} offer applies only to its customer in quote and committed checkout`, async () => {
-    await seedWalletPromotion(type, value, tiers);
-    const input = request();
-    assert.equal((await post('/quoteCustomerCheckout', input, 'customer-a')).body.subtotal, 90000);
-    assert.ok([401, 403].includes((await post('/promotions/save', {productId: 'product-a'})).status));
-    assert.equal((await post('/promotions/save', {productId: 'product-a'}, 'seller')).status, 403);
-    assert.equal((await post('/promotions/save', {productId: 'product-a'}, 'customer-a')).status, 200);
-    assert.equal((await post('/promotions/save', {productId: 'product-a'}, 'customer-a')).status, 200);
-    assert.equal((await db.collection('customerPromotionWallets/customer-a/items').get()).size, 1);
-    const quote = await post('/quoteCustomerCheckout', input, 'customer-a');
-    assert.equal(quote.body.subtotal, expected);
-    assert.equal(quote.body.lines[0].promotionApplied, true);
-    assert.equal((await post('/quoteCustomerCheckout', input, 'customer-b')).body.subtotal, 90000);
-    assert.equal((await post('/quoteGuestCheckout', {...input, savedPromotionIds: ['product-a'], customerId: 'customer-a'})).body.subtotal, 90000);
-    const checkout = await post('/checkoutCustomer', input, 'customer-a');
-    assert.equal(checkout.status, 200); assert.equal(checkout.body.order.subtotal, expected);
-    assert.equal((await db.doc(`orders/${input.requestId}/items/batch-a`).get()).get('promotionApplied'), true);
-  });
-}
-
-test('wallet catalog, expiration, disabling and removing offers do not grant stale discounts', async () => {
-  await seedWalletPromotion();
-  const product = {productId: 'product-a'};
-  const guestCatalog = await post('/promotions/catalog', product);
-  assert.equal(guestCatalog.body.items.length, 1); assert.equal(guestCatalog.body.items[0].saved, false);
-  assert.ok([401, 403].includes((await post('/promotions/catalog', {mine: true})).status));
-  assert.equal((await post('/promotions/save', product, 'customer-a')).status, 200);
-  assert.equal((await post('/promotions/catalog', {mine: true}, 'customer-a')).body.items[0].saved, true);
-  assert.equal((await post('/promotions/catalog', {mine: true}, 'customer-b')).body.items.length, 0);
-  await db.doc('promotions/product-a').update({endDate: past()});
-  assert.equal((await post('/promotions/catalog', product)).body.items.length, 0);
-  assert.equal((await post('/promotions/save', product, 'customer-b')).status, 409);
-  assert.equal((await post('/promotions/catalog', {mine: true}, 'customer-a')).body.items[0].eligible, false);
-  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 90000);
-  await db.doc('promotions/product-a').update({endDate: future(), active: false});
-  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 90000);
-  await db.doc('promotions/product-a').update({active: true});
-  assert.equal((await post('/promotions/remove', {...product, customerId: 'customer-a'}, 'customer-b')).status, 200);
-  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 81000);
-  assert.equal((await post('/promotions/remove', product, 'customer-a')).status, 200);
-  assert.equal((await post('/quoteCustomerCheckout', request(), 'customer-a')).body.subtotal, 90000);
-});
-
-test('guest checkout cannot claim a saved customer promotion', async () => {
-  await seedWalletPromotion();
-  await post('/promotions/save', {productId: 'product-a'}, 'customer-a');
-  const result = await post('/checkoutGuest', {...request(), ...guest(), customerId: 'customer-a', savedPromotionIds: ['product-a']});
-  assert.equal(result.status, 200); assert.equal(result.body.order.subtotal, 90000);
-});
-
-test('removing a voucher after quote forces reconfirmation without creating order or reserving inventory', async () => {
-  await seedWalletPromotion();
-  await post('/promotions/save', {productId: 'product-a'}, 'customer-a');
-  const data = request();
-  const quote = (await post('/quoteCustomerCheckout', data, 'customer-a')).body;
-  await post('/promotions/remove', {productId: 'product-a'}, 'customer-a');
-  const result = await post('/checkoutCustomer', {...data, expectedSubtotal: quote.subtotal,
-    expectedShippingFee: quote.shippingFee}, 'customer-a');
-  assert.equal(result.status, 409); assert.match(result.body.error, /QUOTE_CHANGED/);
-  assert.equal((await db.collection('orders').get()).size, 0);
-  assert.equal((await db.doc('productBatches/batch-a').get()).get('reservedQuantity'), 0);
-});
-
-test('wallet pagination has no duplicate records or cross-customer leakage', async () => {
-  const batch = db.batch();
-  for (let i = 0; i < 27; i++) {
-    const id = `offer-${String(i).padStart(2, '0')}`;
-    batch.set(db.doc(`products/${id}`), {sellerId: 'seller', status: 'ACTIVE', name: id});
-    batch.set(db.doc(`promotions/${id}`), {id, productId: id, sellerId: 'seller', active: true, type: 'PERCENT', value: 5, startDate: past(), endDate: future()});
-  }
-  await batch.commit();
-  const first = (await post('/promotions/catalog', {})).body;
-  assert.equal(first.items.length, 24); assert.equal(first.hasMore, true);
-  const second = (await post('/promotions/catalog', {cursor: first.cursor})).body;
-  assert.equal(second.items.length, 3); assert.equal(second.hasMore, false);
-  assert.equal(new Set([...first.items, ...second.items].map(p => p.productId)).size, 27);
-});
-
-test('missing promotions and expired promotions fall back to rescue price', async () => {
-  const data = request();
-  assert.equal((await post('/quoteCustomerCheckout', data, 'customer-a')).body.subtotal, 90000);
-  await db.doc('promotions/product-a').set({active: true, type: 'PERCENT', value: 90, startDate: past(), endDate: past()});
-  assert.equal((await post('/checkoutCustomer', data, 'customer-a')).body.order.subtotal, 90000);
-});
-
 test('fractional quantities share rounded line subtotals between quote and checkout', async () => {
   await db.doc('products/product-a').update({rescuePrice: 27001});
   const batch = (await db.doc('productBatches/batch-a').get()).data();
@@ -282,7 +192,7 @@ test('Guest DELIVERY/COD creates a shipment; Guest PICKUP transfer snapshots the
   const pickup = request({...g, paymentMethod: 'BANK_TRANSFER'});
   const second = await post('/checkoutGuest', pickup); assert.equal(second.status, 200);
   const payment = (await db.doc(`payments/${pickup.requestId}`).get()).data();
-  assert.equal(payment.status, 'PENDING'); assert.equal(payment.bankCode, 'VCB'); assert.equal(payment.amount, 87300);
+  assert.equal(payment.status, 'PENDING'); assert.equal(payment.bankCode, 'VCB'); assert.equal(payment.amount, 90000);
   assert.equal((await db.doc(`shipments/${pickup.requestId}`).get()).exists, false);
 });
 
@@ -478,26 +388,26 @@ async function multiSellerRequest(overrides = {}) {
     {productId:'product-two',batchId:'batch-two',sellerId:'seller-two',quantity:1}], ...overrides});
 }
 
-test('multi-seller discounts combine after product pricing and atomically create separate customer orders',async()=>{
+test('multi-seller checkout atomically creates separate orders at rescue prices',async()=>{
   const input = await multiSellerRequest();
   const quote=await post('/quoteCustomerCheckout',input,'customer-a');
   assert.equal(quote.status,200,JSON.stringify(quote.body));
-  assert.equal(quote.body.subtotal,120000);assert.equal(quote.body.sellerDiscount,3600);
-  assert.equal(quote.body.platformDiscount,2328);assert.equal(quote.body.total,114072);
+  assert.equal(quote.body.subtotal,120000);assert.equal(quote.body.sellerDiscount,undefined);
+  assert.equal(quote.body.platformDiscount,undefined);assert.equal(quote.body.total,120000);
   assert.equal(quote.body.availablePaymentMethods.includes('BANK_TRANSFER'),false);
-  const result=await post('/checkoutCustomer',{...input,expectedSubtotal:120000,expectedQuantityDiscount:5928,expectedShippingFee:0},'customer-a');
+  const result=await post('/checkoutCustomer',{...input,expectedSubtotal:120000,expectedShippingFee:0},'customer-a');
   assert.equal(result.status,200,JSON.stringify(result.body));assert.equal(result.body.orders.length,2);
-  assert.ok(result.body.orders.every(order => order.volumePolicyVersion === 2));
-  assert.deepEqual(result.body.orders.map(o=>o.totalAmount),[57036,57036]);
-  assert.equal(result.body.orders.reduce((s,o)=>s+o.quantityDiscount,0),5928);
+  assert.ok(result.body.orders.every(order => order.pricingVersion === 3));
+  assert.deepEqual(result.body.orders.map(o=>o.totalAmount),[60000,60000]);
+  assert.ok(result.body.orders.every(o=>o.quantityDiscount===undefined));
   assert.equal((await db.doc('productBatches/batch-two').get()).get('reservedQuantity'),1);
   assert.deepEqual((await db.doc('customerCarts/customer-a').get()).get('items'),[]);
   for(const order of result.body.orders) {
     assert.equal((await db.doc('payments/'+order.id).get()).get('amount'),order.totalAmount);
-    assert.equal(order.sellerReceivableAmount,58200);
-    assert.equal((await db.doc('platformDiscountClaims/'+order.id).get()).get('amount'),1164);
+    assert.equal(order.sellerReceivableAmount,60000);
+    assert.equal((await db.doc('platformDiscountClaims/'+order.id).get()).exists,false);
     const items=await db.collection('orders/'+order.id+'/items').get();
-    assert.equal(items.docs.reduce((s,d)=>s+d.get('platformVolumeDiscount'),0),1164);
+    assert.ok(items.docs.every(d=>d.get('platformVolumeDiscount')===undefined));
   }
   const retry=await post('/checkoutCustomer',input,'customer-a');
   assert.equal(retry.status,200);assert.equal(retry.body.replay,true);
@@ -505,14 +415,14 @@ test('multi-seller discounts combine after product pricing and atomically create
   assert.equal((await db.collection('orders').get()).size,2);
 });
 
-test('one unavailable seller or a stale discount aborts the complete basket without partial reservations',async()=>{
+test('one unavailable seller or a stale price aborts the complete basket without partial reservations',async()=>{
   const input=await multiSellerRequest();
   await db.doc('productBatches/batch-two').update({availableQuantity:0,reservedQuantity:10});
   const result=await post('/checkoutCustomer',input,'customer-a');assert.equal(result.status,409);
   assert.equal((await db.collection('orders').get()).size,0);
   assert.equal((await db.doc('productBatches/batch-a').get()).get('reservedQuantity'),0);
   await db.doc('productBatches/batch-two').update({availableQuantity:10,reservedQuantity:0});
-  const stale=await post('/checkoutCustomer',{...input,expectedQuantityDiscount:0},'customer-a');
+  const stale=await post('/checkoutCustomer',{...input,expectedSubtotal:110000},'customer-a');
   assert.equal(stale.status,409);assert.match(stale.body.error,/QUOTE_CHANGED/);
   assert.equal((await db.collection('orders').get()).size,0);
 });
@@ -533,23 +443,53 @@ test('Guest receives both orders, separate protected lookup codes and idempotent
   assert.equal((await db.collection('orders').get()).size,2);
 });
 
-test('saved product promotion remains first, then seller volume and platform volume use reduced thresholds',async()=>{
-  const input=await multiSellerRequest();await seedWalletPromotion('PERCENT',10);
-  assert.equal((await post('/promotions/save',{productId:'product-a'},'customer-a')).status,200);
-  const q=await post('/quoteCustomerCheckout',input,'customer-a');assert.equal(q.status,200);
-  assert.equal(q.body.subtotal,114000);assert.equal(q.body.sellerDiscount,3420);
-  assert.equal(q.body.platformDiscount,2212);assert.equal(q.body.total,108368);
-  const guestQuote=await post('/quoteGuestCheckout',input);
-  assert.equal(guestQuote.body.subtotal,120000); // Existing saved-customer-only voucher contract is preserved.
+test('retired promotion data cannot change Customer or Guest checkout prices', async () => {
+  const input = await multiSellerRequest();
+  await db.doc('promotions/product-a').set({sellerId:'seller', productId:'product-a', active:true,
+    type:'PERCENT', value:90, quantityDiscountTiers:{'1':90}, startDate:past(), endDate:future()});
+  await db.doc('customerPromotionWallets/customer-a/items/product-a').set({customerId:'customer-a',sellerId:'seller',productId:'product-a'});
+  for (const actor of ['customer-a', null]) {
+    const path = actor ? '/quoteCustomerCheckout' : '/quoteGuestCheckout';
+    const quote = await post(path, {...input, savedPromotionIds:['product-a'], quantityDiscount:99999}, actor);
+    assert.equal(quote.status,200);
+    assert.equal(quote.body.total,120000);
+    assert.equal(quote.body.pricingVersion,3);
+    assert.equal(quote.body.buyMorePolicy,undefined);
+    assert.equal(quote.body.lines[0].finalUnitPrice,30000);
+  }
+  for (const endpoint of ['catalog','save','remove']) {
+    for (const actor of [null,'customer-a','seller','admin'])
+      assert.equal((await post('/promotions/'+endpoint,{productId:'product-a'},actor)).status,404);
+  }
+  const placed = await post('/checkoutCustomer',input,'customer-a');
+  assert.equal(placed.status,200);
+  assert.equal(placed.body.orders.reduce((sum,o)=>sum+o.totalAmount,0),120000);
 });
 
-test('two batches of one product reach its existing quantity tier without double-counting subtotal',async()=>{
-  await seedWalletPromotion('PERCENT',10,{'4':10});
-  assert.equal((await post('/promotions/save',{productId:'product-a'},'customer-a')).status,200);
-  const batch=await db.doc('productBatches/batch-a').get();
-  await db.doc('productBatches/batch-a2').set({...batch.data(),id:'batch-a2'});
-  const input=request({items:[{productId:'product-a',batchId:'batch-a',sellerId:'seller',quantity:2},
-    {productId:'product-a',batchId:'batch-a2',sellerId:'seller',quantity:2}]});
-  const q=await post('/quoteCustomerCheckout',input,'customer-a');assert.equal(q.status,200);
-  assert.equal(q.body.subtotal,97200);assert.equal(q.body.lines[0].finalUnitPrice,24300);
+test('changing rescue price after a quote requires reconfirmation without reserving stock', async () => {
+  const data = request();
+  const quote = (await post('/quoteCustomerCheckout',data,'customer-a')).body;
+  await db.doc('products/product-a').update({rescuePrice:31000});
+  const result = await post('/checkoutCustomer',{...data,expectedSubtotal:quote.subtotal,expectedShippingFee:quote.shippingFee},'customer-a');
+  assert.equal(result.status,409); assert.match(result.body.error,/QUOTE_CHANGED/);
+  assert.equal((await db.collection('orders').get()).size,0);
+  assert.equal((await db.doc('productBatches/batch-a').get()).get('reservedQuantity'),0);
+});
+
+test('stale discounted quotes require reconfirmation while existing legacy orders keep their committed price on retry',async()=>{
+  const input=request({expectedQuantityDiscount:2700,expectedSubtotal:90000,expectedShippingFee:0});
+  const stale=await post('/checkoutCustomer',input,'customer-a');
+  assert.equal(stale.status,409);assert.match(stale.body.error,/QUOTE_CHANGED/);
+  assert.equal((await db.collection('orders').get()).size,0);
+  assert.equal((await db.doc('productBatches/batch-a').get()).get('reservedQuantity'),0);
+  const created=await post('/checkoutCustomer',{...input,expectedQuantityDiscount:0},'customer-a');
+  assert.equal(created.status,200);
+  // A pre-retirement order has authoritative price/payment snapshots.
+  await db.doc('orders/'+input.requestId).update({totalAmount:87300,quantityDiscount:2700});
+  await db.doc('payments/'+input.requestId).update({amount:87300});
+  const replay=await post('/checkoutCustomer',input,'customer-a');
+  assert.equal(replay.status,200);assert.equal(replay.body.replay,true);
+  assert.equal(replay.body.order.totalAmount,87300);
+  assert.equal((await db.doc('payments/'+input.requestId).get()).get('amount'),87300);
+  assert.equal((await db.doc('productBatches/batch-a').get()).get('reservedQuantity'),3);
 });

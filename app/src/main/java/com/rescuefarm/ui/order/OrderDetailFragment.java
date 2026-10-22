@@ -162,11 +162,9 @@ public class OrderDetailFragment extends Fragment {
             if (shipment != null && shipment.getDistanceKm() > 0D)
                 addInfoRow("Khoảng cách", String.format(Locale.getDefault(), "%.1f km", shipment.getDistanceKm()), false);
         }
-        addInfoRow("Tiền hàng sau KM sản phẩm", money.format(order.getSubtotal()), false);
-        if (order.getSellerVolumeDiscount() > 0 || order.getPlatformVolumeDiscount() > 0) {
-            addInfoRow("Giảm thêm cùng Seller", "−" + money.format(order.getSellerVolumeDiscount()), false);
-            addInfoRow("Nền tảng giảm nhiều Seller", "−" + money.format(order.getPlatformVolumeDiscount()), false);
-        } else if (order.getQuantityDiscount() > 0) addInfoRow("Ưu đãi mua nhiều", "−" + money.format(order.getQuantityDiscount()), false);
+        addInfoRow("Tiền hàng", money.format(order.getSubtotal()), false);
+        double historicalAdjustment = Math.max(0, order.getSubtotal() + order.getShippingFee() - order.getTotalAmount());
+        if (historicalAdjustment > 0) addInfoRow("Điều chỉnh giá đã chốt (đơn cũ)", "−" + money.format(historicalAdjustment), false);
         addInfoRow("Tổng thanh toán", money.format(order.getTotalAmount()), true);
     }
 

@@ -17,10 +17,6 @@ public void submit(String name,String phone,String address,String latText,String
 }
 public void submit(String name,String phone,String address,String latText,String lngText,FulfillmentType fulfillment,
         PaymentMethod payment,String note,double expectedSubtotal,double expectedShippingFee){
-    submit(name,phone,address,latText,lngText,fulfillment,payment,note,expectedSubtotal,expectedShippingFee,Double.NaN);
-}
-public void submit(String name,String phone,String address,String latText,String lngText,FulfillmentType fulfillment,
-        PaymentMethod payment,String note,double expectedSubtotal,double expectedShippingFee,double expectedQuantityDiscount){
     if(submitting||state.getValue()!=null&&state.getValue().getStatus()==CheckoutState.Status.LOADING)return;
     Cart value=cart.getValue();List<CartItem> selected=new ArrayList<>();
     if(value!=null)for(CartItem i:value.getItems())if(i.isSelected())selected.add(i);
@@ -36,7 +32,6 @@ public void submit(String name,String phone,String address,String latText,String
         OrderOwnerType owner=cartRepo.getOwnerType()==CartOwnerType.GUEST?OrderOwnerType.GUEST:OrderOwnerType.CUSTOMER;
         CheckoutRequest req=new CheckoutRequest(requestId,owner,cartRepo.getOwnerKey(),name,phone,address,
                 lat,lng,fulfillment,payment,note,selected,expectedSubtotal,expectedShippingFee);
-        req.expectedQuantityDiscount=expectedQuantityDiscount;
         submitting=true;state.setValue(CheckoutState.loading());
         orderRepo.checkout(req,new OrderRepository.OrderCallback(){
             public void onSuccess(Order o,boolean replay){submitting=false;state.postValue(CheckoutState.success(o,replay));}

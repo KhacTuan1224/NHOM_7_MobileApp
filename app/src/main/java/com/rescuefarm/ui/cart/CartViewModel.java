@@ -10,7 +10,6 @@ import com.rescuefarm.domain.model.Cart;
 import com.rescuefarm.domain.model.CartItem;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.ProductBatch;
-import com.rescuefarm.domain.model.Promotion;
 import com.rescuefarm.service.cart.CartGroupingService;
 import com.rescuefarm.service.cart.CartRevalidationService;
 import com.rescuefarm.service.pricing.PricingService;
@@ -112,10 +111,9 @@ public class CartViewModel extends ViewModel {
             CartItem validationItem = item.withQuantity(combinedQuantity);
             productRepository.getCartQuote(product.getId(), batch.getId(),
                     new ProductRepository.CartQuoteCallback() {
-                @Override public void onSuccess(Product latestProduct, ProductBatch latestBatch,
-                        Promotion promotion) {
+                @Override public void onSuccess(Product latestProduct, ProductBatch latestBatch) {
                     CartRevalidationService.Result result = revalidationService.revalidate(
-                            validationItem, latestProduct, latestBatch, promotion, new Date());
+                            validationItem, latestProduct, latestBatch, new Date());
                     if (!result.isValid()) {
                         state.postValue(CartScreenState.of(CartScreenState.Status.ERROR,
                                 result.getMessage())); return;
@@ -149,9 +147,9 @@ public class CartViewModel extends ViewModel {
         CartItem candidate = existing.withQuantity(quantity);
         productRepository.getCartQuote(existing.getProductId(), existing.getBatchId(),
                 new ProductRepository.CartQuoteCallback() {
-            @Override public void onSuccess(Product product, ProductBatch batch, Promotion promotion) {
+            @Override public void onSuccess(Product product, ProductBatch batch) {
                 CartRevalidationService.Result result = revalidationService.revalidate(
-                        candidate, product, batch, promotion, new Date());
+                        candidate, product, batch, new Date());
                 if (!result.isValid()) {
                     state.postValue(CartScreenState.of(CartScreenState.Status.ERROR, result.getMessage())); return;
                 }
@@ -198,9 +196,9 @@ public class CartViewModel extends ViewModel {
         for (CartItem item : cart.getItems()) {
             productRepository.getCartQuote(item.getProductId(), item.getBatchId(),
                     new ProductRepository.CartQuoteCallback() {
-                @Override public void onSuccess(Product product, ProductBatch batch, Promotion promotion) {
+                @Override public void onSuccess(Product product, ProductBatch batch) {
                     CartRevalidationService.Result result = revalidationService.revalidate(
-                            item, product, batch, promotion, new Date());
+                            item, product, batch, new Date());
                     if (!result.isValid()) {
                         issues.incrementAndGet(); finishOne(remaining, issues, changed); return;
                     }

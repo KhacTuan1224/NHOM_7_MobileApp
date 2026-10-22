@@ -14,7 +14,7 @@ public final class SellerDashboardSnapshot {
         public double getQuantity() { return quantity; }
     }
     private final int products, activeProducts, campaigns, activeCampaigns, completedCampaigns;
-    private final int mobileCampaigns, orders, pendingOrders, deliveryOrders, promotions;
+    private final int mobileCampaigns, orders, pendingOrders, deliveryOrders;
     private final double revenue, rescuedQuantity, rescueRate;
     private final List<RankedMetric> topProducts, topReasons, revenueTrend;
     private final List<Order> recentOrders;
@@ -22,7 +22,7 @@ public final class SellerDashboardSnapshot {
 
     public SellerDashboardSnapshot(int products, int activeProducts, int campaigns, int activeCampaigns,
             int completedCampaigns, int mobileCampaigns, int orders,
-            int pendingOrders, int deliveryOrders, int promotions, double revenue,
+            int pendingOrders, int deliveryOrders, double revenue,
             double rescuedQuantity, double rescueRate, List<RankedMetric> topProducts,
             List<RankedMetric> topReasons, List<Order> recentOrders,
             List<RankedMetric> revenueTrend) {
@@ -30,7 +30,7 @@ public final class SellerDashboardSnapshot {
         this.activeCampaigns = activeCampaigns; this.completedCampaigns = completedCampaigns;
         this.mobileCampaigns = mobileCampaigns;
         this.totalOrders = orders; this.orders = orders; this.pendingOrders = pendingOrders; this.deliveryOrders = deliveryOrders;
-        this.promotions = promotions; this.revenue = revenue; this.rescuedQuantity = rescuedQuantity;
+        this.revenue = revenue; this.rescuedQuantity = rescuedQuantity;
         this.rescueRate = rescueRate; this.topProducts = immutable(topProducts);
         this.topReasons = immutable(topReasons); this.revenueTrend = immutable(revenueTrend);
         this.recentOrders = Collections.unmodifiableList(
@@ -49,7 +49,8 @@ public final class SellerDashboardSnapshot {
     public int getOrders() { return orders; }
     public int getPendingOrders() { return pendingOrders; }
     public int getDeliveryOrders() { return deliveryOrders; }
-    public int getPromotions() { return promotions; }
+
+
     public double getRevenue() { return revenue; }
     public double getRescuedQuantity() { return rescuedQuantity; }
     public double getRescueRate() { return rescueRate; }

@@ -67,8 +67,7 @@ public class GuestHomeFragment extends Fragment {
     private BannerPagerAdapter bannerAdapter;
     private ViewPager2.OnPageChangeCallback bannerPageCallback;
     private final Handler bannerHandler = new Handler(Looper.getMainLooper());
-    private LinearLayout volumeGroup, volumeSection;
-    private final Runnable promotionTransitionTick=()->{if(viewModel!=null)viewModel.refreshTimeSensitiveContent();};
+    private final Runnable availabilityTransitionTick=()->{if(viewModel!=null)viewModel.refreshTimeSensitiveContent();};
     private final Runnable freshnessTick = new Runnable() {
         @Override public void run() {
             if (viewModel != null) viewModel.refreshTimeSensitiveContent();
@@ -116,11 +115,7 @@ public class GuestHomeFragment extends Fragment {
         endingSoonSection = view.findViewById(R.id.endingSoonSection);
         nearExpirySection = view.findViewById(R.id.nearExpirySection);
         valueSection = view.findViewById(R.id.valueSection);
-        volumeGroup=new LinearLayout(requireContext()); volumeGroup.setOrientation(LinearLayout.VERTICAL);
-        TextView volumeTitle=new TextView(requireContext()); volumeTitle.setText("Mua nhiều giá tốt"); volumeTitle.setTextSize(18); volumeTitle.setTypeface(volumeTitle.getTypeface(),android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(volumeTitle);
-        volumeGroup.addView(volumeTitle); volumeSection=new LinearLayout(requireContext()); volumeSection.setOrientation(LinearLayout.HORIZONTAL); android.widget.HorizontalScrollView volumeScroll = new android.widget.HorizontalScrollView(requireContext()); volumeScroll.setHorizontalScrollBarEnabled(false); volumeScroll.addView(volumeSection); volumeGroup.addView(volumeScroll);
         LinearLayout home=(LinearLayout)view.findViewById(R.id.valueHomeGroup).getParent();
-        home.addView(volumeGroup,home.indexOfChild(view.findViewById(R.id.valueHomeGroup))+1);
         loadMoreHome = new com.rescuefarm.ui.common.HomeLoadMoreButton(requireContext());
         LinearLayout.LayoutParams moreParams = new LinearLayout.LayoutParams(-2, -2);
         moreParams.gravity = android.view.Gravity.CENTER_HORIZONTAL;
@@ -131,7 +126,6 @@ public class GuestHomeFragment extends Fragment {
             for (com.rescuefarm.ui.common.ListPagination page : sectionPages.values()) page.advance();
             viewModel.loadNextPage(true, true);
         });
-        volumeGroup.setPadding(0,dp(24),0,0);
         campaignSection = view.findViewById(R.id.campaignSection);
         categorySection = view.findViewById(R.id.categorySection);
         viewModel = new ViewModelProvider(this, new HomeViewModelFactory(requireContext()))
@@ -160,17 +154,17 @@ public class GuestHomeFragment extends Fragment {
             locationContainer.setOnClickListener(v -> showLocationPicker());
         }
         locationLabel.setOnClickListener(v -> showLocationPicker());
-        
+
         // See more buttons
-        view.findViewById(R.id.seeMoreCategoriesButton).setOnClickListener(v -> 
+        view.findViewById(R.id.seeMoreCategoriesButton).setOnClickListener(v ->
                 Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allCategoriesFragment));
-        view.findViewById(R.id.seeMoreCriticalButton).setOnClickListener(v -> 
+        view.findViewById(R.id.seeMoreCriticalButton).setOnClickListener(v ->
                 Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allCriticalCampaignsFragment));
-        view.findViewById(R.id.seeMoreValueButton).setOnClickListener(v -> 
+        view.findViewById(R.id.seeMoreValueButton).setOnClickListener(v ->
                 Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allValueProductsFragment));
-        view.findViewById(R.id.seeMoreCampaignsButton).setOnClickListener(v -> 
+        view.findViewById(R.id.seeMoreCampaignsButton).setOnClickListener(v ->
                 Navigation.findNavController(view).navigate(R.id.action_guestHomeFragment_to_allActiveCampaignsFragment));
-        
+
         viewModel.refresh();
     }
 
@@ -405,9 +399,9 @@ public class GuestHomeFragment extends Fragment {
         loadMoreHome.setVisibility(viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns() ? View.VISIBLE : View.GONE);
         loadMoreHome.setEnabled(!viewModel.isPageLoading());
         loadMoreHome.setText(viewModel.isPageLoading() ? R.string.pagination_loading : R.string.pagination_more);
-        bannerHandler.removeCallbacks(promotionTransitionTick);
+        bannerHandler.removeCallbacks(availabilityTransitionTick);
         if(getLifecycle().getCurrentState().isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
-            long delay=viewModel.nextPromotionChangeDelay(); if(delay!=Long.MAX_VALUE)bannerHandler.postDelayed(promotionTransitionTick,delay);
+            long delay=viewModel.nextAvailabilityChangeDelay(); if(delay!=Long.MAX_VALUE)bannerHandler.postDelayed(availabilityTransitionTick,delay);
         }
         String prefix = state.getDataFreshness() == HomeViewState.DataFreshness.OFFLINE ? "OFFLINE • "
                 : state.getDataFreshness() == HomeViewState.DataFreshness.STALE ? "CACHE CŨ • " : "";
@@ -440,19 +434,6 @@ public class GuestHomeFragment extends Fragment {
         renderCampaigns(endingSoonSection, endingSoon, state,
                 "Chưa có chiến dịch sắp kết thúc.");
         renderProducts(state.getValueProducts());
-        volumeSection.removeAllViews(); volumeGroup.setVisibility(state.getVolumeOffers().isEmpty()?View.GONE:View.VISIBLE);
-        addHorizontal(volumeSection,state.getVolumeOffers(),offer->{
-            LinearLayout row=new LinearLayout(requireContext()); row.setOrientation(LinearLayout.VERTICAL);
-            row.addView(renderer.product(offer.product,v->{
-                Bundle args=new Bundle(); args.putString("productId",offer.product.getId()); args.putString("batchId",offer.batchId); args.putString("campaignId",offer.campaignId); args.putDouble("pricingQuantity",offer.threshold);
-                Navigation.findNavController(requireView()).navigate(R.id.action_guestHomeFragment_to_productDetailFragment,args);
-            }));
-            TextView terms=new TextView(requireContext()); terms.setText(String.format(java.util.Locale.forLanguageTag("vi-VN"),
-                "Từ %s %s: giảm thêm %s%%\nGiá sau khi lưu khuyến mãi: %,.0f đ / %s · chưa gồm phí giao hàng",
-                java.math.BigDecimal.valueOf(offer.threshold).stripTrailingZeros().toPlainString().replace('.',','),offer.product.getUnit(),
-                java.math.BigDecimal.valueOf(offer.percent).stripTrailingZeros().toPlainString().replace('.',','),offer.unitPrice,offer.product.getUnit()));
-            row.addView(terms);return row;
-        });
         renderNearExpiry(state.getNearExpiry());
         List<RescueCampaign> otherCampaigns = new ArrayList<>();
         for (RescueCampaign campaign : state.getActiveCampaigns()) {
@@ -581,9 +562,9 @@ public class GuestHomeFragment extends Fragment {
         });
     }
     private com.rescuefarm.ui.common.ListPagination homePagination(LinearLayout container) {
-        boolean products = container == valueSection || container == nearExpirySection || container == volumeSection;
-        boolean campaigns = !products || container == volumeSection;
-        String key = container == volumeSection ? "volume" : String.valueOf(container.getId());
+        boolean products = container == valueSection || container == nearExpirySection;
+        boolean campaigns = !products;
+        String key = String.valueOf(container.getId());
         return sectionPages.computeIfAbsent(key, unused -> new com.rescuefarm.ui.common.ListPagination(6))
                 .compactHomeAction()
                 .remote(() -> products && viewModel.hasMoreProducts() || campaigns && viewModel.hasMoreCampaigns(),
@@ -612,7 +593,7 @@ public class GuestHomeFragment extends Fragment {
     @Override public void onPause() {
         if (searchPopup != null) searchPopup.dismiss();
         bannerHandler.removeCallbacks(freshnessTick);
-        bannerHandler.removeCallbacks(promotionTransitionTick);
+        bannerHandler.removeCallbacks(availabilityTransitionTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
         super.onPause();
     }
@@ -620,7 +601,7 @@ public class GuestHomeFragment extends Fragment {
     @Override public void onDestroyView() {
         loadMoreHome = null;
         bannerHandler.removeCallbacks(freshnessTick);
-        bannerHandler.removeCallbacks(promotionTransitionTick);
+        bannerHandler.removeCallbacks(availabilityTransitionTick);
         bannerHandler.removeCallbacks(bannerAutoScroll);
         if (bannerPager != null && bannerPageCallback != null) {
             bannerPager.unregisterOnPageChangeCallback(bannerPageCallback);

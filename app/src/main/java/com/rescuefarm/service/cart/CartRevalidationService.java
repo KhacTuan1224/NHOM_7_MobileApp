@@ -3,7 +3,6 @@ package com.rescuefarm.service.cart;
 import com.rescuefarm.domain.model.CartItem;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.ProductBatch;
-import com.rescuefarm.domain.model.Promotion;
 import com.rescuefarm.service.pricing.PriceBreakdown;
 import com.rescuefarm.service.pricing.PricingService;
 import java.util.Date;
@@ -12,8 +11,7 @@ public final class CartRevalidationService {
     private final PricingService pricingService;
     public CartRevalidationService(PricingService pricingService) { this.pricingService = pricingService; }
 
-    public Result revalidate(CartItem item, Product product, ProductBatch batch,
-            Promotion promotion, Date now) {
+    public Result revalidate(CartItem item, Product product, ProductBatch batch, Date now) {
         if (item == null || product == null || batch == null || now == null
                 || !item.getProductId().equals(product.getId())
                 || !item.getBatchId().equals(batch.getId())
@@ -24,7 +22,7 @@ public final class CartRevalidationService {
         if (!item.validateStock(batch, now)) return Result.invalid("Không đủ tồn kho khả dụng.");
         try {
             PriceBreakdown quote = pricingService.calculatePrice(product.getOriginalPrice(),
-                    product.getRescuePrice(), item.getQuantity(), promotion, now);
+                    product.getRescuePrice(), item.getQuantity());
             return Result.valid(quote, Math.abs(quote.getFinalUnitPrice() - item.getUnitPrice()) > 0.000001D);
         } catch (IllegalArgumentException error) { return Result.invalid(error.getMessage()); }
     }

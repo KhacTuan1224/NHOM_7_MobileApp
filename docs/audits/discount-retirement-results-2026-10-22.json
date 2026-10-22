@@ -1,0 +1,37 @@
+{
+  "task": "Remove product promotions and purchase-volume discounts",
+  "date": "2026-10-22",
+  "checks": {
+    "androidUnit": {"tests": 243, "failures": 0, "errors": 0},
+    "assembleDebug": "passed",
+    "lintDebug": {"status": "passed", "errors": 0, "warnings": 608},
+    "backendSyntax": "passed",
+    "backendUnit": {"tests": 152, "failures": 0},
+    "cloudinaryWorker": {"tests": 8, "failures": 0},
+    "firestoreAndApiEmulator": {"tests": 114, "failures": 0, "project": "demo-rescuefarm"},
+    "maintenanceScripts": {"tests": 11, "failures": 0},
+    "navigation": {"fragmentDestinations": 58, "missingClasses": 0}
+  },
+  "production": {
+    "firebaseProject": "nhom7-rescuefarm",
+    "deleted": {"promotions": 3, "customerPromotionWalletsIncludingChildren": 4, "promotionNotificationOutbox": 3, "platformDiscountClaims": 0},
+    "remainingRetiredRecordsAfterFinalScan": 0,
+    "dataBackup": "build/discount-retirement/2026-10-22T16-16-12-626Z/backup.json",
+    "finalScan": "build/discount-retirement/2026-10-22T16-26-52-380Z/summary.json",
+    "rulesPublished": true,
+    "ruleset": "bbd9d75d-ebc5-4fc7-919e-77658a40e2c3",
+    "rulesHash": "c1a213b8d022b6e12bdff1f41fa54eb381b06ace92fca2a5d211dd3de1f89946",
+    "rulesBackup": "build/rules-publish/2026-10-22T16-21-42-010Z/",
+    "renderDeployed": false,
+    "gitPushed": false
+  },
+  "preserved": {
+    "historicalOrderPricesAndPayments": true,
+    "productsAndBatches": true,
+    "flashSaleAndMysteryBox": true,
+    "multiSellerCheckout": true,
+    "sepaySourceUnchanged": true,
+    "campaignLifecycleSourceUnchanged": true,
+    "roomSchemaVersion": 11
+  }
+}

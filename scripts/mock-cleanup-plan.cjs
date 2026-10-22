@@ -26,7 +26,6 @@ function buildPlan(records, seed) {
   const campaigns=ids('campaigns');
   matchSeed('banners',['title','imageUrl']);
   matchSeed('posts',['title','imageUrls']);
-  for(const r of root('promotions'))if(products.has(r.data.productId))mark(r.path,'Promotion of verified seed product');
   const posts=ids('posts');
   for(const r of root('orders')) {
     const items=records.filter(i=>i.path.startsWith(r.path+'/items/'));
@@ -47,7 +46,7 @@ function buildPlan(records, seed) {
   for(const r of root('reviews'))if(products.has(r.data.productId)||orders.has(r.data.orderId))mark(r.path,'Review of deleted mock product/order');
   for(const r of root('campaignViewReceipts'))if(campaigns.has(r.data.campaignId))mark(r.path,'Receipt for deleted mock campaign');
   for(const r of root('postViewReceipts'))if(posts.has(r.data.postId))mark(r.path,'Receipt for deleted mock post');
-  const typeSets={ORDER:orders,PRODUCT:products,CAMPAIGN:campaigns,POST:posts,PROMOTION:ids('promotions'),CATEGORY:ids('categories'),BANNER:ids('banners')};
+  const typeSets={ORDER:orders,PRODUCT:products,CAMPAIGN:campaigns,POST:posts,CATEGORY:ids('categories'),BANNER:ids('banners')};
   const linkedResource=(d)=>typeSets[d.resourceType||d.type]?.has(d.resourceId||d.referenceId);
   for(const c of ['notificationOutbox','notificationDeliveries','notifications'])for(const r of root(c))
     if(linkedResource(r.data))mark(r.path,'Notification referring to deleted mock resource');

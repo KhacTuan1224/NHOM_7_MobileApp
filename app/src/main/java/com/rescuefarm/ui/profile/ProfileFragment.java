@@ -51,8 +51,6 @@ public class ProfileFragment extends Fragment {
         addressButton.setVisibility(View.GONE);
         sellerButton = view.findViewById(R.id.sellerProfileButton);
         favoritesButton = view.findViewById(R.id.favoritesButton);
-        view.findViewById(R.id.profilePromotionWalletButton).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         view.findViewById(R.id.editProfileButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(R.id.action_profileFragment_to_editProfileFragment));
         addressButton.setOnClickListener(Navigation.createNavigateOnClickListener(
@@ -134,8 +132,6 @@ public class ProfileFragment extends Fragment {
         addressButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         sellerButton.setVisibility(user.getRole() == UserRole.SELLER ? View.VISIBLE : View.GONE);
         favoritesButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
-        requireView().findViewById(R.id.profilePromotionWalletButton).setVisibility(
-                user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         if (user instanceof Seller) {
             Seller seller = (Seller) user;
             statusView.setText(seller.canSell()

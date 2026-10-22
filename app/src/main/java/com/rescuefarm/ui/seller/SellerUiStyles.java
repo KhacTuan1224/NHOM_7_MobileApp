@@ -16,14 +16,13 @@ import com.rescuefarm.R;
 
 /** Seller management surfaces follow the Admin list and drawer presentation. */
 public final class SellerUiStyles {
-    public enum Section { PRODUCTS, BATCHES, PROMOTIONS, CAMPAIGNS, MOBILE, ORDERS, SHIPMENTS, ANALYTICS, PROFILE }
+    public enum Section { PRODUCTS, BATCHES, RESCUE_CREATE, CAMPAIGNS, MOBILE, ORDERS, SHIPMENTS, ANALYTICS, PROFILE }
     private SellerUiStyles() { }
 
     public static Section forRoute(String route) {
         switch (route) {
             case "products": return Section.PRODUCTS;
             case "batches": return Section.BATCHES;
-            case "promotions": return Section.PROMOTIONS;
             case "campaigns": return Section.CAMPAIGNS;
             case "mobile": return Section.MOBILE;
             case "orders": return Section.ORDERS;
@@ -35,7 +34,8 @@ public final class SellerUiStyles {
     public static int icon(Section section) {
         switch (section) {
             case PRODUCTS: return R.drawable.ic_store;
-            case BATCHES: case PROMOTIONS: return R.drawable.ic_admin_categories;
+            case BATCHES: return R.drawable.ic_admin_categories;
+            case RESCUE_CREATE: return R.drawable.ic_rescue_gift_plain;
             case CAMPAIGNS: return R.drawable.ic_nav_community;
             case MOBILE: return R.drawable.ic_home_location;
             case ORDERS: return R.drawable.ic_nav_orders;
@@ -49,7 +49,7 @@ public final class SellerUiStyles {
         switch (section) {
             case PRODUCTS: return R.color.admin_products;
             case BATCHES: return R.color.admin_categories;
-            case PROMOTIONS: return R.color.admin_reviews;
+            case RESCUE_CREATE: return R.color.admin_reviews;
             case CAMPAIGNS: return R.color.admin_campaigns;
             case MOBILE: return R.color.admin_categories;
             case ORDERS: return R.color.admin_orders;
@@ -63,7 +63,7 @@ public final class SellerUiStyles {
         switch (section) {
             case PRODUCTS: return R.color.admin_products_soft;
             case BATCHES: return R.color.admin_categories_soft;
-            case PROMOTIONS: return R.color.admin_reviews_soft;
+            case RESCUE_CREATE: return R.color.admin_reviews_soft;
             case CAMPAIGNS: return R.color.admin_campaigns_soft;
             case MOBILE: return R.color.admin_categories_soft;
             case ORDERS: return R.color.admin_orders_soft;

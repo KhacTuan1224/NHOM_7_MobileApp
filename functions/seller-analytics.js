@@ -94,8 +94,7 @@ function createSellerAnalytics({db, admin, authenticate}) {
           itemsByOrder.set(order.id, items.docs.map(doc => doc.data()));
         }));
       }
-      const [productDocs, promotionDocs] = await Promise.all(
-        ['products', 'promotions'].map(name => allPages(db.collection(name).where('sellerId', '==', caller.uid), admin)));
+      const productDocs = await allPages(db.collection('products').where('sellerId', '==', caller.uid), admin);
       const ids = [...new Set(campaignDocs.flatMap(doc => Object.keys(doc.get('batchTargets') || {})))];
       const batches = [];
       for (let offset = 0; offset < ids.length; offset += 20) {
@@ -110,7 +109,6 @@ function createSellerAnalytics({db, admin, authenticate}) {
       result.inventory = {products: productDocs.length, activeProducts: productDocs.filter(d => d.get('status') === 'ACTIVE').length,
         campaigns: campaigns.length, activeCampaigns: campaigns.filter(c => c.active).length,
         mobileCampaigns: campaigns.filter(c => c.active && c.rescueMode === 'MOBILE_POINT').length,
-        promotions: promotionDocs.filter(d => d.get('active') === true && time(d.get('startDate')) <= now && time(d.get('endDate')) > now).length,
         deliveryOrders: pending.filter(o => o.fulfillmentType === 'DELIVERY').length};
       result.recentOrders = [...orders].sort((a, b) => time(b.createdAt) - time(a.createdAt) || a.id.localeCompare(b.id)).slice(0, 5)
         .map(o => ({id: o.id, orderCode: o.orderCode, ownerId: o.ownerId, ownerType: o.ownerType, sellerId: o.sellerId,

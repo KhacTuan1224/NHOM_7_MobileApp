@@ -24,20 +24,20 @@ import java.util.Locale;
 public final class SellerDashboardAggregator {
     /** Compatibility overload for callers that only have the pre-analytics dashboard inputs. */
     public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
-            List<RescueCampaign> campaigns, List<Order> orders, int promotions) {
+            List<RescueCampaign> campaigns, List<Order> orders) {
         return aggregate(sellerId, products, campaigns, orders,
-                Collections.emptyList(), promotions);
+                Collections.emptyList());
     }
 
     public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
             List<RescueCampaign> campaigns, List<Order> orders,
-            List<OrderItem> deliveredItems, int promotions) {
-        return aggregate(sellerId, products, campaigns, orders, deliveredItems, promotions, 30);
+            List<OrderItem> deliveredItems) {
+        return aggregate(sellerId, products, campaigns, orders, deliveredItems, 30);
     }
 
     public SellerDashboardSnapshot aggregate(String sellerId, List<Product> products,
             List<RescueCampaign> campaigns, List<Order> orders,
-            List<OrderItem> deliveredItems, int promotions, int periodDays) {
+            List<OrderItem> deliveredItems, int periodDays) {
         String seller = required(sellerId);
         List<Product> ps = filterProducts(seller, products);
         List<RescueCampaign> cs = filterCampaigns(seller, campaigns);
@@ -118,7 +118,7 @@ public final class SellerDashboardAggregator {
         double rescueRate = target <= 0D ? 0D : Math.min(100D, rescued / target * 100D);
         return new SellerDashboardSnapshot(ps.size(), activeProducts, cs.size(), activeCampaigns,
                 completedCampaigns, mobile, os.size(), pendingOrders,
-                delivery, Math.max(0, promotions), revenue, rescued, rescueRate, topProducts,
+                delivery, revenue, rescued, rescueRate, topProducts,
                 topReasons, recent, revenueTrend);
     }
 

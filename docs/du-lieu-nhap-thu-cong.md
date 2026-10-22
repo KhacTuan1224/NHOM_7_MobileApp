@@ -1,15 +1,14 @@
 # Bộ nội dung nhập thủ công cho RescueFarm
 Đối chiếu form Java/XML và kiểm tra nhập liệu của repo ngày **18/10/2026**. Chỉ cung cấp văn bản để bạn tự nhập; không tạo dữ liệu trong database và không thay đổi UI.
 
-Bộ này gồm **8 danh mục, 32 sản phẩm, 32 lô hàng, 16 chiến dịch, 12 khuyến mãi và 10 banner**. Đây là nội dung minh họa cho bản demo, không phải thông tin tồn kho, nguồn hàng hay giá thị trường đã được xác minh. Nếu bán thật, thay bằng thông tin đúng của hàng thực tế.
+Bộ này gồm **8 danh mục, 32 sản phẩm, 32 lô hàng, 16 chiến dịch và 10 banner**. Đây là nội dung minh họa cho bản demo, không phải thông tin tồn kho, nguồn hàng hay giá thị trường đã được xác minh. Nếu bán thật, thay bằng thông tin đúng của hàng thực tế.
 
 ## Cách nhập để các phần liên kết được với nhau
 1. Admin tạo/bổ sung danh mục. Nếu đã có **Trái cây** và **Rau xanh**, dùng lại, không tạo trùng.
 2. Seller tạo sản phẩm, chọn đúng danh mục và tải ảnh. Mỗi sản phẩm bên dưới dùng đơn vị **kg**, trạng thái **Đang bán**.
 3. Mở quản lý lô hàng của từng sản phẩm, tạo một lô theo bảng. Chỉ có sản phẩm mà chưa có lô khả dụng thì chưa đủ để đặt hàng.
 4. Seller tạo chiến dịch, chọn hai lô tương ứng, nhập mục tiêu riêng của từng lô rồi gửi duyệt. Admin duyệt để chiến dịch có thể hiển thị công khai khi đến thời gian bắt đầu.
-5. Tạo khuyến mãi cho một số sản phẩm; không cần áp dụng cho toàn bộ.
-6. Admin tạo banner sau khi đã có chiến dịch hoạt động để chọn theo tên.
+5. Admin tạo banner sau khi đã có chiến dịch hoạt động để chọn theo tên.
 
 **Chiến dịch và bảng tin đã dùng chung một nội dung:** Seller vào **Quản lý chiến dịch** để tạo chiến dịch. Tên, mô tả, ảnh và sản phẩm/lô hàng của chiến dịch cũng là nội dung hiển thị trên bảng tin cộng đồng sau khi được duyệt và đủ điều kiện công khai. Không có bước tạo bài viết Post độc lập, không nhập Campaign ID hay Product ID vào một form bài viết riêng.
 
@@ -617,110 +616,7 @@ Chung cho cả 16 chiến dịch:
 - **Lô thứ hai:** Mướp hương Tiền Giang — **Lượng mục tiêu:** `35` kg.
 - **Tổng mục tiêu để đối chiếu:** 80 kg; không cần tìm ô nhập tổng riêng.
 
-## 5. Khuyến mãi & giá sỉ — Seller
-> Sau khi seller tạo ưu đãi, customer cần mở **Kho khuyến mãi → Tất cả khuyến mãi → Lưu khuyến mãi** mới được áp dụng khi mua. Guest phải đăng nhập để lưu. Xem [luồng kho khuyến mãi](promotion-wallet.md).
-
-Chọn đúng sản phẩm trong mục **Khuyến mãi & giá sỉ**, rồi mở form khuyến mãi. Form không có trường tên chương trình. Tất cả dùng **Ngày bắt đầu `2026-10-18`**, **Ngày kết thúc `2026-10-20`**, bật **Đang bật**. Với loại phần trăm/số tiền, để trống các dòng mức số lượng. Với loại theo số lượng, giá trị nhập `0`, các mức nhập mỗi dòng một cặp `số_lượng=phần_trăm`. Mỗi sản phẩm chỉ có một cấu hình trong bộ này.
-
-### KM01. Thanh long ruột đỏ Bình Thuận
-
-- **Loại khuyến mãi:** Giảm theo phần trăm
-- **Giá trị:** `5`
-- **Các mức số lượng:** để trống.
-
-### KM02. Cam sành Vĩnh Long
-
-- **Loại khuyến mãi:** Giảm theo phần trăm
-- **Giá trị:** `8`
-- **Các mức số lượng:** để trống.
-
-### KM03. Cải ngọt Đà Lạt
-
-- **Loại khuyến mãi:** Giảm số tiền cố định
-- **Giá trị:** `1000`
-- **Các mức số lượng:** để trống.
-
-### KM04. Cà rốt Đà Lạt
-
-- **Loại khuyến mãi:** Giảm theo số lượng
-- **Giá trị:** `0`
-- **Các mức số lượng:**
-
-```text
-3=3
-5=5
-10=8
-```
-
-### KM05. Khoai lang tím Vĩnh Long
-
-- **Loại khuyến mãi:** Giảm theo số lượng
-- **Giá trị:** `0`
-- **Các mức số lượng:**
-
-```text
-3=3
-5=6
-10=9
-```
-
-### KM06. Bí đỏ hồ lô Đắk Lắk
-
-- **Loại khuyến mãi:** Giảm theo phần trăm
-- **Giá trị:** `5`
-- **Các mức số lượng:** để trống.
-
-### KM07. Gạo tẻ Long An
-
-- **Loại khuyến mãi:** Giảm theo số lượng
-- **Giá trị:** `0`
-- **Các mức số lượng:**
-
-```text
-5=3
-10=5
-20=7
-```
-
-### KM08. Gạo lứt đỏ Đồng Tháp
-
-- **Loại khuyến mãi:** Giảm số tiền cố định
-- **Giá trị:** `2000`
-- **Các mức số lượng:** để trống.
-
-### KM09. Đậu xanh nguyên hạt Đắk Lắk
-
-- **Loại khuyến mãi:** Giảm theo số lượng
-- **Giá trị:** `0`
-- **Các mức số lượng:**
-
-```text
-3=3
-5=5
-10=8
-```
-
-### KM10. Đậu phộng nhân Tây Ninh
-
-- **Loại khuyến mãi:** Giảm theo phần trăm
-- **Giá trị:** `5`
-- **Các mức số lượng:** để trống.
-
-### KM11. Gừng tươi Quảng Nam
-
-- **Loại khuyến mãi:** Giảm số tiền cố định
-- **Giá trị:** `1000`
-- **Các mức số lượng:** để trống.
-
-### KM12. Dưa leo Long An
-
-- **Loại khuyến mãi:** Giảm theo phần trăm
-- **Giá trị:** `5`
-- **Các mức số lượng:** để trống.
-
-Khuyến mãi tác động lên mức giá đang áp dụng, nên dùng phần xem trước và tổng tiền checkout để xem giá cuối. Ví dụ mức `5=5` có nghĩa là mua từ 5 kg được giảm 5%, không phải giá 5 đồng. Không tạo mã voucher hay tên chương trình vào ô giá trị vì UI hiện không có các trường này.
-
-## 6. Banner — Admin
+## 5. Banner — Admin
 Mở **Ảnh quảng bá → Tạo ảnh quảng bá**. Chung cho các mục: **ID Banner để trống** để app tự tạo; tự tải ảnh; bật **Đang hiển thị**; để trống **Lý do quản trị**. Ngày bắt đầu `2026-10-18`. Chiến dịch liên kết chọn trong danh sách theo tên sau khi được duyệt và hoạt động. Nếu chưa thấy, tạo banner không liên kết trước hoặc quay lại sau khi chiến dịch đủ điều kiện.
 
 | Banner | Tiêu đề Banner | Thứ tự hiển thị | Ngày bắt đầu | Ngày kết thúc | Chiến dịch liên kết chọn theo tên |
@@ -736,7 +632,7 @@ Mở **Ảnh quảng bá → Tạo ảnh quảng bá**. Chung cho các mục: **
 | BN09 | Mua vừa đủ, sử dụng trọn vẹn | 90 | 2026-10-18 | 2026-10-30 | Không liên kết chiến dịch |
 | BN10 | Cùng RescueFarm kết nối nông sản | 100 | 2026-10-18 | 2026-10-30 | Không liên kết chiến dịch |
 
-## 7. Một vài mô tả cửa hàng để chọn thêm
+## 6. Một vài mô tả cửa hàng để chọn thêm
 Phần này là tùy chọn nếu bạn muốn hoàn thiện hồ sơ công khai của seller đang có. Chỉ dùng cho hồ sơ thử nghiệm hoặc thay bằng nội dung đúng của cửa hàng; giữ nguyên thông tin ngân hàng, người đại diện và địa chỉ thật. Không cần tạo thêm users để nhập bộ sản phẩm trên.
 
 **Tên cửa hàng:** Góc Nông Sản Xanh
@@ -751,8 +647,8 @@ Phần này là tùy chọn nếu bạn muốn hoàn thiện hồ sơ công khai
 
 **Mô tả cửa hàng:** Trạm Nông Sản Mỗi Ngày tập hợp nông sản đang cần tiêu thụ theo từng đợt. Cửa hàng bán theo khối lượng và cập nhật các chiến dịch giải cứu để người dùng dễ theo dõi. Vui lòng xem kỹ thời gian, địa điểm nhận và lượng khả dụng trước khi đặt hàng.
 
-## 8. Nhập ít trước để trang chủ có nội dung
-Nếu chưa muốn nhập hết, bắt đầu với **SP01–SP12 và 12 lô tương ứng**, sau đó tạo **CD01–CD06**, **BN01–BN03** và **KM01–KM05**. Như vậy trang chủ và trang danh mục đã có cả sản phẩm, chiến dịch và banner; bảng tin cộng đồng dùng chính các chiến dịch này. Sau đó bổ sung các nhóm nấm, ngũ cốc, đậu và gia vị để danh mục đa dạng hơn.
+## 7. Nhập ít trước để trang chủ có nội dung
+Nếu chưa muốn nhập hết, bắt đầu với **SP01–SP12 và 12 lô tương ứng**, sau đó tạo **CD01–CD06**, **BN01–BN03**. Như vậy trang chủ và trang danh mục đã có cả sản phẩm, chiến dịch và banner; bảng tin cộng đồng dùng chính các chiến dịch này. Sau đó bổ sung các nhóm nấm, ngũ cốc, đậu và gia vị để danh mục đa dạng hơn.
 
 Ảnh/banner đẹp sẽ cải thiện phần nhìn, nhưng số đã bán, lượng đã giải cứu, đánh giá và biểu đồ phải đến từ luồng sử dụng thực tế. Bộ này không tạo sẵn số liệu thành tích hoặc đánh giá giả. Chiến dịch mới bắt đầu ở 0% là bình thường.
 
@@ -760,7 +656,6 @@ Nếu chưa muốn nhập hết, bắt đầu với **SP01–SP12 và 12 lô tư
 - Form sản phẩm: `app/src/main/res/layout/fragment_product_editor.xml`; `ui/product/ProductEditorFragment.java`.
 - Lô hàng và kiểm tra ngày/giá: `fragment_batch_manager.xml`; `ui/product/ProductValidator.java`.
 - Chiến dịch: `fragment_campaign_editor.xml`; `ui/campaign/CampaignEditorFragment.java`; `CampaignValidator.java`; backend `functions/campaign-media.js`.
-- Khuyến mãi: `fragment_promotion_editor.xml`; `ui/product/PromotionEditorFragment.java`; `domain/model/Promotion.java`.
 - Bảng tin cộng đồng: `ui/feed/FeedFragment.java` dùng `CampaignViewModel.getPublicCampaigns()` và mở `campaignDetailFragment`; không dùng Post làm nội dung bảng tin hiện tại.
 - Danh mục/banner được dựng bằng Java: `ui/admin/AdminResourceFragment.java`.
 - Tên lựa chọn hiển thị: `ui/common/EnumLabels.java`. Các đường dẫn Java ở trên nằm dưới `app/src/main/java/com/rescuefarm/`.
