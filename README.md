@@ -7,7 +7,7 @@ The product requirements and domain decisions are documented in [`final.md`](fin
 ## Main capabilities
 
 - **Guest and Customer:** browse products, categories, banners, campaigns and their community discussions; use a local guest cart or a signed-in Customer cart; checkout, follow orders, manage profile and addresses, favorite products, comment/react/report, and review eligible delivered purchases.
-- **Seller:** apply for seller access; after approval, manage a storefront, products and expiring product batches, rescue campaigns and mobile rescue locations, promotions and orders/shipments. Sellers can use a read-only customer-facing view to inspect published content.
+- **Seller:** apply for seller access; after approval, manage a storefront, products and expiring product batches, rescue campaigns and mobile rescue locations, orders/shipments. Sellers can use a read-only customer-facing view to inspect published content.
 - **Admin:** review Seller applications, moderate products/campaigns/reviews, handle reports and user status, manage catalog content, inspect orders, view rescue analytics, and configure shipping fees.
 - **Backend:** Firebase Authentication and Cloud Firestore are used for identity and application data. The Express service in `functions/` runs on Render and provides trusted checkout/quote, notification, review-summary, and Admin dashboard endpoints. The Cloudflare Worker in `cloudinary-worker/` signs Cloudinary media operations.
 - **Offline support:** Room caches selected application data and WorkManager handles eligible background synchronization. Checkout and other critical inventory actions require the online backend.

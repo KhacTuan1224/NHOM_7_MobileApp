@@ -299,7 +299,6 @@
     <fragment android:id="@+id/sellerOrderListFragment" android:name="com.rescuefarm.ui.order.SellerOrderListFragment"
         android:label="@string/seller_orders_title"><argument android:name="deliveryOnly" android:defaultValue="false" app:argType="boolean" /><action android:id="@+id/action_sellerOrderListFragment_to_orderDetailFragment" app:destination="@id/orderDetailFragment" /></fragment>
     <fragment android:id="@+id/sellerDashboardFragment" android:name="com.rescuefarm.ui.seller.SellerDashboardFragment" android:label="@string/seller_dashboard_title">
-        <action android:id="@+id/action_sellerDashboardFragment_to_sellerPromotionListFragment" app:destination="@id/sellerPromotionListFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_mobileRescueFragment" app:destination="@id/mobileRescueFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerProductListFragment" app:destination="@id/sellerProductListFragment" />
         <action android:id="@+id/action_sellerDashboardFragment_to_sellerCampaignListFragment" app:destination="@id/sellerCampaignListFragment" />
@@ -317,19 +316,13 @@
             app:destination="@id/productEditorFragment" />
         <action android:id="@+id/action_sellerProductListFragment_to_batchManagerFragment"
             app:destination="@id/batchManagerFragment" />
-        <action android:id="@+id/action_sellerProductListFragment_to_promotionEditorFragment"
-            app:destination="@id/promotionEditorFragment" />
     </fragment>
     <fragment android:id="@+id/productEditorFragment"
         android:name="com.rescuefarm.ui.product.ProductEditorFragment" android:label="@string/product_editor_title" />
     <fragment android:id="@+id/batchManagerFragment"
         android:name="com.rescuefarm.ui.product.BatchManagerFragment" android:label="@string/batch_manager_title" />
-    <fragment android:id="@+id/sellerPromotionListFragment" android:name="com.rescuefarm.ui.product.SellerPromotionListFragment"
-        android:label="Khuyến mãi và giá sỉ">
-        <action android:id="@+id/action_sellerPromotionListFragment_to_promotionEditorFragment" app:destination="@id/promotionEditorFragment" />
-    </fragment>
-    <fragment android:id="@+id/promotionEditorFragment"
-        android:name="com.rescuefarm.ui.product.PromotionEditorFragment" android:label="@string/promotion_editor_title" />
+
+
     <fragment android:id="@+id/campaignListFragment"
         android:name="com.rescuefarm.ui.campaign.CampaignListFragment" android:label="@string/campaigns_title">
         <action android:id="@+id/action_campaignListFragment_to_campaignDetailFragment"
@@ -366,7 +359,6 @@
     </fragment>
 
 
-
     <fragment android:id="@+id/favoriteFragment" android:name="com.rescuefarm.ui.engagement.FavoriteFragment" android:label="@string/favorites_title"><action android:id="@+id/action_favoriteFragment_to_productDetailFragment" app:destination="@id/productDetailFragment" /></fragment>
     <fragment android:id="@+id/reviewFragment" android:name="com.rescuefarm.ui.engagement.ReviewFragment" android:label="@string/reviews_title" />
     <fragment android:id="@+id/storefrontFragment" android:name="com.rescuefarm.ui.profile.StorefrontFragment" android:label="Cấu hình cửa hàng" />
@@ -399,10 +391,6 @@
         <argument android:name="itemActive" app:argType="boolean" />
         <argument android:name="itemImageUrl" app:argType="string" />
     </fragment>
-    <fragment android:id="@+id/promotionWalletFragment"
-        android:name="com.rescuefarm.ui.product.PromotionWalletFragment"
-        android:label="@string/promotion_wallet_title">
-        <argument android:name="productId" app:argType="string" android:defaultValue="" />
-    </fragment>
+
     <fragment android:id="@+id/orderReconciliationFragment" android:name="com.rescuefarm.ui.order.OrderReconciliationFragment" android:label="Đối soát đơn hàng" />
 </navigation>

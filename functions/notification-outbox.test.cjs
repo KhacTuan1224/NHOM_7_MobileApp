@@ -76,16 +76,7 @@ test('parallel workers claim a delivery once through a lease', async () => {
   await f.worker.expand(doc); const delivery = (await f.db.collection('notificationDeliveries').get()).docs[0];
   await Promise.all([f.worker.deliver(delivery.ref), f.worker.deliver(delivery.ref)]); assert.equal(f.sends(), 1);
 });
-test('future Promotion is rescheduled then sent at effectiveness, not at save time', async () => {
-  const f = fixture(); await event(f, 'promotion', {kind: 'PROMOTION', resourceType: 'PROMOTION', resourceId: 'product'});
-  const created = f.db.snapshot('notificationOutbox/promotion').get('createdAt');
-  f.db.documents.set('promotions/product', {active: true, startDate: new Timestamp(created.toMillis() + 3600000),
-    endDate: new Timestamp(created.toMillis() + 86400000), updatedAt: created});
-  f.db.documents.set('favorites/favorite', {productId: 'product', customerId: 'customer'});
-  f.db.documents.set('products/product', {status: 'ACTIVE'});
-  await f.worker.runOnce(); assert.equal(f.sends(), 0); assert.equal(f.db.snapshot('notificationOutbox/promotion').get('status'), 'PENDING');
-  f.later(); await f.worker.runOnce(); assert.equal(f.sends(), 1);
-});
+
 test('decision stream is resumable, keeps Seller reasons and hides internal report notes', async () => {
   const at = new Timestamp(Date.now() - 1000);
   const f = fixture({'users/seller': {role: 'SELLER', status: 'ACTIVE'}, 'sellerApplications/seller': {sellerId: 'seller'},
@@ -121,15 +112,19 @@ test('partial multicast retry sends only tokens not already accepted by FCM', as
   await worker.deliver(delivery.ref); assert.equal(batches[0].length, 2); assert.equal(batches[1].length, 1);
   assert.equal(f.db.snapshot(delivery.ref.path).get('pushDelivered'), true);
 });
-test('one-time migration queues pre-existing future promotions once', async () => {
-  const at = new Timestamp(Date.now() - 1000), f = fixture({'promotions/p': {active: true, updatedAt: at,
-    startDate: new Timestamp(Date.now() + 3600000), endDate: new Timestamp(Date.now() + 86400000)}});
-  await f.worker.backfillSources(); await f.worker.backfillSources();
-  assert.equal((await f.db.collection('notificationOutbox').get()).size, 1);
-});
+
 test('report enforcement never forwards the internal note to the target owner', async () => {
   const f = fixture({'products/p': {sellerId: 'seller'}, 'adminAuditLogs/enforcement': {resourceType: 'PRODUCTS', resourceId: 'p',
     fromState: 'ACTIVE', toState: 'HIDDEN', reportId: 'r', reason: 'INTERNAL SECRET', createdAt: new Timestamp(Date.now() - 1)}});
   await f.worker.auditDecisions();
   assert.equal(f.db.snapshot('notificationOutbox/audit_enforcement').get('publicMessage').includes('SECRET'), false);
+});
+
+test('legacy promotions no longer create notification deliveries or backfill events',async()=>{
+  const f=fixture({'promotions/p':{active:true,updatedAt:new Timestamp(Date.now()),startDate:new Timestamp(0),endDate:new Timestamp(Date.now()+86400000)}});
+  await event(f,'retired',{kind:'PROMOTION',resourceType:'PROMOTION',resourceId:'p'});
+  await f.worker.runOnce();
+  assert.equal(f.sends(),0);
+  assert.equal((await f.db.collection('notificationDeliveries').get()).size,0);
+  assert.equal((await f.db.collection('notificationOutbox').get()).size,1);
 });

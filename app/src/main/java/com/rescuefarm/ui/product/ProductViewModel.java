@@ -6,11 +6,9 @@ import androidx.lifecycle.ViewModel;
 import com.rescuefarm.data.repository.AuthRepository;
 import com.rescuefarm.data.repository.ProductRepository;
 import com.rescuefarm.domain.enums.ProductStatus;
-import com.rescuefarm.domain.enums.PromotionType;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.ProductBatch;
-import com.rescuefarm.domain.model.Promotion;
 import com.rescuefarm.service.pricing.PriceBreakdown;
 import com.rescuefarm.service.pricing.PricingService;
 import java.util.ArrayList;
@@ -26,8 +24,6 @@ public class ProductViewModel extends ViewModel {
     private final MutableLiveData<ProductScreenState> state =
             new MutableLiveData<>(ProductScreenState.idle());
     private final MutableLiveData<PriceBreakdown> priceBreakdown = new MutableLiveData<>();
-    private final MutableLiveData<Promotion> promotion = new MutableLiveData<>();
-    private final MutableLiveData<List<Promotion>> sellerPromotions = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Boolean> sellerProductsHaveMore = new MutableLiveData<>(false);
     public ProductViewModel(ProductRepository repository, AuthRepository authRepository) {
         this.repository = repository; this.authRepository = authRepository;
@@ -35,8 +31,8 @@ public class ProductViewModel extends ViewModel {
 
     public LiveData<ProductScreenState> getState() { return state; }
     public LiveData<PriceBreakdown> getPriceBreakdown() { return priceBreakdown; }
-    public LiveData<Promotion> getPromotion() { return promotion; }
-    public LiveData<List<Promotion>> getSellerPromotionsState() { return sellerPromotions; }
+
+
     public LiveData<List<Category>> getCategories() { return repository.observeCategories(); }
     public LiveData<List<Product>> getProducts() { return repository.observeProducts(); }
     private final androidx.lifecycle.MediatorLiveData<List<Product>> publicProducts = new androidx.lifecycle.MediatorLiveData<>();
@@ -94,9 +90,8 @@ public class ProductViewModel extends ViewModel {
     public LiveData<Product> observeProduct(String productId) {
         return repository.observeProduct(productId);
     }
-    public LiveData<Promotion> observePromotion(String productId) {
-        return repository.observePromotion(productId);
-    }
+
+
     public LiveData<List<ProductBatch>> getBatches(String productId) {
         return repository.observeBatches(productId);
     }
@@ -131,76 +126,11 @@ public class ProductViewModel extends ViewModel {
         });
     }
 
+
     public void calculatePrice(Product product, double quantity) {
         if (product == null) return;
-        if (!Double.isFinite(quantity) || quantity <= 0D) {
-            state.setValue(ProductScreenState.error("Số lượng phải là số dương.")); return;
-        }
-        repository.getApplicablePromotion(product.getId(), new ProductRepository.PromotionCallback() {
-            @Override public void onSuccess(Promotion value) {
-                promotion.postValue(value);
-                try { priceBreakdown.postValue(pricingService.calculatePrice(product.getOriginalPrice(),
-                        product.getRescuePrice(), quantity, value, new Date())); }
-                catch (IllegalArgumentException error) { state.postValue(ProductScreenState.error(error.getMessage())); }
-            }
-            @Override public void onError(ProductRepository.ErrorCode error, String message) {
-                if (error == ProductRepository.ErrorCode.NOT_CONFIGURED
-                        || error == ProductRepository.ErrorCode.NOT_FOUND
-                        || error == ProductRepository.ErrorCode.NETWORK
-                        || error == ProductRepository.ErrorCode.FORBIDDEN) {
-                    promotion.postValue(null);
-                    priceBreakdown.postValue(pricingService.calculatePrice(product.getOriginalPrice(),
-                            product.getRescuePrice(), quantity, null, new Date()));
-                } else state.postValue(ProductScreenState.error(message));
-            }
-        });
-    }
-
-    public void loadPromotion(String productId) {
-        repository.getPromotion(productId, new ProductRepository.PromotionCallback() {
-            @Override public void onSuccess(Promotion value) { promotion.postValue(value); }
-            @Override public void onError(ProductRepository.ErrorCode error, String message) {
-                state.postValue(ProductScreenState.error(message));
-            }
-        });
-    }
-
-    public void loadSellerPromotions() {
-        String sellerId = requireUserId(); if (sellerId == null) return;
-        repository.getSellerPromotions(sellerId, new ProductRepository.PromotionListCallback() {
-            @Override public void onSuccess(List<Promotion> values) { sellerPromotions.postValue(values); }
-            @Override public void onError(ProductRepository.ErrorCode error, String message) {
-                state.postValue(ProductScreenState.error(message));
-            }
-        });
-    }
-
-    public void savePromotion(String productId, PromotionType type, String valueText, String tiersText,
-            String startText, String endText, boolean active) {
-        String sellerId = requireUserId(); if (sellerId == null) return;
-        try {
-            double value = type == PromotionType.VOLUME && clean(valueText).isEmpty()
-                    ? 0D : ProductValidator.parseNumber(valueText);
-            Promotion candidate = new Promotion(productId, sellerId, productId, type, value,
-                    parseTiers(tiersText), ProductValidator.parseDate(startText),
-                    ProductValidator.parseDate(endText), active);
-            state.setValue(ProductScreenState.loading());
-            repository.savePromotion(candidate, new ProductRepository.PromotionCallback() {
-                @Override public void onSuccess(Promotion saved) {
-                    promotion.postValue(saved); state.postValue(ProductScreenState.saved("Đã lưu khuyến mãi."));
-                }
-                @Override public void onError(ProductRepository.ErrorCode error, String message) {
-                    state.postValue(ProductScreenState.error(message));
-                }
-            });
-        } catch (IllegalArgumentException error) {
-            state.setValue(ProductScreenState.error("Khuyến mãi không hợp lệ: " + error.getMessage()));
-        }
-    }
-
-    public void setPromotionActive(String productId, boolean active) {
-        repository.setPromotionActive(productId, active,
-                actionCallback(active ? "Đã bật khuyến mãi." : "Đã tắt khuyến mãi."));
+        try { priceBreakdown.setValue(pricingService.calculatePrice(product.getOriginalPrice(), product.getRescuePrice(), quantity)); }
+        catch (IllegalArgumentException error) { state.setValue(ProductScreenState.error(error.getMessage())); }
     }
 
     public void saveProduct(String id, String categoryId, String name, String description,
@@ -291,18 +221,8 @@ public class ProductViewModel extends ViewModel {
         }
         return result;
     }
-    private Map<String, Double> parseTiers(String value) {
-        Map<String, Double> result = new HashMap<>();
-        if (clean(value).isEmpty()) return result;
-        for (String line : value.split("[,\\n]")) {
-            String[] pair = line.trim().split("=", 2);
-            if (pair.length != 2) throw new IllegalArgumentException("Tier phải có dạng số_lượng=phần_trăm");
-            double threshold = ProductValidator.parseNumber(pair[0]);
-            double discount = ProductValidator.parseNumber(pair[1]);
-            result.put(Double.toString(threshold), discount);
-        }
-        return result;
-    }
+
+
     private static String clean(String value) { return value == null ? "" : value.trim(); }
     @Override protected void onCleared() { repository.close(); super.onCleared(); }
 }

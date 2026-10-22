@@ -159,37 +159,12 @@ def build_documents(now: datetime) -> dict[str, dict[str, dict[str, Any]]]:
         },
     }
 
-    promotions = {
-        "prod-binh-thuan-dragon-fruit": {
-            "id": "prod-binh-thuan-dragon-fruit",
-            "sellerId": SELLER_ID,
-            "productId": "prod-binh-thuan-dragon-fruit",
-            "type": "VOLUME",
-            "value": 0,
-            "quantityDiscountTiers": {"5": 5, "10": 10},
-            "startDate": now - timedelta(days=1),
-            "endDate": now + timedelta(days=30),
-            "active": True,
-        },
-        "prod-da-lat-avocado": {
-            "id": "prod-da-lat-avocado",
-            "sellerId": SELLER_ID,
-            "productId": "prod-da-lat-avocado",
-            "type": "VOLUME",
-            "value": 0,
-            "quantityDiscountTiers": {"3": 4, "6": 8},
-            "startDate": now - timedelta(days=1),
-            "endDate": now + timedelta(days=30),
-            "active": True,
-        },
-    }
     return {
         "categories": categories,
         "products": products,
         "productBatches": batches,
         "campaigns": campaigns,
         "banners": banners,
-        "promotions": promotions,
     }
 
 
@@ -197,7 +172,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Import RescueFarm mock data into Firestore.")
     parser.add_argument("--project", default=PROJECT_ID, help=f"Firebase project ID (default: {PROJECT_ID})")
     parser.add_argument("--dry-run", action="store_true", help="Print planned document IDs without writing")
-    parser.add_argument("--only", choices=["categories", "products", "productBatches", "campaigns", "banners", "promotions"], help="Upsert only one collection")
+    parser.add_argument("--only", choices=["categories", "products", "productBatches", "campaigns", "banners"], help="Upsert only one collection")
     args = parser.parse_args()
 
     documents = build_documents(datetime.now(timezone.utc))

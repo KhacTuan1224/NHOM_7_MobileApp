@@ -77,7 +77,6 @@ public class CategoryContentTest {
                     switch (method.getName()) {
                         case "observePublicProductPage": return new MutableLiveData<>(catalog);
                         case "observeCategories": return new MutableLiveData<>(Collections.emptyList());
-                        case "observePromotion": return new MutableLiveData<>();
                         case "observeBatches": return new MutableLiveData<>("mango".equals(args[0])
                                 ? Collections.singletonList(batch) : "carrot".equals(args[0])
                                 ? Collections.singletonList(ProductBatch.restore("carrot-batch", "carrot", null,

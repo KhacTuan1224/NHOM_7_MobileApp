@@ -21,7 +21,7 @@ const protectedCollections=new Set(['users','orders','payments','shipments','pro
 let unchanged=0;
 for(const[p,d]of oldMap)if(!actions.has(p)&&protectedCollections.has(p.split('/')[0])){assert(newMap.has(p),'Protected record missing: '+p);same(newMap.get(p),d,'Protected record changed: '+p);unchanged++;}
 const deletedIds=new Set(plan.actions.filter(a=>a.op==='delete'&&a.path.split('/').length===2).map(a=>a.path.split('/')[1]));
-const operational=new Set(['categories','products','productBatches','campaigns','banners','posts','promotions','orders','payments','shipments','checkoutReceipts','guestOrderCodes','guestOrderGrants','bankTransferReferences','favorites','reviews','customerCarts','campaignViewReceipts','postViewReceipts','notificationOutbox','notificationDeliveries','notifications','campaignMediaDrafts','campaignMediaUploads']);
+const operational=new Set(['categories','products','productBatches','campaigns','banners','posts','orders','payments','shipments','checkoutReceipts','guestOrderCodes','guestOrderGrants','bankTransferReferences','favorites','reviews','customerCarts','campaignViewReceipts','postViewReceipts','notificationOutbox','notificationDeliveries','notifications','campaignMediaDrafts','campaignMediaUploads']);
 function references(v){if(typeof v==='string')return deletedIds.has(v)?[v]:[];if(!v||typeof v!=='object')return[];return Object.entries(v).flatMap(([k,x])=>[...(deletedIds.has(k)?[k]:[]),...references(x)]);}
 for(const[p,d]of newMap)if(operational.has(p.split('/')[0]))assert.equal(references(d).length,0,'Operational reference to deleted record: '+p);
 const roots=c=>after.records.filter(r=>r.path.startsWith(c+'/')&&r.path.split('/').length===2);

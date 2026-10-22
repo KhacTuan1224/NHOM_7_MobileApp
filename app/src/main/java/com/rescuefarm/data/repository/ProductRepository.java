@@ -4,7 +4,6 @@ import androidx.lifecycle.LiveData;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.ProductBatch;
-import com.rescuefarm.domain.model.Promotion;
 import java.util.Date;
 import java.util.List;
 
@@ -24,14 +23,6 @@ public interface ProductRepository {
         void onSuccess(ProductBatch batch);
         void onError(ErrorCode error, String message);
     }
-    interface PromotionCallback {
-        void onSuccess(Promotion promotion);
-        void onError(ErrorCode error, String message);
-    }
-    interface PromotionListCallback {
-        void onSuccess(List<Promotion> promotions);
-        void onError(ErrorCode error, String message);
-    }
     interface ProductListCallback {
         void onSuccess(List<Product> products);
         void onError(ErrorCode error, String message);
@@ -41,7 +32,7 @@ public interface ProductRepository {
         void onError(ErrorCode error, String message);
     }
     interface CartQuoteCallback {
-        void onSuccess(Product product, ProductBatch batch, Promotion promotion);
+        void onSuccess(Product product, ProductBatch batch);
         void onError(ErrorCode error, String message);
     }
 
@@ -54,9 +45,8 @@ public interface ProductRepository {
     default LiveData<Product> observeProduct(String productId) {
         return new androidx.lifecycle.MutableLiveData<>();
     }
-    default LiveData<Promotion> observePromotion(String productId) {
-        return new androidx.lifecycle.MutableLiveData<>();
-    }
+
+
     LiveData<List<ProductBatch>> observeBatches(String productId);
     void refreshCatalog(ActionCallback callback);
     void refreshSellerProducts(String sellerId, ActionCallback callback);
@@ -84,22 +74,8 @@ public interface ProductRepository {
     void deleteBatch(String batchId, long expectedVersion, ActionCallback callback);
     void mutateStock(String batchId, long expectedVersion, StockMutation mutation,
             double quantity, BatchCallback callback);
-    default void getPromotion(String productId, PromotionCallback callback) {
-        callback.onSuccess(null);
-    }
-    /** Buyer pricing only: a promotion must have been saved by the current Customer. */
-    default void getApplicablePromotion(String productId, PromotionCallback callback) {
-        callback.onSuccess(null);
-    }
-    default void getSellerPromotions(String sellerId, PromotionListCallback callback) {
-        callback.onSuccess(new java.util.ArrayList<>());
-    }
-    default void savePromotion(Promotion promotion, PromotionCallback callback) {
-        callback.onError(ErrorCode.NOT_CONFIGURED, "Promotion repository is not configured.");
-    }
-    default void setPromotionActive(String productId, boolean active, ActionCallback callback) {
-        callback.onError(ErrorCode.NOT_CONFIGURED, "Promotion repository is not configured.");
-    }
+
+
     default void getCartQuote(String productId, String batchId, CartQuoteCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, "Không thể revalidate giỏ khi offline.");
     }

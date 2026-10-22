@@ -19,7 +19,7 @@ public class CartRevalidationServiceTest {
 
     @Test public void currentStockAndPrice_areAccepted() {
         CartRevalidationService.Result result = service.revalidate(
-                new CartItem("p::b", "p", "b", "s", 2D, 80D), product(), batch(5D, 2000), null,
+                new CartItem("p::b", "p", "b", "s", 2D, 80D), product(), batch(5D, 2000),
                 new Date(1000));
         assertTrue(result.isValid()); assertFalse(result.isPriceChanged());
         assertEquals(160D, result.getQuote().getLineSubtotal(), 0D);
@@ -28,7 +28,7 @@ public class CartRevalidationServiceTest {
     @Test public void insufficientStock_isRejectedWithoutReservation() {
         ProductBatch batch = batch(1D, 2000);
         CartRevalidationService.Result result = service.revalidate(
-                new CartItem("p::b", "p", "b", "s", 2D, 80D), product(), batch, null,
+                new CartItem("p::b", "p", "b", "s", 2D, 80D), product(), batch,
                 new Date(1000));
         assertFalse(result.isValid());
         assertEquals(1D, batch.getAvailableQuantity(), 0D);
@@ -37,7 +37,7 @@ public class CartRevalidationServiceTest {
 
     @Test public void expiredBatch_isRejected() {
         assertFalse(service.revalidate(new CartItem("p::b", "p", "b", "s", 1D, 80D),
-                product(), batch(5D, 500), null, new Date(1000)).isValid());
+                product(), batch(5D, 500), new Date(1000)).isValid());
     }
 
     private Product product() {

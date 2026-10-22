@@ -195,24 +195,6 @@ service cloud.firestore {
           && data.status in ['AVAILABLE', 'RESERVED_PARTIAL', 'SOLD_OUT', 'EXPIRED', 'ARCHIVED'];
     }
 
-    function validPromotion(data, promotionId) {
-      return data.id == promotionId
-          && data.productId == promotionId
-          && data.sellerId is string
-          && data.type in ['PERCENT', 'FIXED', 'VOLUME']
-          && data.value is number
-          && data.value >= 0
-          && (data.type == 'VOLUME' || data.value > 0)
-          && (data.type != 'PERCENT' || data.value <= 100)
-          && (data.type != 'VOLUME' || data.value == 0)
-          && data.quantityDiscountTiers is map
-          && data.quantityDiscountTiers.size() <= 10
-          && (data.type != 'VOLUME' || data.quantityDiscountTiers.size() > 0)
-          && data.startDate is timestamp
-          && data.endDate is timestamp
-          && data.startDate < data.endDate
-          && data.active is bool;
-    }
 
     function validCustomerCart(data, customerId) {
       return data.id == customerId
@@ -377,11 +359,6 @@ service cloud.firestore {
             'DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'COMPLETED', 'EXPIRED', 'REJECTED', 'STOPPED'
           ];
     }
-
-
-
-
-
 
 
     function activeCampaign(campaignId) {
@@ -815,49 +792,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /promotions/{promotionId} {
-      // Checkout reads by product ID even when no promotion exists or it has expired.
-      // Sellers also read a missing document before creating it in an atomic transaction.
-      allow get: if (isSignedIn() && hasRole(request.auth.uid, 'CUSTOMER')
-            && exists(/databases/$(database)/documents/products/$(promotionId))
-            && get(/databases/$(database)/documents/products/$(promotionId)).data.status == 'ACTIVE')
-          || (isSignedIn() && isApprovedSeller(request.auth.uid) && ownsProduct(promotionId))
-          || (resource.data.active == true
-            && resource.data.startDate <= request.time
-            && resource.data.endDate > request.time)
-          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
-          || isAdmin();
-      allow list: if (resource.data.active == true
-            && resource.data.startDate <= request.time
-            && resource.data.endDate > request.time)
-          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
-          || isAdmin();
-      allow create: if isApprovedSeller(request.auth.uid)
-          && promotionId == request.resource.data.productId
-          && request.resource.data.sellerId == request.auth.uid
-          && ownsProduct(request.resource.data.productId)
-          && validPromotion(request.resource.data, promotionId)
-          && hasNoCredentialFields(request.resource.data);
-      allow update: if isApprovedSeller(request.auth.uid)
-          && resource.data.sellerId == request.auth.uid
-          && request.resource.data.sellerId == resource.data.sellerId
-          && request.resource.data.productId == resource.data.productId
-          && ownsProduct(resource.data.productId)
-          && validPromotion(request.resource.data, promotionId)
-          && hasNoCredentialFields(request.resource.data);
-      allow delete: if false;
-    }
-
-    // Wallet entitlements are validated and written by the trusted backend only.
-    match /customerPromotionWallets/{customerId} {
-      allow get: if hasRole(customerId, 'CUSTOMER');
-      allow list, create, update, delete: if false;
-      match /items/{productId} {
-        allow get, list: if hasRole(customerId, 'CUSTOMER');
-        allow create, update, delete: if false;
-      }
-    }
-
     match /customerCarts/{customerId} {
       allow get: if hasRole(customerId, 'CUSTOMER');
       allow list: if false;
@@ -1092,7 +1026,6 @@ service cloud.firestore {
     }
 
 
-
     match /favorites/{favoriteId} {
       // Transactional favorite toggles must be able to read the deterministic
       // document before its first creation, when resource.data is absent.
@@ -1184,7 +1117,6 @@ service cloud.firestore {
     }
 
 
-
     function validReportCommentContext(data) {
       let parentId = data.get('parentId', '');
       let id = data.targetId;
@@ -1253,7 +1185,7 @@ service cloud.firestore {
             'id', 'userId', 'type', 'title', 'body', 'referenceId', 'orderStatus', 'isRead', 'createdAt', 'resourceType', 'action', 'eventId'
           ])
           && request.resource.data.userId is string
-          && request.resource.data.type in ['ORDER', 'CAMPAIGN', 'PROMOTION', 'MODERATION', 'SYSTEM']
+          && request.resource.data.type in ['ORDER', 'CAMPAIGN', 'MODERATION', 'SYSTEM']
           && request.resource.data.title is string && request.resource.data.title.size() > 0
           && request.resource.data.title.size() <= 120
           && request.resource.data.body is string && request.resource.data.body.size() <= 1000
@@ -1311,7 +1243,7 @@ service cloud.firestore {
     function validClientNotificationEvent(data) {
       let collection = data.resourceType == 'ORDER' ? 'orders' : data.resourceType == 'CAMPAIGN' ? 'campaigns'
           : data.resourceType == 'SELLER_APPLICATION' ? 'sellerApplications'
-          : data.resourceType == 'REPORT' ? 'reports' : 'promotions';
+          : 'reports';
       let path = /databases/$(database)/documents/$(collection)/$(data.resourceId);
       let after = getAfter(path).data;
       return data.keys().hasOnly(['kind', 'resourceType', 'resourceId', 'actorId', 'status', 'retryCount', 'createdAt', 'nextAttemptAt'])
@@ -1326,8 +1258,6 @@ service cloud.firestore {
             || (data.kind == 'ADMINS' && data.resourceType in ['CAMPAIGN', 'SELLER_APPLICATION']
                 && hasRole(request.auth.uid, 'SELLER') && after.sellerId == request.auth.uid
                 && after.status in ['PENDING', 'PENDING_APPROVAL'])
-            || (data.kind == 'PROMOTION' && data.resourceType == 'PROMOTION'
-                && isApprovedSeller(request.auth.uid) && after.sellerId == request.auth.uid && after.active == true)
             || (data.kind == 'ORDER_PAYMENT' && data.resourceType == 'ORDER'
                 && (isAdmin() || (isApprovedSeller(request.auth.uid) && after.sellerId == request.auth.uid))
                 && after.paymentStatus == 'PAID' && get(path).data.paymentStatus != 'PAID'));
