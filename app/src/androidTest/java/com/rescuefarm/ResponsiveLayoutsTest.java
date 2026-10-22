@@ -212,6 +212,47 @@ public class ResponsiveLayoutsTest {
         }
     }
 
+    @Test public void adminNavigationSharesActionsAndReservesItsOwnTabletPane() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            View phone = LayoutInflater.from(context(599, 960, 1f))
+                    .inflate(R.layout.fragment_admin_dashboard, null);
+            assertTrue(phone instanceof androidx.drawerlayout.widget.DrawerLayout);
+            Set<Integer> phoneIds = new HashSet<>();
+            collectIds(phone, phoneIds);
+            phoneIds.remove(R.id.adminDashboardDrawer);
+
+            for (int width : new int[]{600, 960}) {
+                for (float scale : new float[]{1f, 1.6f}) {
+                    for (int direction : new int[]{View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL}) {
+                        Context c = context(width, 600, scale);
+                        View tablet = LayoutInflater.from(c).inflate(R.layout.fragment_admin_dashboard, null);
+                        tablet.setLayoutDirection(direction);
+                        measure(tablet, width, 600);
+                        Set<Integer> tabletIds = new HashSet<>();
+                        collectIds(tablet, tabletIds);
+                        assertEquals("Every admin action must survive the sidebar layout", phoneIds, tabletIds);
+
+                        android.widget.ScrollView navigation = tablet.findViewById(R.id.adminDashboardNavigation);
+                        View content = tablet.findViewById(R.id.adminDashboardContent);
+                        assertEquals(View.VISIBLE, navigation.getVisibility());
+                        assertTrue(content.getWidth() >= dp(c, 335));
+                        assertTrue("Sidebar and overview must not overlap",
+                                navigation.getRight() <= content.getLeft()
+                                        || content.getRight() <= navigation.getLeft());
+                        View lastAction = tablet.findViewById(R.id.adminShippingSettingsButton);
+                        assertTrue(lastAction.getWidth() > 0);
+                        navigation.scrollTo(0, navigation.getChildAt(0).getHeight());
+                        android.graphics.Rect bounds = new android.graphics.Rect();
+                        lastAction.getDrawingRect(bounds);
+                        navigation.offsetDescendantRectToMyCoords(lastAction, bounds);
+                        assertTrue("The final menu action must remain reachable", bounds.bottom
+                                <= navigation.getScrollY() + navigation.getHeight());
+                    }
+                }
+            }
+        });
+    }
+
     @Test public void keyScreensMeasureAtPhoneLandscapeTabletAndLargeFontSizes() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
             int[] layouts = {R.layout.fragment_splash, R.layout.fragment_onboarding,
