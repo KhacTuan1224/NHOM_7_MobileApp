@@ -1,10 +1,12 @@
 const {enqueueNotification} = require('./notification-outbox');
+const {isQuotaError} = require('./read-cache');
 const millis = value => value && typeof value.toMillis === 'function' ? value.toMillis() : 0;
 const terminal = new Set(['DELIVERED', 'CANCELLED']);
 
 // Expiration is a sales restriction, not a physical disposal or an automatic refund.
 function createBatchExpiry({db, admin, campaignLifecycle, now = Date.now, pageSize = 200}) {
   let batchCursor = null, orderCursor = null;
+  let historicalCursor = null, nextHistoricalScan = 0;
   const stamp = () => admin.firestore.FieldValue.serverTimestamp();
   const idField = admin.firestore.FieldPath.documentId();
 
@@ -22,8 +24,8 @@ function createBatchExpiry({db, admin, campaignLifecycle, now = Date.now, pageSi
         availableQuantityAtDetection: batch.get('availableQuantity'),
         reservedQuantityAtDetection: batch.get('reservedQuantity'), soldQuantityAtDetection: batch.get('soldQuantity')
       });
-      if (!['EXPIRED', 'ARCHIVED'].includes(batch.get('status'))) tx.update(ref, {
-        status: 'EXPIRED', expiredAt: stamp(), updatedAt: stamp(),
+      if (!['EXPIRED', 'ARCHIVED'].includes(batch.get('status')) || !batch.get('expiredAt')) tx.update(ref, {
+        status: batch.get('status') === 'ARCHIVED' ? 'ARCHIVED' : 'EXPIRED', expiredAt: stamp(), updatedAt: stamp(),
         inventoryVersion: (batch.get('inventoryVersion') || 0) + 1
       });
     });
@@ -34,13 +36,13 @@ function createBatchExpiry({db, admin, campaignLifecycle, now = Date.now, pageSi
       const snap = await tx.get(ref);
       if (!snap.exists || terminal.has(snap.get('status')) || snap.get('inventoryFinalized')) return;
       const order = snap.data(), ids = Object.keys(order.batchReservations || {});
+      const canCancel = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'].includes(order.status)
+        && ['COD', 'CASH_ON_SITE'].includes(order.paymentMethod) && order.paymentStatus === 'UNPAID';
+      if (order.expiryReviewRequired && !canCancel) return;
       if (!ids.length) return;
       const batches = await Promise.all(ids.map(id => tx.get(db.collection('productBatches').doc(id))));
       if (!batches.some(batch => batch.exists && millis(batch.get('expiryDate')) > 0
           && millis(batch.get('expiryDate')) <= now())) return;
-      const canCancel = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'].includes(order.status)
-        && ['COD', 'CASH_ON_SITE'].includes(order.paymentMethod)
-        && order.paymentStatus === 'UNPAID';
       if (!order.expiryReviewRequired) {
         tx.update(ref, {expiryReviewRequired: true, expiryDetectedAt: stamp(), updatedAt: stamp()});
         const recipients = [...new Set([order.sellerId, ...(order.ownerType === 'CUSTOMER' ? [order.ownerId] : [])].filter(Boolean))];
@@ -61,21 +63,50 @@ function createBatchExpiry({db, admin, campaignLifecycle, now = Date.now, pageSi
   }
 
   async function reconcile() {
-    let query = db.collection('productBatches').where('expiryDate', '<=', admin.firestore.Timestamp.fromMillis(now()))
+    let query = db.collection('productBatches').where('status', 'in', ['AVAILABLE', 'RESERVED_PARTIAL', 'SOLD_OUT'])
+      .where('expiryDate', '<=', admin.firestore.Timestamp.fromMillis(now()))
       .orderBy('expiryDate').orderBy(idField).limit(pageSize);
     if (batchCursor) query = query.startAfter(...batchCursor);
     const batches = await query.get();
-    const batchResults = await Promise.allSettled(batches.docs.map(batch => expire(batch.ref)));
+    const candidates = new Map(batches.docs.map(batch => [batch.id, batch]));
+    let historicalAdvance = null;
+    // Compatibility audit of old EXPIRED/ARCHIVED records is bounded and hourly,
+    // rather than rereading every historical batch every minute.
+    if (now() >= nextHistoricalScan) {
+      let historical = db.collection('productBatches').where('expiryDate', '<=', admin.firestore.Timestamp.fromMillis(now()))
+        .orderBy('expiryDate').orderBy(idField).limit(pageSize);
+      if (historicalCursor) historical = historical.startAfter(...historicalCursor);
+      const page = await historical.get();
+      for (const batch of page.docs) if (!batch.get('expiredAt')) candidates.set(batch.id, batch);
+      const tail = page.docs[page.docs.length - 1];
+      historicalAdvance = {cursor: page.size === pageSize ? [tail.get('expiryDate'), tail.id] : null,
+        nextAt: now() + 3600000};
+    }
+    async function process(documents, action) {
+      const results = [];
+      for (let offset = 0; offset < documents.length; offset += 10) {
+        const chunk = await Promise.allSettled(documents.slice(offset, offset + 10).map(doc => action(doc.ref)));
+        const quota = chunk.find(result => result.status === 'rejected' && isQuotaError(result.reason));
+        if (quota) throw quota.reason;
+        results.push(...chunk);
+      }
+      return results;
+    }
+    const batchResults = await process([...candidates.values()], expire);
+    if (historicalAdvance && !batchResults.some(result => result.status === 'rejected')) {
+      historicalCursor = historicalAdvance.cursor; nextHistoricalScan = historicalAdvance.nextAt;
+    }
     const last = batches.docs[batches.docs.length - 1];
     batchCursor = batches.docs.length === pageSize ? [last.get('expiryDate'), last.id] : null;
-    let ordersQuery = db.collection('orders').orderBy(idField).limit(pageSize);
+    let ordersQuery = db.collection('orders').where('status', 'in',
+      ['PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'SHIPPING']).orderBy(idField).limit(pageSize);
     if (orderCursor) ordersQuery = ordersQuery.startAfter(orderCursor);
     const orders = await ordersQuery.get();
-    const orderResults = await Promise.allSettled(orders.docs.map(order => reviewOrder(order.ref)));
+    const orderResults = await process(orders.docs, reviewOrder);
     orderCursor = orders.docs.length === pageSize ? orders.docs[orders.docs.length - 1].id : null;
     const failures = [...batchResults, ...orderResults].filter(result => result.status === 'rejected');
     if (failures.length) throw new Error(`Batch expiry: ${failures.length} failures; ${failures[0].reason.message}`);
-    return {batches: batches.docs.length, orders: orders.docs.length};
+    return {batches: candidates.size, orders: orders.docs.length};
   }
   return {reconcile};
 }

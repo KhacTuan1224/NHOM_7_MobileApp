@@ -137,13 +137,33 @@ test('expiry sweep retains paid orders for review without fabricated refunds or 
   assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 0);
   await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'PREPARING'}), /đối soát/);
 });
+test('expiry sweep skips finalized order history and avoids rereading already-audited batches every minute',async()=>{
+  const f=setup();
+  f.db.documents.set('productBatches/a',{...f.db.snapshot('productBatches/a').data(),status:'EXPIRED',expiryDate:ts(-1000),expiredAt:ts(-500)});
+  f.db.documents.set('orders/done',{status:'DELIVERED',batchReservations:{a:1},inventoryFinalized:true});
+  let transactions=0;const run=f.db.runTransaction.bind(f.db);
+  f.db.runTransaction=async callback=>{transactions++;return run(callback);};
+  const worker=createBatchExpiry({db:f.db,admin,campaignLifecycle:f.lifecycle});
+  const first=await worker.reconcile(),second=await worker.reconcile();
+  assert.equal(first.orders,0);assert.equal(second.orders,0);assert.equal(transactions,0);
+});
+test('quota failure never advances the historical expiry cursor past unfinished audit work',async()=>{
+  const f=setup();
+  f.db.documents.set('productBatches/a',{...f.db.snapshot('productBatches/a').data(),status:'EXPIRED',expiryDate:ts(-1000)});
+  let fail=true;const run=f.db.runTransaction.bind(f.db);
+  f.db.runTransaction=async callback=>{if(fail){fail=false;throw Object.assign(Error('Quota exceeded'),{code:8});}return run(callback);};
+  const worker=createBatchExpiry({db:f.db,admin,campaignLifecycle:f.lifecycle});
+  await assert.rejects(()=>worker.reconcile(),e=>e.code===8);
+  await worker.reconcile();assert.equal(f.db.snapshot('batchExpiryEvents/a').exists,true);
+});
 
 test('expiry pagination eventually visits later batches, preserves archived status and completed history', async () => {
   const f = setup(), request = data(); await f.commerce.checkout(request, identity); await finish(f, request.requestId);
   expireA(f);
   f.db.documents.set('productBatches/b', {...f.db.snapshot('productBatches/b').data(), expiryDate: ts(-500), status: 'ARCHIVED'});
-  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle, pageSize: 1});
-  await worker.reconcile(); await worker.reconcile(); await worker.reconcile();
+  let clock = Date.now();
+  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle, pageSize: 1, now: () => clock});
+  await worker.reconcile(); clock += 3600001; await worker.reconcile(); clock += 3600001; await worker.reconcile();
   assert.equal((await f.db.collection('batchExpiryEvents').get()).size, 2);
   assert.equal(f.db.snapshot('productBatches/b').get('status'), 'ARCHIVED');
   assert.equal(f.db.snapshot(`orders/${request.requestId}`).get('status'), 'DELIVERED');

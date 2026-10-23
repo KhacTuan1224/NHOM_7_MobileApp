@@ -11,15 +11,13 @@
             <ImageView android:id="@+id/articleShopAvatar" android:layout_width="38dp" android:layout_height="38dp"
                 android:src="@drawable/ic_store" android:background="@drawable/bg_profile_avatar_circle"
                 android:clipToOutline="true" android:scaleType="centerCrop" android:contentDescription="@string/article_shop_avatar" />
-            <TextView android:id="@+id/articleShopName" android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:layout_marginStart="10dp" android:layout_marginEnd="8dp"
-                android:fontFamily="@font/ibm_plex_sans" android:textStyle="bold" android:textSize="14sp"
-                android:textColor="@color/rescue_on_surface" android:maxLines="2" android:ellipsize="end"
-                android:text="@string/article_shop_default" />
-            <TextView android:id="@+id/articleVerified" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:fontFamily="@font/barlow" android:textSize="11sp" android:textStyle="bold"
-                android:paddingStart="9dp" android:paddingEnd="9dp" android:paddingTop="6dp" android:paddingBottom="6dp"
-                android:text="@string/article_unverified" />
+            <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="10dp">
+                <TextView android:id="@+id/articleShopName" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:fontFamily="@font/ibm_plex_sans" android:textStyle="bold" android:textSize="14sp"
+                    android:textColor="@color/rescue_on_surface" android:maxLines="2" android:ellipsize="end"
+                    android:drawablePadding="4dp" android:text="@string/article_shop_default" />
+            </FrameLayout>
         </LinearLayout>
         <TextView android:id="@+id/articleMetadata" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="7dp" android:fontFamily="@font/barlow" android:textSize="12sp"

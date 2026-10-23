@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const {isQuotaError} = require('./read-cache');
 const digest = value => crypto.createHash('sha256').update(value).digest('hex');
 const time = value => value && typeof value.toMillis === 'function' ? value.toMillis() : 0;
 function compareTimestamp(a, b) {
@@ -89,6 +90,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
       await update(doc.ref, {status: 'EXPANDED', recipientCount: recipients.length, expandedAt: stamp()});
       return {expanded: true};
     } catch (error) {
+      if (isQuotaError(error)) throw error;
       await update(doc.ref, {retryCount: (event.retryCount || 0) + (error.nextAt ? 0 : 1), lastError: String(error.message).slice(0, 500),
         nextAttemptAt: ts(error.nextAt || now() + Math.min(3600000, 10000 * 2 ** Math.min(event.retryCount || 0, 8)))});
       return {attentionRequired: !error.nextAt && (event.retryCount || 0) + 1 >= 5};
@@ -172,6 +174,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
       await ownedUpdate({status: 'SENT', pushDelivered: true, deliveredAt: stamp(), lastError: '', leaseUntil: ts(0)});
       return {sent: true};
     } catch (error) {
+      if (isQuotaError(error)) throw error;
       await ownedUpdate({status: 'PENDING', retryCount: (delivery.retryCount || 0) + (error.wait ? 0 : 1),
         lastError: String(error.message).slice(0, 500), leaseUntil: ts(0),
         nextAttemptAt: ts(now() + (error.wait ? 3600000 : Math.min(3600000, 10000 * 2 ** Math.min(delivery.retryCount || 0, 8))))});
@@ -247,14 +250,20 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     try {
       let attentionRequired = false;
       try { await backfillSources(); await auditDecisions(); }
-      catch (error) { attentionRequired = true; console.error('Audit notification stream needs retry:', error.message); }
+      catch (error) {
+        if (isQuotaError(error)) throw error;
+        attentionRequired = true; console.error('Audit notification stream needs retry:', error.message);
+      }
       const events = await db.collection('notificationOutbox').where('status', '==', 'PENDING').where('nextAttemptAt', '<=', ts(now())).limit(25).get();
       for (const doc of events.docs) { const result = await expand(doc); attentionRequired = attentionRequired || !!(result && result.attentionRequired); }
       const deliveries = await db.collection('notificationDeliveries').where('status', '==', 'PENDING').where('nextAttemptAt', '<=', ts(now())).limit(20).get();
       for (let offset = 0; offset < deliveries.docs.length; offset += 5) {
         const results = await Promise.all(deliveries.docs.slice(offset, offset + 5).map(async doc => {
           try { return await deliver(doc.ref); }
-          catch (error) { console.error('Notification delivery needs retry:', doc.id, error.message); return {attentionRequired: true}; }
+          catch (error) {
+            if (isQuotaError(error)) throw error;
+            console.error('Notification delivery needs retry:', doc.id, error.message); return {attentionRequired: true};
+          }
         }));
         attentionRequired = attentionRequired || results.some(result => result && result.attentionRequired);
       }

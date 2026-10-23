@@ -5,11 +5,20 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 if (!serviceAccount) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is required (set it as a Render secret)");
 admin.initializeApp({credential: admin.credential.cert(JSON.parse(serviceAccount))});
 const db = admin.firestore();
+const {isQuotaError, createQuotaGuard, createQuotaMiddleware} = require('./read-cache');
+const quotaGuard = createQuotaGuard();
+let migrationsReady = false;
+function noteQuota(error) {
+  if (quotaGuard.trip()) console.warn('[firestore-quota] Tạm dừng truy vấn và tác vụ nền trong 5 phút:', error.message);
+}
 const app = express();
 app.use(express.json({limit: "256kb", verify: (req, res, bytes) => {
   if (req.originalUrl.startsWith('/webhooks/sepay/')) req.rawBody = Buffer.from(bytes);
 }}));
 app.use(require('./sepay').createSePayApi({db, admin}).router);
+// SePay keeps its existing verification/retry path above. This gate only pauses
+// other API work; never acknowledge a payment without the existing transaction.
+app.use(createQuotaMiddleware(quotaGuard, () => migrationsReady));
 
 async function migrateSellerPaymentProfiles() {
   const marker = db.collection("systemMigrations").doc("sellerPaymentProfilesV1");
@@ -92,7 +101,9 @@ app.get("/health", (_, res) => {
   catch (_) { sepayStatus = 'INVALID_CONFIGURATION'; }
   res.json({ok: true, paymentFlowVersion: 2, sepayStatus, pricingVersion: 3,
     rescueProgramsVersion: 1,
-    rescuePaymentPolicy: 'PICKUP_CASH_NO_PREPAYMENT'});
+    rescuePaymentPolicy: 'PICKUP_CASH_NO_PREPAYMENT', migrationsReady,
+    firestoreReadStatus: quotaGuard.remainingSeconds() ? 'QUOTA_COOLDOWN' : 'NOT_IN_COOLDOWN',
+    retryAfterSeconds: quotaGuard.remainingSeconds()});
 });
 app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: auth}).router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
@@ -228,25 +239,55 @@ app.post("/recalculate-rating", async (req, res, next) => {
 });
 
 app.use((error, req, res, __) => {
+  if (isQuotaError(error) && !req.path.startsWith('/webhooks/sepay/')) {
+    noteQuota(error);
+    const retryAfterSeconds = quotaGuard.remainingSeconds();
+    return res.set('Retry-After', String(retryAfterSeconds)).status(503).json({
+      code: 'FIRESTORE_QUOTA_EXCEEDED', retryAfterSeconds,
+      error: 'Firestore đang vượt quota. Vui lòng chờ quota khả dụng trở lại; tải lại liên tục sẽ không khắc phục được.'
+    });
+  }
   const status = error.status || 500;
   if (status >= 500) console.error("[api]", req.method, req.originalUrl,
     "code=", error.code || "", "message=", error.message || "", error.stack || "");
   res.status(status).json({error: status >= 500 && error.expose !== true ? "Internal server error" : error.message});
 });
-migrateSellerPaymentProfiles().then(() => campaignMedia.migrateReferences()).then(() => {
+async function prepareBackend() {
+  await migrateSellerPaymentProfiles(); await campaignMedia.migrateReferences(); migrationsReady = true;
+}
+prepareBackend().catch(error => {
+  if (!isQuotaError(error)) throw error;
+  noteQuota(error); // Keep health alive; retry migrations after the cooldown.
+}).then(() => {
   app.listen(port, "0.0.0.0", () => console.log(`RescueFarm API listening on ${port}`));
   let reconciling = false;
   const reconcile = async () => {
-    if (reconciling) return;
+    if (reconciling || quotaGuard.remainingSeconds()) return;
     reconciling = true;
     try {
-      const jobs = await Promise.allSettled([campaignLifecycle.reconcileExpired(), batchExpiry.reconcile(), worker.runOnce(), campaignMedia.reconcile(), rescuePrograms.reconcile()]);
-      for (const result of jobs) if (result.status === 'rejected') console.error('Backend reconciliation:', result.reason.message);
+      if (!migrationsReady) await prepareBackend();
+      const jobs = [() => campaignLifecycle.reconcileExpired(), () => batchExpiry.reconcile(),
+        () => worker.runOnce(), () => campaignMedia.reconcile(), () => rescuePrograms.reconcile()];
+      for (const job of jobs) {
+        try { await job(); }
+        catch (error) {
+          if (isQuotaError(error)) { noteQuota(error); break; }
+          console.error('Backend reconciliation:', error.message);
+        }
+      }
     }
-    catch (error) { console.error('Campaign reconciliation failed:', error.message); }
+    catch (error) {
+      if (isQuotaError(error)) noteQuota(error);
+      else console.error('Campaign reconciliation failed:', error.message);
+    }
     finally { reconciling = false; }
   };
-  campaignLifecycle.reconcileAll().catch(error => console.error('Legacy Campaign link repair failed:', error.message));
+  // Legacy repair is a maintenance operation, not a scan to repeat on every deploy.
+  if (process.env.REPAIR_LEGACY_CAMPAIGN_LINKS === 'true' && !quotaGuard.remainingSeconds() && migrationsReady)
+    campaignLifecycle.reconcileAll().catch(error => {
+      if (isQuotaError(error)) noteQuota(error);
+      else console.error('Legacy Campaign link repair failed:', error.message);
+    });
   reconcile();
   setInterval(reconcile, 60000).unref();
 }).catch(error => {

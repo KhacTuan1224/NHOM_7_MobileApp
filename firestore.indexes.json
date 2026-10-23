@@ -1,5 +1,6 @@
 {
   "indexes": [
+    {"collectionGroup":"productBatches","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"expiryDate","order":"ASCENDING"}]},
     {"collectionGroup":"orders","queryScope":"COLLECTION","fields":[{"fieldPath":"sellerId","order":"ASCENDING"},{"fieldPath":"expiryReviewRequired","order":"ASCENDING"}]},
     {"collectionGroup":"orders","queryScope":"COLLECTION","fields":[{"fieldPath":"ownerId","order":"ASCENDING"},{"fieldPath":"expiryReviewRequired","order":"ASCENDING"}]},
     {"collectionGroup": "rescueClaims", "queryScope": "COLLECTION", "fields": [{"fieldPath": "sellerId", "order": "ASCENDING"}, {"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "receivedAt", "order": "ASCENDING"}]},

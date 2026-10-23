@@ -36,3 +36,13 @@ test('private, expired and future campaigns do not expose author or product data
 test('campaign cards reject invalid IDs and oversized batches',async()=>{
   for(const ids of [null,['a/b'],[''],Array(13).fill('c')])await assert.rejects(()=>request(fixture(),ids),e=>e.status===400);
 });
+test('ten concurrent card requests read each shared document once and refresh after TTL',async()=>{
+  const seed=fixture();seed['campaigns/c2']={...seed['campaigns/c']};
+  const db=new MemoryFirestore(seed);let reads=0,clock=1000;const snapshot=db.snapshot.bind(db);
+  db.snapshot=path=>{reads++;return snapshot(path);};
+  const api=createCampaignCardsApi({db,now:()=>clock});const handler=api.router.stack[0].route.stack[0].handle;
+  const send=()=>new Promise((resolve,reject)=>handler({body:{campaignIds:['c','c2']}},{json:resolve},reject));
+  await Promise.all(Array.from({length:10},send));assert.equal(reads,7);
+  await send();assert.equal(reads,7);
+  clock+=30001;await send();assert.equal(reads,9); // Both expired campaigns are rechecked; private docs are not fetched.
+});
