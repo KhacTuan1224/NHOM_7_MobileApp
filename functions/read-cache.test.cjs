@@ -2,6 +2,15 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {createReadCache,createQuotaGuard,isQuotaError}=require('./read-cache');
 const {createQuotaMiddleware}=require('./read-cache');
+test('push invalidation prevents a stale in-flight request from repopulating cache',async()=>{
+  const {invalidateReadCaches}=require('./read-cache');
+  const cache=createReadCache(); let finish;
+  const old=cache.get('projection',()=>new Promise(resolve=>{finish=resolve;}));
+  await Promise.resolve(); invalidateReadCaches();
+  assert.equal(await cache.get('projection',async()=>'fresh'),'fresh');
+  finish('stale'); await old;
+  assert.equal(await cache.get('projection',async()=>'unexpected'),'fresh');
+});
 test('concurrent reads coalesce and cache expires without extending on every hit',async()=>{
   let now=0,reads=0;const cache=createReadCache({ttlMs:100,now:()=>now});
   const load=async()=>{reads++;return 'value';};

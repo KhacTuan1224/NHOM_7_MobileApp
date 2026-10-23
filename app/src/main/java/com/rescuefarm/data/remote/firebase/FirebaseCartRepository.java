@@ -24,21 +24,42 @@ public class FirebaseCartRepository implements CartRepository {
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private final String customerId;
     private final NetworkStatusProvider network;
-    private final MutableLiveData<Cart> cart;
-    private final ListenerRegistration listener;
-
+    private final RemoteCart cart;
+    private final class RemoteCart extends MutableLiveData<Cart> {
+        private ListenerRegistration registration;
+        private com.google.firebase.auth.FirebaseAuth.AuthStateListener authListener;
+        private int generation;
+        RemoteCart() { super(Cart.empty(CartOwnerType.CUSTOMER, customerId)); }
+        private boolean current() {
+            return com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
+                    && customerId.equals(com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid());
+        }
+        void detach() { generation++; if (registration != null) registration.remove(); registration = null; }
+        private void attach() {
+            detach(); if (!current()) { setValue(Cart.empty(CartOwnerType.CUSTOMER, customerId)); return; }
+            int epoch = generation;
+            registration = firestore.collection(CARTS).document(customerId).addSnapshotListener((snapshot, error) -> {
+                if (epoch != generation || !current()) return;
+                if (error != null) {
+                    if (error.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) setValue(Cart.empty(CartOwnerType.CUSTOMER, customerId));
+                    return;
+                }
+                if (snapshot != null) setValue(snapshot.exists() ? mapCart(snapshot) : Cart.empty(CartOwnerType.CUSTOMER, customerId));
+            });
+        }
+        @Override protected void onActive() {
+            authListener = auth -> { if (!current() || registration == null) attach(); };
+            com.google.firebase.auth.FirebaseAuth.getInstance().addAuthStateListener(authListener);
+        }
+        @Override protected void onInactive() { stop(); }
+        void stop() {
+            detach();
+            if (authListener != null) com.google.firebase.auth.FirebaseAuth.getInstance().removeAuthStateListener(authListener);
+            authListener = null;
+        }
+    }
     public FirebaseCartRepository(String customerId, NetworkStatusProvider network) {
-        this.customerId = customerId; this.network = network;
-        cart = new MutableLiveData<>(Cart.empty(CartOwnerType.CUSTOMER, customerId));
-        listener = firestore.collection(CARTS).document(customerId).addSnapshotListener((snapshot, error) -> {
-            if (error != null) {
-                android.util.Log.e("FirebaseCartRepository", "Listen for customerCarts/" + customerId + " failed: " + error.getMessage(), error);
-                return;
-            }
-            if (snapshot != null) {
-                cart.setValue(snapshot.exists() ? mapCart(snapshot) : Cart.empty(CartOwnerType.CUSTOMER, customerId));
-            }
-        });
+        this.customerId = customerId; this.network = network; cart = new RemoteCart();
     }
 
     @Override public LiveData<Cart> observeCart(String ignored) { return cart; }
@@ -176,6 +197,6 @@ public class FirebaseCartRepository implements CartRepository {
     }
     private static String text(Object value) { return value instanceof String ? (String) value : ""; }
     private static double number(Object value) { return value instanceof Number ? ((Number) value).doubleValue() : 0D; }
-    @Override public void close() { listener.remove(); }
+    @Override public void close() { cart.stop(); }
     private interface CartMutation { void apply(Cart cart); }
 }

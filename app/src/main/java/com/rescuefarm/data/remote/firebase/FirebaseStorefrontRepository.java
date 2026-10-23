@@ -19,15 +19,42 @@ public final class FirebaseStorefrontRepository implements com.rescuefarm.data.r
     }
     public androidx.lifecycle.LiveData<SellerStorefront> observe(String id) {
         return new androidx.lifecycle.LiveData<SellerStorefront>() {
-            private com.google.firebase.firestore.ListenerRegistration listener;
-            @Override protected void onActive() {
-                listener = FirebaseFirestore.getInstance().collection("sellerPublicProfiles").document(id)
-                    .addSnapshotListener((snapshot, error) -> {
-                        if (error != null || snapshot == null) { postValue(null); return; }
-                        postValue(SellerStorefront.from(id, snapshot.getData()));
-                    });
+            private final java.util.List<com.google.firebase.firestore.ListenerRegistration> listeners = new java.util.ArrayList<>();
+            private com.google.firebase.firestore.DocumentSnapshot profile, payment;
+            private FirebaseAuth.AuthStateListener authListener;
+            private int generation;
+            private String account = "";
+            private String uid() { return FirebaseAuth.getInstance().getCurrentUser() == null ? "" : FirebaseAuth.getInstance().getCurrentUser().getUid(); }
+            private void publish() {
+                if (profile == null) return;
+                SellerStorefront value = SellerStorefront.from(id, profile.getData());
+                if (id.equals(uid()) && payment != null && payment.exists()) {
+                    value.bankName = text(payment.get("bankCode")); value.accountName = text(payment.get("bankAccountName"));
+                    value.bankAccount = text(payment.get("bankAccountNumber")); value.qrUrl = text(payment.get("qrUrl"));
+                }
+                setValue(value);
             }
-            @Override protected void onInactive() { if (listener != null) listener.remove(); listener = null; }
+            private void detach() { generation++; for (com.google.firebase.firestore.ListenerRegistration listener : listeners) listener.remove(); listeners.clear(); }
+            private void attach() {
+                detach(); profile = null; payment = null; account = uid(); final int epoch = generation;
+                listeners.add(FirebaseFirestore.getInstance().collection("sellerPublicProfiles").document(id).addSnapshotListener((snapshot, error) -> {
+                    if (epoch != generation) return;
+                    if (error != null || snapshot == null) return;
+                    profile = snapshot; publish();
+                }));
+                if (id.equals(account)) listeners.add(FirebaseFirestore.getInstance().collection("sellerPaymentProfiles").document(id).addSnapshotListener((snapshot, error) -> {
+                    if (epoch != generation) return;
+                    payment = error == null ? snapshot : null; publish();
+                }));
+            }
+            @Override protected void onActive() {
+                attach(); authListener = auth -> { if (!account.equals(uid())) { setValue(SellerStorefront.from(id, null)); attach(); } };
+                FirebaseAuth.getInstance().addAuthStateListener(authListener);
+            }
+            @Override protected void onInactive() {
+                detach(); if (authListener != null) FirebaseAuth.getInstance().removeAuthStateListener(authListener);
+                authListener = null;
+            }
         };
     }
     public void load(String id, Callback callback) {

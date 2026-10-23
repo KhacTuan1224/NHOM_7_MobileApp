@@ -24,6 +24,10 @@
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="GIẢI CỨU" android:textSize="11sp" android:textStyle="bold"
             android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/adminRescueFund"
+            style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp" android:layout_marginBottom="6dp" android:gravity="start|center_vertical"
+            android:text="Hũ giải cứu nông sản" app:icon="@drawable/ic_rescue_fund" app:iconGravity="textStart" />
         <com.google.android.material.button.MaterialButton android:id="@+id/adminRescuePrograms"
             style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"

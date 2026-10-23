@@ -61,6 +61,7 @@ public final class AdminResourceFragment extends Fragment {
     private Date orderFromDate, orderThroughDate;
     private EditText shippingBaseFee, shippingFreeDistance, shippingPerKmFee;
     private TextView shippingPreview;
+    private boolean shippingDirty, bindingShipping;
     private String searchTerm = "";
     private boolean bindingStatusFilter;
     private boolean resumedOnce;
@@ -174,8 +175,18 @@ public final class AdminResourceFragment extends Fragment {
         }
         View backButton = view.findViewById(R.id.adminResourceBackButton);
         backButton.setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
-        if (section != Section.ANALYTICS) viewModel.observeSection(section).observe(
-                getViewLifecycleOwner(), this::renderItems);
+        if (section == Section.ANALYTICS) {
+            new com.rescuefarm.service.realtime.BackendSnapshotWatch("admin_dashboard").observe(
+                    getViewLifecycleOwner(), version -> viewModel.refreshDashboard());
+        } else if (section == Section.SHIPPING_SETTINGS) {
+            com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(), () -> {
+                if (!shippingDirty) loadShippingConfig();
+            }, com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("appConfig").document("shipping"));
+        } else {
+            com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(),
+                    () -> viewModel.refreshSectionRealtime(section),
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance().collection(section.getCollection()));
+        }
         view.findViewById(R.id.refreshAdminResourceButton).setOnClickListener(v -> refresh());
         refresh();
     }
@@ -208,7 +219,9 @@ public final class AdminResourceFragment extends Fragment {
         shippingPreview = new TextView(requireContext()); container.addView(shippingPreview);
         android.text.TextWatcher watcher = new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { updateShippingPreview(); }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!bindingShipping) shippingDirty = true; updateShippingPreview();
+            }
             @Override public void afterTextChanged(android.text.Editable s) { }
         };
         shippingBaseFee.addTextChangedListener(watcher); shippingFreeDistance.addTextChangedListener(watcher);
@@ -223,6 +236,7 @@ public final class AdminResourceFragment extends Fragment {
                     @Override public void onSuccess() {
                         if (!isAdded()) return;
                         Toast.makeText(requireContext(), "Đã lưu cấu hình và audit.", Toast.LENGTH_SHORT).show();
+                        shippingDirty = false;
                         loadShippingConfig();
                     }
                     @Override public void onError(AdminRepository.ErrorCode code, String error) {
@@ -246,10 +260,12 @@ public final class AdminResourceFragment extends Fragment {
         message.setText("Đang tải cấu hình từ Firestore…");
         viewModel.loadShippingConfig(new AdminRepository.DetailCallback() {
             @Override public void onSuccess(Map<String, Object> data) {
-                if (!isAdded() || shippingBaseFee == null) return;
+                if (!isAdded() || getView() == null || shippingBaseFee == null || shippingDirty) return;
+                bindingShipping = true;
                 shippingBaseFee.setText(data.get("baseFeeVnd") == null ? "" : String.valueOf(data.get("baseFeeVnd")));
                 shippingFreeDistance.setText(data.get("freeDistanceKm") == null ? "" : String.valueOf(data.get("freeDistanceKm")));
                 shippingPerKmFee.setText(data.get("perKmFeeVnd") == null ? "" : String.valueOf(data.get("perKmFeeVnd")));
+                bindingShipping = false; shippingDirty = false;
                 Object updater = data.get("updatedBy");
                 message.setText(data.isEmpty() ? "Chưa cấu hình phí giao hàng."
                         : "Đã cập nhật bởi " + (updater == null ? "(chưa ghi nhận)" : updater));
@@ -707,40 +723,40 @@ public final class AdminResourceFragment extends Fragment {
         if (value == null) return;
         NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         AdminDashboardCards.addSectionTitle(requireContext(), container, "TỔNG QUAN HỆ THỐNG");
-        AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Tổng quan số lượng", "Moderation là số đang chờ; các mục còn lại là tổng hiện có",
-                new String[]{"Moderation", "Users", "Products", "Campaigns", "Orders"},
+        AdminDashboardCards.addLineChart(requireContext(), container,
+                "Tổng quan số lượng", "Hàng chờ duyệt; người dùng, sản phẩm, chiến dịch và đơn hàng là tổng hiện có",
+                new String[]{"Chờ duyệt", "Người dùng", "Sản phẩm", "Chiến dịch", "Đơn hàng"},
                 new double[]{value.getPendingModerationTotal(), value.total(Section.USERS),
                         value.total(Section.PRODUCTS), value.total(Section.CAMPAIGNS), value.total(Section.ORDERS)},
                 new String[]{String.valueOf(value.getPendingModerationTotal()),
                         String.valueOf(value.total(Section.USERS)), String.valueOf(value.total(Section.PRODUCTS)),
-                        String.valueOf(value.total(Section.CAMPAIGNS)), String.valueOf(value.total(Section.ORDERS))}, 0);
+                        String.valueOf(value.total(Section.CAMPAIGNS)), String.valueOf(value.total(Section.ORDERS))});
         AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Doanh thu đơn đã giao", "All-time, gồm phí giao hàng",
+                "Doanh thu đơn đã giao", "Tổng từ trước đến nay, gồm phí giao hàng",
                 new String[]{"Đã giao hàng"}, new double[]{value.getDeliveredRevenue()},
                 new String[]{currency.format(value.getDeliveredRevenue())}, 1);
 
-        AdminDashboardCards.addSectionTitle(requireContext(), container, "RESCUE ANALYTICS");
+        AdminDashboardCards.addSectionTitle(requireContext(), container, "THỐNG KÊ GIẢI CỨU");
         AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Campaign đang hoạt động và cần ưu tiên", "Các chiến dịch rất khẩn cấp đang hoạt động",
-                new String[]{"Đang hoạt động", "Rất khẩn cấp"},
+                "Chiến dịch đang hoạt động và cần giải cứu gấp", "Số chiến dịch đang hoạt động và số chiến dịch ở mức rất khẩn cấp",
+                new String[]{"Đang hoạt động", "Cần giải cứu gấp"},
                 new double[]{value.getActiveCampaigns(), value.getCriticalCampaigns()},
                 new String[]{String.valueOf(value.getActiveCampaigns()), String.valueOf(value.getCriticalCampaigns())}, 0);
         AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Điểm giải cứu di động", "Vị trí được cập nhật trong 10 phút",
-                new String[]{"Mobile point"}, new double[]{value.getLiveMobilePoints()},
+                "Điểm giải cứu lưu động", "Vị trí được cập nhật trong 10 phút",
+                new String[]{"Điểm lưu động"}, new double[]{value.getLiveMobilePoints()},
                 new String[]{String.valueOf(value.getLiveMobilePoints())}, 3);
         AdminDashboardCards.addColumnChart(requireContext(), container,
-                "Đã giải cứu (Campaign kg)", "Số lượng đã rescued",
+                "Khối lượng đã giải cứu (kg)", "Tổng khối lượng đã giải cứu trong các chiến dịch",
                 new String[]{"Đã giải cứu"}, new double[]{value.getTotalRescuedQuantity()},
                 new String[]{String.format(Locale.getDefault(), "%.2f kg", value.getTotalRescuedQuantity())}, 2);
         AdminDashboardCards.addCompletionChart(requireContext(), container,
-                "Tỷ lệ hoàn thành (Campaign kg)",
-                "Rescued / target của Campaign kg đã xác minh và được kích hoạt",
+                "Tỷ lệ hoàn thành chiến dịch",
+                "Khối lượng đã giải cứu so với mục tiêu của các chiến dịch đã xác minh và kích hoạt",
                 value.getCompletionRate());
         AdminDashboardCards.addFootnote(requireContext(), container,
-                "Doanh thu là tổng all-time của đơn đã giao, gồm phí giao hàng."
-                        + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật: " + value.getCalculatedAt()));
+                "Doanh thu là tổng từ trước đến nay của đơn đã giao, gồm phí giao hàng."
+                        + (value.getCalculatedAt().isEmpty() ? "" : "\nCập nhật lúc: " + value.getCalculatedAt()));
     }
 
     private Button button(int label) {

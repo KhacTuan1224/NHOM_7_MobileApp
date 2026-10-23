@@ -6,6 +6,27 @@ import { doc, getDoc, getDocs, collection, query, where, setDoc,
   collectionGroup, deleteDoc, deleteField, runTransaction, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 
 let env;
+test('push metadata is readable only by an opaque document ID; cannot list, write or access private rescue records', async () => {
+  const key = '12345678-1234-1234-1234-123456789abc';
+  await seed({['realtimeSubscriptions/' + key]: {revision: 'new', unavailable: false, updatedAt: now},
+    'rescueOffers/private': {sellerId: 'seller', status: 'DRAFT'},
+    'rescueClaims/private': {customerId: 'customer-a'}});
+  for (const uid of [null, 'customer-a', 'seller', 'admin']) {
+    const db = uid ? env.authenticatedContext(uid).firestore() : env.unauthenticatedContext().firestore();
+    const signal = await assertSucceeds(getDoc(doc(db, 'realtimeSubscriptions/' + key)));
+    assert.equal(signal.data().revision, 'new');
+    await assertFails(getDocs(collection(db, 'realtimeSubscriptions')));
+    await assertFails(setDoc(doc(db, 'realtimeSubscriptions/' + key), {revision: 'forged'}));
+    await assertFails(updateDoc(doc(db, 'realtimeSubscriptions/' + key), {revision: 'forged'}));
+    await assertFails(deleteDoc(doc(db, 'realtimeSubscriptions/' + key)));
+    await assertFails(getDoc(doc(db, 'realtimeSubscriptions/known-name')));
+    await assertFails(getDoc(doc(db, 'rescueOffers/private')));
+    await assertFails(getDoc(doc(db, 'rescueClaims/private')));
+  }
+  await seed({['realtimeSubscriptions/' + key]: {revision: 'new', unavailable: false, updatedAt: now,
+    privatePayload: 'Must never be exposed'}});
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'realtimeSubscriptions/' + key)));
+});
 const now = Date.now();
 const past = Timestamp.fromMillis(now - 86400000);
 const future = Timestamp.fromMillis(now + 7 * 86400000);

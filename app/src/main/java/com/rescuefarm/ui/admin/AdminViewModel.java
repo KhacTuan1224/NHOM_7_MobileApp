@@ -24,6 +24,40 @@ public final class AdminViewModel extends ViewModel {
     private String cursor = "";
     private boolean hasMore;
     private int pageRequestVersion, dashboardRequestVersion;
+    private boolean realtimePending;
+
+    /** Reload the visible window through the same filters, including pages already opened. */
+    public void refreshSectionRealtime(Section section) {
+        if (section != currentSection) return;
+        if (state.getValue() != null && state.getValue().getStatus() == AdminScreenState.Status.LOADING) {
+            realtimePending = true; return;
+        }
+        realtimePending = false;
+        int target = Math.max(PAGE_SIZE, currentItems().size());
+        reloadWindow(++pageRequestVersion, section, target, "", new java.util.ArrayList<>());
+    }
+    private void reloadWindow(int version, Section section, int target, String after, List<AdminListItem> result) {
+        repository.loadSectionPage(section, PAGE_SIZE, statusFilter, after, searchTerm,
+                section == Section.ORDERS ? orderFromDate : null,
+                section == Section.ORDERS ? orderThroughDate : null, new AdminRepository.PageCallback() {
+            @Override public void onSuccess(List<AdminListItem> items, String next, boolean more) {
+                if (version != pageRequestVersion || section != currentSection) return;
+                if (items != null) result.addAll(items);
+                if (more && result.size() < target && next != null && !next.isEmpty() && !next.equals(after)) {
+                    reloadWindow(version, section, target, next, result); return;
+                }
+                cursor = next; hasMore = more;
+                state.setValue(AdminScreenState.list(result.isEmpty() ? AdminScreenState.Status.EMPTY
+                        : AdminScreenState.Status.READY, section, result, ""));
+            }
+            @Override public void onError(AdminRepository.ErrorCode code, String message) {
+                if (version != pageRequestVersion || section != currentSection) return;
+                state.setValue(AdminScreenState.list(errorStatus(code), section,
+                        code == AdminRepository.ErrorCode.FORBIDDEN || code == AdminRepository.ErrorCode.UNAUTHENTICATED
+                                ? Collections.emptyList() : currentItems(), message));
+            }
+        });
+    }
 
     public AdminViewModel(AdminRepository repository) { this.repository = repository; }
     public LiveData<AdminScreenState> getState() { return state; }
@@ -144,9 +178,10 @@ public final class AdminViewModel extends ViewModel {
                 merged = new java.util.ArrayList<>(unique.values());
                 cursor = nextCursor; hasMore = more;
                 boolean empty = merged.isEmpty();
-                state.postValue(AdminScreenState.list(empty ? AdminScreenState.Status.EMPTY
+                state.setValue(AdminScreenState.list(empty ? AdminScreenState.Status.EMPTY
                         : AdminScreenState.Status.READY, requestedSection, merged,
                         empty ? "Không có dữ liệu phù hợp." : "Đã tải " + merged.size() + " mục."));
+                if (realtimePending) refreshSectionRealtime(requestedSection);
             }
             @Override public void onError(AdminRepository.ErrorCode code, String message) {
                 if (version != pageRequestVersion) return;

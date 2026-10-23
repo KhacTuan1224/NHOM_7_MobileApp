@@ -49,6 +49,7 @@ public final class AdminDashboardFragment extends Fragment {
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
+        new com.rescuefarm.service.realtime.BackendSnapshotWatch("admin_dashboard").observe(getViewLifecycleOwner(), version -> viewModel.refreshDashboard());
         view.findViewById(R.id.adminDashboardBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
         View menuButton = view.findViewById(R.id.adminDashboardMenuButton);
         // Wide layouts keep navigation beside the dashboard instead of in a modal drawer.
@@ -61,6 +62,9 @@ public final class AdminDashboardFragment extends Fragment {
             closeNavigationDrawer();
             Navigation.findNavController(v).navigate(R.id.rescueHubFragment);
         });
+        com.google.android.material.button.MaterialButton fundButton = view.findViewById(R.id.adminRescueFund);
+        AdminUiStyles.sectionButton(requireContext(), fundButton, Section.ANALYTICS);
+        fundButton.setOnClickListener(v -> { closeNavigationDrawer(); Navigation.findNavController(v).navigate(R.id.rescueFundFragment); });
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminHomeSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminHomeCampaignsButton, Section.CAMPAIGNS);

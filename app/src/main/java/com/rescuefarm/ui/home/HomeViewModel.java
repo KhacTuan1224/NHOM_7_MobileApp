@@ -135,12 +135,9 @@ public class HomeViewModel extends ViewModel {
     private void loadGreetingName() {
         String userId = authRepository.getCurrentUserId();
         if (!authRepository.isAuthenticated() || userId == null || userRepository == null) return;
-        userRepository.getUser(userId, new UserRepository.UserCallback() {
-            @Override public void onSuccess(com.rescuefarm.domain.model.User user) {
-                String name = user == null ? null : user.getFullName();
-                if (name != null && !name.trim().isEmpty()) greetingName.postValue(name.trim());
-            }
-            @Override public void onError(UserRepository.ProfileError error, String message) { }
+        homeState.addSource(userRepository.observeUser(userId), user -> {
+            String name = user == null ? null : user.getFullName();
+            greetingName.setValue(name == null || name.trim().isEmpty() ? "bạn" : name.trim());
         });
     }
 

@@ -89,6 +89,7 @@ public class CheckoutFragment extends Fragment {
     private double quotedSubtotal;
     private double quotedShippingFee;
     private Cart currentCart;
+    private final com.rescuefarm.service.realtime.BackendSnapshotWatch checkoutWatch = new com.rescuefarm.service.realtime.BackendSnapshotWatch("");
     private final Handler quoteHandler = new Handler(Looper.getMainLooper());
     private int quoteVersion;
     private final Runnable quoteRunnable = this::refreshShippingEstimate;
@@ -191,6 +192,7 @@ public class CheckoutFragment extends Fragment {
             public void afterTextChanged(Editable s) { }
         };
         name.addTextChangedListener(recipientWatcher); phone.addTextChangedListener(recipientWatcher);
+        checkoutWatch.observe(getViewLifecycleOwner(), version -> { refreshPaymentMethods(); scheduleShippingEstimate(); });
         vm.getCart().observe(getViewLifecycleOwner(), cart -> {
             renderCart(cart); refreshPaymentMethods();
         });
@@ -386,6 +388,12 @@ public class CheckoutFragment extends Fragment {
     private void renderCart(Cart cart) {
         if (cart == null) return;
         currentCart = cart;
+        org.json.JSONArray lines = new org.json.JSONArray();
+        try {
+            for (com.rescuefarm.domain.model.CartItem item : cart.getItems()) if (item.isSelected())
+                lines.put(new org.json.JSONObject().put("productId", item.getProductId()).put("batchId", item.getBatchId()));
+            checkoutWatch.configure("checkout", new org.json.JSONObject().put("lines", lines));
+        } catch (org.json.JSONException ignored) { }
         int count = 0; Set<String> sellers = new HashSet<>();
         for (com.rescuefarm.domain.model.CartItem item : cart.getItems()) if (item.isSelected()) {
             count++; sellers.add(item.getSellerId());

@@ -1,0 +1,6 @@
+{
+  "bankCode": "ICB",
+  "accountNumber": "REPLACE_WITH_FUND_BANK_ACCOUNT_NUMBER",
+  "accountName": "REPLACE WITH FUND ACCOUNT NAME",
+  "webhookSecret": "REPLACE_WITH_YOUR_32_PLUS_CHARACTER_SEPAY_API_KEY"
+}

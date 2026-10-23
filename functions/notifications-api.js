@@ -19,6 +19,12 @@ function createNotificationsApi({db, admin, authenticate}) {
       if (found.length === 1) type = found[0].type;
     }
     if (type === 'RESCUE_OFFER') return {destination: 'rescueHubFragment', args: referenceId ? {offerId: referenceId} : {}};
+    if (type === 'RESCUE_FUND') {
+      const job = referenceId ? await db.collection('rescueFundDeliveries').doc(referenceId).get() : null;
+      if (!job || !job.exists || !(caller.role === 'ADMIN' || caller.role === 'SELLER' && job.get('sellerId') === caller.uid))
+        throw fail(403, 'Không có quyền xem chuyến giao thiện nguyện.');
+      return {destination: 'rescueFundFragment', args: {deliveryId: referenceId}};
+    }
     if (!type || !referenceId) return {destination: 'notificationFragment', args: {}, message: 'Thông báo cũ chưa có thông tin điều hướng cụ thể.'};
     if (!Object.hasOwn(collections, type)) return {destination: 'notificationFragment', args: {}, message: 'Nội dung thông báo không còn khả dụng.'};
     const source = await db.collection(collections[type]).doc(referenceId).get();

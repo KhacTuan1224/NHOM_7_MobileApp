@@ -1235,6 +1235,16 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+    // Fund money, receipts and inventory allocation are trusted-backend only.
+    match /rescueFunds/{id} { allow read, write: if false; }
+    match /rescueFundDonations/{id} { allow read, write: if false; }
+    match /rescueFundReferences/{id} { allow read, write: if false; }
+    match /rescueFundWebhookEvents/{id} { allow read, write: if false; }
+    match /rescueFundBankTransactions/{id} { allow read, write: if false; }
+    match /rescueFundLedger/{id} { allow read, write: if false; }
+    match /rescueFundDeliveries/{id} { allow read, write: if false; }
+    match /rescueFundRuns/{id} { allow read, write: if false; }
+    match /rescueFundPayoutReferences/{id} { allow read, write: if false; }
     match /cartMigrationReceipts/{receiptId} { allow read, write: if false; }
 
     match /adminAuditLogs/{auditId} {
@@ -1313,6 +1323,13 @@ service cloud.firestore {
     match /rescueClaims/{document=**} { allow read, write: if false; }
     match /rescueNearbyPreferences/{document=**} { allow read, write: if false; }
     match /rescueImpact/{document=**} { allow read, write: if false; }
+    // Opaque push subscriptions contain only revisions, an availability flag and a timestamp.
+    // Business reads and subscription scopes are still authorized by the backend.
+    match /realtimeSubscriptions/{subscriptionId} {
+      allow get: if subscriptionId.matches('^[a-f0-9-]{36}$')
+        && resource.data.keys().hasOnly(['revision', 'unavailable', 'updatedAt']);
+      allow list, create, update, delete: if false;
+    }
     match /{document=**} {
       allow read, write: if false;
     }
