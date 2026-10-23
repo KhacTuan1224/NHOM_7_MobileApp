@@ -112,9 +112,12 @@ function createRealtimeApi({db, admin, authenticate, now = Date.now, maxSessions
       if (spec.id) target = target.doc(spec.id);
       if (spec.field) target = target.where(spec.field, '==', spec.value);
       for (const [field, operator, value] of spec.filters || []) target = target.where(field, operator, value);
-      entry = {subscribers: new Set(), children: new Map(), failed: false, unsubscribe: () => {}}; watches.set(key, entry);
+      entry = {subscribers: new Set(), children: new Map(), failed: false, initialized: false, unsubscribe: () => {}}; watches.set(key, entry);
       entry.unsubscribe = target.onSnapshot(snapshot => {
-        invalidateReadCaches();
+        // The initial snapshot establishes a baseline, not a database mutation.
+        // Opening an unrelated screen must not evict every warm API cache.
+        if (entry.initialized) invalidateReadCaches();
+        entry.initialized = true;
         if (spec.children) {
           const children = new Map((snapshot.docs || []).map(row => {
             const child = {collection: spec.collection + '/' + row.id + '/' + spec.children};
