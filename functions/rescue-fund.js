@@ -106,12 +106,22 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
       latitude: f.latitude || 0, longitude: f.longitude || 0, active: f.active === true,
       available: f.available || 0, reserved: f.reserved || 0, spent: f.spent || 0, donated: f.donated || 0}};
   }));
+  api('donations', async () => {
+    const rows = await db.collection('rescueFundDonations').where('status', '==', 'PAID')
+      .orderBy('paidAt', 'desc').limit(50).get();
+    return {items: rows.docs.map(s => ({name: text(s.get('supporterName')) || 'Người ủng hộ ẩn danh',
+      paidAt: ms(s.get('paidAt'))}))};
+  });
   // Opaque bearer token is the receipt credential for Guest and Customer alike.
   const buckets = new Map();
   api('donate', async (b, _, req) => {
     requireValue(money(b.amount) && b.amount >= 10000 && b.amount <= 10000000 && id(b.requestId)
       && /^[a-f0-9]{64}$/.test(b.accessToken || ''), 'Số tiền từ 10.000đ đến 10.000.000đ; thiếu mã phiên hợp lệ.');
     const bank = await resolveBank(), key = hash(b.accessToken + ':' + b.requestId), donationRef = ref('rescueFundDonations', key);
+    const shareName = b.shareName === true;
+    const supporterName = shareName ? text(b.supporterName).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 40) : '';
+    requireValue(!shareName || supporterName.length >= 2,
+      'Nhập tên hiển thị (ít nhất 2 ký tự) hoặc bỏ chọn công khai tên.');
     // Include the device receipt token: a reverse proxy may give many genuine
     // guests the same req.ip. This limiter never grants financial authority.
     const bucketKey = hash((req.ip || '') + ':' + b.accessToken), previous = buckets.get(bucketKey);
@@ -126,6 +136,7 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
       const code = 'SEVQR' + crypto.randomBytes(10).toString('hex').toUpperCase();
       requireValue(!(await tx.get(ref('bankTransferReferences', code))).exists, 'Mã chuyển khoản trùng, hãy tạo yêu cầu khác.', 409);
       const value = {id: key, fundId: 'main', amount: b.amount, tokenHash: hash(b.accessToken),
+        supporterName,
         transferContent: code, bankBin: bank.bankBin, accountNumber: bank.accountNumber,
         sharedSellerId: bank.sharedSellerId || '',
         accountName: bank.accountName, status: 'PENDING', createdAt: ts(now()), expiresAt: ts(now() + 1800000)};

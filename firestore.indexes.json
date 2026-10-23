@@ -1,5 +1,6 @@
 {
   "indexes": [
+    {"collectionGroup":"rescueFundDonations","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"paidAt","order":"DESCENDING"}]},
     {"collectionGroup":"rescueFundDeliveries","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"deadline","order":"ASCENDING"}]},
     {"collectionGroup":"orders","queryScope":"COLLECTION","fields":[{"fieldPath":"sellerId","order":"ASCENDING"},{"fieldPath":"paymentStatus","order":"ASCENDING"},{"fieldPath":"updatedAt","order":"ASCENDING"}]},
     {"collectionGroup":"orders","queryScope":"COLLECTION","fields":[{"fieldPath":"sellerId","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"updatedAt","order":"ASCENDING"}]},
