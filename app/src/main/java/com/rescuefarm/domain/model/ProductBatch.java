@@ -56,8 +56,8 @@ public class ProductBatch {
         if (harvestDate == null || expiryDate == null || now == null) {
             throw new IllegalArgumentException("Harvest, expiry and current dates are required");
         }
-        if (harvestDate.after(expiryDate)) {
-            throw new IllegalArgumentException("Harvest date must not be after expiry date");
+        if (!harvestDate.before(expiryDate)) {
+            throw new IllegalArgumentException("Ngày thu hoạch phải trước hạn sử dụng.");
         }
         boolean hasMovements = reservedQuantity > QUANTITY_TOLERANCE || soldQuantity > QUANTITY_TOLERANCE;
         if (hasMovements && Math.abs(initialQuantity - newInitialQuantity) > QUANTITY_TOLERANCE) {

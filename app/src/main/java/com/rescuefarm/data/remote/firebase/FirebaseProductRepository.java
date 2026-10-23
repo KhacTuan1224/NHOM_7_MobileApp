@@ -392,6 +392,8 @@ public class FirebaseProductRepository implements ProductRepository {
             if (existing.exists() && !sellerId.equals(existing.getString("sellerId"))) {
                 throw new IllegalStateException("FORBIDDEN");
             }
+            if (existing.exists() && ProductStatus.HIDDEN.name().equals(existing.getString("status")))
+                throw new IllegalStateException("PRODUCT_HIDDEN");
             double rating = existing.exists() ? number(existing, "averageRating") : 0D;
             int reviewCount = existing.exists() ? (int) longValue(existing, "reviewCount") : 0;
             Product result = Product.restore(saved.getId(), saved.getSellerId(), saved.getCategoryId(),
@@ -406,7 +408,8 @@ public class FirebaseProductRepository implements ProductRepository {
             data.put("updatedAt", FieldValue.serverTimestamp());
             if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
             else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
-            transaction.set(reference, data);
+            if (existing.exists()) transaction.update(reference, data);
+            else transaction.set(reference, data);
             return result;
         }).addOnSuccessListener(result -> {
             com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
@@ -467,7 +470,9 @@ public class FirebaseProductRepository implements ProductRepository {
                 throw new IllegalStateException("PRODUCT_NOT_HIDDEN");
             String previous = snapshot.getString("sellerHiddenPreviousStatus");
             if (!java.util.Arrays.asList(ProductStatus.ACTIVE.name(), ProductStatus.INACTIVE.name(),
-                    ProductStatus.SOLD_OUT.name()).contains(previous)) previous = ProductStatus.INACTIVE.name();
+                    ProductStatus.SOLD_OUT.name()).contains(previous)
+                    || !clean(snapshot.getString("moderationPreviousStatus")).isEmpty())
+                throw new IllegalStateException("PRODUCT_HIDDEN_BY_ADMIN");
             transaction.update(reference, "status", previous,
                     "sellerHiddenPreviousStatus", FieldValue.delete(),
                     "updatedAt", FieldValue.serverTimestamp());
@@ -489,8 +494,13 @@ public class FirebaseProductRepository implements ProductRepository {
             requireOwner(productSnapshot);
             ProductBatch saved;
             if (existing.exists()) {
+                if (!batch.getProductId().equals(existing.getString("productId")))
+                    throw new IllegalStateException("FORBIDDEN");
                 long version = longValue(existing, "inventoryVersion");
                 InventoryVersionPolicy.requireExpected(version, expectedVersion);
+                if (Boolean.TRUE.equals(existing.getBoolean("everOrdered"))
+                        || number(existing, "reservedQuantity") > 0 || number(existing, "soldQuantity") > 0)
+                    throw new IllegalStateException("BATCH_IN_USE");
                 ProductBatch current = requireBatch(existing);
                 current.updateDetails(batch.getHarvestDate(), batch.getExpiryDate(),
                         batch.getInitialQuantity(), new Date());
@@ -691,13 +701,19 @@ public class FirebaseProductRepository implements ProductRepository {
         if ("BATCH_IN_USE".equals(code)) { consumer.accept(ErrorCode.CONFLICT, "Batch đã phát sinh giữ chỗ/bán hoặc campaign."); return; }
         if ("NOT_FOUND".equals(code)) { consumer.accept(ErrorCode.NOT_FOUND, "Không tìm thấy dữ liệu."); return; }
         if ("FORBIDDEN".equals(code)) { consumer.accept(ErrorCode.FORBIDDEN, "Seller chưa được duyệt hoặc không sở hữu dữ liệu."); return; }
+        if ("PRODUCT_HIDDEN_BY_ADMIN".equals(code)) {
+            consumer.accept(ErrorCode.FORBIDDEN, "Sản phẩm không do bạn tự ẩn hoặc đang bị Admin kiểm duyệt. Vui lòng liên hệ Admin để khôi phục."); return;
+        }
+        if ("PRODUCT_HIDDEN".equals(code)) {
+            consumer.accept(ErrorCode.VALIDATION, "Hãy hiện lại sản phẩm trước khi chỉnh sửa. Sản phẩm do Admin ẩn cần được Admin khôi phục."); return;
+        }
         if (error instanceof IllegalArgumentException || error instanceof IllegalStateException) {
             consumer.accept(ErrorCode.VALIDATION, error.getMessage()); return;
         }
         if (error instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException.Code firestoreCode = ((FirebaseFirestoreException) error).getCode();
             if (firestoreCode == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                consumer.accept(ErrorCode.FORBIDDEN, "Seller chưa được duyệt hoặc không có quyền."); return;
+                consumer.accept(ErrorCode.FORBIDDEN, "Firestore từ chối thao tác: quyền sở hữu hoặc điều kiện dữ liệu chưa hợp lệ. Vui lòng tải lại và kiểm tra Rules đã cập nhật."); return;
             }
             if (firestoreCode == FirebaseFirestoreException.Code.UNAVAILABLE) {
                 consumer.accept(ErrorCode.NETWORK, "Không thể kết nối Firestore; dữ liệu cache vẫn được giữ."); return;
