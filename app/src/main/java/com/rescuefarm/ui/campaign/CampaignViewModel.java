@@ -59,7 +59,10 @@ public class CampaignViewModel extends ViewModel {
         });
     }
     public LiveData<List<RescueCampaign>> getSellerCampaigns() {
-        return repository.observeSellerCampaigns(currentUserId());
+        String id = currentUserId();
+        return androidx.lifecycle.Transformations.map(repository.observeSellerCampaigns(id), campaigns -> {
+            sellerCampaignsHaveMore.setValue(repository.hasMoreSellerCampaigns(id)); return campaigns;
+        });
     }
     public LiveData<Boolean> getSellerCampaignsHaveMore() { return sellerCampaignsHaveMore; }
     public LiveData<RescueCampaign> observeCampaign(String campaignId) {

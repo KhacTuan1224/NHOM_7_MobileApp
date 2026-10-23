@@ -49,6 +49,7 @@ public final class AdminDashboardFragment extends Fragment {
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
+        new com.rescuefarm.service.realtime.BackendSnapshotWatch("admin_dashboard").observe(getViewLifecycleOwner(), version -> viewModel.refreshDashboard());
         view.findViewById(R.id.adminDashboardBackButton).setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
         View menuButton = view.findViewById(R.id.adminDashboardMenuButton);
         // Wide layouts keep navigation beside the dashboard instead of in a modal drawer.

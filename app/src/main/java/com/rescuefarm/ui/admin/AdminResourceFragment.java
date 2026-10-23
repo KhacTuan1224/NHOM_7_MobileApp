@@ -61,6 +61,7 @@ public final class AdminResourceFragment extends Fragment {
     private Date orderFromDate, orderThroughDate;
     private EditText shippingBaseFee, shippingFreeDistance, shippingPerKmFee;
     private TextView shippingPreview;
+    private boolean shippingDirty, bindingShipping;
     private String searchTerm = "";
     private boolean bindingStatusFilter;
     private boolean resumedOnce;
@@ -174,8 +175,18 @@ public final class AdminResourceFragment extends Fragment {
         }
         View backButton = view.findViewById(R.id.adminResourceBackButton);
         backButton.setOnClickListener(v -> androidx.navigation.fragment.NavHostFragment.findNavController(this).popBackStack());
-        if (section != Section.ANALYTICS) viewModel.observeSection(section).observe(
-                getViewLifecycleOwner(), this::renderItems);
+        if (section == Section.ANALYTICS) {
+            new com.rescuefarm.service.realtime.BackendSnapshotWatch("admin_dashboard").observe(
+                    getViewLifecycleOwner(), version -> viewModel.refreshDashboard());
+        } else if (section == Section.SHIPPING_SETTINGS) {
+            com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(), () -> {
+                if (!shippingDirty) loadShippingConfig();
+            }, com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("appConfig").document("shipping"));
+        } else {
+            com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(),
+                    () -> viewModel.refreshSectionRealtime(section),
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance().collection(section.getCollection()));
+        }
         view.findViewById(R.id.refreshAdminResourceButton).setOnClickListener(v -> refresh());
         refresh();
     }
@@ -208,7 +219,9 @@ public final class AdminResourceFragment extends Fragment {
         shippingPreview = new TextView(requireContext()); container.addView(shippingPreview);
         android.text.TextWatcher watcher = new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { updateShippingPreview(); }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!bindingShipping) shippingDirty = true; updateShippingPreview();
+            }
             @Override public void afterTextChanged(android.text.Editable s) { }
         };
         shippingBaseFee.addTextChangedListener(watcher); shippingFreeDistance.addTextChangedListener(watcher);
@@ -223,6 +236,7 @@ public final class AdminResourceFragment extends Fragment {
                     @Override public void onSuccess() {
                         if (!isAdded()) return;
                         Toast.makeText(requireContext(), "Đã lưu cấu hình và audit.", Toast.LENGTH_SHORT).show();
+                        shippingDirty = false;
                         loadShippingConfig();
                     }
                     @Override public void onError(AdminRepository.ErrorCode code, String error) {
@@ -246,10 +260,12 @@ public final class AdminResourceFragment extends Fragment {
         message.setText("Đang tải cấu hình từ Firestore…");
         viewModel.loadShippingConfig(new AdminRepository.DetailCallback() {
             @Override public void onSuccess(Map<String, Object> data) {
-                if (!isAdded() || shippingBaseFee == null) return;
+                if (!isAdded() || getView() == null || shippingBaseFee == null || shippingDirty) return;
+                bindingShipping = true;
                 shippingBaseFee.setText(data.get("baseFeeVnd") == null ? "" : String.valueOf(data.get("baseFeeVnd")));
                 shippingFreeDistance.setText(data.get("freeDistanceKm") == null ? "" : String.valueOf(data.get("freeDistanceKm")));
                 shippingPerKmFee.setText(data.get("perKmFeeVnd") == null ? "" : String.valueOf(data.get("perKmFeeVnd")));
+                bindingShipping = false; shippingDirty = false;
                 Object updater = data.get("updatedBy");
                 message.setText(data.isEmpty() ? "Chưa cấu hình phí giao hàng."
                         : "Đã cập nhật bởi " + (updater == null ? "(chưa ghi nhận)" : updater));

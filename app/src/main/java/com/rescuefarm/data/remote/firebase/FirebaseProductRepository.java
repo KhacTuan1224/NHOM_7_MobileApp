@@ -59,24 +59,48 @@ public class FirebaseProductRepository implements ProductRepository {
     private volatile boolean publicHasMore = true;
     private volatile boolean publicLoading;
 
-    private final androidx.lifecycle.MutableLiveData<Object> publicRevision = new androidx.lifecycle.MutableLiveData<>();
+
+    private SnapshotLiveData<List<Product>> publicProducts;
+    private SnapshotLiveData<List<Product>> allProducts;
+    private SnapshotLiveData<List<Category>> categories;
+    private final Map<String, SnapshotLiveData<List<Product>>> liveSellerProducts = new HashMap<>();
+    private final Map<String, Integer> sellerLimits = new HashMap<>();
+    private int publicLimit = 12;
+
+    private Query publicQuery() {
+        return firestore.collection(PRODUCTS).whereEqualTo("status", ProductStatus.ACTIVE.name())
+                .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(publicLimit + 1L);
+    }
+
     @Override public LiveData<List<Product>> observePublicProductPage() {
-        androidx.lifecycle.MediatorLiveData<List<Product>> result = new androidx.lifecycle.MediatorLiveData<>();
-        java.util.concurrent.atomic.AtomicReference<List<Product>> cached =
-                new java.util.concurrent.atomic.AtomicReference<>(new ArrayList<>());
-        Runnable publish = () -> {
-            List<Product> values = cached.get();
-            Set<String> ids = publicIds;
-            if (ids == null) { result.setValue(new ArrayList<>(values.subList(0, Math.min(12, values.size())))); return; }
-            Map<String, Product> byId = new HashMap<>();
-            for (Product value : values) byId.put(value.getId(), value);
-            List<Product> visible = new ArrayList<>();
-            for (String id : ids) if (byId.containsKey(id)) visible.add(byId.get(id));
-            result.setValue(visible);
-        };
-        result.addSource(dao.observeActiveProducts(), entities -> { cached.set(CatalogCacheMapper.products(entities)); publish.run(); });
-        result.addSource(publicRevision, ignored -> publish.run());
-        return result;
+        if (publicProducts == null) publicProducts = new SnapshotLiveData<>(publicQuery(),
+                Transformations.map(dao.observeActiveProducts(), CatalogCacheMapper::products), null,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(publicLimit, snapshot.size()));
+                    List<Product> values = products(docs);
+                    Set<String> previous = publicIds == null ? java.util.Collections.emptySet() : new HashSet<>(publicIds);
+                    Set<String> ids = new LinkedHashSet<>();
+                    for (Product value : values) ids.add(value.getId());
+                    publicIds = ids;
+                    publicCursor = docs.isEmpty() ? null : docs.get(docs.size() - 1);
+                    publicHasMore = snapshot.size() > publicLimit;
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        for (String id : previous) if (!ids.contains(id)) dao.deleteProduct(id);
+                        List<ProductCacheEntity> entities = new ArrayList<>();
+                        for (Product value : values) entities.add(CatalogCacheMapper.toEntity(value, System.currentTimeMillis()));
+                        dao.replaceProducts(entities);
+                    }));
+                    return values;
+                });
+        return publicProducts;
+    }
+
+    private List<Product> products(List<DocumentSnapshot> documents) {
+        List<Product> values = new ArrayList<>();
+        for (DocumentSnapshot document : documents) {
+            Product value = mapProduct(document); if (value != null) values.add(value);
+        }
+        return values;
     }
 
     @Override public boolean hasMorePublicProducts() { return publicHasMore; }
@@ -85,54 +109,14 @@ public class FirebaseProductRepository implements ProductRepository {
         if (publicLoading) { callback.onError(ErrorCode.CONFLICT, "Đang tải sản phẩm, vui lòng đợi."); return; }
         if (!online(callback, "Không có kết nối; đang giữ sản phẩm đã tải.")) return;
         if (!reset && !publicHasMore) { callback.onSuccess(); return; }
-        publicLoading = true;
-        ActionCallback completion = new ActionCallback() {
-            public void onSuccess() { publicLoading = false; callback.onSuccess(); }
-            public void onError(ErrorCode code, String message) { publicLoading = false; callback.onError(code, message); }
-        };
-        Runnable load = () -> {
-            Query page = firestore.collection(PRODUCTS).whereEqualTo("status", ProductStatus.ACTIVE.name())
-                    .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(13);
-            if (!reset && publicCursor != null) page = page.startAfter(publicCursor);
-            page.get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(snapshot -> {
-                List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(12, snapshot.size()));
-                Set<String> ids = reset || publicIds == null ? new LinkedHashSet<>() : new LinkedHashSet<>(publicIds);
-                List<ProductCacheEntity> entities = new ArrayList<>();
-                for (DocumentSnapshot doc : docs) {
-                    Product product = mapProduct(doc);
-                    if (product != null) { ids.add(product.getId()); entities.add(CatalogCacheMapper.toEntity(product, System.currentTimeMillis())); }
-                }
-                cacheExecutor.execute(() -> {
-                    try {
-                    dao.replaceProducts(entities);
-                    publicIds = ids;
-                    publicCursor = docs.isEmpty() ? (reset ? null : publicCursor) : docs.get(docs.size()-1);
-                    publicHasMore = snapshot.size() > 12;
-                    publicRevision.postValue(new Object());
-                    completion.onSuccess();
-                    } catch (RuntimeException error) {
-                        completion.onError(ErrorCode.UNKNOWN, "Không thể lưu trang sản phẩm trên thiết bị. Vui lòng thử lại.");
-                    }
-                });
-            }).addOnFailureListener(error -> notifyFailure(error, completion::onError));
-        };
-        if (!reset) { load.run(); return; }
-        firestore.collection(CATEGORIES).whereEqualTo("active", true).get().addOnSuccessListener(snapshot -> {
-            List<CategoryCacheEntity> entities = new ArrayList<>();
-            for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                Category category = mapCategory(doc);
-                if (category != null) entities.add(CatalogCacheMapper.toEntity(category, System.currentTimeMillis()));
-            }
-            cacheExecutor.execute(() -> {
-                try {
-                database.runInTransaction(() -> { dao.clearCategories(); dao.replaceCategories(entities); });
-                new android.os.Handler(android.os.Looper.getMainLooper()).post(load);
-                } catch (RuntimeException error) {
-                    completion.onError(ErrorCode.UNKNOWN, "Không thể cập nhật danh mục trên thiết bị. Vui lòng thử lại.");
-                }
-            });
-        }).addOnFailureListener(error -> notifyFailure(error, completion::onError));
+        publicLoading = true; publicLimit = reset ? 12 : publicLimit + 12;
+        observePublicProductPage();
+        publicProducts.refresh(publicQuery(), error -> {
+            publicLoading = false;
+            if (error == null) callback.onSuccess(); else notifyFailure(error, callback::onError);
+        });
     }
+
     private final InventoryService inventoryService = new InventoryService();
 
     public FirebaseProductRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
@@ -141,22 +125,78 @@ public class FirebaseProductRepository implements ProductRepository {
         this.network = network;
     }
 
+
     @Override public LiveData<List<Category>> observeCategories() {
-        return Transformations.map(dao.observeActiveCategories(), CatalogCacheMapper::categories);
+        if (categories == null) categories = new SnapshotLiveData<>(
+                firestore.collection(CATEGORIES).whereEqualTo("active", true),
+                Transformations.map(dao.observeActiveCategories(), CatalogCacheMapper::categories), null,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<Category> values = new ArrayList<>();
+                    List<CategoryCacheEntity> entities = new ArrayList<>();
+                    for (DocumentSnapshot document : snapshot.getDocuments()) {
+                        Category value = mapCategory(document);
+                        if (value != null) { values.add(value); entities.add(CatalogCacheMapper.toEntity(value, System.currentTimeMillis())); }
+                    }
+                    values.sort(java.util.Comparator.comparingInt(Category::getDisplayOrder));
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> { dao.clearCategories(); dao.replaceCategories(entities); }));
+                    return values;
+                });
+        return categories;
     }
     @Override public LiveData<List<Product>> observeProducts() {
-        return Transformations.map(dao.observeActiveProducts(), CatalogCacheMapper::products);
+        if (allProducts == null) allProducts = new SnapshotLiveData<>(
+                firestore.collection(PRODUCTS).whereEqualTo("status", ProductStatus.ACTIVE.name()),
+                Transformations.map(dao.observeActiveProducts(), CatalogCacheMapper::products), null,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<Product> values = products(snapshot.getDocuments());
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        dao.clearActiveProducts();
+                        for (Product value : values) dao.replaceProduct(CatalogCacheMapper.toEntity(value, System.currentTimeMillis()));
+                    }));
+                    return values;
+                });
+        return allProducts;
+    }
+    private Query sellerQuery(String sellerId) {
+        Query query = firestore.collection(PRODUCTS).whereEqualTo("sellerId", sellerId)
+                .orderBy("createdAt", Query.Direction.DESCENDING);
+        int limit = sellerLimits.getOrDefault(sellerId, 0);
+        return limit == 0 ? query : query.limit(limit + 1L);
     }
     @Override public LiveData<List<Product>> observeSellerProducts(String sellerId) {
-        return Transformations.map(dao.observeSellerProducts(sellerId), CatalogCacheMapper::products);
+        if (sellerId == null || sellerId.isEmpty()) return new androidx.lifecycle.MutableLiveData<>(java.util.Collections.emptyList());
+        if (!liveSellerProducts.containsKey(sellerId)) liveSellerProducts.put(sellerId, new SnapshotLiveData<>(
+                sellerQuery(sellerId), Transformations.map(dao.observeSellerProducts(sellerId), CatalogCacheMapper::products),
+                sellerId, java.util.Collections.emptyList(), snapshot -> {
+                    int limit = sellerLimits.getOrDefault(sellerId, 0);
+                    List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, limit == 0 ? snapshot.size() : Math.min(limit, snapshot.size()));
+                    List<Product> values = products(docs);
+                    synchronized (sellerProductCursors) {
+                        if (docs.isEmpty()) sellerProductCursors.remove(sellerId);
+                        else sellerProductCursors.put(sellerId, docs.get(docs.size() - 1));
+                        if (limit > 0 && snapshot.size() > limit) sellersWithMoreProducts.add(sellerId);
+                        else sellersWithMoreProducts.remove(sellerId);
+                    }
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        dao.clearSellerProducts(sellerId);
+                        for (Product value : values) dao.replaceProduct(CatalogCacheMapper.toEntity(value, System.currentTimeMillis()));
+                    }));
+                    return values;
+                }));
+        return liveSellerProducts.get(sellerId);
     }
+
     @Override public LiveData<Product> observeProduct(String productId) {
         return new LiveData<Product>() {
             private ListenerRegistration registration;
             @Override protected void onActive() {
                 registration = firestore.collection(PRODUCTS).document(productId)
                         .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
+                            if (error != null) {
+                                if (error.getCode() == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED) postValue(null);
+                                return;
+                            }
+                            if (snapshot == null) return;
                             Product product = snapshot.exists() ? mapProduct(snapshot) : null;
                             postValue(product);
                             if (product != null) cacheExecutor.execute(() -> dao.replaceProduct(
@@ -169,38 +209,18 @@ public class FirebaseProductRepository implements ProductRepository {
         };
     }
     @Override public LiveData<List<ProductBatch>> observeBatches(String productId) {
-        MediatorLiveData<List<ProductBatch>> result = new MediatorLiveData<>();
-        result.addSource(dao.observeBatches(productId), entities ->
-                result.setValue(CatalogCacheMapper.batches(entities)));
-        LiveData<List<ProductBatch>> remote = new LiveData<List<ProductBatch>>() {
-            private ListenerRegistration registration;
-            @Override protected void onActive() {
-                registration = firestore.collection(BATCHES).whereEqualTo("productId", productId)
-                        .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
-                            List<ProductBatch> values = new ArrayList<>();
-                            List<ProductBatchCacheEntity> entities = new ArrayList<>();
-                            long now = System.currentTimeMillis();
-                            for (DocumentSnapshot document : snapshot.getDocuments()) {
-                                ProductBatch batch = mapBatch(document);
-                                if (batch != null) {
-                                    values.add(batch);
-                                    entities.add(CatalogCacheMapper.toEntity(batch, now));
-                                }
-                            }
-                            postValue(values);
-                            cacheExecutor.execute(() -> database.runInTransaction(() -> {
-                                dao.clearBatches(productId);
-                                dao.replaceBatches(entities);
-                            }));
-                        });
-            }
-            @Override protected void onInactive() {
-                if (registration != null) { registration.remove(); registration = null; }
-            }
-        };
-        result.addSource(remote, result::setValue);
-        return result;
+        return new SnapshotLiveData<>(firestore.collection(BATCHES).whereEqualTo("productId", productId),
+                Transformations.map(dao.observeBatches(productId), CatalogCacheMapper::batches), null,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<ProductBatch> values = new ArrayList<>();
+                    List<ProductBatchCacheEntity> entities = new ArrayList<>();
+                    for (DocumentSnapshot document : snapshot.getDocuments()) {
+                        ProductBatch value = mapBatch(document);
+                        if (value != null) { values.add(value); entities.add(CatalogCacheMapper.toEntity(value, System.currentTimeMillis())); }
+                    }
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> { dao.clearBatches(productId); dao.replaceBatches(entities); }));
+                    return values;
+                });
     }
 
     @Override public void refreshCatalog(ActionCallback callback) {
@@ -231,52 +251,22 @@ public class FirebaseProductRepository implements ProductRepository {
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+
     @Override public void refreshSellerProducts(String sellerId, ActionCallback callback) {
         if (!online(callback, "Đang offline; sản phẩm seller tiếp tục dùng Room cache.")) return;
-        firestore.collection(PRODUCTS).whereEqualTo("sellerId", sellerId).get()
-                .addOnSuccessListener(snapshot -> {
-                    List<ProductCacheEntity> products = new ArrayList<>(); long now = System.currentTimeMillis();
-                    for (DocumentSnapshot document : snapshot.getDocuments()) {
-                        Product value = mapProduct(document);
-                        if (value != null) products.add(CatalogCacheMapper.toEntity(value, now));
-                    }
-                    cacheExecutor.execute(() -> {
-                        database.runInTransaction(() -> {
-                            dao.clearSellerProducts(sellerId); dao.replaceProducts(products);
-                        });
-                        callback.onSuccess();
-                    });
-                }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        sellerLimits.put(sellerId, 0); observeSellerProducts(sellerId);
+        liveSellerProducts.get(sellerId).refresh(sellerQuery(sellerId), error -> {
+            if (error == null) callback.onSuccess(); else notifyFailure(error, callback::onError);
+        });
     }
 
     @Override public void refreshSellerProductPage(String sellerId, boolean reset, ActionCallback callback) {
         if (!online(callback, "Đang offline; sản phẩm seller tiếp tục dùng Room cache.")) return;
-        Query query = firestore.collection(PRODUCTS).whereEqualTo("sellerId", sellerId)
-                .orderBy("createdAt", Query.Direction.DESCENDING).limit(SELLER_PAGE_SIZE);
-        DocumentSnapshot cursor;
-        synchronized (sellerProductCursors) { cursor = sellerProductCursors.get(sellerId); }
-        if (!reset && cursor != null) query = query.startAfter(cursor);
-        query.get().addOnSuccessListener(snapshot -> {
-            List<ProductCacheEntity> values = new ArrayList<>(); long now = System.currentTimeMillis();
-            for (DocumentSnapshot document : snapshot.getDocuments()) {
-                Product product = mapProduct(document);
-                if (product != null) values.add(CatalogCacheMapper.toEntity(product, now));
-            }
-            synchronized (sellerProductCursors) {
-                if (reset) sellerProductCursors.remove(sellerId);
-                if (!snapshot.isEmpty()) sellerProductCursors.put(sellerId,
-                        snapshot.getDocuments().get(snapshot.size() - 1));
-                if (snapshot.size() == SELLER_PAGE_SIZE) sellersWithMoreProducts.add(sellerId);
-                else sellersWithMoreProducts.remove(sellerId);
-            }
-            cacheExecutor.execute(() -> {
-                database.runInTransaction(() -> {
-                    if (reset) dao.clearSellerProducts(sellerId);
-                    dao.replaceProducts(values);
-                });
-                callback.onSuccess();
-            });
-        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        sellerLimits.put(sellerId, reset ? SELLER_PAGE_SIZE : sellerLimits.getOrDefault(sellerId, SELLER_PAGE_SIZE) + SELLER_PAGE_SIZE);
+        observeSellerProducts(sellerId);
+        liveSellerProducts.get(sellerId).refresh(sellerQuery(sellerId), error -> {
+            if (error == null) callback.onSuccess(); else notifyFailure(error, callback::onError);
+        });
     }
 
     @Override public boolean hasMoreSellerProducts(String sellerId) {

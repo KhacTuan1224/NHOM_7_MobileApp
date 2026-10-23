@@ -84,7 +84,10 @@ public class ProductViewModel extends ViewModel {
         });
     }
     public LiveData<List<Product>> getSellerProducts() {
-        return repository.observeSellerProducts(currentUserId());
+        String id = currentUserId();
+        return androidx.lifecycle.Transformations.map(repository.observeSellerProducts(id), products -> {
+            sellerProductsHaveMore.setValue(repository.hasMoreSellerProducts(id)); return products;
+        });
     }
     public LiveData<Boolean> getSellerProductsHaveMore() { return sellerProductsHaveMore; }
     public LiveData<Product> observeProduct(String productId) {

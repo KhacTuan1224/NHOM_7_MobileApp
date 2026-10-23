@@ -32,10 +32,19 @@ public final class CampaignFeedCardRenderer {
     private final Map<String, Long> loadedAt = new HashMap<>(), attemptedAt = new HashMap<>();
     private final java.util.Set<String> inFlight = new java.util.HashSet<>();
     private int generation;
-    public CampaignFeedCardRenderer(Fragment fragment) { this.fragment = fragment; }
+    private List<RescueCampaign> currentPage = new ArrayList<>();
+    public CampaignFeedCardRenderer(Fragment fragment) {
+        this.fragment = fragment;
+        new com.rescuefarm.service.realtime.BackendSnapshotWatch("campaign_cards").observe(fragment.getViewLifecycleOwner(), version -> {
+            ++generation; inFlight.clear(); attemptedAt.clear(); cached.clear(); loadedAt.clear();
+            Map<String,View> bindings = new HashMap<>(visible);
+            beginPage(currentPage); visible.putAll(bindings);
+        });
+    }
 
     /** One bounded request per visible page; callbacks cannot bind views from an old page. */
     public void beginPage(List<RescueCampaign> campaigns) {
+        currentPage = new ArrayList<>(campaigns);
         visible.clear();
         int requestGeneration = generation;
         long now = android.os.SystemClock.elapsedRealtime();
@@ -55,9 +64,8 @@ public final class CampaignFeedCardRenderer {
                     if (requestGeneration != generation || !fragment.isAdded() || fragment.getView() == null) return;
                     inFlight.removeAll(requested);
                     JSONObject cards = response.optJSONObject("cards"); if (cards == null) return;
-                    java.util.Iterator<String> keys = cards.keys();
-                    while (keys.hasNext()) {
-                        String id = keys.next(); JSONObject value = cards.optJSONObject(id); if (value == null) continue;
+                    for (String id : requested) {
+                        JSONObject value = cards.optJSONObject(id); if (value == null) value = new JSONObject();
                         cached.put(id, value); loadedAt.put(id, android.os.SystemClock.elapsedRealtime());
                         View root = visible.get(id);
                         if (root != null) bindMetadata(root, value);
@@ -157,7 +165,7 @@ public final class CampaignFeedCardRenderer {
         }
     }
     public void clear() {
-        ++generation; visible.clear(); cached.clear(); loadedAt.clear(); attemptedAt.clear(); inFlight.clear();
+        ++generation; visible.clear(); cached.clear(); loadedAt.clear(); attemptedAt.clear(); inFlight.clear(); currentPage.clear();
     }
     public View message(String value) {
         TextView text = new TextView(fragment.requireContext()); text.setText(value);

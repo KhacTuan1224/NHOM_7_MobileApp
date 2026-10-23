@@ -100,7 +100,7 @@ app.get("/health", (_, res) => {
   try { sepayStatus = Object.keys(require('./sepay').merchants()).length ? 'CONFIGURED' : 'NOT_CONFIGURED'; }
   catch (_) { sepayStatus = 'INVALID_CONFIGURATION'; }
   res.json({ok: true, paymentFlowVersion: 2, sepayStatus, pricingVersion: 3,
-    rescueProgramsVersion: 1,
+    rescueProgramsVersion: 1, realtimeVersion: 1,
     rescuePaymentPolicy: 'PICKUP_CASH_NO_PREPAYMENT', migrationsReady,
     firestoreReadStatus: quotaGuard.remainingSeconds() ? 'QUOTA_COOLDOWN' : 'NOT_IN_COOLDOWN',
     retryAfterSeconds: quotaGuard.remainingSeconds()});
@@ -109,6 +109,9 @@ app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: aut
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
 app.use(require('./campaign-cards').createCampaignCardsApi({db}).router);
 app.use(require('./seller-payment-options').createSellerPaymentOptionsApi({db}).router);
+const realtime = require('./realtime').createRealtimeApi({db, admin, authenticate: auth,
+  onError: error => { if (isQuotaError(error)) noteQuota(error); else console.warn('[realtime]', error.message); }});
+app.use(realtime.router);
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
 const batchExpiry = require('./batch-expiry').createBatchExpiry({db, admin, campaignLifecycle});
 app.use(campaignLifecycle.router);

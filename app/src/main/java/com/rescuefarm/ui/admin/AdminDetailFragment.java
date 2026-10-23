@@ -40,6 +40,7 @@ public final class AdminDetailFragment extends Fragment {
     private TextView message;
     private MaterialButton retry;
     private EditText reason;
+    private int detailGeneration;
     private final List<View> actionViews = new ArrayList<>();
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -67,22 +68,41 @@ public final class AdminDetailFragment extends Fragment {
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         loadDetail();
+        java.util.List<Object> targets = new java.util.ArrayList<>();
+        com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        targets.add(db.collection(section.getCollection()).document(item.getId()));
+        if (section == Section.SELLER_APPLICATIONS) targets.add(db.collection("users").document(item.getId()));
+        if (section == Section.PRODUCTS) targets.add(db.collection("productBatches").whereEqualTo("productId", item.getId()));
+        if (section == Section.CAMPAIGNS) targets.add(db.collection("productBatches").whereEqualTo("activeCampaignId", item.getId()));
+        if (section == Section.ORDERS) {
+            targets.add(db.collection("orders").document(item.getId()).collection("items"));
+            targets.add(db.collection("payments").document(item.getId()));
+            targets.add(db.collection("shipments").document(item.getId()));
+        }
+        com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(), this::loadDetail, targets.toArray());
     }
 
     private void loadDetail() {
         progress.setVisibility(View.VISIBLE);
         retry.setVisibility(View.GONE);
         message.setText("Đang tải đầy đủ hồ sơ…");
-        content.removeAllViews();
+        final int request = ++detailGeneration;
+        final View boundView = getView();
         viewModel.loadDetail(section, item.getId(), new AdminRepository.DetailCallback() {
             @Override public void onSuccess(Map<String, Object> detail) {
-                if (!isAdded()) return;
+                if (!isAdded() || getView() != boundView || request != detailGeneration) return;
                 progress.setVisibility(View.GONE);
                 message.setText("");
+                String draft = reason == null ? "" : reason.getText().toString();
+                content.removeAllViews(); actionViews.clear(); reason = null;
+                Object currentStatus = detail == null ? null : detail.get("status");
+                if (currentStatus instanceof String) item = new AdminListItem(item.getId(), item.getTitle(), item.getSubtitle(),
+                        (String) currentStatus, item.isActive(), item.getImageUrl());
                 renderDetail(detail == null ? Collections.emptyMap() : detail);
+                if (reason != null) reason.setText(draft);
             }
             @Override public void onError(AdminRepository.ErrorCode code, String error) {
-                if (!isAdded()) return;
+                if (!isAdded() || getView() != boundView || request != detailGeneration) return;
                 progress.setVisibility(View.GONE);
                 message.setText(error == null ? "Không tải được chi tiết." : error);
                 retry.setVisibility(View.VISIBLE);

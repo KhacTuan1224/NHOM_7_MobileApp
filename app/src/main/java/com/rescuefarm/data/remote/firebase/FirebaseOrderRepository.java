@@ -65,85 +65,52 @@ public class FirebaseOrderRepository implements OrderRepository {
     private static final int SELLER_ORDER_PAGE_SIZE = 12;
     private final Map<String, DocumentSnapshot> customerOrderCursors = new HashMap<>();
     private final Map<String, Boolean> customerOrderHasMore = new HashMap<>();
-    private final Map<String, androidx.lifecycle.MutableLiveData<List<Order>>> customerPages = new HashMap<>();
+    private final Map<String, SnapshotLiveData<List<Order>>> customerPages = new HashMap<>();
+    private final Map<String, Integer> customerLimits = new HashMap<>();
+    private final Map<String, SnapshotLiveData<List<Order>>> sellerPages = new HashMap<>();
+    private final Map<String, Integer> sellerLimits = new HashMap<>();
     private final java.util.Set<String> customerPagesLoading = new java.util.HashSet<>();
 
-    private androidx.lifecycle.MutableLiveData<List<Order>> customerPage(String ownerId) {
-        return customerPages.computeIfAbsent(ownerId, key -> new androidx.lifecycle.MutableLiveData<>());
+
+    private Query customerQuery(String ownerId) {
+        return db.collection(ORDERS).whereEqualTo("ownerId", ownerId).whereEqualTo("ownerType", "CUSTOMER")
+                .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(customerLimits.getOrDefault(ownerId, 12) + 1L);
     }
     @Override public LiveData<List<Order>> observeCustomerOrderPage(String ownerId) {
-        MediatorLiveData<List<Order>> result = new MediatorLiveData<>();
-        androidx.lifecycle.MutableLiveData<List<Order>> page = customerPage(ownerId);
-        result.addSource(orderDao.observeOwnerOrders(ownerId), entities -> {
-            List<Order> cached = OrderCacheMapper.orders(entities);
-            List<Order> loaded = page.getValue();
-            if (loaded == null) { result.setValue(new ArrayList<>(cached.subList(0, Math.min(12, cached.size())))); return; }
-            Map<String, Order> byId = new HashMap<>();
-            for (Order value : cached) byId.put(value.getId(), value);
-            List<Order> visible = new ArrayList<>();
-            for (Order value : loaded) visible.add(byId.containsKey(value.getId()) ? byId.get(value.getId()) : value);
-            result.setValue(visible);
-        });
-        result.addSource(page, result::setValue);
-        // Keep statuses live only for the requested window, not the complete history.
-        LiveData<Boolean> updates = Transformations.switchMap(page, loaded -> new LiveData<Boolean>() {
-            private ListenerRegistration listener;
-            @Override protected void onActive() {
-                if (loaded == null || loaded.isEmpty()) return;
-                listener = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
-                        .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
-                        .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(loaded.size())
-                        .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
-                            List<Order> values = new ArrayList<>();
-                            for (DocumentSnapshot doc : snapshot.getDocuments()) values.add(mapOrder(doc, new ArrayList<>()));
-                            cacheExecutor.execute(() -> orderDao.replaceOrders(toEntities(values)));
-                        });
-            }
-            @Override protected void onInactive() { if (listener != null) listener.remove(); listener = null; }
-        });
-        result.addSource(updates, ignored -> { });
-        return result;
+        if (ownerId == null || ownerId.isEmpty()) return new androidx.lifecycle.MutableLiveData<>(java.util.Collections.emptyList());
+        if (!customerPages.containsKey(ownerId)) customerPages.put(ownerId, new SnapshotLiveData<>(customerQuery(ownerId),
+                Transformations.map(orderDao.observeOwnerOrders(ownerId), OrderCacheMapper::orders), ownerId,
+                java.util.Collections.emptyList(), snapshot -> {
+                    int limit = customerLimits.getOrDefault(ownerId, 12);
+                    List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(limit, snapshot.size()));
+                    List<Order> values = new ArrayList<>();
+                    for (DocumentSnapshot document : docs) values.add(mapOrder(document, new ArrayList<>()));
+                    customerOrderHasMore.put(ownerId, snapshot.size() > limit);
+                    if (docs.isEmpty()) customerOrderCursors.remove(ownerId);
+                    else customerOrderCursors.put(ownerId, docs.get(docs.size() - 1));
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        orderDao.clearOwnerOrders(ownerId); orderDao.replaceOrders(toEntities(values));
+                    }));
+                    return values;
+                }));
+        return customerPages.get(ownerId);
     }
     @Override public boolean hasMoreCustomerOrders(String ownerId) {
         return customerOrderHasMore.getOrDefault(ownerId, true);
     }
     @Override public void refreshCustomerOrderPage(String ownerId, boolean reset, ActionCallback callback) {
-        if (customerPagesLoading.contains(ownerId)) return;
+        if (customerPagesLoading.contains(ownerId)) { callback.onSuccess(); return; }
         if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Không thể tải thêm đơn hàng khi offline."); return; }
         if (!reset && !hasMoreCustomerOrders(ownerId)) { callback.onSuccess(); return; }
         customerPagesLoading.add(ownerId);
-        Query query = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
-                .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
-                .orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(13);
-        DocumentSnapshot cursor = customerOrderCursors.get(ownerId);
-        if (!reset && cursor != null) query = query.startAfter(cursor);
-        query.get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(snapshot -> {
-            List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(12, snapshot.size()));
-            java.util.LinkedHashMap<String, Order> merged = new java.util.LinkedHashMap<>();
-            List<Order> previous = customerPage(ownerId).getValue();
-            if (!reset && previous != null) for (Order value : previous) merged.put(value.getId(), value);
-            for (DocumentSnapshot doc : docs) { Order value = mapOrder(doc, new ArrayList<>()); merged.put(value.getId(), value); }
-            List<Order> values = new ArrayList<>(merged.values());
-            cacheExecutor.execute(() -> {
-                try {
-                orderDao.replaceOrders(toEntities(values));
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    if (reset) customerOrderCursors.remove(ownerId);
-                    if (!docs.isEmpty()) customerOrderCursors.put(ownerId, docs.get(docs.size()-1));
-                    customerOrderHasMore.put(ownerId, snapshot.size() > 12);
-                    customerPagesLoading.remove(ownerId);
-                    customerPage(ownerId).setValue(values); callback.onSuccess();
-                });
-                } catch (RuntimeException error) {
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        customerPagesLoading.remove(ownerId);
-                        callback.onError(ErrorCode.UNKNOWN, "Không thể lưu trang đơn hàng trên thiết bị. Vui lòng thử lại.");
-                    });
-                }
-            });
-        }).addOnFailureListener(error -> { customerPagesLoading.remove(ownerId); failure(error, callback); });
+        customerLimits.put(ownerId, reset ? 12 : customerLimits.getOrDefault(ownerId, 12) + 12);
+        observeCustomerOrderPage(ownerId);
+        customerPages.get(ownerId).refresh(customerQuery(ownerId), error -> {
+            customerPagesLoading.remove(ownerId);
+            if (error == null) callback.onSuccess(); else failure(error, callback);
+        });
     }
+
     private final SharedPreferencesGuestSessionRepository guestSession;
     private final Handler guestHandler = new Handler(Looper.getMainLooper());
     private final Map<String, Runnable> guestPolls = new HashMap<>();
@@ -152,76 +119,45 @@ public class FirebaseOrderRepository implements OrderRepository {
     public FirebaseOrderRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
             NetworkStatusProvider network, SharedPreferencesGuestSessionRepository guestSession){this.database=database;this.orderDao=database.orderCacheDao();
         this.cacheExecutor=cacheExecutor;this.network=network;this.guestSession=guestSession;}
-    @Override public LiveData<List<Order>> observeOrders(String ownerId){
-        MediatorLiveData<List<Order>> result = new MediatorLiveData<>();
-        result.addSource(Transformations.map(orderDao.observeOwnerOrders(ownerId),
-                OrderCacheMapper::orders), result::setValue);
-        LiveData<List<Order>> remote = new LiveData<List<Order>>() {
-            private ListenerRegistration registration;
-            @Override protected void onActive() {
-                if (ownerId == null || ownerId.trim().isEmpty()) {
-                    postValue(new ArrayList<>());
-                    return;
-                }
-                registration = db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
-                        .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name())
-                        .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
-                            List<Order> values = new ArrayList<>();
-                            for (DocumentSnapshot document : snapshot.getDocuments()) {
-                                values.add(mapOrder(document, new ArrayList<>()));
-                            }
-                            postValue(values);
-                        });
-            }
-            @Override protected void onInactive() {
-                if (registration != null) { registration.remove(); registration = null; }
-            }
-        };
-        result.addSource(remote, values -> {
-            if (values == null) return;
-            result.setValue(values);
-            cacheExecutor.execute(() -> database.runInTransaction(() -> {
-                orderDao.clearOwnerOrders(ownerId);
-                orderDao.replaceOrders(toEntities(values));
-            }));
-        });
-        return result;
+    @Override public LiveData<List<Order>> observeOrders(String ownerId) {
+        if (ownerId == null || ownerId.trim().isEmpty()) return new androidx.lifecycle.MutableLiveData<>(java.util.Collections.emptyList());
+        return new SnapshotLiveData<>(db.collection(ORDERS).whereEqualTo("ownerId", ownerId)
+                .whereEqualTo("ownerType", OrderOwnerType.CUSTOMER.name()),
+                Transformations.map(orderDao.observeOwnerOrders(ownerId), OrderCacheMapper::orders), ownerId,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<Order> values = new ArrayList<>();
+                    for (DocumentSnapshot document : snapshot.getDocuments()) values.add(mapOrder(document, new ArrayList<>()));
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        orderDao.clearOwnerOrders(ownerId); orderDao.replaceOrders(toEntities(values));
+                    }));
+                    return values;
+                });
     }
-    @Override public LiveData<List<Order>> observeSellerOrders(String sellerId){
-        MediatorLiveData<List<Order>> result = new MediatorLiveData<>();
-        result.addSource(Transformations.map(orderDao.observeSellerOrders(sellerId), OrderCacheMapper::orders), result::setValue);
-        LiveData<List<Order>> remote = new LiveData<List<Order>>() {
-            private ListenerRegistration registration;
-            @Override protected void onActive() {
-                if (sellerId == null || sellerId.trim().isEmpty()) { postValue(new ArrayList<>()); return; }
-                registration = db.collection(ORDERS).whereEqualTo("sellerId", sellerId)
-                        .orderBy("createdAt", Query.Direction.DESCENDING).limit(SELLER_ORDER_PAGE_SIZE)
-                        .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
-                            if (!snapshot.getDocuments().isEmpty()) {
-                                synchronized (sellerOrderCursors) {
-                                  if (!sellerOrderCursors.containsKey(sellerId)) {
-                                    sellerOrderCursors.put(sellerId, snapshot.getDocuments().get(snapshot.size() - 1));
-                                    sellerOrderHasMore.put(sellerId, snapshot.size() == SELLER_ORDER_PAGE_SIZE);
-                                  }
-                                }
-                            }
-                            List<Order> values = new ArrayList<>();
-                            for (DocumentSnapshot document : snapshot.getDocuments()) values.add(mapOrder(document, new ArrayList<>()));
-                            postValue(values);
-                            cacheExecutor.execute(() -> orderDao.replaceOrders(toEntities(values)));
-                        });
-                sellerOrderListeners.put(sellerId, registration);
-            }
-            @Override protected void onInactive() {
-                if (registration != null) registration.remove();
-                if (sellerId != null) sellerOrderListeners.remove(sellerId);
-                registration = null;
-            }
-        };
-        result.addSource(remote, unused -> { });
-        return result;
+
+    private Query sellerQuery(String sellerId) {
+        return db.collection(ORDERS).whereEqualTo("sellerId", sellerId)
+                .orderBy("createdAt", Query.Direction.DESCENDING).limit(sellerLimits.getOrDefault(sellerId, SELLER_ORDER_PAGE_SIZE) + 1L);
+    }
+    @Override public LiveData<List<Order>> observeSellerOrders(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) return new androidx.lifecycle.MutableLiveData<>(java.util.Collections.emptyList());
+        if (!sellerPages.containsKey(sellerId)) sellerPages.put(sellerId, new SnapshotLiveData<>(sellerQuery(sellerId),
+                Transformations.map(orderDao.observeSellerOrders(sellerId), OrderCacheMapper::orders), sellerId,
+                java.util.Collections.emptyList(), snapshot -> {
+                    int limit = sellerLimits.getOrDefault(sellerId, SELLER_ORDER_PAGE_SIZE);
+                    List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(limit, snapshot.size()));
+                    List<Order> values = new ArrayList<>();
+                    for (DocumentSnapshot document : docs) values.add(mapOrder(document, new ArrayList<>()));
+                    synchronized (sellerOrderCursors) {
+                        sellerOrderHasMore.put(sellerId, snapshot.size() > limit);
+                        if (docs.isEmpty()) sellerOrderCursors.remove(sellerId);
+                        else sellerOrderCursors.put(sellerId, docs.get(docs.size() - 1));
+                    }
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        orderDao.clearSellerOrders(sellerId); orderDao.replaceOrders(toEntities(values));
+                    }));
+                    return values;
+                }));
+        return sellerPages.get(sellerId);
     }
 
     @Override public void checkout(CheckoutRequest request, OrderCallback callback) {
@@ -304,35 +240,23 @@ public class FirebaseOrderRepository implements OrderRepository {
             cacheExecutor.execute(()->{database.runInTransaction(()->{orderDao.clearOwnerOrders(ownerId);
                 orderDao.replaceOrders(toEntities(values));});callback.onSuccess();});}).addOnFailureListener(e->failure(e,callback));
     }
-    @Override public void refreshSellerOrders(String sellerId,ActionCallback callback){
-        if(!network.isOnline()){callback.onError(ErrorCode.NETWORK,"Không thể tải đơn seller khi offline.");return;}
-        db.collection(ORDERS).whereEqualTo("sellerId",sellerId).orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(SELLER_ORDER_PAGE_SIZE).get().addOnSuccessListener(s->{
-            List<Order> values=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())values.add(mapOrder(d,new ArrayList<>()));
-            synchronized (sellerOrderCursors) {
-                sellerOrderHasMore.put(sellerId, s.size() == SELLER_ORDER_PAGE_SIZE);
-                if (s.isEmpty()) sellerOrderCursors.remove(sellerId);
-                else sellerOrderCursors.put(sellerId, s.getDocuments().get(s.size() - 1));
-            }
-            cacheExecutor.execute(()->{database.runInTransaction(()->{orderDao.clearSellerOrders(sellerId);
-                orderDao.replaceOrders(toEntities(values));});callback.onSuccess();});}).addOnFailureListener(e->failure(e,callback));
+
+    @Override public void refreshSellerOrders(String sellerId, ActionCallback callback) {
+        reloadSellerOrders(sellerId, true, callback);
     }
     @Override public void loadMoreSellerOrders(String sellerId, ActionCallback callback) {
-        if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Tải thêm đơn cần kết nối mạng."); return; }
-        DocumentSnapshot cursor; boolean hasMore;
-        synchronized (sellerOrderCursors) { cursor = sellerOrderCursors.get(sellerId); hasMore = Boolean.TRUE.equals(sellerOrderHasMore.get(sellerId)); }
-        if (!hasMore || cursor == null) { callback.onSuccess(); return; }
-        db.collection(ORDERS).whereEqualTo("sellerId", sellerId).orderBy("createdAt", Query.Direction.DESCENDING)
-                .startAfter(cursor).limit(SELLER_ORDER_PAGE_SIZE).get().addOnSuccessListener(snapshot -> {
-                    List<Order> values = new ArrayList<>();
-                    for (DocumentSnapshot document : snapshot.getDocuments()) values.add(mapOrder(document, new ArrayList<>()));
-                    synchronized (sellerOrderCursors) {
-                        sellerOrderHasMore.put(sellerId, snapshot.size() == SELLER_ORDER_PAGE_SIZE);
-                        if (!snapshot.isEmpty()) sellerOrderCursors.put(sellerId, snapshot.getDocuments().get(snapshot.size() - 1));
-                    }
-                    cacheExecutor.execute(() -> { orderDao.replaceOrders(toEntities(values)); callback.onSuccess(); });
-                }).addOnFailureListener(error -> failure(error, callback));
+        if (!hasMoreSellerOrders(sellerId)) { callback.onSuccess(); return; }
+        reloadSellerOrders(sellerId, false, callback);
     }
+    private void reloadSellerOrders(String sellerId, boolean reset, ActionCallback callback) {
+        if (!network.isOnline()) { callback.onError(ErrorCode.NETWORK, "Không thể tải đơn seller khi offline."); return; }
+        sellerLimits.put(sellerId, reset ? SELLER_ORDER_PAGE_SIZE : sellerLimits.getOrDefault(sellerId, SELLER_ORDER_PAGE_SIZE) + SELLER_ORDER_PAGE_SIZE);
+        observeSellerOrders(sellerId);
+        sellerPages.get(sellerId).refresh(sellerQuery(sellerId), error -> {
+            if (error == null) callback.onSuccess(); else failure(error, callback);
+        });
+    }
+
     @Override public boolean hasMoreSellerOrders(String sellerId) {
         synchronized (sellerOrderCursors) { return Boolean.TRUE.equals(sellerOrderHasMore.get(sellerId)); }
     }
@@ -373,47 +297,98 @@ public class FirebaseOrderRepository implements OrderRepository {
         fetchLifecycle(clean(orderId),false,callback);
     }
 
+
+    private final Map<String, com.rescuefarm.service.realtime.BackendSnapshotWatch> guestWatches = new HashMap<>();
+    private final Map<String, androidx.lifecycle.Observer<Long>> guestObservers = new HashMap<>();
     @Override public void observeOrder(String orderId, LifecycleCallback callback) {
         String id = clean(orderId);
         if (id.isEmpty()) { callback.onError(ErrorCode.VALIDATION, "Mã đơn hàng không hợp lệ."); return; }
+        stopObservingOrder(id);
         if (hasGuestAccess(id)) {
-            stopObservingOrder(id);
-            Runnable poll = new Runnable() {
-                @Override public void run() {
-                    if (guestPolls.get(id) != this) return;
-                    Runnable currentPoll = this;
+            com.rescuefarm.service.realtime.BackendSnapshotWatch watch = new com.rescuefarm.service.realtime.BackendSnapshotWatch("guest_order");
+            try { watch.configure("guest_order", new JSONObject().put("orderId", id).put("accessToken", guestSession.getOrderAccessToken(id))); }
+            catch (Exception invalid) { callback.onError(ErrorCode.VALIDATION, "Cần tra cứu lại đơn Guest."); return; }
+            final String account = auth.getCurrentUser() == null ? "" : auth.getCurrentUser().getUid();
+            class GuestRefresh implements androidx.lifecycle.Observer<Long> {
+                boolean loading, pending;
+                boolean current() { return guestWatches.get(id) == watch && account.equals(auth.getCurrentUser() == null ? "" : auth.getCurrentUser().getUid()); }
+                public void onChanged(Long version) {
+                    if (!current()) return;
+                    if (loading) { pending = true; return; }
+                    loading = true;
                     getGuestOrder(id, new LifecycleCallback() {
-                        public void onSuccess(Order order, Payment p, Shipment s, boolean replay) {
-                            if (guestPolls.get(id) != currentPoll) return;
-                            callback.onSuccess(order, p, s, replay);
-                            boolean waitingForTransfer = p.getMethod() == PaymentMethod.BANK_TRANSFER
-                                    && p.getStatus() == PaymentStatus.PENDING && order.getStatus() != OrderStatus.CANCELLED;
-                            guestHandler.postDelayed(currentPoll, waitingForTransfer ? 3000L : 15000L);
+                        public void onSuccess(Order order, Payment payment, Shipment shipment, boolean replay) {
+                            loading = false; if (!current()) return;
+                            callback.onSuccess(order, payment, shipment, replay); drain();
                         }
                         public void onError(ErrorCode error, String message) {
-                            if (guestPolls.get(id) != currentPoll) return;
-                            callback.onError(error, message); guestHandler.postDelayed(currentPoll, 30000L);
+                            loading = false; if (!current()) return;
+                            callback.onError(error, message); drain();
                         }
+                        void drain() { if (pending) { pending = false; onChanged(0L); } }
                     });
                 }
-            };
-            guestPolls.put(id, poll); poll.run(); return;
+            }
+            GuestRefresh observer = new GuestRefresh();
+            guestWatches.put(id, watch); guestObservers.put(id, observer); watch.observeForever(observer);
+            observer.onChanged(0L); return;
         }
-        ListenerRegistration old = orderDetailListeners.remove(id);
-        if (old != null) old.remove();
-        ListenerRegistration listener = db.collection(ORDERS).document(id).addSnapshotListener((snapshot, error) -> {
-            if (error != null) { failure(error, callback); return; }
-            if (snapshot == null || !snapshot.exists()) { callback.onError(ErrorCode.NOT_FOUND, "Không tìm thấy đơn."); return; }
-            fetchLifecycle(id, false, callback);
-        });
-        orderDetailListeners.put(id, listener);
+        LiveOrder observer = new LiveOrder(id, callback);
+        orderDetailListeners.put(id, observer); observer.start();
     }
-
-    @Override
-    public void stopObservingOrder(String orderId) {
-        Runnable poll = guestPolls.remove(clean(orderId));
-        if (poll != null) guestHandler.removeCallbacks(poll);
-        ListenerRegistration listener = orderDetailListeners.remove(clean(orderId));
+    private final class LiveOrder implements ListenerRegistration {
+        final String id, uid;
+        final LifecycleCallback callback;
+        final List<ListenerRegistration> listeners = new ArrayList<>();
+        boolean active = true, loading, pending, childListeners;
+        final Runnable reload = this::fetch;
+        LiveOrder(String id, LifecycleCallback callback) {
+            this.id = id; this.callback = callback;
+            uid = auth.getCurrentUser() == null ? "" : auth.getCurrentUser().getUid();
+        }
+        boolean current() { return active && auth.getCurrentUser() != null && uid.equals(auth.getCurrentUser().getUid()); }
+        void changed() { if (!current()) return; guestHandler.removeCallbacks(reload); guestHandler.postDelayed(reload, 100L); }
+        void start() {
+            listeners.add(db.collection(ORDERS).document(id).addSnapshotListener((snapshot, error) -> {
+                if (!current()) return;
+                if (error != null) { failure(error, callback); return; }
+                if (snapshot == null || !snapshot.exists()) { callback.onError(ErrorCode.NOT_FOUND, "Không tìm thấy đơn."); return; }
+                if (!childListeners) {
+                    childListeners = true;
+                    listeners.add(db.collection(PAYMENTS).document(id).addSnapshotListener((value, failure) -> changed()));
+                    listeners.add(db.collection(ORDERS).document(id).collection(ITEMS).addSnapshotListener((value, failure) -> changed()));
+                    if ("DELIVERY".equals(snapshot.getString("fulfillmentType")))
+                        listeners.add(db.collection(SHIPMENTS).document(id).addSnapshotListener((value, failure) -> changed()));
+                }
+                changed();
+            }));
+        }
+        void fetch() {
+            if (!current()) return;
+            if (loading) { pending = true; return; }
+            loading = true;
+            fetchLifecycle(id, false, new LifecycleCallback() {
+                public void onSuccess(Order order, Payment payment, Shipment shipment, boolean replay) {
+                    loading = false;
+                    if (!current()) return;
+                    callback.onSuccess(order, payment, shipment, replay); drain();
+                }
+                public void onError(ErrorCode error, String message) {
+                    loading = false;
+                    if (!current()) return;
+                    callback.onError(error, message); drain();
+                }
+                void drain() { if (pending) { pending = false; changed(); } }
+            });
+        }
+        @Override public void remove() { active = false; guestHandler.removeCallbacks(reload); for (ListenerRegistration listener : listeners) listener.remove(); listeners.clear(); }
+    }
+    @Override public void stopObservingOrder(String orderId) {
+        String id = clean(orderId);
+        com.rescuefarm.service.realtime.BackendSnapshotWatch watch = guestWatches.remove(id);
+        androidx.lifecycle.Observer<Long> observer = guestObservers.remove(id);
+        if (watch != null && observer != null) watch.removeObserver(observer);
+        ListenerRegistration listener = orderDetailListeners.remove(id);
         if (listener != null) listener.remove();
     }
 
@@ -587,6 +562,6 @@ public class FirebaseOrderRepository implements OrderRepository {
     private void failure(Exception e,LifecycleCallback c){String m=e.getMessage()==null?"":e.getMessage();if(m.contains("ORDER_NOT_FOUND")){c.onError(ErrorCode.NOT_FOUND,"Không tìm thấy đơn.");return;}if(m.contains("ILLEGAL_ORDER_TRANSITION")){c.onError(ErrorCode.VALIDATION,"Chuyển trạng thái đơn không hợp lệ.");return;}if(m.contains("BANK_TRANSFER_NOT_CONFIRMED")){c.onError(ErrorCode.CONFLICT,"Cần xác nhận chuyển khoản thủ công trước khi hoàn tất đơn.");return;}if(m.contains("PAID_ORDER_REQUIRES_REFUND")){c.onError(ErrorCode.CONFLICT,"Đơn đã thanh toán cần quy trình hoàn tiền, không thể hủy trực tiếp.");return;}if(m.contains("FINALIZED")||m.contains("reserved")||m.contains("CAMPAIGN")||m.contains("RESERVATIONS")){c.onError(ErrorCode.CONFLICT,"Tồn kho hoặc campaign đã thay đổi; transaction đã rollback.");return;}if(e instanceof FirebaseFirestoreException&&((FirebaseFirestoreException)e).getCode()==FirebaseFirestoreException.Code.PERMISSION_DENIED){c.onError(ErrorCode.FORBIDDEN,"Bạn không có quyền cập nhật đơn này.");return;}c.onError(ErrorCode.UNKNOWN,"Không thể cập nhật đơn; transaction đã rollback.");}
     private static double number(DocumentSnapshot d,String f){Object v=d==null?null:d.get(f);return v instanceof Number?((Number)v).doubleValue():0D;}
     private static long longValue(DocumentSnapshot d,String f){Long v=d.getLong(f);return v==null?0L:v;}private static Date date(DocumentSnapshot d,String f){Timestamp v=d.getTimestamp(f);return v==null?null:v.toDate();}private static String clean(String v){return v==null?"":v.trim();}private static <T extends Enum<T>>T enumValue(Class<T> t,String v,T fallback){try{return Enum.valueOf(t,v==null?"":v);}catch(Exception e){return fallback;}}
-    @Override public void close(){for(Runnable poll:guestPolls.values())guestHandler.removeCallbacks(poll);guestPolls.clear();for(ListenerRegistration listener:orderDetailListeners.values())listener.remove();
+    @Override public void close(){for(String id:new ArrayList<>(guestWatches.keySet()))stopObservingOrder(id);for(Runnable poll:guestPolls.values())guestHandler.removeCallbacks(poll);guestPolls.clear();for(ListenerRegistration listener:orderDetailListeners.values())listener.remove();
         orderDetailListeners.clear();for(ListenerRegistration listener:sellerOrderListeners.values())listener.remove();sellerOrderListeners.clear();cacheExecutor.shutdownNow();}
 }

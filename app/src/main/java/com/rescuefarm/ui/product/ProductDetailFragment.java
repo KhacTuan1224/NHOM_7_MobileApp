@@ -136,7 +136,20 @@ public class ProductDetailFragment extends Fragment {
             ((MainActivity) requireActivity()).observeActorRole().observe(getViewLifecycleOwner(), role ->
                     applyActorActions(view));
         }
-        viewModel.loadProduct(productId); viewModel.refreshBatches(productId);
+        viewModel.observeProduct(productId).observe(getViewLifecycleOwner(), product -> {
+            currentProduct = product;
+            if (product == null) {
+                currentPrice = null;
+                ((TextView) view.findViewById(R.id.productDetailName)).setText("Sản phẩm không còn khả dụng");
+                ((TextView) view.findViewById(R.id.productDetailDescription)).setText("");
+                ((TextView) view.findViewById(R.id.productDetailPrice)).setText("");
+                view.findViewById(R.id.addToCartButton).setEnabled(false);
+                return;
+            }
+            view.findViewById(R.id.addToCartButton).setEnabled(product.isAvailable());
+            render(view, product);
+        });
+        viewModel.refreshBatches(productId);
     }
 
     private void applyActorActions(View root) {

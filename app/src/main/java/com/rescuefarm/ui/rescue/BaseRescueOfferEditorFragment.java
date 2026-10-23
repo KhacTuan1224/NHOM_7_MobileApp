@@ -92,6 +92,9 @@ public abstract class BaseRescueOfferEditorFragment extends Fragment {
             if (batchPicker != null) batchPicker.update(choices, value.loading, more, value.message);
             if (!value.loading && value.message.isEmpty() && more) model.more();
         });
+        com.rescuefarm.ui.campaign.CampaignViewModel inventory = new ViewModelProvider(this,
+                new com.rescuefarm.ui.campaign.CampaignViewModelFactory(requireContext())).get(com.rescuefarm.ui.campaign.CampaignViewModel.class);
+        inventory.getBatchOptions().observe(getViewLifecycleOwner(), options -> model.refreshRealtime());
         model.load("batches", "batches", body("includeUnavailable", true));
     }
     protected abstract int editorLayout();

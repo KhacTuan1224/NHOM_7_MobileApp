@@ -1,17 +1,24 @@
 // Process-local, bounded cache for read-only projections. Never use for auth,
 // checkout, payment decisions, stock reservations or transaction reads.
+const readCaches = new Set();
+function invalidateReadCaches() { for (const invalidate of readCaches) invalidate(); }
 function createReadCache({ttlMs = 30000, maxEntries = 500, now = Date.now} = {}) {
   const values = new Map(), pending = new Map();
+  let generation = 0;
+  readCaches.add(() => { generation++; values.clear(); pending.clear(); });
   async function get(key, loader) {
     const cached = values.get(key);
     if (cached && cached.expiresAt > now()) return cached.value;
     values.delete(key);
     if (pending.has(key)) return pending.get(key);
+    const request = generation;
     const task = Promise.resolve().then(loader).then(value => {
-      if (values.size >= maxEntries) values.delete(values.keys().next().value);
-      values.set(key, {value, expiresAt: now() + ttlMs});
+      if (request === generation) {
+        if (values.size >= maxEntries) values.delete(values.keys().next().value);
+        values.set(key, {value, expiresAt: now() + ttlMs});
+      }
       return value;
-    }).finally(() => pending.delete(key));
+    }).finally(() => { if (pending.get(key) === task) pending.delete(key); });
     pending.set(key, task); return task;
   }
   return {get};
@@ -39,4 +46,4 @@ function createQuotaMiddleware(guard, ready) {
     });
   };
 }
-module.exports = {createReadCache, isQuotaError, createQuotaGuard, createQuotaMiddleware};
+module.exports = {createReadCache, invalidateReadCaches, isQuotaError, createQuotaGuard, createQuotaMiddleware};

@@ -30,6 +30,22 @@ import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
 
 public class MainActivity extends AppCompatActivity implements NavigationScrollListener {
     private AuthStateListener authStateListener;
+    private com.google.firebase.firestore.ListenerRegistration actorRegistration;
+    private int actorWatchGeneration;
+    private String actorWatchUid = "", actorFingerprint = "";
+    private void watchActor() {
+        if (actorRegistration != null) actorRegistration.remove();
+        actorRegistration = null; actorFingerprint = "";
+        final int epoch = ++actorWatchGeneration;
+        actorWatchUid = FirebaseAuth.getInstance().getCurrentUser() == null ? "" : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (actorWatchUid.isEmpty()) return;
+        actorRegistration = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("users").document(actorWatchUid)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (epoch != actorWatchGeneration || snapshot == null || error != null || snapshot.getMetadata().isFromCache()) return;
+                    String fingerprint = snapshot.exists() ? snapshot.getString("role") + ":" + snapshot.getString("status") + ":" + snapshot.getString("sellerStatus") : "deleted";
+                    if (!fingerprint.equals(actorFingerprint)) { actorFingerprint = fingerprint; restoreActorRole(); }
+                });
+    }
     private UserRole currentRole;
     private final MutableLiveData<UserRole> actorRole = new MutableLiveData<>();
     private NavController navController;
@@ -115,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 updateBottomNavigation(centerActionButton, homeButton, communityButton,
                         ordersButton, profileButton, destination)
         );
-        authStateListener = firebaseAuth -> restoreActorRole();
+        authStateListener = firebaseAuth -> { restoreActorRole(); watchActor(); };
         pendingNotification = getPreferences(MODE_PRIVATE).getString("pendingNotification", "");
         captureNotificationIntent(getIntent());
     }
@@ -131,6 +147,9 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         new androidx.lifecycle.ViewModelProvider(this)
                 .get(com.rescuefarm.ui.engagement.UnreadNotificationsViewModel.class).stop();
         if (authStateListener != null) FirebaseAuth.getInstance().removeAuthStateListener(authStateListener);
+        actorWatchGeneration++;
+        if (actorRegistration != null) actorRegistration.remove();
+        actorRegistration = null;
         super.onStop();
     }
 

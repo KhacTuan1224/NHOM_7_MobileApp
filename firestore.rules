@@ -1313,6 +1313,13 @@ service cloud.firestore {
     match /rescueClaims/{document=**} { allow read, write: if false; }
     match /rescueNearbyPreferences/{document=**} { allow read, write: if false; }
     match /rescueImpact/{document=**} { allow read, write: if false; }
+    // Opaque push subscriptions contain only revisions, an availability flag and a timestamp.
+    // Business reads and subscription scopes are still authorized by the backend.
+    match /realtimeSubscriptions/{subscriptionId} {
+      allow get: if subscriptionId.matches('^[a-f0-9-]{36}$')
+        && resource.data.keys().hasOnly(['revision', 'unavailable', 'updatedAt']);
+      allow list, create, update, delete: if false;
+    }
     match /{document=**} {
       allow read, write: if false;
     }
