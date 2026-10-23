@@ -33,7 +33,7 @@
     <string name="fund_amount_range">Từ 10.000đ đến 10.000.000đ mỗi lần.</string>
     <string name="fund_amount_error">Nhập số tiền từ 10.000đ đến 10.000.000đ.</string>
     <string name="fund_privacy_title">Tên trên danh sách ủng hộ</string>
-    <string name="fund_privacy_description">Bạn được hiển thị ẩn danh nếu không chọn công khai tên.</string>
+    <string name="fund_privacy_description">Bảng xếp hạng hiển thị số tiền của từng lượt ủng hộ đã xác nhận. Bạn được hiển thị ẩn danh nếu không chọn công khai tên.</string>
     <string name="fund_qr_note">Chuyển đúng số tiền và nội dung trên QR. Hệ thống tự xác nhận sau khi nhận được giao dịch.</string>
     <string name="fund_qr_title">Quét QR để gửi yêu thương</string>
     <string name="fund_qr_description">Dùng ứng dụng ngân hàng để quét mã bên dưới.</string>
