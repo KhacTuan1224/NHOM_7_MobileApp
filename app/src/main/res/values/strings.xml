@@ -182,6 +182,7 @@
     <string name="seller_approval_catalog_notice">Chỉ seller đã được phê duyệt mới có thể tạo hoặc sửa sản phẩm và batch.</string>
     <string name="add_product_action">Thêm sản phẩm</string>
     <string name="manage_batches_action">Quản lý lô hàng</string>
+    <string name="manage_promotion_action">Quản lý khuyến mãi</string>
     <string name="seller_batch_products_title">Chọn sản phẩm để quản lý batch</string>
     <string name="seller_batch_products_notice">Batch là các lô hàng của một sản phẩm. Chọn sản phẩm để xem, tạo hoặc cập nhật lô và tồn kho.</string>
     <string name="open_product_batches_action">Quản lý batch và tồn kho</string>
