@@ -53,7 +53,7 @@ public final class RescueHubFragment extends Fragment {
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             if (getView() != null && model != null && model.state().getValue() != null && !model.state().getValue().loading) model.refresh();
-            clock.postDelayed(this, 60000);
+            clock.postDelayed(this, 300000);
         }
     };
     private final FirebaseAuth.AuthStateListener auth = firebase -> {
@@ -331,7 +331,7 @@ public final class RescueHubFragment extends Fragment {
     private LinearLayout form() { LinearLayout form = column(requireContext()); int pad = dp(requireContext(), 20); form.setPadding(pad, 0, pad, 0); return form; }
     private void confirm(String title, String message, Runnable action) { new MaterialAlertDialogBuilder(requireContext()).setTitle(title).setMessage(message).setPositiveButton("Xác nhận", (d, w) -> action.run()).setNegativeButton("Đóng", null).show(); }
     private void tell(String message) { if (isAdded()) Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show(); }
-    @Override public void onStart() { super.onStart(); FirebaseAuth.getInstance().addAuthStateListener(auth); clock.postDelayed(tick, 60000); }
+    @Override public void onStart() { super.onStart(); FirebaseAuth.getInstance().addAuthStateListener(auth); clock.removeCallbacks(tick); clock.postDelayed(tick, 300000); }
     @Override public void onStop() { clock.removeCallbacks(tick); FirebaseAuth.getInstance().removeAuthStateListener(auth); super.onStop(); }
     @Override public void onSaveInstanceState(@NonNull Bundle out) {
         super.onSaveInstanceState(out); out.putBoolean("nearby", nearby);

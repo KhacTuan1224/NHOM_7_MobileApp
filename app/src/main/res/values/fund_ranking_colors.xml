@@ -1,0 +1,10 @@
+<resources>
+    <color name="fund_gold">#D5A53B</color>
+    <color name="fund_podium_deep">#194E35</color>
+    <color name="fund_podium_light">#B8DCC5</color>
+    <color name="fund_ranking_background">#EAF4ED</color>
+    <color name="fund_rank_purple_light">#A66AF1</color>
+    <color name="fund_rank_purple_deep">#6132B4</color>
+    <color name="fund_rank_lavender">#F1E7FF</color>
+    <color name="fund_rank_avatar">#8754CB</color>
+</resources>

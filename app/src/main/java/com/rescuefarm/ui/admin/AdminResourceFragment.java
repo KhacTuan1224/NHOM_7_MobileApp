@@ -46,7 +46,7 @@ public final class AdminResourceFragment extends Fragment {
             if (getView() != null && viewModel != null && section == Section.ANALYTICS
                     && (viewModel.getState().getValue() == null || viewModel.getState().getValue().getStatus() != AdminScreenState.Status.LOADING))
                 viewModel.refreshDashboard();
-            timeHandler.postDelayed(this, 60000L);
+            timeHandler.postDelayed(this, 300000L);
         }
     };
     private AdminViewModel viewModel;
@@ -780,7 +780,7 @@ public final class AdminResourceFragment extends Fragment {
 
     @Override public void onResume() {
         super.onResume();
-        timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+        timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 300000L);
         if (resumedOnce && section != Section.SHIPPING_SETTINGS) {
             viewModel.refreshSection(section);
         }

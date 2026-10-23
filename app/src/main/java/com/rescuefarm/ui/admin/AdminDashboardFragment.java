@@ -27,7 +27,7 @@ public final class AdminDashboardFragment extends Fragment {
             if (getView() != null && viewModel != null
                     && (viewModel.getState().getValue() == null || viewModel.getState().getValue().getStatus() != AdminScreenState.Status.LOADING))
                 viewModel.refreshDashboard();
-            timeHandler.postDelayed(this, 60000L);
+            timeHandler.postDelayed(this, 300000L);
         }
     };
     private AdminViewModel viewModel;
@@ -135,7 +135,7 @@ public final class AdminDashboardFragment extends Fragment {
         return new AdminDashboardCards.Metric(title, value, detail);
     }
     @Override public void onResume() {
-        super.onResume(); if (viewModel != null) viewModel.refreshDashboard(); timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+        super.onResume(); if (viewModel != null) viewModel.refreshDashboard(); timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 300000L);
     }
     @Override public void onPause() {
         timeHandler.removeCallbacks(timeRefresh); super.onPause();

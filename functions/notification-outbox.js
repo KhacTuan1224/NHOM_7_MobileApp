@@ -212,9 +212,11 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
   }
 
   // One-time compatibility migration for pending moderation work.
+  let sourceBackfillReady = false;
   async function backfillSources() {
+    if (sourceBackfillReady) return;
     const marker = db.collection('notificationWorkerState').doc('sourceBackfillV1');
-    if ((await marker.get()).exists) return;
+    if ((await marker.get()).exists) { sourceBackfillReady = true; return; }
     for (const [name, resourceType] of [['sellerApplications', 'SELLER_APPLICATION'], ['campaigns', 'CAMPAIGN'], ['reports', 'REPORT']]) {
       let cursor = null;
       while (true) {
@@ -242,6 +244,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
       }
     }
     await db.runTransaction(async tx => { tx.set(marker, {completedAt: stamp()}); });
+    sourceBackfillReady = true;
   }
 
   let running = false;
