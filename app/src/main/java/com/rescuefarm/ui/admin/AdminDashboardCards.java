@@ -3,6 +3,7 @@ package com.rescuefarm.ui.admin;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
@@ -54,18 +55,26 @@ final class AdminDashboardCards {
 
     static void addColumnChart(Context context, LinearLayout parent, String title, String detail,
             String[] labels, double[] values, String[] valueLabels, int colorOffset) {
+        addChartCaption(context, parent, title, detail);
         MetricColumnChart chart = new MetricColumnChart(context, labels, values, valueLabels, colorOffset);
         parent.addView(chart, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(context, 176)));
+    }
+
+    static void addLineChart(Context context, LinearLayout parent, String title, String detail,
+            String[] labels, double[] values, String[] valueLabels) {
         addChartCaption(context, parent, title, detail);
+        MetricLineChart chart = new MetricLineChart(context, labels, values, valueLabels);
+        parent.addView(chart, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(context, 176)));
     }
 
     static void addCompletionChart(Context context, LinearLayout parent, String title,
             String detail, double percentage) {
+        addChartCaption(context, parent, title, detail);
         CompletionChart chart = new CompletionChart(context, percentage);
         parent.addView(chart, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(context, 156)));
-        addChartCaption(context, parent, title, detail);
     }
 
     private static void addChartCaption(Context context, LinearLayout parent, String title, String detail) {
@@ -167,6 +176,76 @@ final class AdminDashboardCards {
                 result = result.substring(0, result.length() - 1);
             }
             return result + "…";
+        }
+    }
+
+    private static final class MetricLineChart extends View {
+        private final String[] labels;
+        private final double[] values;
+        private final String[] valueLabels;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final int lineColor, text, muted, grid;
+
+        MetricLineChart(Context context, String[] labels, double[] values, String[] valueLabels) {
+            super(context);
+            this.labels = labels;
+            this.values = values;
+            this.valueLabels = valueLabels;
+            lineColor = ContextCompat.getColor(context, R.color.rescue_chart_orange);
+            text = ContextCompat.getColor(context, R.color.rescue_on_surface);
+            muted = ContextCompat.getColor(context, R.color.rescue_on_surface_variant);
+            grid = ContextCompat.getColor(context, R.color.rescue_outline);
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float density = getResources().getDisplayMetrics().density;
+            float left = 20 * density, right = getWidth() - 20 * density;
+            float top = 25 * density, base = getHeight() - 35 * density;
+            float height = Math.max(10, base - top);
+            double max = 0;
+            for (double value : values) max = Math.max(max, Math.max(0, value));
+            if (max <= 0) max = 1;
+            max *= 1.12;
+
+            paint.setColor(grid);
+            paint.setStrokeWidth(density);
+            for (int i = 0; i < 4; i++) {
+                float y = top + height * i / 3f;
+                canvas.drawLine(left, y, right, y, paint);
+            }
+            if (values.length == 0) return;
+
+            float step = values.length == 1 ? 0 : (right - left) / (values.length - 1);
+            Path path = new Path();
+            for (int i = 0; i < values.length; i++) {
+                float x = values.length == 1 ? (left + right) / 2 : left + step * i;
+                float y = base - (float) (height * Math.max(0, values[i]) / max);
+                if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+            }
+            paint.setColor(lineColor);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(3 * density);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            canvas.drawPath(path, paint);
+            paint.setStyle(Paint.Style.FILL);
+
+            for (int i = 0; i < values.length; i++) {
+                float x = values.length == 1 ? (left + right) / 2 : left + step * i;
+                float y = base - (float) (height * Math.max(0, values[i]) / max);
+                paint.setColor(lineColor);
+                canvas.drawCircle(x, y, 5 * density, paint);
+                paint.setColor(text);
+                paint.setTextAlign(Paint.Align.CENTER);
+                paint.setTypeface(Typeface.create(com.rescuefarm.ui.common.AppTypography.bodyTypeface(getContext()), Typeface.BOLD));
+                paint.setTextSize(11 * density);
+                if (i < valueLabels.length) canvas.drawText(valueLabels[i], x, Math.max(13 * density, y - 8 * density), paint);
+                paint.setColor(muted);
+                paint.setTypeface(com.rescuefarm.ui.common.AppTypography.bodyTypeface(getContext()));
+                paint.setTextSize(9 * density);
+                canvas.drawText(labels[i], x, getHeight() - 10 * density, paint);
+            }
         }
     }
 
