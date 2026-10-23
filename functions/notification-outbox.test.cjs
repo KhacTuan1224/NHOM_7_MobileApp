@@ -2,6 +2,19 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {MemoryFirestore, Timestamp, admin} = require('./test-support/memory-firestore.cjs');
 const {createNotificationWorker, enqueueNotification} = require('./notification-outbox');
+test('Firestore quota stops notification scans immediately without more queries or retry writes',async()=>{
+  let reads=0,writes=0;
+  const db={
+    collection(){
+      reads++;
+      return {doc(){return {get:async()=>{throw Object.assign(Error('Quota exceeded'),{code:8});}};}};
+    },
+    runTransaction(){writes++;throw Error('Must not write during quota failure');}
+  };
+  const worker=createNotificationWorker({db,admin});
+  await assert.rejects(()=>worker.runOnce(),error=>error.code===8);
+  assert.equal(reads,1);assert.equal(writes,0);
+});
 function fixture(seed = {}) {
   let clock = Date.now() + 1000, failures = 0, sends = 0;
   const db = new MemoryFirestore({'users/customer': {role: 'CUSTOMER', status: 'ACTIVE'},

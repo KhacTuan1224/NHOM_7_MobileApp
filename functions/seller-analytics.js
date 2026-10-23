@@ -1,4 +1,5 @@
 const express = require('express');
+const {createReadCache} = require('./read-cache');
 const {normalizeUnit} = require('./quantity-units');
 const {projectCampaign} = require('./campaign-projection');
 const {orderAllocations} = require('./campaign-lifecycle');
@@ -72,6 +73,7 @@ function aggregateSellerStatistics({orders, campaigns, itemsByOrder, days, now =
 
 function createSellerAnalytics({db, admin, authenticate}) {
   const router = express.Router();
+  const cache = createReadCache({ttlMs: 45000, maxEntries: 50});
   router.post('/seller/statistics', async (req, res, next) => {
     try {
       const caller = await authenticate(req, ['SELLER']);
@@ -80,6 +82,7 @@ function createSellerAnalytics({db, admin, authenticate}) {
         throw Object.assign(new Error('Seller phải được duyệt để xem thống kê.'), {status: 403});
       const days = req.body && req.body.days;
       if (![0, 7, 30, 90].includes(days)) throw Object.assign(new Error('Kỳ thống kê không hợp lệ.'), {status: 400});
+      const response = await cache.get(caller.uid + "|" + days, async () => {
       const [orderDocs, campaignDocs] = await Promise.all([
         allPages(db.collection('orders').where('sellerId', '==', caller.uid), admin),
         allPages(db.collection('campaigns').where('sellerId', '==', caller.uid), admin)]);
@@ -116,7 +119,10 @@ function createSellerAnalytics({db, admin, authenticate}) {
           subtotal: o.subtotal, quantityDiscount: o.quantityDiscount, shippingFee: o.shippingFee, note: o.note,
           status: o.status, receiverName: o.receiverName, receiverPhone: o.receiverPhone, fulfillmentType: o.fulfillmentType, paymentMethod: o.paymentMethod, paymentStatus: o.paymentStatus, totalAmount: o.totalAmount, createdAt: time(o.createdAt), updatedAt: time(o.updatedAt)}));
       result.totalOrders = orders.length;
-      res.json(result);
+      result.generatedAt = now; result.cacheTtlSeconds = 45;
+      return result;
+      });
+      res.json(response);
     } catch (error) { next(error); }
   });
   return {router};

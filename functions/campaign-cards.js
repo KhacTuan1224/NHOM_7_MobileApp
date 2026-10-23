@@ -1,4 +1,5 @@
 const express = require('express');
+const {createReadCache} = require('./read-cache');
 const text = value => typeof value === 'string' ? value.trim() : '';
 const millis = value => value && typeof value.toMillis === 'function' ? value.toMillis() : 0;
 const https = value => /^https:\/\//i.test(text(value)) ? text(value) : '';
@@ -7,6 +8,8 @@ const https = value => /^https:\/\//i.test(text(value)) ? text(value) : '';
 // contacts, banking details or private profile names to Guest/Customer clients.
 function createCampaignCardsApi({db, now = Date.now}) {
   const router = express.Router();
+  const reads = createReadCache({ttlMs: 30000, maxEntries: 1000, now});
+  const read = (collection, id) => reads.get(collection + '/' + id, () => db.collection(collection).doc(id).get());
   router.post('/campaigns/cards', async (req, res, next) => {
     try {
       const ids = req.body?.campaignIds;
@@ -17,8 +20,7 @@ function createCampaignCardsApi({db, now = Date.now}) {
       function author(id) {
         if (!sellers.has(id)) sellers.set(id, (async () => {
           const [user, profile, application] = await Promise.all([
-            db.collection('users').doc(id).get(), db.collection('sellerPublicProfiles').doc(id).get(),
-            db.collection('sellerApplications').doc(id).get()
+            read('users', id), read('sellerPublicProfiles', id), read('sellerApplications', id)
           ]);
           const active = user.exists && user.get('role') === 'SELLER' && user.get('status') === 'ACTIVE';
           return {
@@ -33,7 +35,7 @@ function createCampaignCardsApi({db, now = Date.now}) {
         return sellers.get(id);
       }
       await Promise.all([...new Set(ids)].map(async id => {
-        const snapshot = await db.collection('campaigns').doc(id).get();
+        const snapshot = await read('campaigns', id);
         if (!snapshot.exists || snapshot.get('status') !== 'ACTIVE'
             || millis(snapshot.get('startDate')) > now() || millis(snapshot.get('endDate')) <= now()) return;
         const sellerId = text(snapshot.get('sellerId'));
@@ -42,10 +44,10 @@ function createCampaignCardsApi({db, now = Date.now}) {
         const batchIds = Object.keys(snapshot.get('batchTargets') || {}).slice(0, 3);
         for (const batchId of batchIds) {
           if (!/^[A-Za-z0-9_-]{1,128}$/.test(batchId)) continue;
-          const batch = await db.collection('productBatches').doc(batchId).get();
+          const batch = await read('productBatches', batchId);
           const productId = batch.exists ? text(batch.get('productId')) : '';
           if (!productId || productId.includes('/')) continue;
-          const product = await db.collection('products').doc(productId).get();
+          const product = await read('products', productId);
           if (product.exists && product.get('sellerId') === sellerId && product.get('status') === 'ACTIVE')
             products.set(productId, {name: text(product.get('name')), unit: text(product.get('unit')),
               rescuePrice: Number.isFinite(product.get('rescuePrice')) ? product.get('rescuePrice') : 0});

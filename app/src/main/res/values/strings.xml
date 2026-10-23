@@ -407,4 +407,9 @@
     <string name="campaign_decrease_quantity">Giảm số lượng</string>
     <string name="campaign_increase_quantity">Tăng số lượng</string>
     <string name="checkout_sender_title">Thông tin người gửi</string>
+    <!-- Rescue Progress Stages -->
+    <string name="rescue_progress_stage_low">Tiến độ thấp (Cần cứu gấp)</string>
+    <string name="rescue_progress_stage_medium">Đang tiến triển tốt</string>
+    <string name="rescue_progress_stage_high">Sắp đạt mục tiêu</string>
+    <string name="rescue_progress_stage_completed">Đã hoàn thành giải cứu</string>
 </resources>

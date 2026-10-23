@@ -62,9 +62,8 @@ public final class HomeCardRenderer {
 
         ProgressBar progress = new ProgressBar(fragment.requireContext(), null,
                 android.R.attr.progressBarStyleHorizontal);
-        progress.setMax(100);
-        progress.setProgress((int) Math.round(campaign.calculateProgress()));
-        progress.setProgressTintList(ColorStateList.valueOf(color(R.color.rescue_high)));
+        double progressPercent = campaign.calculateProgress();
+        com.rescuefarm.ui.common.RescueProgressUtils.applyProgress(progress, progressPercent);
         progress.setProgressBackgroundTintList(ColorStateList.valueOf(color(R.color.rescue_primary_container)));
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, dp(6));
         progressParams.setMargins(0, dp(6), 0, dp(4)); body.addView(progress, progressParams);
@@ -75,8 +74,9 @@ public final class HomeCardRenderer {
         } else {
         String unit = campaign.getQuantityUnitLabel();
         body.addView(text(String.format(Locale.forLanguageTag("vi-VN"),
-                "%.0f%% hoàn thành · mục tiêu %.2f %s", campaign.calculateProgress(),
-                campaign.getTargetQuantity(), unit), 13, false, R.color.rescue_on_surface_variant));
+                "%.0f%% hoàn thành · mục tiêu %.2f %s", progressPercent,
+                campaign.getTargetQuantity(), unit), 13, true,
+                com.rescuefarm.ui.common.RescueProgressUtils.getProgressColorRes(progressPercent)));
         body.addView(text(String.format(Locale.forLanguageTag("vi-VN"),
                 "Đã giải cứu %.2f · đang giữ %.2f · còn khả dụng %.2f %s",
                 campaign.getRescuedQuantity(), campaign.getReservedQuantity(),
