@@ -1112,9 +1112,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             }
             if (section == Section.SELLER_APPLICATIONS) {
                 changes.put("rejectionReason", target.equals("REJECTED") ? note : "");
-                String userId = clean(current.getString("sellerId"));
-                if (userId.isEmpty()) userId = clean(current.getString("id"));
-                if (userId.isEmpty()) userId = id;
+                String userId = com.rescuefarm.service.admin.SellerApplicationIdentity.resolve(
+                        current.getString("sellerId"), current.getString("id"), id);
                 DocumentReference userRef = db.collection(USERS).document(userId);
                 DocumentSnapshot seller = tx.get(userRef);
                 if (!seller.exists()) {
