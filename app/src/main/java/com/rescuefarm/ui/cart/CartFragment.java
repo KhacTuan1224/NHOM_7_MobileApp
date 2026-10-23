@@ -98,6 +98,9 @@ public class CartFragment extends Fragment {
             }
         });
 
+        viewModel.getCartWarnings().observe(getViewLifecycleOwner(), warnings -> {
+            Cart current = viewModel.getCart().getValue(); if (current != null) render(current);
+        });
         // Cập nhật trạng thái revalidate / cảnh báo ngầm
         viewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == CartScreenState.Status.ERROR) {
@@ -145,6 +148,10 @@ public class CartFragment extends Fragment {
             if (!hasSelected) {
                 Toast.makeText(requireContext(), "Vui lòng chọn ít nhất 1 nông sản để thanh toán.", Toast.LENGTH_SHORT).show();
                 return;
+            }
+            Map<String,String> warnings = viewModel.getCartWarnings().getValue();
+            for (CartItem item : currentCart.getItems()) if (item.isSelected() && warnings != null && warnings.containsKey(item.getId())) {
+                Toast.makeText(requireContext(), warnings.get(item.getId()), Toast.LENGTH_LONG).show(); return;
             }
             Navigation.findNavController(v).navigate(R.id.action_cartFragment_to_checkoutFragment);
         });
@@ -242,6 +249,8 @@ public class CartFragment extends Fragment {
             title.setText(item.getProductId());
         }
 
+        Map<String,String> warnings = viewModel.getCartWarnings().getValue();
+        if (warnings != null && warnings.containsKey(item.getId())) title.append("\n" + warnings.get(item.getId()));
         // Tải ảnh sản phẩm bằng Glide
         if (product != null && product.getImageUrls() != null && !product.getImageUrls().isEmpty()
                 && product.getImageUrls().get(0) != null && !product.getImageUrls().get(0).trim().isEmpty()) {

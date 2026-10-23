@@ -57,57 +57,53 @@ public class FirebaseCampaignRepository implements CampaignRepository {
     private volatile boolean publicHasMore = true;
     private volatile boolean publicLoading;
 
-    private final androidx.lifecycle.MutableLiveData<Object> publicRevision = new androidx.lifecycle.MutableLiveData<>();
-    @Override public LiveData<List<RescueCampaign>> observePublicCampaignPage() {
-        androidx.lifecycle.MediatorLiveData<List<RescueCampaign>> result = new androidx.lifecycle.MediatorLiveData<>();
-        java.util.concurrent.atomic.AtomicReference<List<RescueCampaign>> cached =
-                new java.util.concurrent.atomic.AtomicReference<>(new ArrayList<>());
-        Runnable publish = () -> {
-            List<RescueCampaign> values = cached.get();
-            Set<String> ids = publicIds;
-            if (ids == null) { result.setValue(new ArrayList<>(values.subList(0, Math.min(12, values.size())))); return; }
-            Map<String, RescueCampaign> byId = new HashMap<>();
-            for (RescueCampaign value : values) byId.put(value.getId(), value);
-            List<RescueCampaign> visible = new ArrayList<>();
-            for (String id : ids) if (byId.containsKey(id)) visible.add(byId.get(id));
-            result.setValue(visible);
-        };
-        result.addSource(campaignDao.observeActiveCampaigns(), entities -> { cached.set(CampaignCacheMapper.campaigns(entities)); publish.run(); });
-        result.addSource(publicRevision, ignored -> publish.run());
-        return result;
+
+    private SnapshotLiveData<List<RescueCampaign>> publicCampaigns, activeCampaigns;
+    private SnapshotLiveData<List<Banner>> activeBanners;
+    private final Map<String, SnapshotLiveData<List<RescueCampaign>>> liveSellerCampaigns = new HashMap<>();
+    private final Map<String, Integer> sellerLimits = new HashMap<>();
+    private int publicLimit = 12;
+
+    private Query publicQuery() {
+        return firestore.collection(CAMPAIGNS).whereEqualTo("status", CampaignStatus.ACTIVE.name())
+                .orderBy("urgencyLevel").orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(publicLimit + 1L);
     }
-
+    private List<RescueCampaign> campaigns(List<DocumentSnapshot> documents) {
+        List<RescueCampaign> values = new ArrayList<>();
+        for (DocumentSnapshot document : documents) {
+            RescueCampaign value = mapCampaign(document); if (value != null) values.add(value);
+        }
+        return values;
+    }
+    @Override public LiveData<List<RescueCampaign>> observePublicCampaignPage() {
+        if (publicCampaigns == null) publicCampaigns = new SnapshotLiveData<>(publicQuery(),
+                Transformations.map(campaignDao.observeActiveCampaigns(), CampaignCacheMapper::campaigns), null,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(publicLimit, snapshot.size()));
+                    List<RescueCampaign> values = campaigns(docs);
+                    Set<String> ids = new java.util.LinkedHashSet<>();
+                    for (RescueCampaign value : values) ids.add(value.getId());
+                    publicIds = ids; publicHasMore = snapshot.size() > publicLimit;
+                    publicCursor = docs.isEmpty() ? null : docs.get(docs.size() - 1);
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        campaignDao.clearActiveCampaigns();
+                        for (RescueCampaign value : values) campaignDao.replaceCampaign(CampaignCacheMapper.toEntity(value, System.currentTimeMillis()));
+                    }));
+                    return values;
+                });
+        return publicCampaigns;
+    }
     @Override public boolean hasMorePublicCampaigns() { return publicHasMore; }
-
     @Override public void refreshPublicCampaignPage(boolean reset, ActionCallback callback) {
         if (publicLoading) { callback.onError(ErrorCode.CONFLICT, "Đang tải chiến dịch, vui lòng đợi."); return; }
         if (!online(callback, "Không có kết nối; đang giữ chiến dịch đã tải.")) return;
         if (!reset && !publicHasMore) { callback.onSuccess(); return; }
-        publicLoading = true;
-        Query page = firestore.collection(CAMPAIGNS).whereEqualTo("status", CampaignStatus.ACTIVE.name())
-                .orderBy("urgencyLevel").orderBy(com.google.firebase.firestore.FieldPath.documentId()).limit(13);
-        if (!reset && publicCursor != null) page = page.startAfter(publicCursor);
-        page.get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(snapshot -> {
-            List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, Math.min(12, snapshot.size()));
-            Set<String> ids = reset || publicIds == null ? new java.util.LinkedHashSet<>() : new java.util.LinkedHashSet<>(publicIds);
-            List<CampaignCacheEntity> entities = new ArrayList<>();
-            for (DocumentSnapshot doc : docs) {
-                RescueCampaign campaign = mapCampaign(doc);
-                if (campaign != null) { ids.add(campaign.getId()); entities.add(CampaignCacheMapper.toEntity(campaign, System.currentTimeMillis())); }
-            }
-            cacheExecutor.execute(() -> {
-                try {
-                campaignDao.replaceCampaigns(entities);
-                publicIds = ids;
-                publicCursor = docs.isEmpty() ? (reset ? null : publicCursor) : docs.get(docs.size()-1);
-                publicHasMore = snapshot.size() > 12;
-                publicRevision.postValue(new Object());
-                publicLoading = false; callback.onSuccess();
-                } catch (RuntimeException error) {
-                    publicLoading = false; callback.onError(ErrorCode.UNKNOWN, "Không thể lưu trang chiến dịch trên thiết bị. Vui lòng thử lại.");
-                }
-            });
-        }).addOnFailureListener(error -> { publicLoading = false; notifyFailure(error, callback::onError); });
+        publicLoading = true; publicLimit = reset ? 12 : publicLimit + 12;
+        observePublicCampaignPage();
+        publicCampaigns.refresh(publicQuery(), error -> {
+            publicLoading = false;
+            if (error == null) callback.onSuccess(); else notifyFailure(error, callback::onError);
+        });
     }
 
     public FirebaseCampaignRepository(RescueFarmDatabase database, ExecutorService cacheExecutor,
@@ -118,19 +114,59 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         this.network = network;
     }
 
+
     @Override public LiveData<List<RescueCampaign>> observeActiveCampaigns() {
-        return Transformations.map(campaignDao.observeActiveCampaigns(), CampaignCacheMapper::campaigns);
+        if (activeCampaigns == null) activeCampaigns = new SnapshotLiveData<>(
+                firestore.collection(CAMPAIGNS).whereEqualTo("status", CampaignStatus.ACTIVE.name()),
+                Transformations.map(campaignDao.observeActiveCampaigns(), CampaignCacheMapper::campaigns), null,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<RescueCampaign> values = campaigns(snapshot.getDocuments());
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        campaignDao.clearActiveCampaigns();
+                        for (RescueCampaign value : values) campaignDao.replaceCampaign(CampaignCacheMapper.toEntity(value, System.currentTimeMillis()));
+                    }));
+                    return values;
+                });
+        return activeCampaigns;
+    }
+    private Query sellerQuery(String sellerId) {
+        Query query = firestore.collection(CAMPAIGNS).whereEqualTo("sellerId", sellerId)
+                .orderBy("createdAt", Query.Direction.DESCENDING);
+        int limit = sellerLimits.getOrDefault(sellerId, 0);
+        return limit == 0 ? query : query.limit(limit + 1L);
     }
     @Override public LiveData<List<RescueCampaign>> observeSellerCampaigns(String sellerId) {
-        return Transformations.map(campaignDao.observeSellerCampaigns(sellerId), CampaignCacheMapper::campaigns);
+        if (sellerId == null || sellerId.isEmpty()) return new androidx.lifecycle.MutableLiveData<>(java.util.Collections.emptyList());
+        if (!liveSellerCampaigns.containsKey(sellerId)) liveSellerCampaigns.put(sellerId, new SnapshotLiveData<>(
+                sellerQuery(sellerId), Transformations.map(campaignDao.observeSellerCampaigns(sellerId), CampaignCacheMapper::campaigns),
+                sellerId, java.util.Collections.emptyList(), snapshot -> {
+                    int limit = sellerLimits.getOrDefault(sellerId, 0);
+                    List<DocumentSnapshot> docs = snapshot.getDocuments().subList(0, limit == 0 ? snapshot.size() : Math.min(limit, snapshot.size()));
+                    List<RescueCampaign> values = campaigns(docs);
+                    if (docs.isEmpty()) sellerCampaignCursors.remove(sellerId);
+                    else sellerCampaignCursors.put(sellerId, docs.get(docs.size() - 1));
+                    if (limit > 0 && snapshot.size() > limit) sellersWithMoreCampaigns.add(sellerId);
+                    else sellersWithMoreCampaigns.remove(sellerId);
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> {
+                        campaignDao.clearSellerCampaigns(sellerId);
+                        for (RescueCampaign value : values) campaignDao.replaceCampaign(CampaignCacheMapper.toEntity(value, System.currentTimeMillis()));
+                    }));
+                    return values;
+                }));
+        return liveSellerCampaigns.get(sellerId);
     }
+
     @Override public LiveData<RescueCampaign> observeCampaign(String campaignId) {
         return new LiveData<RescueCampaign>() {
             private ListenerRegistration registration;
             @Override protected void onActive() {
                 registration = firestore.collection(CAMPAIGNS).document(campaignId)
                         .addSnapshotListener((snapshot, error) -> {
-                            if (error != null || snapshot == null) return;
+                            if (error != null) {
+                                if (error.getCode() == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED) postValue(null);
+                                return;
+                            }
+                            if (snapshot == null) return;
                             RescueCampaign campaign = snapshot.exists() ? mapCampaign(snapshot) : null;
                             postValue(campaign);
                             if (campaign != null) cache(campaign);
@@ -141,8 +177,23 @@ public class FirebaseCampaignRepository implements CampaignRepository {
             }
         };
     }
+
     @Override public LiveData<List<Banner>> observeActiveBanners() {
-        return Transformations.map(bannerDao.observeActiveBanners(), BannerCacheMapper::banners);
+        if (activeBanners == null) activeBanners = new SnapshotLiveData<>(
+                firestore.collection(BANNERS).whereEqualTo("active", true),
+                Transformations.map(bannerDao.observeActiveBanners(), BannerCacheMapper::banners), null,
+                java.util.Collections.emptyList(), snapshot -> {
+                    List<Banner> values = new ArrayList<>();
+                    List<com.rescuefarm.data.local.entity.BannerCacheEntity> entities = new ArrayList<>();
+                    for (DocumentSnapshot document : snapshot.getDocuments()) {
+                        Banner value = mapBanner(document);
+                        if (value != null) { values.add(value); entities.add(BannerCacheMapper.toEntity(value, System.currentTimeMillis())); }
+                    }
+                    values.sort(java.util.Comparator.comparingInt(Banner::getDisplayOrder));
+                    cacheExecutor.execute(() -> database.runInTransaction(() -> { bannerDao.clearBanners(); bannerDao.replaceBanners(entities); }));
+                    return values;
+                });
+        return activeBanners;
     }
 
     @Override public void refreshActiveCampaigns(ActionCallback callback) {
@@ -178,38 +229,22 @@ public class FirebaseCampaignRepository implements CampaignRepository {
                 .addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
+
     @Override public void refreshSellerCampaigns(String sellerId, ActionCallback callback) {
         if (!online(callback, "Đang offline; campaign seller tiếp tục dùng Room cache.")) return;
-        firestore.collection(CAMPAIGNS).whereEqualTo("sellerId", sellerId).get()
-                .addOnSuccessListener(snapshot -> cacheCampaigns(snapshot.getDocuments(), false, sellerId, callback))
-                .addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        sellerLimits.put(sellerId, 0); observeSellerCampaigns(sellerId);
+        liveSellerCampaigns.get(sellerId).refresh(sellerQuery(sellerId), error -> {
+            if (error == null) callback.onSuccess(); else notifyFailure(error, callback::onError);
+        });
     }
 
     @Override public void refreshSellerCampaignPage(String sellerId, boolean reset, ActionCallback callback) {
         if (!online(callback, "Đang offline; campaign seller tiếp tục dùng Room cache.")) return;
-        Query query = firestore.collection(CAMPAIGNS).whereEqualTo("sellerId", sellerId)
-                .orderBy("createdAt", Query.Direction.DESCENDING).limit(12);
-        DocumentSnapshot cursor = sellerCampaignCursors.get(sellerId);
-        if (!reset && cursor != null) query = query.startAfter(cursor);
-        query.get().addOnSuccessListener(snapshot -> {
-            List<CampaignCacheEntity> entities = new ArrayList<>(); long now = System.currentTimeMillis();
-            for (DocumentSnapshot document : snapshot.getDocuments()) {
-                RescueCampaign campaign = mapCampaign(document);
-                if (campaign != null) entities.add(CampaignCacheMapper.toEntity(campaign, now));
-            }
-            if (reset) sellerCampaignCursors.remove(sellerId);
-            if (!snapshot.isEmpty()) sellerCampaignCursors.put(sellerId,
-                    snapshot.getDocuments().get(snapshot.size() - 1));
-            if (snapshot.size() == 12) sellersWithMoreCampaigns.add(sellerId);
-            else sellersWithMoreCampaigns.remove(sellerId);
-            cacheExecutor.execute(() -> {
-                database.runInTransaction(() -> {
-                    if (reset) campaignDao.clearSellerCampaigns(sellerId);
-                    campaignDao.replaceCampaigns(entities);
-                });
-                callback.onSuccess();
-            });
-        }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
+        sellerLimits.put(sellerId, reset ? 12 : sellerLimits.getOrDefault(sellerId, 12) + 12);
+        observeSellerCampaigns(sellerId);
+        liveSellerCampaigns.get(sellerId).refresh(sellerQuery(sellerId), error -> {
+            if (error == null) callback.onSuccess(); else notifyFailure(error, callback::onError);
+        });
     }
 
     @Override public boolean hasMoreSellerCampaigns(String sellerId) {

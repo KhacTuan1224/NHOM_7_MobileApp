@@ -3,19 +3,28 @@ import androidx.lifecycle.*;import com.google.firebase.Timestamp;import com.goog
 public class FirebaseEngagementRepository implements EngagementRepository{
  private static final String FAVORITES="favorites",REVIEWS="reviews",REPORTS="reports",NOTIFICATIONS="notifications",ORDERS="orders",ITEMS="items",USERS="users",DEVICES="devices";
  private final FirebaseFirestore db=FirebaseFirestore.getInstance();private final FirebaseAuth auth=FirebaseAuth.getInstance();private final NetworkStatusProvider network;private final ReviewEligibilityService eligibility=new ReviewEligibilityService();
- private final MutableLiveData<List<Favorite>> favorites=new MutableLiveData<>(new ArrayList<>());private final MutableLiveData<List<Review>> reviews=new MutableLiveData<>(new ArrayList<>());private final MutableLiveData<List<Report>> reports=new MutableLiveData<>(new ArrayList<>());private final MutableLiveData<List<Notification>> notifications=new MutableLiveData<>(new ArrayList<>());
- public FirebaseEngagementRepository(NetworkStatusProvider n){network=n;}public LiveData<List<Favorite>> observeFavorites(){return favorites;}public LiveData<List<Review>> observeProductReviews(){return reviews;}public LiveData<List<Report>> observeReports(){return reports;}public LiveData<List<Notification>> observeNotifications(){return new LiveData<List<Notification>>() {
-  private ListenerRegistration listener;
-  protected void onActive(){String uid=auth.getCurrentUser()==null?"":auth.getCurrentUser().getUid();
-   if(uid.isEmpty()){postValue(Collections.emptyList());return;}
-   listener=db.collection(NOTIFICATIONS).whereEqualTo("userId",uid).addSnapshotListener((snapshot,error)->{
-    if(error!=null||snapshot==null)return; List<Notification> values=new ArrayList<>();
-    for(DocumentSnapshot d:snapshot.getDocuments())values.add(mapNotification(d));
-    values.sort((a,b)->Long.compare(time(b.getCreatedAt()),time(a.getCreatedAt())));postValue(values);
-   });
-  }
-  protected void onInactive(){if(listener!=null)listener.remove();listener=null;}
- };}
+
+ private final SnapshotLiveData<List<Favorite>> favorites;
+ private final SnapshotLiveData<List<Review>> reviews;
+ private final SnapshotLiveData<List<Report>> reports;
+ private final SnapshotLiveData<List<Notification>> notifications;
+ public FirebaseEngagementRepository(NetworkStatusProvider n) {
+  network=n; String uid=auth.getCurrentUser()==null?"":auth.getCurrentUser().getUid();
+  favorites=new SnapshotLiveData<>(db.collection(FAVORITES).whereEqualTo("customerId",uid),null,uid,Collections.emptyList(),s->{
+   List<Favorite> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapFavorite(d));return out;});
+  reviews=new SnapshotLiveData<>(db.collection(REVIEWS).whereEqualTo("productId","").whereEqualTo("status","PUBLISHED"),null,null,Collections.emptyList(),s->{
+   List<Review> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReview(d));return out;});
+  reports=new SnapshotLiveData<>(db.collection(REPORTS),null,uid,Collections.emptyList(),s->{
+   List<Report> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReport(d));return out;});
+  notifications=new SnapshotLiveData<>(db.collection(NOTIFICATIONS).whereEqualTo("userId",uid),null,uid,Collections.emptyList(),s->{
+   List<Notification> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapNotification(d));
+   out.sort((a,b)->Long.compare(time(b.getCreatedAt()),time(a.getCreatedAt())));return out;});
+ }
+ public LiveData<List<Favorite>> observeFavorites(){return favorites;}
+ public LiveData<List<Review>> observeProductReviews(){return reviews;}
+ public LiveData<List<Report>> observeReports(){return reports;}
+ public LiveData<List<Notification>> observeNotifications(){return notifications;}
+ private SnapshotLiveData.Completion refreshed(ActionCallback callback){return error->{if(error==null)callback.onSuccess();else fail(error,callback);};}
  public LiveData<Boolean> observeFavorite(String customerId,String productId){return new LiveData<Boolean>(){
   private ListenerRegistration registration;
   @Override protected void onActive(){
@@ -32,9 +41,9 @@ public class FirebaseEngagementRepository implements EngagementRepository{
   }
   @Override protected void onInactive(){if(registration!=null){registration.remove();registration=null;}}
  };}
- public void refreshFavorites(String uid,ActionCallback cb){query(FAVORITES,"customerId",uid,s->{List<Favorite> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapFavorite(d));favorites.setValue(out);cb.onSuccess();},cb);}
+ public void refreshFavorites(String uid,ActionCallback cb){if(!online(cb)||!session(uid,cb))return;favorites.changeOwner(uid);favorites.refresh(db.collection(FAVORITES).whereEqualTo("customerId",uid),refreshed(cb));}
  public void toggleFavorite(String uid,String productId,FavoriteCallback cb){if(!online(cb)||!session(uid,cb))return;Favorite f;try{f=Favorite.create(uid,productId,new Date());}catch(Exception e){cb.onError(ErrorCode.VALIDATION,e.getMessage());return;}DocumentReference ref=db.collection(FAVORITES).document(f.getId());db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(d.exists()){tx.delete(ref);return false;}tx.set(ref,favoriteMap(f));return true;}).addOnSuccessListener(cb::onSuccess).addOnFailureListener(e->fail(e,cb));}
- public void refreshProductReviews(String productId,ActionCallback cb){if(!online(cb))return;db.collection(REVIEWS).whereEqualTo("productId",productId).whereEqualTo("status",ReviewStatus.PUBLISHED.name()).get().addOnSuccessListener(s->{List<Review> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReview(d));reviews.setValue(out);cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}
+ public void refreshProductReviews(String productId,ActionCallback cb){if(!online(cb))return;reviews.refresh(db.collection(REVIEWS).whereEqualTo("productId",productId).whereEqualTo("status",ReviewStatus.PUBLISHED.name()),refreshed(cb));}
  public void saveReview(Review r, boolean update, ReviewCallback cb) {
   if(!online(cb))return;
   if(r==null){cb.onError(ErrorCode.VALIDATION,"Review không hợp lệ.");return;}
@@ -84,9 +93,9 @@ public class FirebaseEngagementRepository implements EngagementRepository{
  public void createReport(String uid,ReportTargetType type,String targetId,String reason,String description,ReportCallback cb){if(!online(cb)||!session(uid,cb))return;DocumentReference ref=db.collection(REPORTS).document();try{String path="",parentType="",parentId="",canonicalId=targetId;
 if(type==ReportTargetType.COMMENT){String[] parts=targetId.split("/",-1);if(parts.length!=4||!parts[0].equals("campaigns")||!parts[2].equals("comments")||parts[1].isEmpty()||parts[3].isEmpty())throw new IllegalArgumentException("Cần đường dẫn campaigns/{id}/comments/{id}.");path=targetId;parentType="CAMPAIGN";parentId=parts[1];canonicalId=parts[3];}
 Report r=Report.create(ref.getId(),uid,type,canonicalId,reason,description,new Date());Map<String,Object> data=reportMap(r);if(type==ReportTargetType.COMMENT){data.put("targetPath",path);data.put("parentType",parentType);data.put("parentId",parentId);}com.google.firebase.firestore.WriteBatch batch=db.batch();batch.set(ref,data);com.rescuefarm.service.notification.NotificationOutbox.enqueue(batch,db,"ADMINS","REPORT",r.getId());batch.commit().addOnSuccessListener(v->{cb.onSuccess(r);}).addOnFailureListener(e->fail(e,cb));}catch(Exception e){cb.onError(ErrorCode.VALIDATION,e.getMessage());}}
- public void refreshReports(ActionCallback cb){if(!online(cb))return;db.collection(REPORTS).get().addOnSuccessListener(s->{List<Report> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapReport(d));reports.setValue(out);cb.onSuccess();}).addOnFailureListener(e->fail(e,cb));}
+ public void refreshReports(ActionCallback cb){if(!online(cb))return;reports.refresh(db.collection(REPORTS),refreshed(cb));}
  public void transitionReport(String id,ReportStatus target,String note,ReportCallback cb){if(!online(cb))return;if(target==null){cb.onError(ErrorCode.VALIDATION,"Trạng thái report không hợp lệ.");return;}String admin=auth.getCurrentUser()==null?"":auth.getCurrentUser().getUid();DocumentReference ref=db.collection(REPORTS).document(id);db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(!d.exists())throw new IllegalStateException("REPORT_NOT_FOUND");Report r=mapReport(d);if(target==ReportStatus.IN_REVIEW)r.startReview(admin);else if(target==ReportStatus.RESOLVED)r.resolve(admin,note);else if(target==ReportStatus.REJECTED)r.reject(admin,note);else throw new IllegalStateException("REPORT_TRANSITION_INVALID");tx.update(ref,"status",r.getStatus().name(),"resolvedBy",r.getResolvedBy(),"resolutionNote",clean(r.getResolutionNote()),"updatedAt",FieldValue.serverTimestamp());java.util.Map<String,Object> audit=new java.util.HashMap<>();audit.put("adminId",admin);audit.put("resourceType","REPORTS");audit.put("resourceId",id);audit.put("fromState",d.getString("status"));audit.put("toState",r.getStatus().name());audit.put("reason",clean(note));audit.put("createdAt",FieldValue.serverTimestamp());tx.set(db.collection("adminAuditLogs").document(),audit);return r;}).addOnSuccessListener(cb::onSuccess).addOnFailureListener(e->fail(e,cb));}
- public void refreshNotifications(String uid,ActionCallback cb){query(NOTIFICATIONS,"userId",uid,s->{List<Notification> out=new ArrayList<>();for(DocumentSnapshot d:s.getDocuments())out.add(mapNotification(d));out.sort((a,b)->Long.compare(time(b.getCreatedAt()),time(a.getCreatedAt())));notifications.setValue(out);cb.onSuccess();},cb);}
+ public void refreshNotifications(String uid,ActionCallback cb){if(!online(cb)||!session(uid,cb))return;notifications.changeOwner(uid);notifications.refresh(db.collection(NOTIFICATIONS).whereEqualTo("userId",uid),refreshed(cb));}
  public void markNotificationRead(String id,ActionCallback cb){if(!online(cb))return;DocumentReference ref=db.collection(NOTIFICATIONS).document(id);db.runTransaction(tx->{DocumentSnapshot d=tx.get(ref);if(!d.exists())throw new IllegalStateException("NOTIFICATION_NOT_FOUND");if(Boolean.TRUE.equals(d.getBoolean("isRead")))return true;tx.update(ref,"isRead",true,"readAt",FieldValue.serverTimestamp());return false;}).addOnSuccessListener(v->cb.onSuccess()).addOnFailureListener(e->fail(e,cb));}
  public void registerFcmToken(String uid,String token,ActionCallback cb){if(!online(cb))return;if(!session(uid,cb))return;if(clean(token).isEmpty()){cb.onError(ErrorCode.TOKEN,"FCM không trả về token thiết bị hợp lệ.");return;}Map<String,Object> m=new HashMap<>();m.put("userId",uid);m.put("token",token);m.put("platform","ANDROID");m.put("updatedAt",FieldValue.serverTimestamp());db.collection(USERS).document(uid).collection(DEVICES).document(hash(token)).set(m).addOnSuccessListener(v->cb.onSuccess()).addOnFailureListener(e->fail(e,cb));}
  private void query(String collection,String field,String value,com.google.android.gms.tasks.OnSuccessListener<QuerySnapshot> ok,ActionCallback cb){if(!online(cb))return;db.collection(collection).whereEqualTo(field,value).get().addOnSuccessListener(ok).addOnFailureListener(e->fail(e,cb));}

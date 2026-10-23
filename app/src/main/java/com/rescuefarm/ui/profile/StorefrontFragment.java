@@ -55,6 +55,9 @@ public final class StorefrontFragment extends Fragment {
             });
             home.refresh();
         }
+        vm.observe(sellerId).observe(getViewLifecycleOwner(), value -> {
+            if (value != null) vm.storefront.setValue(value);
+        });
         vm.load(sellerId);
     }
     private void buildEditor() {

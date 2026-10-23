@@ -88,9 +88,9 @@ public class CampaignDetailFragment extends Fragment {
             }
         }
     }
-    @Override public void onStart() { super.onStart(); clock.removeCallbacks(timeTick); clock.post(timeTick); }
-    @Override public void onStop() { clock.removeCallbacks(timeTick); super.onStop(); }
     private String campaignId = "";
+    private int contentsGeneration;
+    private com.rescuefarm.service.realtime.FirebaseRealtime contentsWatch;
     private RescueCampaign campaign;
     private CartViewModel cartViewModel;
     private LocationProvider locationProvider;
@@ -182,27 +182,43 @@ public class CampaignDetailFragment extends Fragment {
             }
         });
 
-        viewModel.getState().observe(getViewLifecycleOwner(), value -> {
-            if (value.getStatus() == CampaignScreenState.Status.CAMPAIGN) {
-                render(view, value.getCampaign());
-                refreshUrgency(value.getCampaign());
-                if (value.getCampaign().getStatus() == com.rescuefarm.domain.enums.CampaignStatus.ACTIVE
-                        && !engagementLoaded) { engagementLoaded = true; loadEngagement(); }
-                if (value.getCampaign().getStatus() == com.rescuefarm.domain.enums.CampaignStatus.ACTIVE
-                        && !viewRecorded) {
-                    viewRecorded = true;
-                    engagementRepository.recordView(campaignId, new CampaignEngagementRepository.ViewCallback() {
-                        @Override public void onSuccess(long count) {
-                            if (!isAdded() || campaign == null) return;
-                            campaign.setViewCount(count);
-                            View root = getView();
-                            if (root != null) set(root, R.id.campaignViewCount, count + " lượt xem");
-                        }
-                        @Override public void onError(String message) { }
-                    });
-                }
-            } else if (value.getStatus() == CampaignScreenState.Status.ERROR) {
-                Toast.makeText(requireContext(), value.getMessage(), Toast.LENGTH_LONG).show();
+        contentsWatch = com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(),
+                () -> loadCampaignBatchesAndProducts(campaign));
+        viewModel.getState().observe(getViewLifecycleOwner(), stateValue -> {
+            if (stateValue.getStatus() == CampaignScreenState.Status.ERROR)
+                Toast.makeText(requireContext(), stateValue.getMessage(), Toast.LENGTH_LONG).show();
+        });
+        viewModel.observeCampaign(campaignId).observe(getViewLifecycleOwner(), value -> {
+            if (value == null) {
+                campaign = null; engagementLoaded = false;
+                if (engagementRepository != null) engagementRepository.close();
+                view.findViewById(R.id.campaignCareButton).setEnabled(false);
+                view.findViewById(R.id.campaignSendCommentButton).setEnabled(false);
+                view.findViewById(R.id.campaignAddToCartButton).setEnabled(false);
+                view.findViewById(R.id.campaignRescueNowButton).setEnabled(false);
+                view.findViewById(R.id.campaignDirectionsButton).setEnabled(false);
+                set(view, R.id.campaignDetailTitle, "Chiến dịch không còn khả dụng");
+                return;
+            }
+            render(view, value);
+            refreshUrgency(value);
+            if (value.getStatus() == com.rescuefarm.domain.enums.CampaignStatus.ACTIVE
+                    && !engagementLoaded) { engagementLoaded = true; loadEngagement(); }
+            if (value.getStatus() != com.rescuefarm.domain.enums.CampaignStatus.ACTIVE) {
+                engagementRepository.close(); engagementLoaded = false;
+            }
+            if (value.getStatus() == com.rescuefarm.domain.enums.CampaignStatus.ACTIVE
+                    && !viewRecorded) {
+                viewRecorded = true;
+                engagementRepository.recordView(campaignId, new CampaignEngagementRepository.ViewCallback() {
+                    @Override public void onSuccess(long count) {
+                        if (!isAdded() || campaign == null) return;
+                        campaign.setViewCount(count);
+                        View root = getView();
+                        if (root != null) set(root, R.id.campaignViewCount, count + " lượt xem");
+                    }
+                    @Override public void onError(String message) { }
+                });
             }
         });
         
@@ -285,7 +301,7 @@ public class CampaignDetailFragment extends Fragment {
                     applyActorActions(view));
         }
         
-        viewModel.load(campaignId);
+
     }
 
     private void applyActorActions(View root) {
@@ -642,21 +658,35 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private void loadCampaignBatchesAndProducts(RescueCampaign value) {
+        final int request = ++contentsGeneration;
+        final View boundView = getView();
+        if (boundView == null) return;
         if (value == null || value.getBatchTargets().isEmpty()) {
+            if (contentsWatch != null) contentsWatch.configure();
+            loadedBatches = new ArrayList<>(); loadedProducts = new ArrayList<>();
             bindEmptyProductSection();
             return;
         }
         List<String> batchIds = new ArrayList<>(value.getBatchTargets().keySet());
+        java.util.List<Object> targets = new java.util.ArrayList<>();
+        com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        for (String id : batchIds) targets.add(db.collection("productBatches").document(id));
+        for (Product product : loadedProducts) targets.add(db.collection("products").document(product.getId()));
+        if (contentsWatch != null) contentsWatch.configure(targets.toArray());
         ProductRepository repo = ProductRepositoryFactory.create(requireContext());
         repo.getBatchesByIds(batchIds, new ProductRepository.BatchListCallback() {
             @Override public void onSuccess(List<ProductBatch> batches) {
-                if (!isAdded()) { repo.close(); return; }
+                if (!isAdded() || getView() != boundView || request != contentsGeneration || campaign != value) { repo.close(); return; }
                 loadedBatches = batches != null ? batches : new ArrayList<>();
                 repo.getCampaignProducts(batchIds, new ProductRepository.ProductListCallback() {
                     @Override public void onSuccess(List<Product> products) {
                         repo.close();
-                        if (!isAdded()) return;
+                        if (!isAdded() || getView() != boundView || request != contentsGeneration || campaign != value) return;
                         loadedProducts = products != null ? products : new ArrayList<>();
+                        java.util.List<Object> latest = new java.util.ArrayList<>();
+                        for (String id : batchIds) latest.add(db.collection("productBatches").document(id));
+                        for (Product product : loadedProducts) latest.add(db.collection("products").document(product.getId()));
+                        if (contentsWatch != null) contentsWatch.configure(latest.toArray());
                         bindProductBatchSection();
                     }
                     @Override public void onError(ProductRepository.ErrorCode error, String message) {
@@ -923,7 +953,22 @@ public class CampaignDetailFragment extends Fragment {
         }
     }
     
+    @Override public void onStart() {
+        super.onStart();
+        clock.removeCallbacks(timeTick); clock.post(timeTick);
+        if (campaign != null && campaign.getStatus() == com.rescuefarm.domain.enums.CampaignStatus.ACTIVE && !engagementLoaded) {
+            engagementLoaded = true; loadEngagement();
+        }
+    }
+    @Override public void onStop() {
+        clock.removeCallbacks(timeTick);
+        if (engagementRepository != null) engagementRepository.close();
+        engagementLoaded = false;
+        super.onStop();
+    }
+
     @Override public void onDestroyView() {
+        contentsGeneration++; contentsWatch = null;
         clock.removeCallbacks(timeTick);
         if (locationProvider != null) {
             locationProvider.close();

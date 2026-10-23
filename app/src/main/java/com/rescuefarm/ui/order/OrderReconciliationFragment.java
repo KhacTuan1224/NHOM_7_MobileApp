@@ -20,7 +20,7 @@ public final class OrderReconciliationFragment extends Fragment {
     private TextView message;
     private String orderId = "", requestId = UUID.randomUUID().toString();
     private int generation;
-    private boolean busy;
+    private boolean busy, realtimePending;
     private View listReload;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup parent, @Nullable Bundle state) {
         orderId = state == null ? getArguments() == null ? "" : getArguments().getString("orderId", "") : state.getString("orderId", "");
@@ -35,7 +35,25 @@ public final class OrderReconciliationFragment extends Fragment {
         content = CustomerUi.column(requireContext()); root.addView(content);
         return CustomerUi.screen(this, root);
     }
-    @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) { load(); }
+    @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        load(); bindRealtime();
+    }
+    private void bindRealtime() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            if (orderId.isEmpty()) return;
+            String token = new SharedPreferencesGuestSessionRepository(requireContext()).getOrderAccessToken(orderId);
+            com.rescuefarm.service.realtime.BackendSnapshotWatch watch = new com.rescuefarm.service.realtime.BackendSnapshotWatch("guest_order");
+            try { watch.configure("guest_order", new JSONObject().put("orderId", orderId).put("accessToken", token)); } catch (JSONException ignored) { }
+            watch.observe(getViewLifecycleOwner(), version -> refreshRealtime());
+        } else {
+            com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+            if (orderId.isEmpty()) com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(), this::refreshRealtime,
+                    db.collection("orders").whereEqualTo("expiryReviewRequired", true));
+            else com.rescuefarm.service.realtime.FirebaseRealtime.bind(getViewLifecycleOwner(), this::refreshRealtime,
+                    db.collection("orders").document(orderId), db.collection("payments").document(orderId));
+        }
+    }
+    private void refreshRealtime() { if (busy) realtimePending = true; else { realtimePending = false; load(); } }
     @Override public void onSaveInstanceState(@NonNull Bundle state) {
         super.onSaveInstanceState(state); state.putString("orderId", orderId); state.putString("requestId", requestId);
     }
@@ -63,6 +81,7 @@ public final class OrderReconciliationFragment extends Fragment {
             public void onSuccess(JSONObject value) {
                 if (expected != generation || getView() == null) return;
                 busy = false; message.setText(""); done.accept(value);
+                if (realtimePending) refreshRealtime();
             }
             public void onError(String error) {
                 if (expected != generation || getView() == null) return;
@@ -78,6 +97,7 @@ public final class OrderReconciliationFragment extends Fragment {
         } else RenderBackendClient.post("/orders/reconciliation/" + path, body, callback);
     }
     private void load() {
+        if (busy || content == null) return;
         content.removeAllViews();
         request(orderId.isEmpty() ? "list" : "get", body(), value -> {
             if (orderId.isEmpty()) {
@@ -92,7 +112,7 @@ public final class OrderReconciliationFragment extends Fragment {
         if (items != null) for (int i = 0; i < items.length(); i++) {
             JSONObject item = items.optJSONObject(i); if (item == null) continue;
             CustomerUi.button(content, item.optString("orderCode") + " • " + EnumLabels.label(item.optString("paymentStatus")), v -> {
-                orderId = item.optString("id"); requestId = UUID.randomUUID().toString(); load();
+                orderId = item.optString("id"); requestId = UUID.randomUUID().toString(); load(); bindRealtime();
             });
         }
         if (value.optBoolean("hasMore")) {

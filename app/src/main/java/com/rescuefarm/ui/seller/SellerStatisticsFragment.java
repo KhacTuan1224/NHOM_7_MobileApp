@@ -59,6 +59,7 @@ public final class SellerStatisticsFragment extends Fragment {
         view.findViewById(R.id.sellerStatisticsBack).setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
         view.findViewById(R.id.sellerStatisticsRefresh).setOnClickListener(v -> viewModel.load(periods[period.getSelectedItemPosition()], true));
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
+        new com.rescuefarm.service.realtime.BackendSnapshotWatch("seller_statistics").observe(getViewLifecycleOwner(), version -> viewModel.load(viewModel.getDays(), true));
     }
     private void render(SellerStatisticsViewModel.State state) {
         content.removeAllViews(); message.setText(state.message);

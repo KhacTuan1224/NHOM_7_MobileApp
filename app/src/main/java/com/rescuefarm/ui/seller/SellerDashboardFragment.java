@@ -71,6 +71,7 @@ public class SellerDashboardFragment extends Fragment {
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
+        new com.rescuefarm.service.realtime.BackendSnapshotWatch("seller_statistics").observe(getViewLifecycleOwner(), version -> viewModel.refresh());
         View menuButton = view.findViewById(R.id.sellerDashboardMenuButton);
         // Wide layouts keep navigation beside the dashboard instead of in a modal drawer.
         menuButton.setVisibility(drawer == null ? View.GONE : View.VISIBLE);

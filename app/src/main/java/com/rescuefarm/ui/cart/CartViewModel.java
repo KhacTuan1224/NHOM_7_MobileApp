@@ -29,6 +29,12 @@ public class CartViewModel extends ViewModel {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final LiveData<Cart> cart;
+    private final androidx.lifecycle.MediatorLiveData<Cart> displayCart = new androidx.lifecycle.MediatorLiveData<>();
+    private final MutableLiveData<Map<String,String>> cartWarnings = new MutableLiveData<>(new HashMap<>());
+    private final Map<String,Product> latestProducts = new HashMap<>();
+    private final Map<String,List<ProductBatch>> latestBatches = new HashMap<>();
+    private final Map<String,LiveData<List<ProductBatch>>> liveBatches = new HashMap<>();
+    private boolean productsReceived;
     private final PricingService pricingService = new PricingService();
     private final CartGroupingService groupingService = new CartGroupingService();
     private final CartRevalidationService revalidationService = new CartRevalidationService(pricingService);
@@ -39,8 +45,46 @@ public class CartViewModel extends ViewModel {
     public CartViewModel(CartRepository cartRepository, ProductRepository productRepository) {
         this.cartRepository = cartRepository; this.productRepository = productRepository;
         this.cart = cartRepository.observeCart();
+        displayCart.addSource(cart, value -> { syncLiveBatches(value); publishCart(); });
+        displayCart.addSource(productRepository.observeProducts(), products -> {
+            productsReceived = true; latestProducts.clear();
+            if (products != null) for (Product product : products) latestProducts.put(product.getId(), product);
+            publishCart();
+        });
     }
-    public LiveData<Cart> getCart() { return cart; }
+    public LiveData<Cart> getCart() { return displayCart; }
+    public LiveData<Map<String,String>> getCartWarnings() { return cartWarnings; }
+    private void syncLiveBatches(Cart value) {
+        Set<String> needed = new HashSet<>();
+        if (value != null) for (CartItem item : value.getItems()) needed.add(item.getProductId());
+        for (String id : new ArrayList<>(liveBatches.keySet())) if (!needed.contains(id)) {
+            displayCart.removeSource(liveBatches.remove(id)); latestBatches.remove(id);
+        }
+        for (String id : needed) if (!liveBatches.containsKey(id)) {
+            LiveData<List<ProductBatch>> source = productRepository.observeBatches(id); liveBatches.put(id, source);
+            displayCart.addSource(source, batches -> { latestBatches.put(id, batches); publishCart(); });
+        }
+    }
+    private void publishCart() {
+        Cart value = cart.getValue();
+        if (value == null) { displayCart.setValue(null); cartWarnings.setValue(new HashMap<>()); return; }
+        List<CartItem> items = new ArrayList<>(); Map<String,String> warnings = new HashMap<>();
+        for (CartItem item : value.getItems()) {
+            Product product = latestProducts.get(item.getProductId()); ProductBatch selected = null;
+            List<ProductBatch> batches = latestBatches.get(item.getProductId());
+            if (batches != null) for (ProductBatch batch : batches) if (item.getBatchId().equals(batch.getId())) selected = batch;
+            if (productsReceived && product == null) warnings.put(item.getId(), "Sản phẩm không còn bán.");
+            if (product != null && batches != null) {
+                CartRevalidationService.Result result = revalidationService.revalidate(item, product, selected, new Date());
+                if (result.isValid()) item = item.withQuote(result.getQuote().getFinalUnitPrice());
+                else warnings.put(item.getId(), result.getMessage());
+            }
+            items.add(item);
+        }
+        cartWarnings.setValue(warnings);
+        // Display projection only: snapshots never write a price back to the shared cart.
+        displayCart.setValue(new Cart(value.getId(), value.getOwnerType(), value.getOwnerKey(), items, value.getUpdatedAt()));
+    }
     public LiveData<List<Product>> getProducts() { return productRepository.observeProducts(); }
     public LiveData<CartScreenState> getState() { return state; }
     public void showMigrationPending(String message) { state.postValue(CartScreenState.of(CartScreenState.Status.ERROR, message)); }

@@ -20,12 +20,52 @@ public final class RescueProgramsViewModel extends ViewModel {
         }
     }
     private final RescueProgramsRepository repository = new RescueProgramsRepository();
-    private final MutableLiveData<State> state = new MutableLiveData<>();
+    private final androidx.lifecycle.MediatorLiveData<State> state = new androidx.lifecycle.MediatorLiveData<>();
+    private final com.rescuefarm.service.realtime.BackendSnapshotWatch live = new com.rescuefarm.service.realtime.BackendSnapshotWatch("");
+    private boolean realtimePending;
+    private int visibleCount;
     private final SavedStateHandle saved;
     private int generation;
     private String screen = "catalog", path = "catalog";
     private JSONObject query = new JSONObject(), value = new JSONObject();
-    public RescueProgramsViewModel(SavedStateHandle saved) { this.saved = saved; }
+    public RescueProgramsViewModel(SavedStateHandle saved) {
+        this.saved = saved;
+        state.addSource(live, version -> refreshRealtime());
+    }
+    public void refreshRealtime() {
+        State previous = state.getValue();
+        if (previous != null && previous.loading) { realtimePending = true; return; }
+        realtimePending = false;
+        fetchWindow(Math.max(visibleCount, 1), "", new JSONArray());
+    }
+    private void fetchWindow(int target, String cursor, JSONArray accumulated) {
+        final int request = ++generation;
+        final String owner = uid(), currentScreen = screen;
+        JSONObject body;
+        try { body = new JSONObject(query.toString()); if (!cursor.isEmpty()) body.put("cursor", cursor); }
+        catch (org.json.JSONException invalid) { return; }
+        state.setValue(new State(true, screen, value, ""));
+        repository.request(path, body, new RenderBackendClient.Callback() {
+            public void onSuccess(JSONObject result) {
+                if (request != generation || !owner.equals(uid())) return;
+                JSONArray items = result.optJSONArray("items");
+                if (items != null) for (int i=0; i<items.length(); i++) accumulated.put(items.opt(i));
+                String next = result.optString("cursor");
+                if (result.optBoolean("hasMore") && accumulated.length() < target && !next.isEmpty() && !next.equals(cursor)) {
+                    fetchWindow(target, next, accumulated); return;
+                }
+                if (items != null) try { result.put("items", accumulated); } catch (org.json.JSONException ignored) { }
+                value = result; visibleCount = accumulated.length();
+                state.setValue(new State(false, currentScreen, value, "")); drainRealtime();
+            }
+            public void onError(String error) {
+                if (request == generation && owner.equals(uid())) {
+                    state.setValue(new State(false, currentScreen, value, error)); realtimePending = false;
+                }
+            }
+        });
+    }
+    private void drainRealtime() { if (realtimePending) refreshRealtime(); }
     public LiveData<State> state() { return state; }
     public void clearMessage() {
         State previous = state.getValue();
@@ -41,6 +81,8 @@ public final class RescueProgramsViewModel extends ViewModel {
     public void load(String screen, String path, JSONObject query) {
         generation++;
         this.screen = screen; this.path = path; this.query = query;
+        visibleCount = 0; realtimePending = false;
+        live.configure("rescue", query);
         saved.set("screen", screen); saved.set("path", path); saved.set("query", query.toString());
         value = new JSONObject(); state.setValue(new State(false, screen, value, "")); fetch(false);
     }
@@ -70,7 +112,8 @@ public final class RescueProgramsViewModel extends ViewModel {
                     if (next != null) for (int i = 0; i < next.length(); i++) combined.put(next.opt(i));
                     try { result.put("items", combined); } catch (org.json.JSONException ignored) { }
                 }
-                value = result; state.setValue(new State(false, currentScreen, value, ""));
+                value = result; visibleCount = value.optJSONArray("items") == null ? 0 : value.optJSONArray("items").length();
+                state.setValue(new State(false, currentScreen, value, "")); drainRealtime();
             }
             public void onError(String error) {
                 if (current == generation && owner.equals(uid())) state.setValue(new State(false, currentScreen, value, error));
@@ -86,7 +129,7 @@ public final class RescueProgramsViewModel extends ViewModel {
                 if (current != generation || !owner.equals(uid())) return;
                 state.setValue(new State(false, screen, value, ""));
                 if (path.equals("create")) saved.remove("createRequestId");
-                success.run();
+                success.run(); drainRealtime();
             }
             public void onError(String error) {
                 if (current == generation && owner.equals(uid())) state.setValue(new State(false, screen, value, error));

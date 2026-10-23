@@ -30,33 +30,44 @@ public final class FirebaseCampaignEngagementRepository implements CampaignEngag
         this.network = network; this.viewerId = viewerId;
     }
 
+
+    private final List<com.google.firebase.firestore.ListenerRegistration> liveListeners = new ArrayList<>();
+    private int liveGeneration;
     @Override public void load(String campaignId, String userId, Callback callback) {
-        if (!network.isOnline()) { callback.onError("Reaction và bình luận cần kết nối mạng."); return; }
+        close(); int generation = liveGeneration;
         DocumentReference campaign = db.collection(CAMPAIGNS).document(campaignId);
-        campaign.collection("reactions").get().addOnSuccessListener(reactions -> {
+        final com.google.firebase.firestore.QuerySnapshot[] snapshots = new com.google.firebase.firestore.QuerySnapshot[2];
+        Runnable publish = () -> {
+            if (generation != liveGeneration || snapshots[0] == null || snapshots[1] == null) return;
             EnumMap<ReactionType, Integer> counts = new EnumMap<>(ReactionType.class);
             ReactionType mine = null;
-            for (DocumentSnapshot row : reactions) {
+            for (DocumentSnapshot row : snapshots[0].getDocuments()) {
                 ReactionType type = enumValue(row.getString("type")); if (type == null) continue;
                 counts.put(type, counts.getOrDefault(type, 0) + 1);
                 if (!empty(userId) && userId.equals(row.getString("userId"))) mine = type;
             }
-            ReactionType selected = mine;
-            campaign.collection("comments").orderBy("createdAt", Query.Direction.ASCENDING).limit(100)
-                    .get().addOnSuccessListener(rows -> {
-                        List<Comment> comments = new ArrayList<>();
-                        for (DocumentSnapshot row : rows) {
-                            try {
-                                CommentStatus status = CommentStatus.valueOf(value(row.getString("status"), "ACTIVE"));
-                                String content = value(row.getString("content"), "");
-                                if (status == CommentStatus.HIDDEN || status == CommentStatus.DELETED) continue;
-                                comments.add(Comment.restore(row.getId(), campaignId, row.getString("userId"),
-                                        content, status, date(row.get("createdAt")), date(row.get("updatedAt"))));
-                            } catch (RuntimeException ignored) { }
-                        }
-                        callback.onSuccess(new CampaignEngagementSnapshot(counts, selected, comments));
-                    }).addOnFailureListener(error -> callback.onError(message(error)));
-        }).addOnFailureListener(error -> callback.onError(message(error)));
+            List<Comment> comments = new ArrayList<>();
+            for (DocumentSnapshot row : snapshots[1].getDocuments()) {
+                try {
+                    CommentStatus status = CommentStatus.valueOf(value(row.getString("status"), "ACTIVE"));
+                    if (status == CommentStatus.HIDDEN || status == CommentStatus.DELETED) continue;
+                    comments.add(Comment.restore(row.getId(), campaignId, row.getString("userId"),
+                            value(row.getString("content"), ""), status, date(row.get("createdAt")), date(row.get("updatedAt"))));
+                } catch (RuntimeException ignored) { }
+            }
+            callback.onSuccess(new CampaignEngagementSnapshot(counts, mine, comments));
+        };
+        liveListeners.add(campaign.collection("reactions").addSnapshotListener((rows, error) -> {
+            if (generation != liveGeneration) return;
+            if (error != null) { callback.onError(message(error)); return; }
+            snapshots[0] = rows; publish.run();
+        }));
+        liveListeners.add(campaign.collection("comments").orderBy("createdAt", Query.Direction.ASCENDING).limit(100)
+                .addSnapshotListener((rows, error) -> {
+                    if (generation != liveGeneration) return;
+                    if (error != null) { callback.onError(message(error)); return; }
+                    snapshots[1] = rows; publish.run();
+                }));
     }
 
     @Override public void toggleReaction(String campaignId, String userId, ReactionType type, Action callback) {
@@ -127,5 +138,5 @@ public final class FirebaseCampaignEngagementRepository implements CampaignEngag
     private static String value(String value, String fallback) { return value == null ? fallback : value; }
     private static boolean empty(String value) { return value == null || value.trim().isEmpty(); }
     private static String message(Exception e) { return e.getLocalizedMessage() == null ? "Không thể cập nhật tương tác." : e.getLocalizedMessage(); }
-    @Override public void close() { }
+    @Override public void close() { liveGeneration++; for (com.google.firebase.firestore.ListenerRegistration listener : liveListeners) listener.remove(); liveListeners.clear(); }
 }
