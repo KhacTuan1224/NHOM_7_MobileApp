@@ -64,7 +64,7 @@ public final class HomeCardRenderer {
                 android.R.attr.progressBarStyleHorizontal);
         progress.setMax(100);
         progress.setProgress((int) Math.round(campaign.calculateProgress()));
-        progress.setProgressTintList(ColorStateList.valueOf(color(R.color.rescue_high)));
+        progress.setProgressTintList(ColorStateList.valueOf(color(com.rescuefarm.ui.common.CampaignProgressColors.forPercent(campaign.calculateProgress()))));
         progress.setProgressBackgroundTintList(ColorStateList.valueOf(color(R.color.rescue_primary_container)));
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, dp(6));
         progressParams.setMargins(0, dp(6), 0, dp(4)); body.addView(progress, progressParams);

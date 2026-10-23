@@ -2,6 +2,19 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {aggregateSellerStatistics, allPages} = require('./seller-analytics');
 const {MemoryFirestore, Timestamp, admin} = require('./test-support/memory-firestore.cjs');
+test('statistics cache coalesces scans per seller but rechecks approval on every request',async()=>{
+  const {createSellerAnalytics}=require('./seller-analytics');
+  const db=new MemoryFirestore({'users/s':{sellerStatus:'APPROVED'},'users/other':{sellerStatus:'APPROVED'}});
+  const original=db.collection.bind(db);let orderScans=0;
+  db.collection=name=>{if(name==='orders')orderScans++;return original(name);};
+  const api=createSellerAnalytics({db,admin,authenticate:async req=>({uid:req.uid,role:'SELLER'})});
+  const handler=api.router.stack[0].route.stack[0].handle;
+  const send=uid=>new Promise((resolve,reject)=>handler({uid,body:{days:7}},{json:resolve},reject));
+  await Promise.all([send('s'),send('s')]);assert.equal(orderScans,1);
+  await send('other');assert.equal(orderScans,2);
+  db.documents.set('users/s',{sellerStatus:'REJECTED'});
+  await assert.rejects(()=>send('s'),e=>e.status===403);assert.equal(orderScans,2);
+});
 test('statistics read all pages, independently of the 50-order UI page size', async () => {
   const seed = {};
   for (let i = 0; i < 451; i++) seed[`orders/order-${String(i).padStart(4, '0')}`] = {sellerId: 'seller', totalAmount: 1};

@@ -1,8 +1,8 @@
 <resources>
     <string name="article_shop_avatar">Ảnh cửa hàng công khai</string>
     <string name="article_shop_default">Cửa hàng nông sản</string>
-    <string name="article_unverified">Chưa xác minh</string>
-    <string name="article_verified">Đã duyệt</string>
+    <string name="article_unverified_description">%1$s, chưa xác minh đăng ký kinh doanh</string>
+    <string name="article_verified_description">%1$s, đăng ký kinh doanh đã được duyệt</string>
     <string name="article_campaign_image">Ảnh chiến dịch giải cứu</string>
     <string name="article_open_campaign">Xem chiến dịch giải cứu</string>
     <string name="article_unknown_time">Chưa có thời gian đăng</string>
