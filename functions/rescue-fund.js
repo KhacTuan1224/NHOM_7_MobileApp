@@ -26,12 +26,10 @@ function settings(input) {
   requireValue(value.name.length >= 3 && value.name.length <= 120 && value.charityName.length >= 3
     && value.charityName.length <= 160 && value.address.length >= 5 && value.address.length <= 500
     && value.phone.length <= 30, 'Nhập đủ tên hũ, tổ chức và địa chỉ nhận.');
-  requireValue(Number.isFinite(input.latitude) && Math.abs(input.latitude) <= 90
-    && Number.isFinite(input.longitude) && Math.abs(input.longitude) <= 180, 'Tọa độ nhận hàng không hợp lệ.');
   requireValue([12, 24].includes(input.idleHours) && [12, 24].includes(input.expiryHours)
     && money(input.dailyBudget) && input.dailyBudget >= 10000
     && money(input.perSellerBudget) && input.perSellerBudget >= 10000, 'Hạn mức hoặc khung giờ không hợp lệ.');
-  return {...value, latitude: input.latitude, longitude: input.longitude, idleHours: input.idleHours,
+  return {...value, latitude: 0, longitude: 0, idleHours: input.idleHours,
     expiryHours: input.expiryHours, dailyBudget: input.dailyBudget, perSellerBudget: input.perSellerBudget,
     active: input.active === true};
 }

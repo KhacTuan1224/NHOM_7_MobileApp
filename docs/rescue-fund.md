@@ -52,7 +52,7 @@ Lượt triển khai code này **chưa deploy production, chưa tạo quỹ/số
 
    Đối chiếu: [xác thực SePay](https://developer.sepay.vn/vi/sepay-webhooks/xac-thuc), [payload và phản hồi webhook](https://developer.sepay.vn/vi/sepay-webhooks/tich-hop-webhook).
 
-5. Cài APK mới. Admin → drawer → **Hũ giải cứu nông sản → Cấu hình hũ và điểm thiện nguyện**: nhập tên hũ, tổ chức, địa chỉ, điện thoại, vĩ/kinh độ, ngân sách ngày, tối đa mỗi Seller/ngày, hai khung giờ. Ban đầu lưu khi đang tắt để kiểm tra thông tin; bật khi tài khoản/webhook/index/Worker đã sẵn sàng. Seller phải lưu ngân hàng hợp lệ trong hồ sơ trước khi được chọn.
+5. Cài APK mới. Admin → drawer → **Hũ giải cứu nông sản → Cấu hình hũ và điểm thiện nguyện**: nhập tên hũ, tổ chức, địa chỉ qua form tỉnh/thành, quận/huyện, phường/xã và số nhà/tên đường, điện thoại, ngân sách ngày, tối đa mỗi Seller/ngày, hai khung giờ. Ban đầu lưu khi đang tắt để kiểm tra thông tin; bật khi tài khoản/webhook/index/Worker đã sẵn sàng. Seller phải lưu ngân hàng hợp lệ trong hồ sơ trước khi được chọn.
 
 6. Lịch đánh thức backend: workflow [rescue-fund-nightly.yml](../.github/workflows/rescue-fund-nightly.yml) chạy `17:00 UTC` (00:00 Việt Nam), có `workflow_dispatch`. Repository variable `RENDER_BACKEND_URL` là URL backend HTTPS; repository secret `NOTIFICATION_WORKER_SECRET` phải khớp Render. Workflow chỉ chạy khi cấu hình đủ; không in secret. Backend còn có timer khi tiến trình đang sống và giữ cursor theo ngày để khởi động lại không phân bổ trùng. Render Free có thể ngủ, GitHub cron có thể chạy muộn; đây không phải cam kết đúng từng giây lúc 00:00. Không có webhook/cron nào tạo tiền khi chưa được SePay xác nhận hoặc chưa có bút toán Admin có bằng chứng.
 
