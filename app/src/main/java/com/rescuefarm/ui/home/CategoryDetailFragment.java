@@ -100,6 +100,7 @@ public class CategoryDetailFragment extends Fragment {
                 viewModel::isPageLoading, () -> viewModel.loadNextPage(true, true))
                 .render(articlesContainer, articles, page -> {
                     articlesContainer.removeAllViews();
+                    articlesRenderer.beginPage(page);
                     if (page.isEmpty()) articlesContainer.addView(productsRenderer.message(getString(
                             state.isRefreshing() ? R.string.category_detail_loading
                                     : viewModel.hasMoreProducts() || viewModel.hasMoreCampaigns()
@@ -114,6 +115,7 @@ public class CategoryDetailFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        if (articlesRenderer != null) articlesRenderer.clear();
         productsContainer = null;
         articlesContainer = null;
         productsRenderer = null;

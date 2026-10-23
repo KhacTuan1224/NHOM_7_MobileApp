@@ -96,6 +96,7 @@ app.get("/health", (_, res) => {
 });
 app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: auth}).router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
+app.use(require('./campaign-cards').createCampaignCardsApi({db}).router);
 app.use(require('./seller-payment-options').createSellerPaymentOptionsApi({db}).router);
 const campaignLifecycle = require('./campaign-lifecycle').createCampaignLifecycle({db, admin, authenticate: auth});
 const batchExpiry = require('./batch-expiry').createBatchExpiry({db, admin, campaignLifecycle});
