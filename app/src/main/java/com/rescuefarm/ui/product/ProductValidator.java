@@ -25,7 +25,7 @@ public final class ProductValidator {
             Date now) {
         Date harvest = parseDate(harvestDate); Date expiry = parseDate(expiryDate);
         if (harvest == null || expiry == null) return "Ngày phải theo định dạng yyyy-MM-dd.";
-        if (harvest.after(expiry)) return "Ngày thu hoạch không được sau hạn sử dụng.";
+        if (!harvest.before(expiry)) return "Ngày thu hoạch phải trước hạn sử dụng.";
         if (!expiry.after(now)) return "Hạn sử dụng phải ở tương lai.";
         Double value = number(quantity);
         if (value == null || value <= 0) return "Số lượng batch phải là số dương.";

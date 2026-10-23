@@ -137,7 +137,8 @@ service cloud.firestore {
             'id', 'sellerId', 'categoryId', 'name', 'description', 'originalPrice',
             'rescuePrice', 'unit', 'origin', 'province', 'imageUrls', 'imagePublicIds', 'averageRating',
             'reviewCount', 'status', 'createdAt', 'updatedAt', 'moderatedBy',
-            'moderatedAt', 'moderationReason', 'moderationPreviousStatus', 'ratingSum', 'lastReviewId'
+            'moderatedAt', 'moderationReason', 'moderationPreviousStatus', 'ratingSum', 'lastReviewId',
+            'sellerHiddenPreviousStatus'
           ])
           && data.id is string && data.sellerId is string
           && data.name is string
@@ -162,6 +163,7 @@ service cloud.firestore {
           && data.reviewCount is int && data.reviewCount >= 0
           && data.createdAt is timestamp && data.updatedAt is timestamp
           && data.get('moderationPreviousStatus', '') in ['', 'ACTIVE', 'INACTIVE', 'SOLD_OUT']
+          && data.get('sellerHiddenPreviousStatus', '') in ['', 'ACTIVE', 'INACTIVE', 'SOLD_OUT']
           && get(/databases/$(database)/documents/categories/$(data.categoryId)).data.active == true
           && data.status in ['ACTIVE', 'INACTIVE', 'SOLD_OUT', 'HIDDEN'];
     }
@@ -172,7 +174,7 @@ service cloud.firestore {
             'initialQuantity', 'availableQuantity', 'reservedQuantity', 'soldQuantity',
             'status', 'inventoryVersion', 'createdAt', 'updatedAt',
             'lastReservationOrderId', 'lastReservationQuantity',
-            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity', 'everOrdered'
+            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity', 'everOrdered', 'expiredAt'
           ])
           && data.id is string && data.productId is string
           && data.initialQuantity is number
@@ -709,7 +711,21 @@ service cloud.firestore {
           && hasNoCredentialFields(request.resource.data);
       allow update: if (isApprovedSeller(request.auth.uid)
           && resource.data.sellerId == request.auth.uid
-          && resource.data.status != 'HIDDEN'
+          && resource.data.get('moderationPreviousStatus', '') == ''
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'categoryId', 'name', 'description', 'originalPrice', 'rescuePrice', 'origin',
+            'province', 'imageUrls', 'imagePublicIds', 'status', 'sellerHiddenPreviousStatus', 'updatedAt'
+          ])
+          && ((resource.data.status != 'HIDDEN' && request.resource.data.status != 'HIDDEN'
+                && request.resource.data.get('sellerHiddenPreviousStatus', '')
+                    == resource.data.get('sellerHiddenPreviousStatus', ''))
+            || (resource.data.status in ['ACTIVE', 'INACTIVE', 'SOLD_OUT']
+                && request.resource.data.status == 'HIDDEN'
+                && request.resource.data.sellerHiddenPreviousStatus == resource.data.status)
+            || (resource.data.status == 'HIDDEN'
+                && resource.data.get('sellerHiddenPreviousStatus', '') in ['ACTIVE', 'INACTIVE', 'SOLD_OUT']
+                && request.resource.data.status == resource.data.sellerHiddenPreviousStatus
+                && !request.resource.data.keys().hasAny(['sellerHiddenPreviousStatus'])))
           && request.resource.data.id == resource.data.id
           && request.resource.data.sellerId == resource.data.sellerId
           && request.resource.data.unit == resource.data.unit
@@ -743,13 +759,19 @@ service cloud.firestore {
     }
 
     match /productBatches/{batchId} {
-      allow get, list: if canReadBatch(resource.data);
+      // Android reads the new random ID inside its transaction before creating it.
+      // An absent batch has no productId to inspect; this does not expose existing batches.
+      allow get: if (isSignedIn() && isApprovedSeller(request.auth.uid)
+          && !exists(/databases/$(database)/documents/productBatches/$(batchId)))
+          || canReadBatch(resource.data);
+      allow list: if canReadBatch(resource.data);
       allow create: if isApprovedSeller(request.auth.uid)
           && ownsProduct(request.resource.data.productId)
           && request.resource.data.id == batchId
           && request.resource.data.inventoryVersion == 1
           && request.resource.data.expiryDate > request.time
           && request.resource.data.get('activeCampaignId', '') in ['', null]
+          && !request.resource.data.keys().hasAny(['expiredAt'])
           && validBatch(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow update: if (isApprovedSeller(request.auth.uid)
