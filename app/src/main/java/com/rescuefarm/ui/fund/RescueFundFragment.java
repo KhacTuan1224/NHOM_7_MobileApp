@@ -212,7 +212,6 @@ public final class RescueFundFragment extends Fragment {
         View divider = new View(requireContext()); divider.setBackgroundColor(requireContext().getColor(R.color.rescue_outline));
         accounting.addView(divider, new LinearLayout.LayoutParams(-1, dp(requireContext(), 1)));
         RescueFundUi.detail(accounting, R.drawable.ic_order_step_check, getString(R.string.fund_spent), money(fund.optDouble("spent")));
-        button(accounting, getString(R.string.fund_supporters), v -> showDonations());
         if (!role.equals("ADMIN") && !prefs.getString("receipt", "").isEmpty())
             button(accounting, getString(R.string.fund_receipt), v -> receipt());
 
@@ -223,6 +222,8 @@ public final class RescueFundFragment extends Fragment {
                 charity.isEmpty() ? getString(R.string.fund_destination_empty) : charity,
                 address.isEmpty() ? getString(R.string.fund_address_empty) : address);
 
+        renderRanking();
+        if (!role.equals("ADMIN")) return;
         heading(body, getString(R.string.fund_how_title));
         LinearLayout steps = RescueFundUi.card(body);
         RescueFundUi.step(steps, "1", getString(R.string.fund_step_donate), getString(R.string.fund_step_donate_description));
@@ -265,7 +266,7 @@ public final class RescueFundFragment extends Fragment {
         LinearLayout privacy = RescueFundUi.card(body);
         heading(privacy, getString(R.string.fund_privacy_title));
         CheckBox shareName = new com.google.android.material.checkbox.MaterialCheckBox(requireContext());
-        shareName.setText("Hiển thị tên trong danh sách ủng hộ");
+        shareName.setText("Hiển thị tên trên bảng xếp hạng sẻ chia");
         AppTypography.body(shareName); shareName.setTextSize(15); shareName.setSingleLine(false);
         shareName.setMinHeight(dp(requireContext(), 48));
         privacy.addView(shareName, new LinearLayout.LayoutParams(-1, -2));
@@ -294,57 +295,49 @@ public final class RescueFundFragment extends Fragment {
         }); button(body, "Quay về hũ", v -> load());
     }
 
-    private void showDonations() {
-        LinearLayout rows = column(requireContext());
-        rows.setPadding(dp(requireContext(), 16), dp(requireContext(), 8), dp(requireContext(), 16), 0);
-        ScrollView scroll = new ScrollView(requireContext()); scroll.addView(rows);
-        final androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Danh sách ủng hộ")
-                .setView(scroll)
-                .setNegativeButton("Đóng", (d, which) -> d.dismiss())
-                .create();
-        final boolean[] loading = {false};
-        final String[] lastItems = {null};
-        final android.os.Handler updates = new android.os.Handler(android.os.Looper.getMainLooper());
-        final Runnable[] refresh = new Runnable[1];
-        refresh[0] = () -> {
-            if (!dialog.isShowing()) return;
-            if (loading[0]) { updates.postDelayed(refresh[0], 1000); return; }
-            loading[0] = true;
-            RenderBackendClient.postGuest("/rescue-fund/donations", json(), new RenderBackendClient.Callback() {
-                @Override public void onSuccess(JSONObject response) {
-                    loading[0] = false;
-                    if (!dialog.isShowing()) return;
-                    JSONArray items = response.optJSONArray("items");
-                    String snapshot = items == null ? "[]" : items.toString();
-                    if (!snapshot.equals(lastItems[0])) {
-                        lastItems[0] = snapshot;
-                        rows.removeAllViews();
-                        if (items == null || items.length() == 0) {
-                            text(rows, "Chưa có lượt ủng hộ đã xác nhận.");
-                        } else {
-                            TextView updated = text(rows, "Cập nhật tự động mỗi 5 giây · mới nhất trước");
-                            updated.setTextSize(12);
-                            for (int i = 0; i < items.length(); i++) {
-                                JSONObject item = items.optJSONObject(i); if (item == null) continue;
-                                LinearLayout supporter = RescueFundUi.card(rows);
-                                RescueFundUi.detail(supporter, R.drawable.ic_heart,
-                                        item.optString("name", "Người ủng hộ ẩn danh"), date(item.optLong("paidAt")));
-                            }
-                        }
-                    }
-                    updates.postDelayed(refresh[0], 5000);
+    private void renderRanking() {
+        heading(body, "Bảng xếp hạng sẻ chia");
+        LinearLayout ranking = RescueFundUi.card(body);
+        RescueFundUi.label(ranking, "50 lượt ủng hộ cao nhất đã xác nhận · xếp theo số tiền từng lượt, không cộng theo tên.",
+                13, R.color.rescue_on_surface_variant, false);
+        LinearLayout content = column(requireContext());
+        ranking.addView(content, new LinearLayout.LayoutParams(-1, -2));
+        RescueFundUi.label(content, "Đang tải bảng xếp hạng…", 14, R.color.rescue_on_surface_variant, false);
+        loadRanking(ranking, content);
+    }
+    private void loadRanking(LinearLayout ranking, LinearLayout content) {
+        int expected = generation;
+        RenderBackendClient.postGuest("/rescue-fund/ranking", json(), new RenderBackendClient.Callback() {
+            public void onSuccess(JSONObject response) {
+                if (getView() == null || expected != generation || ranking.getParent() != body) return;
+                content.removeAllViews();
+                JSONArray items = response.optJSONArray("items");
+                if (items == null || items.length() == 0) {
+                    RescueFundUi.label(content, "Chưa có lượt ủng hộ đã xác nhận.", 14, R.color.rescue_on_surface_variant, false);
+                    return;
                 }
-                @Override public void onError(String error) {
-                    loading[0] = false;
-                    if (!dialog.isShowing()) return;
-                    rows.removeAllViews(); text(rows, "Không tải được danh sách: " + error);
-                    updates.postDelayed(refresh[0], 5000);
+                LinearLayout podium = RescueFundUi.row(content);
+                podium.setGravity(Gravity.BOTTOM);
+                for (int position : new int[]{1, 0, 2}) {
+                    if (position >= items.length()) continue;
+                    JSONObject item = items.optJSONObject(position);
+                    if (item != null) RescueFundUi.podium(podium, position + 1,
+                            item.optString("name", "Người ủng hộ ẩn danh"), money(item.optDouble("amount")));
                 }
-            });
-        };
-        dialog.setOnDismissListener(d -> updates.removeCallbacks(refresh[0]));
-        dialog.show(); refresh[0].run();
+                for (int i = 3; i < items.length(); i++) {
+                    JSONObject item = items.optJSONObject(i);
+                    if (item != null) RescueFundUi.rankRow(content, i + 1,
+                            item.optString("name", "Người ủng hộ ẩn danh"), money(item.optDouble("amount")));
+                }
+            }
+            public void onError(String error) {
+                if (getView() == null || expected != generation || ranking.getParent() != body) return;
+                content.removeAllViews();
+                RescueFundUi.label(content, "Chưa tải được bảng xếp hạng. Vui lòng thử lại.", 14,
+                        R.color.rescue_on_surface_variant, false);
+                button(content, "Thử lại", v -> { v.setEnabled(false); loadRanking(ranking, content); });
+            }
+        });
     }
     private void receipt() {
         request("receipt", json("donationId", prefs.getString("receipt", ""), "accessToken", token()), result -> showReceipt(result.optJSONObject("donation")));

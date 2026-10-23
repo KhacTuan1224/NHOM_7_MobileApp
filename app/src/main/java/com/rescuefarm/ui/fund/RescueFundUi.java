@@ -58,6 +58,46 @@ final class RescueFundUi {
         androidx.core.view.ViewCompat.setAccessibilityHeading(text, true);
     }
 
+    static void podium(LinearLayout parent, int rank, String name, String amount) {
+        Context context = parent.getContext();
+        LinearLayout place = CustomerUi.column(context);
+        place.setGravity(Gravity.CENTER_HORIZONTAL);
+        place.setPadding(dp(context, 4), dp(context, 12), dp(context, 4), 0);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, 1);
+        params.setMargins(dp(context, 3), dp(context, 12), dp(context, 3), dp(context, 16));
+        parent.addView(place, params);
+        TextView number = label(place, String.valueOf(rank), rank == 1 ? 30 : 24, R.color.rescue_primary, true);
+        number.setGravity(Gravity.CENTER);
+        int size = dp(context, rank == 1 ? 64 : 48);
+        number.setLayoutParams(new LinearLayout.LayoutParams(size, size));
+        number.setBackground(background(context, R.color.rescue_primary_container, 32, false));
+        TextView donor = label(place, name, 13, R.color.rescue_on_surface, true);
+        donor.setGravity(Gravity.CENTER); donor.setMinLines(2); donor.setMaxLines(3);
+        donor.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        TextView total = label(place, amount, 13, R.color.rescue_primary, true);
+        total.setGravity(Gravity.CENTER);
+        TextView base = label(place, "Hạng " + rank, 12, R.color.rescue_primary, true);
+        base.setGravity(Gravity.CENTER);
+        base.setBackground(background(context, R.color.rescue_primary_container, 10, false));
+        base.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(context, rank == 1 ? 56 : rank == 2 ? 40 : 32)));
+    }
+
+    static void rankRow(LinearLayout parent, int rank, String name, String amount) {
+        Context context = parent.getContext();
+        View divider = new View(context);
+        divider.setBackgroundColor(context.getColor(R.color.rescue_outline));
+        parent.addView(divider, new LinearLayout.LayoutParams(-1, dp(context, 1)));
+        LinearLayout row = row(parent);
+        row.setPadding(0, dp(context, 10), 0, dp(context, 10));
+        TextView number = label(row, String.valueOf(rank), 16, R.color.rescue_on_surface_variant, true);
+        number.setGravity(Gravity.CENTER);
+        number.setLayoutParams(new LinearLayout.LayoutParams(dp(context, 36), -2));
+        LinearLayout copy = CustomerUi.column(context);
+        row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+        label(copy, name, 15, R.color.rescue_on_surface, true);
+        label(copy, amount, 14, R.color.rescue_primary, true);
+    }
+
     static LinearLayout row(LinearLayout parent) {
         LinearLayout row = new LinearLayout(parent.getContext());
         row.setGravity(Gravity.CENTER_VERTICAL);

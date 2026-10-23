@@ -96,6 +96,21 @@ test('Vietnam midnight boundary is independent of host timezone', () => {
   assert.equal(dayKey(Date.parse('2026-10-22T16:59:59Z')), '2026-10-22');
   assert.equal(dayKey(Date.parse('2026-10-22T17:00:00Z')), '2026-10-23');
 });
+
+test('Public ranking includes only confirmed donations, ordered by amount with stable ties and private fields excluded', async () => {
+  await Promise.all([
+    ['small', {status:'PAID', amount:10000, supporterName:'Small', paidAt:ts(clock)}],
+    ['large', {status:'PAID', amount:100000, supporterName:'Public donor', paidAt:ts(clock + 1000), accountNumber:'secret', accessToken:'secret'}],
+    ['anonymous', {status:'PAID', amount:100000, supporterName:'', paidAt:ts(clock)}],
+    ['pending', {status:'PENDING', amount:1000000, supporterName:'Pending', paidAt:ts(clock)}]
+  ].map(([key, value]) => db.doc('rescueFundDonations/'+key).set(value)));
+  const response = await api('ranking');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.items.map(row => [row.rank,row.name,row.amount]), [
+    [1,'Người ủng hộ ẩn danh',100000], [2,'Public donor',100000], [3,'Small',10000]
+  ]);
+  for (const row of response.body.items) assert.deepEqual(Object.keys(row).sort(), ['amount','name','paidAt','rank']);
+});
 test('Guest QR replay is idempotent and receipt requires its opaque token', async () => {
   const input = donationInput(), first = await api('donate', input), second = await api('donate', input);
   assert.equal(first.status, 200); assert.equal(second.body.donation.id, first.body.donation.id);

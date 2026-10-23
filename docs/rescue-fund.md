@@ -4,6 +4,10 @@
 
 Một hũ chung (`main`) do Admin quản lý, một địa điểm thiện nguyện đang được chọn. Địa điểm được chụp lại vào từng chuyến; đổi địa chỉ trong cấu hình không đổi chuyến đang giao.
 
+Bảng xếp hạng sẻ chia nằm ngay dưới **Nơi đón nhận sẻ chia**, hiển thị tối đa 50 lượt ủng hộ PAID theo số tiền giảm dần; cùng số tiền thì lượt xác nhận trước đứng trước. Đây là xếp hạng từng lượt, không gộp người theo tên hiển thị. Top 1–3 có bục xếp hạng, từ hạng 4 là danh sách; người không công khai tên vẫn ẩn danh. Làm mới trang để cập nhật, backend cache tối đa 30 giây và vô hiệu hóa khi nhận ủng hộ mới. Customer, Guest và Seller không còn khối “Hũ hoạt động thế nào”.
+
+Khi cập nhật bảng xếp hạng, deploy backend Render và composite index `rescueFundDonations: status ASC, amount DESC, paidAt ASC` trong `firestore.indexes.json`, chờ index sẵn sàng rồi cài APK mới.
+
 1. Customer/Guest mở **Home → Hũ giải cứu → Ủng hộ vào hũ**, nhập 10.000–10.000.000đ, nhấn **Xác nhận và xem QR**. Seller cũng có thể ủng hộ trong màn hũ.
 2. QR có đúng số tiền, ngân hàng và mã chuyển khoản riêng cho lần ủng hộ, dùng trong 30 phút. Biên nhận gần nhất lưu trên thiết bị; màn QR kiểm tra trạng thái mỗi 15 giây khi đang mở, dừng khi chuyển màn/đã nhận/hết thời gian. Có nút làm mới trạng thái, không có nút xác nhận đã chuyển tiền.
 3. Webhook SePay hợp lệ tự ghi nhận tiền vào hũ. Kiểm tra tài khoản, mã, số tiền, giờ giao dịch; chống lặp ID giao dịch và mã ngân hàng. Giao dịch sai/ngoài thời gian được lưu để đối soát, không tự cộng tiền. Webhook gửi thử `id: 0` không làm tăng số dư.

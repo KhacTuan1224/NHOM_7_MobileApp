@@ -112,6 +112,13 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
     return {items: rows.docs.map(s => ({name: text(s.get('supporterName')) || 'Người ủng hộ ẩn danh',
       paidAt: ms(s.get('paidAt'))}))};
   });
+  api('ranking', async () => cache.get('ranking:' + publicRevision, async () => {
+    const rows = await db.collection('rescueFundDonations').where('status', '==', 'PAID')
+      .orderBy('amount', 'desc').orderBy('paidAt', 'asc').limit(50).get();
+    return {items: rows.docs.map((s, index) => ({rank: index + 1,
+      name: text(s.get('supporterName')) || 'Người ủng hộ ẩn danh',
+      amount: s.get('amount'), paidAt: ms(s.get('paidAt'))}))};
+  }));
   // Opaque bearer token is the receipt credential for Guest and Customer alike.
   const buckets = new Map();
   api('donate', async (b, _, req) => {
