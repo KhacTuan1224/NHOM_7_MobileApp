@@ -60,6 +60,7 @@ public final class AdminDetailFragment extends Fragment {
         retry = view.findViewById(R.id.adminDetailRetryButton);
         TextView title = view.findViewById(R.id.adminDetailTitle);
         TextView subtitle = view.findViewById(R.id.adminDetailSubtitle);
+        title.setTextAppearance(R.style.TextAppearance_RescueFarm_Detail_PageTitle);
         if (section == Section.USERS) {
             title.setText("Chi tiết người dùng");
             subtitle.setVisibility(View.GONE);

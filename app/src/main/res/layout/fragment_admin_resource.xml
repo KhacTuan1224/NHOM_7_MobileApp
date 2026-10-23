@@ -9,7 +9,7 @@
             <com.rescuefarm.ui.common.AppBackButton android:id="@+id/adminResourceBackButton" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
             <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/adminResourceTitle" android:layout_width="0dp" android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.RescueFarm.Display" />
+            android:textAppearance="@style/TextAppearance.RescueFarm.Detail.PageTitle" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton style="@style/Widget.RescueFarm.AdminOutlinedButton" android:id="@+id/adminAddCatalogResourceButton" android:layout_width="match_parent"
