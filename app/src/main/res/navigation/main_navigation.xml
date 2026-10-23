@@ -4,6 +4,7 @@
     android:id="@+id/main_navigation"
     app:startDestination="@id/launchLoadingFragment">
 
+    <fragment android:id="@+id/rescueFundFragment" android:name="com.rescuefarm.ui.fund.RescueFundFragment" android:label="Hũ giải cứu" />
     <fragment android:id="@+id/flashSaleFragment" android:name="com.rescuefarm.ui.rescue.FlashSaleFragment" android:label="Flash Sale" />
     <fragment android:id="@+id/mysteryBoxFragment" android:name="com.rescuefarm.ui.rescue.MysteryBoxFragment" android:label="Hộp bí ẩn" />
     <fragment android:id="@+id/rescueHubFragment"

@@ -62,6 +62,9 @@ public final class AdminDashboardFragment extends Fragment {
             closeNavigationDrawer();
             Navigation.findNavController(v).navigate(R.id.rescueHubFragment);
         });
+        com.google.android.material.button.MaterialButton fundButton = view.findViewById(R.id.adminRescueFund);
+        AdminUiStyles.sectionButton(requireContext(), fundButton, Section.ANALYTICS);
+        fundButton.setOnClickListener(v -> { closeNavigationDrawer(); Navigation.findNavController(v).navigate(R.id.rescueFundFragment); });
         bind(view, R.id.adminSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminHomeSellersButton, Section.SELLER_APPLICATIONS);
         bind(view, R.id.adminHomeCampaignsButton, Section.CAMPAIGNS);

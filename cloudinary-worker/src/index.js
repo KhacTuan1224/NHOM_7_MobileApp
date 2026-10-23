@@ -156,6 +156,12 @@ async function resolveAsset(body, uid, profile) {
   }
   if (type === "sellerProof" && resourceId === uid)
     return { publicId: `rescuefarm/sellers/${uid}/application-proof`, assetFolder: `rescuefarm_assets/seller_applications/${uid}` };
+  if (type === "fundDelivery" && profile.role === "SELLER")
+    return {publicId: `rescuefarm/fund-deliveries/${uid}/${resourceId}/image-${crypto.randomUUID()}`,
+      assetFolder: `rescuefarm_assets/fund_deliveries/${uid}`, immutable: true};
+  if (type === "fundReceipt" && profile.role === "ADMIN")
+    return {publicId: `rescuefarm/fund-receipts/${uid}/${resourceId}/image-${crypto.randomUUID()}`,
+      assetFolder: `rescuefarm_assets/fund_receipts/${uid}`, immutable: true};
   if (type === "product" && profile.role === "SELLER" && profile.sellerStatus === "APPROVED")
     return { publicId: `rescuefarm/products/${uid}/${resourceId}/image-${slot}`, assetFolder: `rescuefarm_assets/products/${uid}/${resourceId}` };
   if (type === "campaign") return null;

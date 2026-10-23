@@ -83,6 +83,11 @@ public class SellerDashboardFragment extends Fragment {
         bindRescue(view, R.id.dashboardRescueCreate, "", true, SellerUiStyles.Section.RESCUE_CREATE, R.drawable.ic_rescue_gift_plain);
         bindRescue(view, R.id.dashboardRescueOffers, "mine", false, SellerUiStyles.Section.ORDERS, R.drawable.ic_nav_orders);
         bindRescue(view, R.id.dashboardRescueImpact, "impact", false, SellerUiStyles.Section.ANALYTICS, R.drawable.ic_nav_dashboard);
+        SellerUiStyles.drawerButton(view.findViewById(R.id.dashboardRescueFund), SellerUiStyles.Section.ANALYTICS, R.drawable.ic_rescue_fund);
+        view.findViewById(R.id.dashboardRescueFund).setOnClickListener(v -> {
+            if (drawer != null) drawer.closeDrawer(androidx.core.view.GravityCompat.START);
+            Navigation.findNavController(v).navigate(R.id.rescueFundFragment);
+        });
         bind(view, R.id.dashboardProductsButton, "products");
         bind(view, R.id.dashboardBatchesButton, "batches");
         bind(view, R.id.dashboardCampaignsButton, "campaigns");

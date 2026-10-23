@@ -170,4 +170,4 @@ function createSePayApi({db, admin, env = process.env, now = Date.now}) {
   return {router, receive};
 }
 
-module.exports = {createSePayApi, paymentDetails, merchants, bankBin, paymentCode, bankTransferCapability};
+module.exports = {createSePayApi, paymentDetails, merchants, bankBin, paymentCode, bankTransferCapability, verifyWebhook};
