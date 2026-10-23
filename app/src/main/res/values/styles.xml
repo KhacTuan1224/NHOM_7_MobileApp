@@ -51,6 +51,14 @@
         <item name="fontFamily">@font/ibm_plex_sans</item>
     </style>
 
+    <style name="TextAppearance.RescueFarm.HomeSectionTitle" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rescue_primary</item>
+        <item name="android:fontFamily">@font/ibm_plex_sans</item>
+        <item name="fontFamily">@font/ibm_plex_sans</item>
+    </style>
+
     <style name="TextAppearance.RescueFarm.Body" parent="TextAppearance.Material3.BodyLarge" >
         <item name="android:fontFamily">@font/barlow</item>
         <item name="fontFamily">@font/barlow</item>
