@@ -66,10 +66,6 @@ public class ProductDetailFragment extends Fragment {
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         com.rescuefarm.ui.common.DetailTypography.bindHeader(this, view, "Chi tiết sản phẩm");
         productId = getArguments() == null ? "" : getArguments().getString("productId", "");
-        view.findViewById(R.id.productPromotionWalletButton).setOnClickListener(v -> {
-            Bundle args = new Bundle(); args.putString("productId", productId);
-            Navigation.findNavController(v).navigate(R.id.promotionWalletFragment, args);
-        });
         Bundle arguments = getArguments();
         requestedBatchId = arguments == null ? "" : clean(arguments.getString("batchId"));
         campaignId = arguments == null ? "" : clean(arguments.getString("campaignId"));
@@ -242,7 +238,6 @@ public class ProductDetailFragment extends Fragment {
         NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         String text = getString(R.string.price_breakdown_format,
                 money.format(value.getOriginalPrice()), money.format(value.getRescuePrice()),
-                money.format(value.getPromotionDiscount()), value.getVolumeDiscountPercent(),
                 money.format(value.getFinalUnitPrice()), money.format(value.getLineSubtotal()));
         ((TextView) view.findViewById(R.id.priceBreakdownText)).setText(text);
     }

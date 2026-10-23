@@ -23,11 +23,9 @@ import com.rescuefarm.data.local.mapper.CatalogCacheMapper;
 import com.rescuefarm.data.repository.ProductRepository;
 import com.rescuefarm.domain.enums.BatchStatus;
 import com.rescuefarm.domain.enums.ProductStatus;
-import com.rescuefarm.domain.enums.PromotionType;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.ProductBatch;
-import com.rescuefarm.domain.model.Promotion;
 import com.rescuefarm.service.inventory.InventoryService;
 import com.rescuefarm.service.inventory.InventoryVersionPolicy;
 import com.rescuefarm.service.network.NetworkStatusProvider;
@@ -47,7 +45,6 @@ public class FirebaseProductRepository implements ProductRepository {
     private static final String CATEGORIES = "categories";
     private static final String PRODUCTS = "products";
     private static final String BATCHES = "productBatches";
-    private static final String PROMOTIONS = "promotions";
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
     private final RescueFarmDatabase database;
@@ -395,6 +392,8 @@ public class FirebaseProductRepository implements ProductRepository {
             if (existing.exists() && !sellerId.equals(existing.getString("sellerId"))) {
                 throw new IllegalStateException("FORBIDDEN");
             }
+            if (existing.exists() && ProductStatus.HIDDEN.name().equals(existing.getString("status")))
+                throw new IllegalStateException("PRODUCT_HIDDEN");
             double rating = existing.exists() ? number(existing, "averageRating") : 0D;
             int reviewCount = existing.exists() ? (int) longValue(existing, "reviewCount") : 0;
             Product result = Product.restore(saved.getId(), saved.getSellerId(), saved.getCategoryId(),
@@ -409,7 +408,8 @@ public class FirebaseProductRepository implements ProductRepository {
             data.put("updatedAt", FieldValue.serverTimestamp());
             if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
             else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
-            transaction.set(reference, data);
+            if (existing.exists()) transaction.update(reference, data);
+            else transaction.set(reference, data);
             return result;
         }).addOnSuccessListener(result -> {
             com.rescuefarm.service.media.CloudinaryAssetCleanup.deleteRemoved(
@@ -470,7 +470,9 @@ public class FirebaseProductRepository implements ProductRepository {
                 throw new IllegalStateException("PRODUCT_NOT_HIDDEN");
             String previous = snapshot.getString("sellerHiddenPreviousStatus");
             if (!java.util.Arrays.asList(ProductStatus.ACTIVE.name(), ProductStatus.INACTIVE.name(),
-                    ProductStatus.SOLD_OUT.name()).contains(previous)) previous = ProductStatus.INACTIVE.name();
+                    ProductStatus.SOLD_OUT.name()).contains(previous)
+                    || !clean(snapshot.getString("moderationPreviousStatus")).isEmpty())
+                throw new IllegalStateException("PRODUCT_HIDDEN_BY_ADMIN");
             transaction.update(reference, "status", previous,
                     "sellerHiddenPreviousStatus", FieldValue.delete(),
                     "updatedAt", FieldValue.serverTimestamp());
@@ -492,8 +494,13 @@ public class FirebaseProductRepository implements ProductRepository {
             requireOwner(productSnapshot);
             ProductBatch saved;
             if (existing.exists()) {
+                if (!batch.getProductId().equals(existing.getString("productId")))
+                    throw new IllegalStateException("FORBIDDEN");
                 long version = longValue(existing, "inventoryVersion");
                 InventoryVersionPolicy.requireExpected(version, expectedVersion);
+                if (Boolean.TRUE.equals(existing.getBoolean("everOrdered"))
+                        || number(existing, "reservedQuantity") > 0 || number(existing, "soldQuantity") > 0)
+                    throw new IllegalStateException("BATCH_IN_USE");
                 ProductBatch current = requireBatch(existing);
                 current.updateDetails(batch.getHarvestDate(), batch.getExpiryDate(),
                         batch.getInitialQuantity(), new Date());
@@ -588,116 +595,6 @@ public class FirebaseProductRepository implements ProductRepository {
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
 
-    @Override public void getApplicablePromotion(String productId, PromotionCallback callback) {
-        String uid = currentUserId();
-        if (uid == null || uid.trim().isEmpty()) { callback.onSuccess(null); return; }
-        firestore.collection("customerPromotionWallets").document(uid).collection("items").document(productId)
-                .get(com.google.firebase.firestore.Source.SERVER).addOnSuccessListener(saved -> {
-                    if (!saved.exists() || !uid.equals(saved.getString("customerId"))) {
-                        callback.onSuccess(null); return;
-                    }
-                    getPromotion(productId, new PromotionCallback() {
-                        @Override public void onSuccess(Promotion value) {
-                            callback.onSuccess(value != null && value.getSellerId().equals(saved.getString("sellerId"))
-                                    && value.isValid(new java.util.Date()) ? value : null);
-                        }
-                        @Override public void onError(ErrorCode code, String message) { callback.onError(code, message); }
-                    });
-                }).addOnFailureListener(error -> {
-                    if (error instanceof FirebaseFirestoreException && ((FirebaseFirestoreException) error).getCode()
-                            == FirebaseFirestoreException.Code.PERMISSION_DENIED) callback.onSuccess(null);
-                    else notifyFailure(error, callback::onError);
-                });
-    }
-
-    @Override public void getPromotion(String productId, PromotionCallback callback) {
-        firestore.collection(PROMOTIONS).document(productId).get()
-                .addOnSuccessListener(snapshot -> {
-                    if (!snapshot.exists()) { callback.onSuccess(null); return; }
-                    Promotion value = mapPromotion(snapshot);
-                    if (value == null) callback.onError(ErrorCode.VALIDATION, "Dữ liệu khuyến mãi không hợp lệ.");
-                    else callback.onSuccess(value);
-                }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
-    }
-
-    @Override public LiveData<Promotion> observePromotion(String productId) {
-        return new LiveData<Promotion>() {
-            private ListenerRegistration registration;
-            private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
-            private final Runnable retry = this::listen;
-            private void listen() {
-                if (!hasActiveObservers()) return;
-                if (registration != null) registration.remove();
-                registration = firestore.collection(PROMOTIONS).document(productId).addSnapshotListener((snapshot, error) -> {
-                    if (error != null || snapshot == null) {
-                        postValue(null); handler.removeCallbacks(retry); handler.postDelayed(retry, 60000L); return;
-                    }
-                    handler.removeCallbacks(retry); postValue(snapshot.exists() ? mapPromotion(snapshot) : null);
-                });
-            }
-            @Override protected void onActive() { listen(); }
-            @Override protected void onInactive() { handler.removeCallbacks(retry); if (registration != null) { registration.remove(); registration = null; } }
-        };
-    }
-
-    @Override public void getSellerPromotions(String sellerId, PromotionListCallback callback) {
-        firestore.collection(PROMOTIONS).whereEqualTo("sellerId", sellerId).get()
-                .addOnSuccessListener(snapshot -> {
-                    List<Promotion> values = new ArrayList<>();
-                    for (DocumentSnapshot document : snapshot.getDocuments()) {
-                        Promotion value = mapPromotion(document);
-                        if (value != null) values.add(value);
-                    }
-                    callback.onSuccess(values);
-                }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
-    }
-
-    @Override public void savePromotion(Promotion promotion, PromotionCallback callback) {
-        if (!online(callback, "Không thể lưu promotion khi offline; thay đổi không được xếp hàng.")) return;
-        String sellerId = currentUserId();
-        if (sellerId == null) { callback.onError(ErrorCode.FORBIDDEN, "Vui lòng đăng nhập seller."); return; }
-        Promotion candidate;
-        try {
-            candidate = new Promotion(promotion.getProductId(), sellerId, promotion.getProductId(),
-                    promotion.getType(), promotion.getValue(), promotion.getQuantityDiscountTiers(),
-                    promotion.getStartDate(), promotion.getEndDate(), promotion.isActive());
-        } catch (IllegalArgumentException error) {
-            callback.onError(ErrorCode.VALIDATION, error.getMessage()); return;
-        }
-        DocumentReference productRef = firestore.collection(PRODUCTS).document(candidate.getProductId());
-        DocumentReference promotionRef = firestore.collection(PROMOTIONS).document(candidate.getProductId());
-        firestore.runTransaction(transaction -> {
-            DocumentSnapshot product = transaction.get(productRef);
-            DocumentSnapshot existing = transaction.get(promotionRef);
-            requireOwner(product);
-            if (existing.exists() && !sellerId.equals(existing.getString("sellerId"))) {
-                throw new IllegalStateException("FORBIDDEN");
-            }
-            Map<String, Object> data = promotionMap(candidate);
-            data.put("updatedAt", FieldValue.serverTimestamp());
-            if (!existing.exists()) data.put("createdAt", FieldValue.serverTimestamp());
-            else if (existing.get("createdAt") != null) data.put("createdAt", existing.get("createdAt"));
-            transaction.set(promotionRef, data);
-            if (candidate.isActive()) com.rescuefarm.service.notification.NotificationOutbox.enqueue(transaction, firestore, "PROMOTION", "PROMOTION", candidate.getProductId());
-            return candidate;
-        }).addOnSuccessListener(saved -> { callback.onSuccess(saved); })
-                .addOnFailureListener(error -> notifyFailure(error, callback::onError));
-    }
-
-    @Override public void setPromotionActive(String productId, boolean active, ActionCallback callback) {
-        if (!online(callback, "Không thể đổi promotion khi offline; thay đổi không được xếp hàng.")) return;
-        DocumentReference promotionRef = firestore.collection(PROMOTIONS).document(productId);
-        firestore.runTransaction(transaction -> {
-            DocumentSnapshot promotion = transaction.get(promotionRef);
-            if (!promotion.exists()) throw new IllegalStateException("NOT_FOUND");
-            DocumentSnapshot product = transaction.get(firestore.collection(PRODUCTS).document(productId));
-            requireOwner(product);
-            transaction.update(promotionRef, "active", active, "updatedAt", FieldValue.serverTimestamp());
-            if (active) com.rescuefarm.service.notification.NotificationOutbox.enqueue(transaction, firestore, "PROMOTION", "PROMOTION", productId);
-            return null;
-        }).addOnSuccessListener(unused -> { callback.onSuccess(); })
-                .addOnFailureListener(error -> notifyFailure(error, callback::onError));
-    }
 
     @Override public void getCartQuote(String productId, String batchId, CartQuoteCallback callback) {
         if (!online(callback, "Cần kết nối mạng để revalidate giá và tồn kho trước checkout.")) return;
@@ -709,10 +606,7 @@ public class FirebaseProductRepository implements ProductRepository {
                 if (batch == null || !productId.equals(batch.getProductId())) {
                     callback.onError(ErrorCode.NOT_FOUND, "Batch không còn khả dụng."); return;
                 }
-                getApplicablePromotion(productId, new PromotionCallback() {
-                    @Override public void onSuccess(Promotion value) { callback.onSuccess(product, batch, value); }
-                    @Override public void onError(ErrorCode code, String message) { callback.onError(code, message); }
-                });
+                callback.onSuccess(product, batch);
             }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
         }).addOnFailureListener(error -> notifyFailure(error, callback::onError));
     }
@@ -749,24 +643,6 @@ public class FirebaseProductRepository implements ProductRepository {
         catch (IllegalArgumentException | IllegalStateException error) { return null; }
     }
 
-    private Promotion mapPromotion(DocumentSnapshot value) {
-        try {
-            Map<String, Double> tiers = new HashMap<>();
-            Object raw = value.get("quantityDiscountTiers");
-            if (raw instanceof Map<?, ?>) {
-                for (Map.Entry<?, ?> entry : ((Map<?, ?>) raw).entrySet()) {
-                    if (entry.getKey() instanceof String && entry.getValue() instanceof Number) {
-                        tiers.put((String) entry.getKey(), ((Number) entry.getValue()).doubleValue());
-                    }
-                }
-            }
-            return Promotion.restore(value.getId(), value.getString("sellerId"),
-                    value.getString("productId"), enumValue(PromotionType.class,
-                    value.getString("type"), null), number(value, "value"), tiers,
-                    date(value, "startDate"), date(value, "endDate"),
-                    Boolean.TRUE.equals(value.getBoolean("active")));
-        } catch (IllegalArgumentException error) { return null; }
-    }
 
     private ProductBatch requireBatch(DocumentSnapshot value) {
         Date expiry = date(value, "expiryDate");
@@ -808,15 +684,7 @@ public class FirebaseProductRepository implements ProductRepository {
         data.put("reservedQuantity", value.getReservedQuantity()); data.put("soldQuantity", value.getSoldQuantity());
         data.put("status", value.getStatus().name()); data.put("inventoryVersion", value.getInventoryVersion()); return data;
     }
-    private Map<String, Object> promotionMap(Promotion value) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("id", value.getProductId()); data.put("sellerId", value.getSellerId());
-        data.put("productId", value.getProductId()); data.put("type", value.getType().name());
-        data.put("value", value.getValue());
-        data.put("quantityDiscountTiers", value.getQuantityDiscountTiers());
-        data.put("startDate", value.getStartDate()); data.put("endDate", value.getEndDate());
-        data.put("active", value.isActive()); return data;
-    }
+
 
     private void requireOwner(DocumentSnapshot snapshot) {
         String userId = currentUserId();
@@ -833,13 +701,19 @@ public class FirebaseProductRepository implements ProductRepository {
         if ("BATCH_IN_USE".equals(code)) { consumer.accept(ErrorCode.CONFLICT, "Batch đã phát sinh giữ chỗ/bán hoặc campaign."); return; }
         if ("NOT_FOUND".equals(code)) { consumer.accept(ErrorCode.NOT_FOUND, "Không tìm thấy dữ liệu."); return; }
         if ("FORBIDDEN".equals(code)) { consumer.accept(ErrorCode.FORBIDDEN, "Seller chưa được duyệt hoặc không sở hữu dữ liệu."); return; }
+        if ("PRODUCT_HIDDEN_BY_ADMIN".equals(code)) {
+            consumer.accept(ErrorCode.FORBIDDEN, "Sản phẩm không do bạn tự ẩn hoặc đang bị Admin kiểm duyệt. Vui lòng liên hệ Admin để khôi phục."); return;
+        }
+        if ("PRODUCT_HIDDEN".equals(code)) {
+            consumer.accept(ErrorCode.VALIDATION, "Hãy hiện lại sản phẩm trước khi chỉnh sửa. Sản phẩm do Admin ẩn cần được Admin khôi phục."); return;
+        }
         if (error instanceof IllegalArgumentException || error instanceof IllegalStateException) {
             consumer.accept(ErrorCode.VALIDATION, error.getMessage()); return;
         }
         if (error instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException.Code firestoreCode = ((FirebaseFirestoreException) error).getCode();
             if (firestoreCode == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                consumer.accept(ErrorCode.FORBIDDEN, "Seller chưa được duyệt hoặc không có quyền."); return;
+                consumer.accept(ErrorCode.FORBIDDEN, "Firestore từ chối thao tác: quyền sở hữu hoặc điều kiện dữ liệu chưa hợp lệ. Vui lòng tải lại và kiểm tra Rules đã cập nhật."); return;
             }
             if (firestoreCode == FirebaseFirestoreException.Code.UNAVAILABLE) {
                 consumer.accept(ErrorCode.NETWORK, "Không thể kết nối Firestore; dữ liệu cache vẫn được giữ."); return;
@@ -872,7 +746,6 @@ public class FirebaseProductRepository implements ProductRepository {
         if (callback instanceof ActionCallback) ((ActionCallback) callback).onError(ErrorCode.NETWORK, message);
         else if (callback instanceof ProductCallback) ((ProductCallback) callback).onError(ErrorCode.NETWORK, message);
         else if (callback instanceof BatchCallback) ((BatchCallback) callback).onError(ErrorCode.NETWORK, message);
-        else if (callback instanceof PromotionCallback) ((PromotionCallback) callback).onError(ErrorCode.NETWORK, message);
         else if (callback instanceof CartQuoteCallback) ((CartQuoteCallback) callback).onError(ErrorCode.NETWORK, message);
         return false;
     }

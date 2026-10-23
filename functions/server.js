@@ -90,8 +90,8 @@ app.get("/health", (_, res) => {
   let sepayStatus;
   try { sepayStatus = Object.keys(require('./sepay').merchants()).length ? 'CONFIGURED' : 'NOT_CONFIGURED'; }
   catch (_) { sepayStatus = 'INVALID_CONFIGURATION'; }
-  res.json({ok: true, paymentFlowVersion: 2, sepayStatus, promotionWalletVersion: 1,
-    promotionPolicy: 'SAVED_CUSTOMER_ONLY', rescueProgramsVersion: 1,
+  res.json({ok: true, paymentFlowVersion: 2, sepayStatus, pricingVersion: 3,
+    rescueProgramsVersion: 1,
     rescuePaymentPolicy: 'PICKUP_CASH_NO_PREPAYMENT'});
 });
 app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: auth}).router);

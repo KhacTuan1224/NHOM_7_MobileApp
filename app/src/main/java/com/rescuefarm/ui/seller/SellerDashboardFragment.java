@@ -75,12 +75,11 @@ public class SellerDashboardFragment extends Fragment {
                 drawer.openDrawer(androidx.core.view.GravityCompat.START));
         view.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(unused -> viewModel.refresh());
         bindRescue(view, R.id.dashboardRescueExplore, "catalog", false, SellerUiStyles.Section.CAMPAIGNS, R.drawable.ic_store);
-        bindRescue(view, R.id.dashboardRescueCreate, "", true, SellerUiStyles.Section.PROMOTIONS, R.drawable.ic_rescue_gift_plain);
+        bindRescue(view, R.id.dashboardRescueCreate, "", true, SellerUiStyles.Section.RESCUE_CREATE, R.drawable.ic_rescue_gift_plain);
         bindRescue(view, R.id.dashboardRescueOffers, "mine", false, SellerUiStyles.Section.ORDERS, R.drawable.ic_nav_orders);
         bindRescue(view, R.id.dashboardRescueImpact, "impact", false, SellerUiStyles.Section.ANALYTICS, R.drawable.ic_nav_dashboard);
         bind(view, R.id.dashboardProductsButton, "products");
         bind(view, R.id.dashboardBatchesButton, "batches");
-        bind(view, R.id.dashboardPromotionsButton, "promotions");
         bind(view, R.id.dashboardCampaignsButton, "campaigns");
         bind(view, R.id.dashboardMobileButton, "mobile");
         bind(view, R.id.dashboardOrdersButton, "orders");
@@ -124,8 +123,6 @@ public class SellerDashboardFragment extends Fragment {
         int action;
         if (destination == SellerRoutePolicy.Destination.PRODUCTS)
             action = R.id.action_sellerDashboardFragment_to_sellerProductListFragment;
-        else if (destination == SellerRoutePolicy.Destination.PROMOTIONS)
-            action = R.id.action_sellerDashboardFragment_to_sellerPromotionListFragment;
         else if (destination == SellerRoutePolicy.Destination.MOBILE)
             action = R.id.action_sellerDashboardFragment_to_mobileRescueFragment;
         else if (destination == SellerRoutePolicy.Destination.BATCHES) {
@@ -151,7 +148,7 @@ public class SellerDashboardFragment extends Fragment {
         boolean enabled = value.getStatus() == SellerDashboardState.Status.READY
                 || value.getStatus() == SellerDashboardState.Status.EMPTY;
         for (int id : new int[]{R.id.dashboardProductsButton, R.id.dashboardBatchesButton,
-                R.id.dashboardPromotionsButton, R.id.dashboardCampaignsButton, R.id.dashboardMobileButton,
+                R.id.dashboardCampaignsButton, R.id.dashboardMobileButton,
                 R.id.dashboardOrdersButton, R.id.dashboardShipmentsButton,
                 R.id.dashboardStatisticsButton, R.id.dashboardProfileButton, R.id.sellerHomeOrdersButton,
                 R.id.dashboardRescueExplore, R.id.dashboardRescueCreate, R.id.dashboardRescueOffers, R.id.dashboardRescueImpact})

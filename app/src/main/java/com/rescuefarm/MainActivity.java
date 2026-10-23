@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                                         ImageView profileButton,
                                         NavDestination destination) {
         int destinationId = destination.getId();
-        
+
         boolean sellerSurface = currentRole == UserRole.SELLER && isSellerSurface(destinationId);
         boolean adminSurface = currentRole == UserRole.ADMIN
                 && (destinationId == R.id.adminDashboardFragment || destinationId == R.id.adminResourceFragment);
@@ -353,7 +353,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.addressListFragment
                 || destinationId == R.id.addressEditorFragment
                 || destinationId == R.id.favoriteFragment
-                || destinationId == R.id.promotionWalletFragment
                 // Product/Campaign
                 || destinationId == R.id.productDetailFragment
                 || destinationId == R.id.publicSellerProfileFragment
@@ -388,16 +387,15 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         bottomNavigationHidden = false;
         scrollDirectionDistance = 0;
         ViewCompat.requestApplyInsets(findViewById(R.id.mainRoot));
-        
+
         int inactive = ContextCompat.getColor(this, R.color.rescue_on_surface_variant);
         int active = ContextCompat.getColor(this, R.color.rescue_splash_green);
-        
+
         // Highlight home button for home and related fragments
         boolean isHomeActive = destinationId == R.id.guestHomeFragment
                 || destinationId == R.id.sellerProductListFragment
                 || destinationId == R.id.productEditorFragment
                 || destinationId == R.id.batchManagerFragment
-                || destinationId == R.id.promotionEditorFragment
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment
@@ -418,17 +416,17 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.campaignDetailFragment
                 || destinationId == R.id.productListFragment
                 || destinationId == R.id.campaignListFragment;
-        
+
         // Highlight community button for feed related
         boolean isCommunityActive = destinationId == R.id.feedFragment;
-        
+
         // Highlight orders button for order related
         boolean isOrdersActive = destinationId == R.id.orderConfirmationFragment
                 || destinationId == R.id.sellerOrderListFragment
                 || destinationId == R.id.customerOrderListFragment
                 || destinationId == R.id.orderDetailFragment
                 || destinationId == R.id.checkoutFragment;
-        
+
         // Highlight profile button for profile related
         boolean isProfileActive = destinationId == R.id.profileFragment
                 || destinationId == R.id.guestProfileFragment
@@ -436,7 +434,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.addressListFragment
                 || destinationId == R.id.addressEditorFragment
                 || destinationId == R.id.favoriteFragment
-                || destinationId == R.id.promotionWalletFragment
                 || destinationId == R.id.notificationFragment
                 || destinationId == R.id.reviewFragment
                 || destinationId == R.id.reportFragment;
@@ -444,7 +441,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         boolean isCenterActive = sellerSurface && (destinationId == R.id.sellerDashboardFragment
                     || destinationId == R.id.sellerProfileFragment)
                 || adminSurface;
-        
+
         tintNavigationIcon(homeButton, isHomeActive, active, inactive);
         tintNavigationIcon(communityButton, isCommunityActive, active, inactive);
         tintNavigationIcon(ordersButton, isOrdersActive, active, inactive);
@@ -460,7 +457,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.sellerProductListFragment
                 || destinationId == R.id.productEditorFragment
                 || destinationId == R.id.batchManagerFragment
-                || destinationId == R.id.promotionEditorFragment
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment

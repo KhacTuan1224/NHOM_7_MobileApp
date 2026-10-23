@@ -38,7 +38,7 @@ public final class AdminDetailFormatter {
                 "finalPriceSnapshot", "Đơn giá khi đặt", "originalPriceSnapshot", "Giá gốc khi đặt",
                 "rescuePriceSnapshot", "Giá giải cứu khi đặt", "subtotal", "Tiền hàng",
                 "totalAmount", "Tổng thanh toán", "amount", "Số tiền", "shippingFee", "Phí giao hàng",
-                "quantityDiscount", "Giảm giá số lượng", "totalDiscount", "Tổng giảm giá", "discount", "Giảm giá",
+                "quantityDiscount", "Điều chỉnh giá đã chốt (đơn cũ)", "totalDiscount", "Tổng giảm giá", "discount", "Giảm giá",
                 "baseFeeVnd", "Phí giao hàng cơ bản", "perKmFeeVnd", "Phí mỗi km", "freeDistanceKm", "Khoảng cách miễn phí",
                 "quantity", "Số lượng", "initialQuantity", "Số lượng ban đầu", "availableQuantity", "Số lượng còn lại",
                 "reservedQuantity", "Số lượng đã giữ", "soldQuantity", "Số lượng đã bán", "unit", "Đơn vị tính",

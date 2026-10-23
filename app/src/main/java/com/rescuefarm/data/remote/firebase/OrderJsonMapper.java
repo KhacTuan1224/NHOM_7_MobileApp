@@ -25,10 +25,10 @@ final class OrderJsonMapper {
                 d.optString("ownerId"), d.optString("orderCode"), d.optString("sellerId"), d.optString("campaignId"),
                 FulfillmentType.valueOf(d.optString("fulfillmentType")), d.optString("receiverName"),
                 d.optString("receiverPhone"), d.optString("receiverAddress"), d.optDouble("receiverLatitude"),
-                d.optDouble("receiverLongitude"), d.optDouble("subtotal"), d.optDouble("quantityDiscount"),
+                d.optDouble("receiverLongitude"), d.optDouble("subtotal"), d.optDouble("quantityDiscount", 0),
                 d.optDouble("shippingFee"), d.optDouble("totalAmount"), PaymentMethod.valueOf(d.optString("paymentMethod")),
                 PaymentStatus.valueOf(d.optString("paymentStatus")), OrderStatus.valueOf(d.optString("status")),
-                d.optString("note"), date(d, "createdAt"), date(d, "updatedAt"), items).withVolumeDiscounts(d.optDouble("sellerVolumeDiscount"), d.optDouble("platformVolumeDiscount"))
+                d.optString("note"), date(d, "createdAt"), date(d, "updatedAt"), items)
                 .withExpiryReview(d.optBoolean("expiryReviewRequired"), d.optString("cancellationReason"));
     }
     static Payment payment(JSONObject d) {

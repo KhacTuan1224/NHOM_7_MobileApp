@@ -56,11 +56,6 @@
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="8dp" android:visibility="gone" android:text="@string/seller_profile_action" />
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/profilePromotionWalletButton"
-            app:icon="@drawable/ic_profile_voucher"
-            style="@style/Widget.RescueFarm.AccountProfileSecondary"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="12dp" android:visibility="gone" android:text="@string/promotion_wallet_title" />
 
         <com.google.android.material.button.MaterialButton android:id="@+id/favoritesButton"
             app:icon="@drawable/ic_heart"

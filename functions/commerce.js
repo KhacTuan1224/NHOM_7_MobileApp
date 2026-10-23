@@ -1,12 +1,10 @@
 const express = require("express");
-const {applyVolume, allocate} = require("./purchase-volume");
 const {paymentDetails, bankTransferCapability} = require('./sepay');
 const {availablePaymentMethods} = require('./seller-payment-options');
 const {normalizeUnit, campaignUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
 const crypto = require("node:crypto");
 const {createCampaignLifecycle, readAllocations} = require('./campaign-lifecycle');
-const {createPromotionWallet, walletItem, available: promotionAvailable} = require('./promotion-wallet');
 
 const text = value => typeof value === "string" ? value.trim() : "";
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
@@ -19,18 +17,10 @@ const phone = value => text(value).replace(/[\s().-]/g, "").replace(/^\+84/, "0"
 const coordinates = (lat, lng) => Number.isFinite(lat) && lat >= -90 && lat <= 90
   && Number.isFinite(lng) && lng >= -180 && lng <= 180 && !(lat === 0 && lng === 0);
 
-function price(product, promotion, quantity, now) {
+function price(product, quantity) {
   const original = number(product.originalPrice), rescue = number(product.rescuePrice);
   if (!(original > 0 && rescue > 0 && rescue <= original)) throw error(409, "Giá sản phẩm chưa hợp lệ.");
-  let discount = 0, tier = 0;
-  if (promotion && promotion.active === true && time(promotion.startDate) <= now && time(promotion.endDate) > now) {
-    if (promotion.type === "PERCENT") discount = rescue * number(promotion.value, 0) / 100;
-    if (promotion.type === "FIXED") discount = number(promotion.value, 0);
-    for (const [threshold, percent] of Object.entries(promotion.quantityDiscountTiers || {})) {
-      if (quantity >= Number(threshold)) tier = Math.max(tier, number(percent, 0));
-    }
-  }
-  const unit = money(Math.max(0, rescue - Math.min(rescue, discount)) * (1 - Math.min(100, tier) / 100));
+  const unit = money(rescue);
   return {unit, subtotal: money(unit * quantity), originalSubtotal: money(original * quantity)};
 }
 
@@ -91,8 +81,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     for (const item of items) {
       const p = await read(db.collection('products').doc(item.productId));
       const b = await read(db.collection('productBatches').doc(item.batchId));
-      const promo = await read(db.collection('promotions').doc(item.productId));
-      const saved = identity?.ownerType === 'CUSTOMER' ? await read(walletItem(db, identity.ownerId, item.productId)) : null;
       if (!p.exists || p.get('sellerId') !== sellerId || p.get('status') !== 'ACTIVE') throw error(409, "Sản phẩm không còn bán.");
       if (!b.exists || b.get('productId') !== p.id || !['AVAILABLE', 'RESERVED_PARTIAL'].includes(b.get('status'))
           || time(b.get('expiryDate')) <= now || number(b.get('availableQuantity'), 0) < item.quantity) {
@@ -102,15 +90,11 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       if (!Number.isFinite(batch.initialQuantity) || !Number.isFinite(batch.reservedQuantity)
           || !Number.isFinite(batch.soldQuantity) || Math.abs(batch.initialQuantity - batch.availableQuantity
             - batch.reservedQuantity - batch.soldQuantity) > 0.000001) throw error(409, "Tồn kho lô hàng chưa nhất quán.");
-      const canUsePromotion = !!saved?.exists && saved.get('customerId') === identity.ownerId
-        && saved.get('sellerId') === sellerId && promo.exists
-        && promotionAvailable(promo.data(), p.data(), seller.data(), now);
-      const productQuantity = items.filter(row => row.productId === item.productId).reduce((sum, row) => sum + row.quantity, 0);
-      const calculated = price(p.data(), canUsePromotion ? promo.data() : null, productQuantity, now);
+      const calculated = price(p.data(), item.quantity);
       calculated.subtotal = money(calculated.unit * item.quantity);
       calculated.originalSubtotal = money(p.get("originalPrice") * item.quantity);
       rows.push({item, product: p.data(), batch, batchRef: b.ref,
-        promotionApplied: canUsePromotion && calculated.unit < money(p.get('rescuePrice')), price: calculated});
+        price: calculated});
     }
     const campaignIds = [...new Set(rows.map(row => text(row.batch.activeCampaignId)).filter(Boolean))];
     if (campaignIds.length > 1 || (data.fulfillmentType === 'ON_SITE_RESCUE' && !campaignIds.length)) {
@@ -172,12 +156,12 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     if (data.paymentMethod === 'BANK_TRANSFER' && !['bankCode', 'bankAccountName', 'bankAccountNumber'].every(key => text(paymentProfile[key]))) {
       throw error(409, "Cửa hàng chưa cấu hình đủ tài khoản nhận chuyển khoản.");
     }
-    const lines = rows.map(({item, product, price: value, promotionApplied}) => ({...item, productName: text(product.name), promotionApplied,
+    const lines = rows.map(({item, product, price: value}) => ({...item, productName: text(product.name),
       unit: text(product.unit), subtotal: value.subtotal, finalUnitPrice: value.unit, originalSubtotal: value.originalSubtotal}));
     const subtotal = lines.reduce((sum, line) => sum + line.subtotal, 0);
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
     return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
-      public: {promotionPolicy: 'SAVED_CUSTOMER_ONLY', lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
+      public: {pricingVersion: 3, lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
         availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, verification.available ? paymentProfile : null),
         bankTransferVerification: verification,
         sellerName: text(seller.get('fullName')), sellerAddress: profile ? text(profile.address) : '',
@@ -197,20 +181,9 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     const groups = [];
     for (const sellerId of sellerIds) groups.push(await quote(read,
       {...data, items: items.filter(item => item.sellerId === sellerId)}, now, identity));
-    const volume = applyVolume(groups.map(group => ({sellerId: group.sellerId, subtotal: group.public.subtotal})));
-    for (let i = 0; i < groups.length; i++) {
-      const group = groups[i], discount = volume.groups[i];
-      Object.assign(group.public, discount, {volumePolicyVersion: volume.policy.version, total: discount.netSubtotal + group.public.shippingFee,
-        productDiscount: group.public.totalDiscount,
-        totalDiscount: group.public.totalDiscount + discount.quantityDiscount});
-      const sellerParts = allocate(discount.sellerDiscount, group.rows.map(row => row.price.subtotal));
-      const platformParts = allocate(discount.platformDiscount, group.rows.map((row, j) => row.price.subtotal - sellerParts[j]));
-      group.rows.forEach((row, j) => { row.sellerVolumeDiscount = sellerParts[j]; row.platformVolumeDiscount = platformParts[j]; });
-      group.public.lines.forEach((line, j) => { line.sellerVolumeDiscount = sellerParts[j]; line.platformVolumeDiscount = platformParts[j]; });
-    }
-    const summary = {...groups[0].public, groups: groups.map(group => group.public), buyMorePolicy: volume.policy,
-      platformPercent: volume.platformPercent, sellerCount: sellerIds.length, lines: groups.flatMap(group => group.public.lines)};
-    for (const key of ['subtotal', 'originalSubtotal', 'productDiscount', 'sellerDiscount', 'platformDiscount', 'quantityDiscount', 'totalDiscount', 'shippingFee', 'total'])
+    const summary = {...groups[0].public, groups: groups.map(group => group.public),
+      sellerCount: sellerIds.length, lines: groups.flatMap(group => group.public.lines)};
+    for (const key of ['subtotal', 'originalSubtotal', 'totalDiscount', 'shippingFee', 'total'])
       summary[key] = groups.reduce((sum, group) => sum + group.public[key], 0);
     summary.availablePaymentMethods = groups[0].public.availablePaymentMethods.filter(method =>
       groups.every(group => group.public.availablePaymentMethods.includes(method)));
@@ -236,10 +209,9 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         throw error(409, 'Cửa hàng chưa kết nối xác minh chuyển khoản SePay. Vui lòng chọn thanh toán khi nhận hàng hoặc chờ cửa hàng hoàn tất kết nối; chưa chuyển tiền.');
       const order = {id: requestId, requestId, ownerType: identity.ownerType, ownerId: identity.ownerId,
         orderCode: `RF-${requestId.replace(/-/g, '').toUpperCase()}`, sellerId: q.sellerId, campaignId: q.public.campaignId,
-        ...normalized, subtotal: q.public.subtotal, quantityDiscount: q.public.quantityDiscount,
-        sellerVolumeDiscount: q.public.sellerDiscount, platformVolumeDiscount: q.public.platformDiscount,
-        sellerReceivableAmount: q.public.subtotal - q.public.sellerDiscount + q.public.shippingFee,
-        volumePolicyVersion: q.public.volumePolicyVersion, checkoutGroupId: groupId, shippingFee: q.public.shippingFee,
+        ...normalized, subtotal: q.public.subtotal,
+        sellerReceivableAmount: q.public.subtotal + q.public.shippingFee,
+        pricingVersion: 3, checkoutGroupId: groupId, shippingFee: q.public.shippingFee,
         totalAmount: q.public.total, paymentStatus, status: 'PENDING', campaignReservedQuantity: q.campaignQuantity,
         batchReservations: Object.fromEntries(items.map(item => [item.batchId, item.quantity])),
         campaignBatchReservations: Object.fromEntries(q.rows.filter(row => text(row.batch.activeCampaignId))
@@ -267,8 +239,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
           productId: item.productId, batchId: item.batchId, productNameSnapshot: text(p.name),
           productImageSnapshot: Array.isArray(p.imageUrls) ? text(p.imageUrls[0]) : '', unitSnapshot: normalizeUnit(p.unit),
           originalPriceSnapshot: p.originalPrice, rescuePriceSnapshot: p.rescuePrice, finalPriceSnapshot: row.price.unit,
-          quantity: item.quantity, subtotal: row.price.subtotal, sellerVolumeDiscount: row.sellerVolumeDiscount, platformVolumeDiscount: row.platformVolumeDiscount, promotionApplied: row.promotionApplied,
-          promotionIdSnapshot: row.promotionApplied ? item.productId : ''});
+          quantity: item.quantity, subtotal: row.price.subtotal});
         tx.update(row.batchRef, {availableQuantity: batch.availableQuantity - item.quantity,
           reservedQuantity: batch.reservedQuantity + item.quantity, status: 'RESERVED_PARTIAL',
           inventoryVersion: number(batch.inventoryVersion, 0) + 1, lastReservationOrderId: requestId,
@@ -304,10 +275,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       enqueueNotification(tx, db, admin, `order_${requestId}_admins`, {kind: 'ADMINS', resourceType: 'ORDER', resourceId: requestId});
       if (identity.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${requestId}_PENDING`, {
         kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId, recipientUid: identity.ownerId, decision: 'PENDING', inboxId: `${requestId}_PENDING`});
-      if (q.public.platformDiscount > 0) tx.create(db.collection('platformDiscountClaims').doc(requestId), {
-        orderId: requestId, checkoutGroupId: groupId, sellerId: q.sellerId, amount: q.public.platformDiscount,
-        policyVersion: q.public.volumePolicyVersion, settlementStatus: 'UNSETTLED', requiresOrderStatus: 'DELIVERED', createdAt: stamp()
-      });
       return order;
   }
 
@@ -355,7 +322,9 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
       const code = identity.ownerType === 'GUEST' ? await tx.get(codeRef) : null;
       if (code && code.exists) throw error(409, "Mã đơn bị trùng. Hãy thử lại.");
-      if (Number.isFinite(data.expectedQuantityDiscount) && Math.abs(data.expectedQuantityDiscount - q.public.quantityDiscount) > 0.5
+      // Older APKs can submit a quote taken before discount retirement. Never
+      // silently charge a higher total; already-created orders replay above.
+      if (number(data.expectedQuantityDiscount, 0) > 0
           || Number.isFinite(data.expectedSubtotal) && Math.abs(data.expectedSubtotal - q.public.subtotal) > 0.5
           || Number.isFinite(data.expectedShippingFee) && Math.abs(data.expectedShippingFee - q.public.shippingFee) > 0.5) {
         throw error(409, "QUOTE_CHANGED: Giá hoặc phí giao hàng đã thay đổi. Hãy kiểm tra báo giá mới.");
@@ -394,7 +363,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
   const route = (path, handler) => router.post(path, async (req, res, next) => {
     try { res.json(await handler(req)); } catch (failure) { next(failure); }
   });
-  router.use(createPromotionWallet({db, admin, authenticate, limit}).router);
   async function reconciledQuote(data, identity = null) {
     await lifecycle.reconcileItems(validateSelection(data, true));
     return (await basketQuote(ref => ref.get(), data, Date.now(), identity)).public;
