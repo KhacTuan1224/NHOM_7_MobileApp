@@ -121,6 +121,7 @@ public final class RescueFundFragment extends Fragment {
                     + money(fund.optDouble("reserved")) + "\nĐã chi: " + money(fund.optDouble("spent")));
             text(body, "Nơi nhận: " + fund.optString("charityName") + "\n" + fund.optString("address"));
             text(body, "Phân bổ lúc 00:00 giờ Việt Nam. Chỉ giải cứu hàng còn hạn và cần giao trước hạn sử dụng.");
+            button(body, "Danh sách ủng hộ", v -> showDonations());
             if (role.equals("ADMIN")) {
                 button(body, "Cấu hình hũ và điểm thiện nguyện", v -> config());
                 button(body, "Lịch sử biến động", v -> ledger(""));
@@ -148,16 +149,81 @@ public final class RescueFundFragment extends Fragment {
     private void donateForm() {
         body.removeAllViews(); heading(body, "Số tiền ủng hộ");
         EditText amount = input(body, "Số tiền (VND, từ 10.000đ)", NUMBER);
+        CheckBox shareName = new CheckBox(requireContext());
+        shareName.setText("Hiển thị tên trong danh sách ủng hộ");
+        body.addView(shareName);
+        EditText supporterName = input(body, "Tên hiển thị", TEXT);
+        supporterName.setVisibility(View.GONE);
+        shareName.setOnCheckedChangeListener((buttonView, checked) ->
+                supporterName.setVisibility(checked ? View.VISIBLE : View.GONE));
+        text(body, "Nếu không chọn công khai tên, bạn sẽ hiển thị là người ủng hộ ẩn danh.");
         text(body, "Chuyển đúng số tiền và nội dung trên QR. SePay tự xác nhận; không có nút xác nhận chuyển tiền thủ công.");
         String key = UUID.randomUUID().toString();
         button(body, "Xác nhận và xem QR", v -> {
             try { long total = Long.parseLong(value(amount));
-                request("donate", json("amount", total, "requestId", key, "accessToken", token()), result -> {
+                if (shareName.isChecked() && value(supporterName).length() < 2) {
+                    supporterName.setError("Nhập tên hiển thị hoặc bỏ chọn công khai tên."); return;
+                }
+                request("donate", json("amount", total, "requestId", key, "accessToken", token(),
+                        "shareName", shareName.isChecked(), "supporterName", value(supporterName)), result -> {
                     JSONObject d = result.optJSONObject("donation"); if (d == null) return;
                     prefs.edit().putString("receipt", d.optString("id")).apply(); showReceipt(d);
                 });
             } catch (NumberFormatException error) { amount.setError("Nhập số tiền nguyên hợp lệ."); }
         }); button(body, "Quay về hũ", v -> load());
+    }
+
+    private void showDonations() {
+        LinearLayout rows = column(requireContext());
+        ScrollView scroll = new ScrollView(requireContext()); scroll.addView(rows);
+        final androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Danh sách ủng hộ")
+                .setView(scroll)
+                .setNegativeButton("Đóng", (d, which) -> d.dismiss())
+                .create();
+        final boolean[] loading = {false};
+        final String[] lastItems = {null};
+        final android.os.Handler updates = new android.os.Handler(android.os.Looper.getMainLooper());
+        final Runnable[] refresh = new Runnable[1];
+        refresh[0] = () -> {
+            if (!dialog.isShowing()) return;
+            if (loading[0]) { updates.postDelayed(refresh[0], 1000); return; }
+            loading[0] = true;
+            RenderBackendClient.postGuest("/rescue-fund/donations", json(), new RenderBackendClient.Callback() {
+                @Override public void onSuccess(JSONObject response) {
+                    loading[0] = false;
+                    if (!dialog.isShowing()) return;
+                    JSONArray items = response.optJSONArray("items");
+                    String snapshot = items == null ? "[]" : items.toString();
+                    if (!snapshot.equals(lastItems[0])) {
+                        lastItems[0] = snapshot;
+                        rows.removeAllViews();
+                        if (items == null || items.length() == 0) {
+                            text(rows, "Chưa có lượt ủng hộ đã xác nhận.");
+                        } else {
+                            TextView updated = text(rows, "Cập nhật tự động mỗi 5 giây · mới nhất trước");
+                            updated.setTextSize(12);
+                            for (int i = 0; i < items.length(); i++) {
+                                JSONObject item = items.optJSONObject(i); if (item == null) continue;
+                                TextView row = text(rows, item.optString("name", "Người ủng hộ ẩn danh")
+                                        + "\n" + date(item.optLong("paidAt")));
+                                int padding = dp(requireContext(), 12);
+                                row.setPadding(padding, padding, padding, padding);
+                            }
+                        }
+                    }
+                    updates.postDelayed(refresh[0], 5000);
+                }
+                @Override public void onError(String error) {
+                    loading[0] = false;
+                    if (!dialog.isShowing()) return;
+                    rows.removeAllViews(); text(rows, "Không tải được danh sách: " + error);
+                    updates.postDelayed(refresh[0], 5000);
+                }
+            });
+        };
+        dialog.setOnDismissListener(d -> updates.removeCallbacks(refresh[0]));
+        dialog.show(); refresh[0].run();
     }
     private void receipt() {
         request("receipt", json("donationId", prefs.getString("receipt", ""), "accessToken", token()), result -> showReceipt(result.optJSONObject("donation")));
