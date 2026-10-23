@@ -36,6 +36,7 @@ public class CampaignListFragment extends Fragment {
     private final CampaignLocationService distanceService = new CampaignLocationService();
     private LocationProvider locationProvider; private List<RescueCampaign> campaigns = new ArrayList<>();
     private Double nearbyLatitude, nearbyLongitude;
+    private com.rescuefarm.ui.feed.CampaignFeedCardRenderer articleRenderer;
     private final ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissions);
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -44,6 +45,7 @@ public class CampaignListFragment extends Fragment {
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         container = view.findViewById(R.id.campaignContainer); empty = view.findViewById(R.id.emptyCampaignText);
+        articleRenderer = new com.rescuefarm.ui.feed.CampaignFeedCardRenderer(this);
         locationProvider = LocationProviderFactory.create(requireContext());
         viewModel = new ViewModelProvider(this, new CampaignViewModelFactory(requireContext()))
                 .get(CampaignViewModel.class);
@@ -100,34 +102,33 @@ public class CampaignListFragment extends Fragment {
         pagination.remote(viewModel::hasMorePublicCampaigns, viewModel::isPublicPageLoading,
                 () -> viewModel.refreshPublicPage(false)).render(container, shown, page -> {
             container.removeAllViews();
+            articleRenderer.beginPage(page);
             for (RescueCampaign campaign : page) container.addView(card(campaign, now));
         });
     }
     private View card(RescueCampaign campaign, Date now) {
-        MaterialCardView card = new MaterialCardView(requireContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2); params.setMargins(0,0,0,dp(12));
-        card.setLayoutParams(params); card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
-        LinearLayout body = new LinearLayout(requireContext()); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(14),dp(14),dp(14),dp(14));
-        TextView title = text(campaign.getTitle(), 18, true);
-        com.rescuefarm.ui.common.AppTypography.title(title);
-        TextView badge = text(campaign.getHighlightLabel(), 14, true);
-        TextView progress = text(getString(R.string.campaign_progress_format,
-                campaign.calculateProgress(), campaign.getRescuedQuantity(), campaign.getTargetQuantity()), 15, false);
-        body.addView(title); body.addView(badge); body.addView(progress);
-        if (nearbyLatitude != null) {
-            double km = distanceService.distanceToCampaign(nearbyLatitude, nearbyLongitude, campaign, now);
-            body.addView(text(String.format(Locale.forLanguageTag("vi-VN"), "Cách bạn %.1f km", km), 14, false));
-        }
-        card.addView(body); card.setOnClickListener(v -> {
+        View card = articleRenderer.card(campaign, java.util.Collections.emptyList(), v -> {
             Bundle args = new Bundle(); args.putString("campaignId", campaign.getId());
             Navigation.findNavController(requireView()).navigate(
                     R.id.action_campaignListFragment_to_campaignDetailFragment, args);
-        }); return card;
+        });
+        if (nearbyLatitude != null) {
+            TextView metadata = card.findViewById(R.id.articleMetadata);
+            String distance = String.format(Locale.forLanguageTag("vi-VN"), "Cách bạn %.1f km",
+                    distanceService.distanceToCampaign(nearbyLatitude, nearbyLongitude, campaign, now));
+            metadata.setTag(distance);
+            metadata.append(" · " + distance);
+        }
+        return card;
     }
     private TextView text(String value, int size, boolean bold) {
         TextView view = new TextView(requireContext()); view.setText(value); view.setTextSize(size);
         if (bold) view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD); return view;
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
-    @Override public void onDestroyView() { if (locationProvider != null) locationProvider.close(); super.onDestroyView(); }
+    @Override public void onDestroyView() {
+        if (articleRenderer != null) articleRenderer.clear();
+        container = null;
+        if (locationProvider != null) locationProvider.close(); super.onDestroyView();
+    }
 }
