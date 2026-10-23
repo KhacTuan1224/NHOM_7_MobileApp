@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.rescuefarm.ui.common.NavigationAwareScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/sellerDashboardNavigation" android:layout_width="304dp" android:layout_height="match_parent"
+        android:layout_gravity="start" android:background="@color/rescue_surface"
+        android:elevation="16dp">
+        <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="RESCUEFARM" android:textSize="12sp" android:textStyle="bold"
+                android:textColor="@color/rescue_primary" android:padding="12dp" />
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Quản lý cửa hàng" android:textSize="20sp" android:textStyle="bold"
+                android:textColor="@color/rescue_on_surface" android:paddingStart="12dp"
+                android:paddingBottom="16dp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="KINH DOANH" android:textSize="11sp" android:textStyle="bold"
+                android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardProductsButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/seller_products_action" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardBatchesButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/manage_batches_action" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardPromotionsButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/manage_promotion_action" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardCampaignsButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/seller_campaigns_action" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardMobileButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/mobile_rescue_action" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="GIẢI CỨU" android:textSize="11sp" android:textStyle="bold"
+                android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardRescueExplore"
+                style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+                android:gravity="start|center_vertical" android:text="Khám phá gói giải cứu"
+                app:icon="@drawable/ic_store" app:iconGravity="textStart" app:iconTint="@color/rescue_primary" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardRescueCreate"
+                style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+                android:gravity="start|center_vertical" android:text="Tạo gói giải cứu"
+                app:icon="@drawable/ic_rescue_gift_plain" app:iconGravity="textStart" app:iconTint="@color/rescue_primary" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardRescueOffers"
+                style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+                android:gravity="start|center_vertical" android:text="Gói cửa hàng"
+                app:icon="@drawable/ic_nav_orders" app:iconGravity="textStart" app:iconTint="@color/rescue_primary" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardRescueImpact"
+                style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
+                android:gravity="start|center_vertical" android:text="Tác động đã xác nhận"
+                app:icon="@drawable/ic_nav_dashboard" app:iconGravity="textStart" app:iconTint="@color/rescue_primary" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="ĐƠN HÀNG" android:textSize="11sp" android:textStyle="bold"
+                android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardOrdersButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/seller_orders_action" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardShipmentsButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/seller_shipments_action" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="PHÂN TÍCH &amp; TÀI KHOẢN" android:textSize="11sp" android:textStyle="bold"
+                android:textColor="@color/rescue_on_surface_variant" android:padding="12dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardStatisticsButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/seller_statistics_action" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardProfileButton" style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:gravity="start|center_vertical"
+                android:text="@string/nav_seller_storefront" />
+        </com.rescuefarm.ui.common.ResponsiveContentLayout>
+    </com.rescuefarm.ui.common.NavigationAwareScrollView>

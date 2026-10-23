@@ -71,8 +71,12 @@ public class SellerDashboardFragment extends Fragment {
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
-        view.findViewById(R.id.sellerDashboardMenuButton).setOnClickListener(unused ->
-                drawer.openDrawer(androidx.core.view.GravityCompat.START));
+        View menuButton = view.findViewById(R.id.sellerDashboardMenuButton);
+        // Wide layouts keep navigation beside the dashboard instead of in a modal drawer.
+        menuButton.setVisibility(drawer == null ? View.GONE : View.VISIBLE);
+        menuButton.setOnClickListener(unused -> {
+            if (drawer != null) drawer.openDrawer(androidx.core.view.GravityCompat.START);
+        });
         view.findViewById(R.id.refreshSellerDashboardButton).setOnClickListener(unused -> viewModel.refresh());
         bindRescue(view, R.id.dashboardRescueExplore, "catalog", false, SellerUiStyles.Section.CAMPAIGNS, R.drawable.ic_store);
         bindRescue(view, R.id.dashboardRescueCreate, "", true, SellerUiStyles.Section.RESCUE_CREATE, R.drawable.ic_rescue_gift_plain);
