@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fund_screen_title">Hũ giải cứu</string>
+    <string name="fund_loading">Đang tải thông tin hũ…</string>
+    <string name="fund_intro">Góp chút yêu thương,\ntrao thêm bữa lành.</string>
+    <string name="fund_intro_description">Chung tay giải cứu nông sản còn tươi và gửi đến những nơi cần sẻ chia.</string>
+    <string name="fund_active">Đang nhận ủng hộ</string>
+    <string name="fund_paused">Tạm dừng nhận ủng hộ</string>
+    <string name="fund_available">Số dư có thể phân bổ</string>
+    <string name="fund_reserved">Đang giữ cho chuyến giao</string>
+    <string name="fund_spent">Đã chi thiện nguyện</string>
+    <string name="fund_donate">Ủng hộ vào hũ</string>
+    <string name="fund_supporters">Danh sách ủng hộ</string>
+    <string name="fund_receipt">Biên nhận gần nhất</string>
+    <string name="fund_paused_description">Hũ đang tạm ngừng nhận ủng hộ. Bạn vẫn có thể xem thông tin và biên nhận đã có.</string>
+    <string name="fund_destination">Nơi đón nhận sẻ chia</string>
+    <string name="fund_destination_empty">Đang cập nhật điểm thiện nguyện</string>
+    <string name="fund_address_empty">Địa chỉ sẽ được hiển thị khi điểm nhận được cấu hình.</string>
+    <string name="fund_how_title">Hũ hoạt động thế nào?</string>
+    <string name="fund_step_donate">Bạn góp vào hũ</string>
+    <string name="fund_step_donate_description">Chuyển khoản bằng QR. Khoản ủng hộ được tự động ghi nhận sau khi xác nhận.</string>
+    <string name="fund_step_rescue">Nông sản được giải cứu</string>
+    <string name="fund_step_rescue_description">Hũ phân bổ lúc 00:00 giờ Việt Nam, ưu tiên nông sản còn hạn sử dụng.</string>
+    <string name="fund_step_deliver">Trao đến nơi cần</string>
+    <string name="fund_step_deliver_description">Người bán giao đến điểm thiện nguyện trước hạn sử dụng và gửi bằng chứng bàn giao.</string>
+    <string name="fund_admin_title">Quản lý hũ</string>
+    <string name="fund_delivery_title">Chuyến giao thiện nguyện</string>
+    <string name="fund_delivery_empty">Chưa có chuyến giao</string>
+    <string name="fund_delivery_empty_description">Các chuyến được phân bổ sẽ hiển thị tại đây để theo dõi và bàn giao.</string>
+    <string name="fund_amount_title">Góp một phần yêu thương</string>
+    <string name="fund_amount_description">Chọn nhanh một mức ủng hộ hoặc nhập số tiền bạn muốn góp.</string>
+    <string name="fund_amount_hint">Số tiền ủng hộ (VND)</string>
+    <string name="fund_amount_range">Từ 10.000đ đến 10.000.000đ mỗi lần.</string>
+    <string name="fund_amount_error">Nhập số tiền từ 10.000đ đến 10.000.000đ.</string>
+    <string name="fund_privacy_title">Tên trên danh sách ủng hộ</string>
+    <string name="fund_privacy_description">Bạn được hiển thị ẩn danh nếu không chọn công khai tên.</string>
+    <string name="fund_qr_note">Chuyển đúng số tiền và nội dung trên QR. Hệ thống tự xác nhận sau khi nhận được giao dịch.</string>
+    <string name="fund_qr_title">Quét QR để gửi yêu thương</string>
+    <string name="fund_qr_description">Dùng ứng dụng ngân hàng để quét mã bên dưới.</string>
+    <string name="fund_paid_title">Cảm ơn bạn đã sẻ chia!</string>
+    <string name="fund_paid_description">Khoản ủng hộ đã được ghi nhận vào hũ giải cứu.</string>
+    <string name="fund_receipt_expired">QR đã hết hạn</string>
+    <string name="fund_transfer_details">Thông tin chuyển khoản</string>
+    <string name="fund_account_name">Chủ tài khoản</string>
+    <string name="fund_account_number">Số tài khoản</string>
+    <string name="fund_transfer_content">Nội dung chuyển khoản</string>
+</resources>
