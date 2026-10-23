@@ -29,6 +29,9 @@ public class ProfileFragment extends Fragment {
     private TextView businessInfo;
     private ImageView avatarView;
     private View progress, addressButton, sellerButton, favoritesButton;
+    private User profileUser;
+    private com.rescuefarm.domain.model.SellerApplication sellerApplication;
+    private boolean observingApplication;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
@@ -36,6 +39,7 @@ public class ProfileFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        profileUser = null; sellerApplication = null; observingApplication = false;
         nameView = view.findViewById(R.id.profileName);
         emailView = view.findViewById(R.id.profileEmail);
         roleView = view.findViewById(R.id.profileRole);
@@ -105,7 +109,16 @@ public class ProfileFragment extends Fragment {
 
     private void renderProfile(User user) {
         if (user == null) return;
+        profileUser = user;
         nameView.setText(user.getFullName()); emailView.setText(user.getEmail());
+        renderVerification();
+        if (user instanceof Seller && !observingApplication) {
+            observingApplication = true;
+            viewModel.observeSellerApplication().observe(getViewLifecycleOwner(), application -> {
+                sellerApplication = application;
+                renderVerification();
+            });
+        }
         String avatarUrl = user.getAvatarUrl();
         android.graphics.drawable.Drawable person = androidx.core.content.ContextCompat.getDrawable(
                 requireContext(), R.drawable.ic_nav_profile).mutate();
@@ -138,5 +151,30 @@ public class ProfileFragment extends Fragment {
                     ? R.string.seller_approved_message : R.string.seller_pending_message);
         } else statusView.setText(user.getRole() == UserRole.ADMIN
                 ? R.string.admin_access_message : R.string.customer_profile_message);
+    }
+
+    private void renderVerification() {
+        if (!(profileUser instanceof Seller)) {
+            nameView.setCompoundDrawablesRelative(null, null, null, null);
+            nameView.setContentDescription(null);
+            return;
+        }
+        boolean verified = profileUser.isActive() && ((Seller) profileUser).canSell()
+                && sellerApplication != null
+                && profileUser.getId().equals(sellerApplication.getSellerId())
+                && sellerApplication.getStatus() == com.rescuefarm.domain.enums.ApplicationStatus.APPROVED
+                && sellerApplication.getProofImageUrl() != null
+                && sellerApplication.getProofImageUrl().trim().toLowerCase(java.util.Locale.ROOT).startsWith("https://");
+        android.graphics.drawable.Drawable tick = androidx.core.content.ContextCompat.getDrawable(
+                requireContext(), R.drawable.ic_shop_verified);
+        if (tick != null) {
+            tick = tick.mutate();
+            tick.setTint(requireContext().getColor(verified ? R.color.rescue_primary : R.color.rescue_on_surface_variant));
+            int size = Math.round(16 * getResources().getDisplayMetrics().density);
+            tick.setBounds(0, 0, size, size);
+        }
+        nameView.setCompoundDrawablesRelative(null, null, tick, null);
+        nameView.setContentDescription(getString(verified ? R.string.article_verified_description
+                : R.string.article_unverified_description, nameView.getText()));
     }
 }

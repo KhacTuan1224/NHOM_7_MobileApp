@@ -746,6 +746,52 @@ test('Seller application submission and its Admin event are committed together',
   await assertSucceeds(batch.commit());
 });
 
+for (const initialStatus of ['PENDING_APPROVAL', 'APPROVED']) {
+  for (const target of ['APPROVED', 'REJECTED']) {
+    test(`Admin moderates mixed-case Seller UID atomically: ${initialStatus} to ${target}`, async () => {
+      const uid = 'SellerUidMixedAbC123';
+      const proofImageUrl = 'https://example.com/application-proof.jpg';
+      const originalSeller = (await getDoc(doc(env.authenticatedContext('admin').firestore(), 'users/seller'))).data();
+      await seed({
+        [`users/${uid}`]: {...originalSeller, id: uid, sellerStatus: initialStatus},
+        [`sellerApplications/${uid}`]: {id: uid, sellerId: uid, representativeName: 'Test Seller',
+          shopName: 'Test shop', address: 'Test address', proofImageUrl, status: 'PENDING',
+          rejectionReason: '', submittedAt: past, updatedAt: past}
+      });
+      const db = env.authenticatedContext('admin').firestore();
+      const applicationRef = doc(db, `sellerApplications/${uid}`);
+      // Reproduce the old Android bug: uppercasing an enum is safe, a UID is not.
+      await assert.rejects(runTransaction(db, async tx => {
+        const application = await tx.get(applicationRef);
+        const wrongSeller = await tx.get(doc(db, `users/${application.data().sellerId.toUpperCase()}`));
+        if (!wrongSeller.exists()) throw new Error('SELLER_NOT_FOUND');
+      }), /SELLER_NOT_FOUND/);
+      const reason = target === 'REJECTED' ? 'Proof needs correction' : '';
+      const moderation = {moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+        moderationReason: reason, updatedAt: serverTimestamp()};
+      // Rules still require the linked account and application to agree.
+      if (initialStatus !== target) await assertFails(updateDoc(applicationRef, {...moderation,
+        status: target, rejectionReason: reason}));
+      await assertSucceeds(runTransaction(db, async tx => {
+        const application = await tx.get(applicationRef);
+        const sellerRef = doc(db, `users/${application.data().sellerId}`);
+        const seller = await tx.get(sellerRef);
+        assert.equal(seller.data().role, 'SELLER');
+        tx.update(sellerRef, {...moderation, sellerStatus: target});
+        tx.update(applicationRef, {...moderation, status: target, rejectionReason: reason});
+        tx.set(doc(db, `adminAuditLogs/application-${target}`), {adminId: 'admin',
+          resourceType: 'SELLER_APPLICATIONS', resourceId: uid, fromState: 'PENDING',
+          toState: target, reason, createdAt: serverTimestamp()});
+      }));
+      assert.equal((await getDoc(applicationRef)).data().status, target);
+      assert.equal((await getDoc(applicationRef)).data().proofImageUrl, proofImageUrl);
+      assert.equal((await getDoc(doc(db, `users/${uid}`))).data().sellerStatus, target);
+      assert.equal((await getDoc(doc(db, `adminAuditLogs/application-${target}`))).data().resourceId, uid);
+      assert.equal((await getDoc(doc(db, `users/${uid.toUpperCase()}`))).exists(), false);
+    });
+  }
+}
+
 
 
 
