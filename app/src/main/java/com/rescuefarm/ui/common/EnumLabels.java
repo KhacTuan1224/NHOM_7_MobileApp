@@ -89,12 +89,8 @@ public final class EnumLabels {
         labels.put("CHƯA NỘP HỒ SƠ CHI TIẾT", "Chưa nộp hồ sơ chi tiết");
         labels.put("RESERVED_PARTIAL", "Đã giữ một phần");
         labels.put("SUSPENDED", "Tạm đình chỉ");
-        labels.put("PROMOTION", "Khuyến mãi");
         labels.put("MODERATION", "Kiểm duyệt");
         labels.put("SYSTEM", "Hệ thống");
-        labels.put("PERCENT", "Giảm theo phần trăm");
-        labels.put("FIXED", "Giảm số tiền cố định");
-        labels.put("VOLUME", "Giảm theo số lượng");
         labels.put("LIKE", "Thích");
         labels.put("SUPPORT", "Ủng hộ");
         labels.put("CARE", "Quan tâm");

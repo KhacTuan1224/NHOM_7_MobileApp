@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TextAppearance.RescueFarm.Detail.PageTitle" parent="TextAppearance.RescueFarm.TitleMedium">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/rescue_on_surface</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.Detail.Name" parent="TextAppearance.RescueFarm.Detail.PageTitle">
+        <item name="android:textSize">22sp</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.Detail.Section" parent="TextAppearance.RescueFarm.TitleMedium">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/rescue_on_surface</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.Detail.Body" parent="TextAppearance.RescueFarm.BodyMedium">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/rescue_on_surface</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.Detail.Meta" parent="TextAppearance.RescueFarm.BodySmall">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/rescue_on_surface_variant</item>
+    </style>
+    <style name="TextAppearance.RescueFarm.Detail.Price" parent="TextAppearance.RescueFarm.Detail.Body">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rescue_primary</item>
+    </style>
+</resources>

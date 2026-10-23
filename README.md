@@ -7,7 +7,7 @@ The product requirements and domain decisions are documented in [`final.md`](fin
 ## Main capabilities
 
 - **Guest and Customer:** browse products, categories, banners, campaigns and their community discussions; use a local guest cart or a signed-in Customer cart; checkout, follow orders, manage profile and addresses, favorite products, comment/react/report, and review eligible delivered purchases.
-- **Seller:** apply for seller access; after approval, manage a storefront, products and expiring product batches, rescue campaigns and mobile rescue locations, promotions and orders/shipments. Sellers can use a read-only customer-facing view to inspect published content.
+- **Seller:** apply for seller access; after approval, manage a storefront, products and expiring product batches, rescue campaigns and mobile rescue locations, orders/shipments. Sellers can use a read-only customer-facing view to inspect published content.
 - **Admin:** review Seller applications, moderate products/campaigns/reviews, handle reports and user status, manage catalog content, inspect orders, view rescue analytics, and configure shipping fees.
 - **Backend:** Firebase Authentication and Cloud Firestore are used for identity and application data. The Express service in `functions/` runs on Render and provides trusted checkout/quote, notification, review-summary, and Admin dashboard endpoints. The Cloudflare Worker in `cloudinary-worker/` signs Cloudinary media operations.
 - **Offline support:** Room caches selected application data and WorkManager handles eligible background synchronization. Checkout and other critical inventory actions require the online backend.
@@ -79,6 +79,10 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The `ap
 The GitHub workflow creates a debug-signed APK for development/demo installation. Release signing and Play Store publishing are not configured in this repository; do not treat the workflow APK as a production Play Store release.
 
 ## Backend and Firebase setup
+
+- **Hoàn thiện audit/đối soát đơn:** xem [hướng dẫn ngày 22/10/2026](docs/audits/audit-fixes-setup-2026-10-22.md) cho trang đối soát, chứng từ/hoàn tiền đã thực hiện, Room 11, chuyển giỏ Guest chống lặp và hai index mới. Luồng QR/webhook SePay tự động được giữ nguyên.
+
+- **Giải cứu mở rộng:** xem [hướng dẫn setup và vận hành hai phương thức](docs/rescue-programs-setup.md): hộp bí ẩn và giờ chót. Module có giao diện Guest/Customer/Seller/Admin, giữ tồn kho từ lô thật và dùng scheduler thông báo hiện có.
 
 - **Render backend:** follow [`functions/README.md`](functions/README.md). Render needs `FIREBASE_SERVICE_ACCOUNT_JSON` as a server-side secret. Never add it to Android or commit it. Check the deployed service at `/health`.
 - **Cloudinary uploads:** follow [`cloudinary-worker/README.md`](cloudinary-worker/README.md). Keep `CLOUDINARY_API_SECRET` in Cloudflare Worker secrets; configure only the Cloud name and Worker URL in Android.

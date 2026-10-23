@@ -14,6 +14,7 @@ public class InventoryServiceTest {
     @Test
     public void deliveryFlow_reservesThenCommitsBatchAndCampaignTogether() {
         ProductBatch batch = new ProductBatch("batch-1", "product-1", 50.0);
+        batch.updateDetails(new java.util.Date(1), new java.util.Date(Long.MAX_VALUE), 50, new java.util.Date());
         RescueCampaign campaign = new RescueCampaign("campaign-1", "seller-1", 40.0);
         InventoryService service = new InventoryService();
 

@@ -101,7 +101,10 @@ public final class HomeContentBuilder {
 
         List<Product> valueProducts = new ArrayList<>();
         if (productSource != null) for (Product value : productSource) {
-            if (value != null && value.isAvailable() && value.calculateDiscountPercent() > 0D) {
+            if (value != null && value.isAvailable() && value.calculateDiscountPercent() > 0D
+                    && batchesByProduct != null && batchesByProduct.get(value.getId()) != null
+                    && batchesByProduct.get(value.getId()).stream().anyMatch(batch -> batch != null
+                        && value.getId().equals(batch.getProductId()) && batch.isSellable(safeNow))) {
                 valueProducts.add(value);
             }
         }
@@ -132,37 +135,6 @@ public final class HomeContentBuilder {
                 nearExpiry, locationLabel);
     }
 
-    public List<VolumeOffer> volumeOffers(List<Product> products, Map<String, com.rescuefarm.domain.model.Promotion> promotions,
-            Map<String,List<ProductBatch>> batches, List<RescueCampaign> campaigns, Date now) {
-        List<VolumeOffer> offers=new ArrayList<>(); if(products==null||promotions==null||batches==null) return offers;
-        Map<String,RescueCampaign> byId=new LinkedHashMap<>(); if(campaigns!=null) for(RescueCampaign c:campaigns) byId.put(c.getId(),c);
-        for(Product p:products) {
-            if(p==null||!p.isAvailable()) continue;
-            com.rescuefarm.domain.model.Promotion promo=promotions.get(p.getId());
-            if(promo==null||!promo.isValid(now)||!p.getSellerId().equals(promo.getSellerId())||!p.getId().equals(promo.getProductId())) continue;
-            List<ProductBatch> stock=batches.get(p.getId()); if(stock==null) continue;
-            VolumeOffer best=null;
-            for(ProductBatch batch:stock) {
-                if(batch==null||!batch.isSellable(now)) continue;
-                double available=batch.getAvailableQuantity(); String cid=batch.getActiveCampaignId();
-                if(cid!=null&&!cid.isEmpty()) {
-                    RescueCampaign c=byId.get(cid); if(!com.rescuefarm.service.campaign.CampaignTimeFormatter.canPurchase(c,now)) continue;
-                    available=Math.min(available,c.calculateRemainingForBatch(batch.getId()));
-                }
-                for(Map.Entry<String,Double> tier:promo.getQuantityDiscountTiers().entrySet()) {
-                    double threshold; try{threshold=Double.parseDouble(tier.getKey());}catch(NumberFormatException e){continue;}
-                    if(!Double.isFinite(threshold)||threshold<=0||available+.000001<threshold||tier.getValue()<=0) continue;
-                    double percent=promo.calculateDiscount(threshold);
-                    double price=new com.rescuefarm.service.pricing.PricingService().calculatePrice(p.getOriginalPrice(),p.getRescuePrice(),threshold,promo,now).getFinalUnitPrice();
-                    VolumeOffer candidate=new VolumeOffer(p,batch.getId(),cid,threshold,percent,price);
-                    if(best==null||threshold<best.threshold||(threshold==best.threshold&&batch.getId().compareTo(best.batchId)<0)) best=candidate;
-                }
-            }
-            if(best!=null) offers.add(best);
-        }
-        offers.sort(java.util.Comparator.comparingDouble((VolumeOffer o)->o.percent).reversed().thenComparing(o->o.product.getId()));
-        return offers;
-    }
 
     private void refreshUrgency(RescueCampaign campaign,
             Map<String, List<ProductBatch>> batchesByProduct, Date now) {

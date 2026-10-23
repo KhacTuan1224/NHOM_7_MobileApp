@@ -137,7 +137,8 @@ service cloud.firestore {
             'id', 'sellerId', 'categoryId', 'name', 'description', 'originalPrice',
             'rescuePrice', 'unit', 'origin', 'province', 'imageUrls', 'imagePublicIds', 'averageRating',
             'reviewCount', 'status', 'createdAt', 'updatedAt', 'moderatedBy',
-            'moderatedAt', 'moderationReason', 'moderationPreviousStatus', 'ratingSum', 'lastReviewId'
+            'moderatedAt', 'moderationReason', 'moderationPreviousStatus', 'ratingSum', 'lastReviewId',
+            'sellerHiddenPreviousStatus'
           ])
           && data.id is string && data.sellerId is string
           && data.name is string
@@ -162,6 +163,7 @@ service cloud.firestore {
           && data.reviewCount is int && data.reviewCount >= 0
           && data.createdAt is timestamp && data.updatedAt is timestamp
           && data.get('moderationPreviousStatus', '') in ['', 'ACTIVE', 'INACTIVE', 'SOLD_OUT']
+          && data.get('sellerHiddenPreviousStatus', '') in ['', 'ACTIVE', 'INACTIVE', 'SOLD_OUT']
           && get(/databases/$(database)/documents/categories/$(data.categoryId)).data.active == true
           && data.status in ['ACTIVE', 'INACTIVE', 'SOLD_OUT', 'HIDDEN'];
     }
@@ -172,7 +174,7 @@ service cloud.firestore {
             'initialQuantity', 'availableQuantity', 'reservedQuantity', 'soldQuantity',
             'status', 'inventoryVersion', 'createdAt', 'updatedAt',
             'lastReservationOrderId', 'lastReservationQuantity',
-            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity', 'everOrdered'
+            'lastLifecycleOrderId', 'lastLifecycleAction', 'lastLifecycleQuantity', 'everOrdered', 'expiredAt'
           ])
           && data.id is string && data.productId is string
           && data.initialQuantity is number
@@ -195,24 +197,6 @@ service cloud.firestore {
           && data.status in ['AVAILABLE', 'RESERVED_PARTIAL', 'SOLD_OUT', 'EXPIRED', 'ARCHIVED'];
     }
 
-    function validPromotion(data, promotionId) {
-      return data.id == promotionId
-          && data.productId == promotionId
-          && data.sellerId is string
-          && data.type in ['PERCENT', 'FIXED', 'VOLUME']
-          && data.value is number
-          && data.value >= 0
-          && (data.type == 'VOLUME' || data.value > 0)
-          && (data.type != 'PERCENT' || data.value <= 100)
-          && (data.type != 'VOLUME' || data.value == 0)
-          && data.quantityDiscountTiers is map
-          && data.quantityDiscountTiers.size() <= 10
-          && (data.type != 'VOLUME' || data.quantityDiscountTiers.size() > 0)
-          && data.startDate is timestamp
-          && data.endDate is timestamp
-          && data.startDate < data.endDate
-          && data.active is bool;
-    }
 
     function validCustomerCart(data, customerId) {
       return data.id == customerId
@@ -379,11 +363,6 @@ service cloud.firestore {
     }
 
 
-
-
-
-
-
     function activeCampaign(campaignId) {
       return get(/databases/$(database)/documents/campaigns/$(campaignId)).data.status == 'ACTIVE';
     }
@@ -391,10 +370,11 @@ service cloud.firestore {
     function validCampaignComment(data, campaignId) {
       return data.keys().hasOnly([
             'id', 'campaignId', 'userId', 'status', 'content', 'createdAt', 'updatedAt',
-            'moderatedBy', 'moderatedAt', 'moderationReason'
+            'moderatedBy', 'moderatedAt', 'moderationReason', 'moderationPreviousStatus'
           ])
           && data.id is string && data.campaignId == campaignId
           && data.userId is string
+          && data.get('moderationPreviousStatus', '') in ['', 'ACTIVE', 'EDITED']
           && data.status in ['ACTIVE', 'EDITED', 'DELETED', 'HIDDEN']
           && data.content is string
           && ((data.status == 'DELETED' && data.content == '')
@@ -691,8 +671,6 @@ service cloud.firestore {
             'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
           ])
           && validAdminCategory(request.resource.data, categoryId)
-          && (request.resource.data.active == true
-            || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
       allow delete: if false;
     }
@@ -733,7 +711,21 @@ service cloud.firestore {
           && hasNoCredentialFields(request.resource.data);
       allow update: if (isApprovedSeller(request.auth.uid)
           && resource.data.sellerId == request.auth.uid
-          && resource.data.status != 'HIDDEN'
+          && resource.data.get('moderationPreviousStatus', '') == ''
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'categoryId', 'name', 'description', 'originalPrice', 'rescuePrice', 'origin',
+            'province', 'imageUrls', 'imagePublicIds', 'status', 'sellerHiddenPreviousStatus', 'updatedAt'
+          ])
+          && ((resource.data.status != 'HIDDEN' && request.resource.data.status != 'HIDDEN'
+                && request.resource.data.get('sellerHiddenPreviousStatus', '')
+                    == resource.data.get('sellerHiddenPreviousStatus', ''))
+            || (resource.data.status in ['ACTIVE', 'INACTIVE', 'SOLD_OUT']
+                && request.resource.data.status == 'HIDDEN'
+                && request.resource.data.sellerHiddenPreviousStatus == resource.data.status)
+            || (resource.data.status == 'HIDDEN'
+                && resource.data.get('sellerHiddenPreviousStatus', '') in ['ACTIVE', 'INACTIVE', 'SOLD_OUT']
+                && request.resource.data.status == resource.data.sellerHiddenPreviousStatus
+                && !request.resource.data.keys().hasAny(['sellerHiddenPreviousStatus'])))
           && request.resource.data.id == resource.data.id
           && request.resource.data.sellerId == resource.data.sellerId
           && request.resource.data.unit == resource.data.unit
@@ -760,8 +752,6 @@ service cloud.firestore {
             'moderationPreviousStatus', 'updatedAt'
           ])
           && validProduct(request.resource.data)
-          && (request.resource.data.status != 'HIDDEN'
-            || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data)
           && hasNoCredentialFields(request.resource.data))
         || validReviewSummaryChange(resource.data, request.resource.data, productId);
@@ -769,12 +759,19 @@ service cloud.firestore {
     }
 
     match /productBatches/{batchId} {
-      allow get, list: if canReadBatch(resource.data);
+      // Android reads the new random ID inside its transaction before creating it.
+      // An absent batch has no productId to inspect; this does not expose existing batches.
+      allow get: if (isSignedIn() && isApprovedSeller(request.auth.uid)
+          && !exists(/databases/$(database)/documents/productBatches/$(batchId)))
+          || canReadBatch(resource.data);
+      allow list: if canReadBatch(resource.data);
       allow create: if isApprovedSeller(request.auth.uid)
           && ownsProduct(request.resource.data.productId)
           && request.resource.data.id == batchId
           && request.resource.data.inventoryVersion == 1
+          && request.resource.data.expiryDate > request.time
           && request.resource.data.get('activeCampaignId', '') in ['', null]
+          && !request.resource.data.keys().hasAny(['expiredAt'])
           && validBatch(request.resource.data)
           && hasNoCredentialFields(request.resource.data);
       allow update: if (isApprovedSeller(request.auth.uid)
@@ -790,6 +787,10 @@ service cloud.firestore {
             && request.resource.data.soldQuantity == 0
             && request.resource.data.availableQuantity == request.resource.data.initialQuantity
             && (!resource.data.get('everOrdered', false)
+              || (request.resource.data.status == 'ARCHIVED'
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'inventoryVersion', 'updatedAt'])))
+            && ((resource.data.expiryDate > request.time
+                && !(resource.data.status in ['EXPIRED', 'ARCHIVED']))
               || (request.resource.data.status == 'ARCHIVED'
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'inventoryVersion', 'updatedAt'])))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -811,49 +812,6 @@ service cloud.firestore {
             && validBatch(request.resource.data));
       // Keep batch references valid for delivered AND cancelled orders. Archive instead.
       allow delete: if false;
-    }
-
-    match /promotions/{promotionId} {
-      // Checkout reads by product ID even when no promotion exists or it has expired.
-      // Sellers also read a missing document before creating it in an atomic transaction.
-      allow get: if (isSignedIn() && hasRole(request.auth.uid, 'CUSTOMER')
-            && exists(/databases/$(database)/documents/products/$(promotionId))
-            && get(/databases/$(database)/documents/products/$(promotionId)).data.status == 'ACTIVE')
-          || (isSignedIn() && isApprovedSeller(request.auth.uid) && ownsProduct(promotionId))
-          || (resource.data.active == true
-            && resource.data.startDate <= request.time
-            && resource.data.endDate > request.time)
-          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
-          || isAdmin();
-      allow list: if (resource.data.active == true
-            && resource.data.startDate <= request.time
-            && resource.data.endDate > request.time)
-          || (isSignedIn() && resource.data.sellerId == request.auth.uid)
-          || isAdmin();
-      allow create: if isApprovedSeller(request.auth.uid)
-          && promotionId == request.resource.data.productId
-          && request.resource.data.sellerId == request.auth.uid
-          && ownsProduct(request.resource.data.productId)
-          && validPromotion(request.resource.data, promotionId)
-          && hasNoCredentialFields(request.resource.data);
-      allow update: if isApprovedSeller(request.auth.uid)
-          && resource.data.sellerId == request.auth.uid
-          && request.resource.data.sellerId == resource.data.sellerId
-          && request.resource.data.productId == resource.data.productId
-          && ownsProduct(resource.data.productId)
-          && validPromotion(request.resource.data, promotionId)
-          && hasNoCredentialFields(request.resource.data);
-      allow delete: if false;
-    }
-
-    // Wallet entitlements are validated and written by the trusted backend only.
-    match /customerPromotionWallets/{customerId} {
-      allow get: if hasRole(customerId, 'CUSTOMER');
-      allow list, create, update, delete: if false;
-      match /items/{productId} {
-        allow get, list: if hasRole(customerId, 'CUSTOMER');
-        allow create, update, delete: if false;
-      }
     }
 
     match /customerCarts/{customerId} {
@@ -981,7 +939,7 @@ service cloud.firestore {
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                 'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
               ])
-              && (!(request.resource.data.status in ['REJECTED', 'STOPPED'])
+              && (request.resource.data.status != 'REJECTED'
                 || request.resource.data.moderationReason.size() >= 3)
               && hasAdminModerationFields(request.resource.data))
           )
@@ -1034,9 +992,15 @@ service cloud.firestore {
             && request.resource.data.id == resource.data.id
             && request.resource.data.campaignId == resource.data.campaignId
             && request.resource.data.userId == resource.data.userId
-            && request.resource.data.status == 'HIDDEN'
+            && (((resource.data.status in ['ACTIVE', 'EDITED'])
+                && request.resource.data.status == 'HIDDEN'
+                && request.resource.data.moderationPreviousStatus == resource.data.status)
+              || (resource.data.status == 'HIDDEN'
+                && request.resource.data.status in ['ACTIVE', 'EDITED']
+                && request.resource.data.get('moderationPreviousStatus', '') == ''))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason'
+              'status', 'updatedAt', 'moderatedBy', 'moderatedAt', 'moderationReason',
+              'moderationPreviousStatus'
             ])
             && hasAdminModerationFields(request.resource.data)
             && validCampaignComment(request.resource.data, campaignId));
@@ -1079,12 +1043,9 @@ service cloud.firestore {
             'moderatedAt', 'moderationReason'
           ])
           && validAdminBanner(request.resource.data, bannerId)
-          && (request.resource.data.active == true
-            || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data);
       allow delete: if false;
     }
-
 
 
     match /favorites/{favoriteId} {
@@ -1171,12 +1132,11 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'status', 'moderatedBy', 'moderatedAt', 'moderationReason', 'updatedAt'
           ])
-          && (!(request.resource.data.status in ['REJECTED', 'HIDDEN'])
+          && (request.resource.data.status != 'REJECTED'
             || request.resource.data.moderationReason.size() >= 3)
           && hasAdminModerationFields(request.resource.data)));
       allow delete: if false;
     }
-
 
 
     function validReportCommentContext(data) {
@@ -1247,7 +1207,7 @@ service cloud.firestore {
             'id', 'userId', 'type', 'title', 'body', 'referenceId', 'orderStatus', 'isRead', 'createdAt', 'resourceType', 'action', 'eventId'
           ])
           && request.resource.data.userId is string
-          && request.resource.data.type in ['ORDER', 'CAMPAIGN', 'PROMOTION', 'MODERATION', 'SYSTEM']
+          && request.resource.data.type in ['ORDER', 'CAMPAIGN', 'MODERATION', 'SYSTEM']
           && request.resource.data.title is string && request.resource.data.title.size() > 0
           && request.resource.data.title.size() <= 120
           && request.resource.data.body is string && request.resource.data.body.size() <= 1000
@@ -1265,6 +1225,17 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
       allow delete: if false;
     }
+
+    match /batchExpiryEvents/{batchId} {
+      allow read: if isAdmin() || (isApprovedSeller(request.auth.uid)
+          && resource.data.sellerId == request.auth.uid);
+      allow write: if false;
+    }
+    match /orderReconciliationEvents/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /cartMigrationReceipts/{receiptId} { allow read, write: if false; }
 
     match /adminAuditLogs/{auditId} {
       allow get, list: if isAdmin();
@@ -1294,7 +1265,7 @@ service cloud.firestore {
     function validClientNotificationEvent(data) {
       let collection = data.resourceType == 'ORDER' ? 'orders' : data.resourceType == 'CAMPAIGN' ? 'campaigns'
           : data.resourceType == 'SELLER_APPLICATION' ? 'sellerApplications'
-          : data.resourceType == 'REPORT' ? 'reports' : 'promotions';
+          : 'reports';
       let path = /databases/$(database)/documents/$(collection)/$(data.resourceId);
       let after = getAfter(path).data;
       return data.keys().hasOnly(['kind', 'resourceType', 'resourceId', 'actorId', 'status', 'retryCount', 'createdAt', 'nextAttemptAt'])
@@ -1309,8 +1280,6 @@ service cloud.firestore {
             || (data.kind == 'ADMINS' && data.resourceType in ['CAMPAIGN', 'SELLER_APPLICATION']
                 && hasRole(request.auth.uid, 'SELLER') && after.sellerId == request.auth.uid
                 && after.status in ['PENDING', 'PENDING_APPROVAL'])
-            || (data.kind == 'PROMOTION' && data.resourceType == 'PROMOTION'
-                && isApprovedSeller(request.auth.uid) && after.sellerId == request.auth.uid && after.active == true)
             || (data.kind == 'ORDER_PAYMENT' && data.resourceType == 'ORDER'
                 && (isAdmin() || (isApprovedSeller(request.auth.uid) && after.sellerId == request.auth.uid))
                 && after.paymentStatus == 'PAID' && get(path).data.paymentStatus != 'PAID'));
@@ -1338,6 +1307,12 @@ service cloud.firestore {
       allow get, list: if isAdmin();
     }
 
+    // Stock-backed programs and nearby coordinates
+    // are served only through the role-checked Render API. No client ledger writes.
+    match /rescueOffers/{document=**} { allow read, write: if false; }
+    match /rescueClaims/{document=**} { allow read, write: if false; }
+    match /rescueNearbyPreferences/{document=**} { allow read, write: if false; }
+    match /rescueImpact/{document=**} { allow read, write: if false; }
     match /{document=**} {
       allow read, write: if false;
     }

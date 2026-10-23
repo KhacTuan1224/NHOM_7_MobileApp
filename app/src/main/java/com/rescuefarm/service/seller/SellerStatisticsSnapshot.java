@@ -62,7 +62,7 @@ public final class SellerStatisticsSnapshot {
                     o.optString("ownerId"), o.optString("orderCode", o.optString("id")), o.optString("sellerId"), o.optString("campaignId"),
                     com.rescuefarm.domain.enums.FulfillmentType.valueOf(o.optString("fulfillmentType", "PICKUP")),
                     o.optString("receiverName", "—"), o.optString("receiverPhone", "—"), o.optString("receiverAddress"), o.optDouble("receiverLatitude"), o.optDouble("receiverLongitude"),
-                    o.optDouble("subtotal"), o.optDouble("quantityDiscount"), o.optDouble("shippingFee"), o.optDouble("totalAmount"),
+                    o.optDouble("subtotal"), o.optDouble("quantityDiscount", 0), o.optDouble("shippingFee"), o.optDouble("totalAmount"),
                     com.rescuefarm.domain.enums.PaymentMethod.valueOf(o.optString("paymentMethod", "COD")),
                     com.rescuefarm.domain.enums.PaymentStatus.valueOf(o.optString("paymentStatus", "UNPAID")),
                     com.rescuefarm.domain.enums.OrderStatus.valueOf(o.optString("status", "PENDING")), o.optString("note"),
@@ -71,7 +71,7 @@ public final class SellerStatisticsSnapshot {
         return new SellerDashboardSnapshot(inventory.optInt("products"), inventory.optInt("activeProducts"),
                 inventory.optInt("campaigns"), inventory.optInt("activeCampaigns"), completedCampaigns,
                 inventory.optInt("mobileCampaigns"), orders,
-                pendingOrders, inventory.optInt("deliveryOrders"), inventory.optInt("promotions"), revenue, kg, rescueRate,
+                pendingOrders, inventory.optInt("deliveryOrders"), revenue, kg, rescueRate,
                 top, why, recent, trend).withTotalOrders(json.optInt("totalOrders"));
     }
     private static String reasonLabel(String reason) {

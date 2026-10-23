@@ -64,7 +64,7 @@ public class GuestOrderConfirmationFlowTest {
         Order mockOrder = Order.create("order-1", OrderOwnerType.GUEST, "guest-123",
                 "RF-123456", "seller-1", null, FulfillmentType.DELIVERY,
                 "Nguyễn Văn A", "0901234567", "123 Đường A, Quận 1", 10.7, 106.6,
-                30000, 0, 15000, PaymentMethod.COD, PaymentStatus.UNPAID,
+                30000, 15000, PaymentMethod.COD, PaymentStatus.UNPAID,
                 "Giao nhanh giúp tôi", Collections.singletonList(item), new Date());
 
         callbackPassed.onSuccess(mockOrder, false);

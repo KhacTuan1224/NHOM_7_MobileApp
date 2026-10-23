@@ -52,11 +52,11 @@ public class NotificationFragment extends Fragment {
     };
     @Override public void onStart() { super.onStart(); FirebaseAuth.getInstance().addAuthStateListener(authListener); }
     @Override public void onStop() { FirebaseAuth.getInstance().removeAuthStateListener(authListener); super.onStop(); }
-    
-    private final ActivityResultLauncher<String> permissionLauncher = 
+
+    private final ActivityResultLauncher<String> permissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
                 if (!granted) {
-                    Toast.makeText(requireContext(), 
+                    Toast.makeText(requireContext(),
                             R.string.notification_permission_denied, Toast.LENGTH_LONG).show();
                 } else registerCurrentToken();
             });
@@ -71,20 +71,20 @@ public class NotificationFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
-        userId = FirebaseAuth.getInstance().getCurrentUser() == null 
-                ? "" 
+
+        userId = FirebaseAuth.getInstance().getCurrentUser() == null
+                ? ""
                 : FirebaseAuth.getInstance().getCurrentUser().getUid();
-        
+
         container = view.findViewById(R.id.notificationContainer);
         emptyText = view.findViewById(R.id.emptyNotificationText);
-        
-        viewModel = new ViewModelProvider(this, 
+
+        viewModel = new ViewModelProvider(this,
                 new EngagementViewModelFactory(requireContext()))
                 .get(EngagementViewModel.class);
-        
+
         viewModel.notifications().observe(getViewLifecycleOwner(), this::renderNotifications);
-        
+
         viewModel.getState().observe(getViewLifecycleOwner(), state -> {
             if (state.getStatus() == EngagementState.Status.ERROR) {
                 Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_LONG).show();
@@ -93,16 +93,16 @@ public class NotificationFragment extends Fragment {
                 Toast.makeText(requireContext(), state.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-        
-        view.findViewById(R.id.enableNotificationsButton).setOnClickListener(v -> 
+
+        view.findViewById(R.id.enableNotificationsButton).setOnClickListener(v ->
                 enableNotifications());
-        
+
         viewModel.refreshNotifications(userId);
     }
 
     private void enableNotifications() {
-        if (Build.VERSION.SDK_INT >= 33 
-                && ContextCompat.checkSelfPermission(requireContext(), 
+        if (Build.VERSION.SDK_INT >= 33
+                && ContextCompat.checkSelfPermission(requireContext(),
                         Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
             return;
@@ -114,7 +114,7 @@ public class NotificationFragment extends Fragment {
         com.rescuefarm.service.notification.FcmDeviceSyncWorker.refreshNow(requireContext());
         FirebaseMessaging.getInstance().getToken()
                 .addOnSuccessListener(token -> viewModel.registerToken(userId, token))
-                .addOnFailureListener(e -> Toast.makeText(requireContext(), 
+                .addOnFailureListener(e -> Toast.makeText(requireContext(),
                         R.string.fcm_token_failed, Toast.LENGTH_LONG).show());
     }
 
@@ -128,16 +128,16 @@ public class NotificationFragment extends Fragment {
         if (notifications != null) for (Notification item : notifications)
             if (item != null && !uid.isEmpty() && uid.equals(item.getUserId())) owned.add(item);
         notifications = owned;
-        
+
         if (notifications == null || notifications.isEmpty()) {
             emptyText.setVisibility(View.VISIBLE);
             container.setVisibility(View.GONE);
             return;
         }
-        
+
         emptyText.setVisibility(View.GONE);
         container.setVisibility(View.VISIBLE);
-        
+
         for (Notification notification : notifications) {
             View card = createNotificationCard(notification);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
@@ -151,15 +151,15 @@ public class NotificationFragment extends Fragment {
         card.setRadius(dp(12));
         card.setStrokeWidth(0);
         card.setCardElevation(dp(2));
-        card.setCardBackgroundColor(notification.isRead() 
+        card.setCardBackgroundColor(notification.isRead()
                 ? getColor(R.color.rescue_surface)
                 : getColor(R.color.rescue_primary_container));
-        
+
         LinearLayout content = new LinearLayout(requireContext());
         content.setOrientation(LinearLayout.HORIZONTAL);
         content.setPadding(dp(12), dp(12), dp(12), dp(12));
         content.setGravity(Gravity.CENTER_VERTICAL);
-        
+
         // Icon
         ImageView icon = new ImageView(requireContext());
         icon.setScaleType(ImageView.ScaleType.CENTER);
@@ -169,18 +169,18 @@ public class NotificationFragment extends Fragment {
         LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(40), dp(40));
         iconParams.setMarginEnd(dp(12));
         content.addView(icon, iconParams);
-        
+
         // Text content
         LinearLayout textContent = new LinearLayout(requireContext());
         textContent.setOrientation(LinearLayout.VERTICAL);
-        
+
         TextView title = new TextView(requireContext());
         title.setText(notification.getTitle());
         title.setTextSize(14);
         title.setTextColor(getColor(R.color.rescue_on_surface));
         title.setTypeface(notification.isRead() ? null : Typeface.DEFAULT_BOLD); com.rescuefarm.ui.common.AppTypography.title(title);
         textContent.addView(title);
-        
+
         TextView body = new TextView(requireContext());
         body.setText(notification.getType() == com.rescuefarm.domain.enums.NotificationType.ORDER
                 ? com.rescuefarm.ui.common.OrderLabels.notificationBody(notification.getBody()) : notification.getBody());
@@ -190,9 +190,9 @@ public class NotificationFragment extends Fragment {
         LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(-1, -2);
         bodyParams.topMargin = dp(4);
         textContent.addView(body, bodyParams);
-        
+
         // Time
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm",
                 Locale.forLanguageTag("vi-VN"));
         TextView time = new TextView(requireContext());
         time.setText(dateFormat.format(notification.getCreatedAt()));
@@ -201,27 +201,26 @@ public class NotificationFragment extends Fragment {
         LinearLayout.LayoutParams timeParams = new LinearLayout.LayoutParams(-1, -2);
         timeParams.topMargin = dp(4);
         textContent.addView(time, timeParams);
-        
+
         content.addView(textContent, new LinearLayout.LayoutParams(0, -2, 1f));
-        
+
         card.addView(content, new FrameLayout.LayoutParams(-1, -2));
-        
+
         card.setOnClickListener(v -> {
             if (requireActivity() instanceof com.rescuefarm.MainActivity)
                 ((com.rescuefarm.MainActivity)requireActivity()).openNotification(notification.getId());
         });
-        
+
         return card;
     }
 
     private int getNotificationIcon(NotificationType type) {
         if (type == null) return R.drawable.ic_nav_profile;
-        
+
         switch (type) {
             case ORDER:
                 return R.drawable.ic_nav_orders;
             case CAMPAIGN:
-            case PROMOTION:
                 return R.drawable.ic_home_search;
             case MODERATION:
                 return R.drawable.ic_nav_community;

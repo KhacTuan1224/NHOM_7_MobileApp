@@ -6,6 +6,10 @@
   "emptyCollectionPolicy": "Do not create placeholder documents. Collections materialize on first real write.",
   "enforcement": ["firestore.rules", "Android repository validation", "functions backend validation"],
   "collections": [
+    {"path":"rescueOffers/{requestId}","purpose":"Gói giải cứu giữ tồn kho từ lô thật, hộp bí ẩn và giờ chót, chỉ backend đọc/ghi","documentId":"Seller request UUID","references":["users/{sellerId}","productBatches/{batchId}"]},
+    {"path":"rescueClaims/{claimId}","purpose":"Cam kết, giữ suất, xác nhận nhận và trả tiền tại điểm; không thu trước","documentId":"SHA256(offerId|customerId)","references":["rescueOffers/{offerId}","users/{customerId}"]},
+    {"path":"rescueNearbyPreferences/{customerId}","purpose":"Vị trí chủ động bật, riêng tư, hết hạn 24 giờ","documentId":"Customer UID","references":["users/{customerId}"]},
+    {"path":"rescueImpact/{sellerId}","purpose":"Thống kê sau xác nhận nhận, tách riêng đơn vị vật lý","documentId":"Seller UID","references":["users/{sellerId}"]},
     {"path":"users/{userId}","purpose":"Tài khoản và vai trò","documentId":"Firebase Auth UID","references":[]},
     {"path":"users/{userId}/addresses/{addressId}","purpose":"Địa chỉ nhận hàng","documentId":"addressId","references":["users/{userId}"]},
     {"path":"users/{userId}/devices/{deviceId}","purpose":"Thiết bị và FCM token","documentId":"SHA-256 token","references":["users/{userId}"]},

@@ -12,4 +12,8 @@ public class ProductValidatorTest {
     @Test public void invalidDateFormat_fails() {
         assertNotNull(ProductValidator.validateBatch("05/10/2026", "2026-10-20", "10", new Date(0)));
     }
+    @Test public void sameHarvestAndExpiryDay_isRejectedBeforeFirestore() {
+        assertEquals("Ngày thu hoạch phải trước hạn sử dụng.",
+                ProductValidator.validateBatch("2026-11-10", "2026-11-10", "10", new Date(0)));
+    }
 }

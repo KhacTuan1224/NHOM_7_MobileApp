@@ -17,6 +17,25 @@ import org.junit.Test;
 
 public class ProductViewModelTest {
     @Rule public final InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
+    @Test public void publicListRequiresLiveBatchAndReappearsAfterNewBatchArrives() {
+        FakeProductRepository repository = new FakeProductRepository();
+        ProductViewModel viewModel = new ProductViewModel(repository, new FakeAuthRepository());
+        viewModel.getPublicProducts().observeForever(products -> { });
+        Product product = new Product("product", "seller", "vegetables", "Rau", "", 100, 80, "kg", "", "",
+            new ArrayList<>(), com.rescuefarm.domain.enums.ProductStatus.ACTIVE);
+        repository.products.setValue(java.util.Collections.singletonList(product));
+        assertTrue(viewModel.getPublicProductsSnapshot().isEmpty());
+        long now = System.currentTimeMillis();
+        ProductBatch old = ProductBatch.restore("old", "product", null, new java.util.Date(1), new java.util.Date(now - 1000),
+            10, 10, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        repository.batches.setValue(java.util.Collections.singletonList(old));
+        assertTrue(viewModel.getPublicProductsSnapshot().isEmpty());
+        ProductBatch fresh = ProductBatch.restore("fresh", "product", null, new java.util.Date(now), new java.util.Date(now + 3600000),
+            10, 10, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        repository.batches.setValue(java.util.Arrays.asList(old, fresh));
+        assertEquals(1, viewModel.getPublicProducts().getValue().size());
+        assertEquals(10, old.getAvailableQuantity(), 0);
+    }
 
     @Test public void invalidPrice_isRejectedBeforeRepository() {
         FakeProductRepository repository = new FakeProductRepository();
@@ -34,31 +53,10 @@ public class ProductViewModelTest {
         assertEquals(ProductScreenState.Status.SAVED, viewModel.getState().getValue().getStatus());
     }
 
-    @Test public void buyerPricingUsesOnlySavedPromotionAndRecalculatesAfterRemoval() {
-        FakeProductRepository repository = new FakeProductRepository();
-        ProductViewModel viewModel = new ProductViewModel(repository, new FakeAuthRepository());
-        Product product = new Product("product", "seller", "vegetables", "Rau", "", 100, 80, "kg", "", "",
-                new ArrayList<>(), com.rescuefarm.domain.enums.ProductStatus.ACTIVE);
-        viewModel.calculatePrice(product, 2);
-        assertEquals(80, viewModel.getPriceBreakdown().getValue().getFinalUnitPrice(), 0);
-        repository.saved = true;
-        viewModel.calculatePrice(product, 2);
-        assertEquals(72, viewModel.getPriceBreakdown().getValue().getFinalUnitPrice(), 0);
-        repository.saved = false;
-        viewModel.calculatePrice(product, 2);
-        assertEquals(80, viewModel.getPriceBreakdown().getValue().getFinalUnitPrice(), 0);
-        assertFalse(repository.rawPromotionRead);
-    }
 
     private static final class FakeProductRepository implements ProductRepository {
-        private boolean saved, rawPromotionRead;
-        @Override public void getPromotion(String id, PromotionCallback callback) { rawPromotionRead = true; }
-        @Override public void getApplicablePromotion(String id, PromotionCallback callback) {
-            long now = System.currentTimeMillis();
-            callback.onSuccess(saved ? new com.rescuefarm.domain.model.Promotion(id, "seller", id,
-                    com.rescuefarm.domain.enums.PromotionType.PERCENT, 10, new java.util.HashMap<>(),
-                    new java.util.Date(now - 100000), new java.util.Date(now + 100000), true) : null);
-        }
+
+
         private boolean saveCalled;
         private final MutableLiveData<List<Product>> products = new MutableLiveData<>(new ArrayList<>());
         private final MutableLiveData<List<Category>> categories = new MutableLiveData<>(new ArrayList<>());

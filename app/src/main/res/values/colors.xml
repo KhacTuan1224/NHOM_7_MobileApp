@@ -44,4 +44,8 @@
     <color name="admin_analytics_soft">#E6F5F3</color>
     <color name="admin_shipping">#6652A3</color>
     <color name="admin_shipping_soft">#F0EDFA</color>
+    <!-- Rescue Progress 3-Stage Colors -->
+    <color name="rescue_progress_low">#D32F2F</color>
+    <color name="rescue_progress_medium">#E68A00</color>
+    <color name="rescue_progress_high">#2E6B45</color>
 </resources>

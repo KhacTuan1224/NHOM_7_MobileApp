@@ -33,6 +33,7 @@ public class CustomerOrderListFragment extends Fragment {
         AuthRepository auth = AuthRepositoryFactory.create(requireContext());
         String ownerId = auth.isAuthenticated() ? auth.getCurrentUserId() : "";
         boolean signedIn = ownerId != null && !ownerId.trim().isEmpty();
+        if (signedIn) OrderReconciliationFragment.addEntry(this, view.findViewById(R.id.customerOrdersContainer), "Đơn cần đối soát", "");
         TextView empty = view.findViewById(R.id.customerOrdersEmpty);
         TextView message = view.findViewById(R.id.customerOrdersMessage);
         View refresh = view.findViewById(R.id.refreshCustomerOrdersButton);

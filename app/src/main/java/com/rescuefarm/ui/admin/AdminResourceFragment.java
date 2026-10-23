@@ -52,7 +52,6 @@ public final class AdminResourceFragment extends Fragment {
     private AdminViewModel viewModel;
     private Section section;
     private TextView title, message;
-    private EditText reason;
     private ProgressBar progress;
     private LinearLayout container;
     private EditText searchInput;
@@ -102,9 +101,10 @@ public final class AdminResourceFragment extends Fragment {
         section = Section.from(raw);
         title = view.findViewById(R.id.adminResourceTitle);
         message = view.findViewById(R.id.adminResourceMessage);
-        reason = view.findViewById(R.id.adminModerationReason);
+        view.findViewById(R.id.adminModerationReason).setVisibility(View.GONE);
         progress = view.findViewById(R.id.adminResourceProgress);
         container = view.findViewById(R.id.adminResourceContainer);
+        if (section == Section.ORDERS) com.rescuefarm.ui.order.OrderReconciliationFragment.addEntry(this, container, "Đơn cần đối soát", "");
         searchInput = view.findViewById(R.id.adminSearchInput);
         statusFilter = view.findViewById(R.id.adminStatusFilter);
         loadMoreButton = view.findViewById(R.id.loadMoreAdminItemsButton);
@@ -125,13 +125,12 @@ public final class AdminResourceFragment extends Fragment {
             addCatalog.setOnClickListener(v -> showCatalogEditor(null));
         }
         if (section == Section.SHIPPING_SETTINGS) {
-            addCatalog.setVisibility(View.GONE); reason.setVisibility(View.GONE);
+            addCatalog.setVisibility(View.GONE);
             searchInput.setVisibility(View.GONE); statusFilter.setVisibility(View.GONE);
             view.findViewById(R.id.adminOrderDateFilters).setVisibility(View.GONE);
             loadMoreButton.setVisibility(View.GONE);
         }
-        reason.setVisibility(section == Section.CATEGORIES || section == Section.BANNERS
-                ? View.VISIBLE : View.GONE);
+        // Admin hide/show actions on catalog resources do not require a reason.
         viewModel = new ViewModelProvider(this, new AdminViewModelFactory(requireContext()))
                 .get(AdminViewModel.class);
         viewModel.getState().observe(getViewLifecycleOwner(), this::render);
@@ -148,8 +147,8 @@ public final class AdminResourceFragment extends Fragment {
                 });
             } else dateFilters.setVisibility(View.GONE);
             if (section == Section.ORDERS) searchInput.setHint("orderCode / code: / seller: / customer: / id:");
-            else if (section == Section.REPORTS) searchInput.setHint("target ID hoặc target:...");
-            else searchInput.setHint("Tìm theo tên hoặc nhập id:<mã>");
+            else if (section == Section.REPORTS) searchInput.setHint("Tìm tiêu đề, nội dung hoặc target:<ID>");
+            else searchInput.setHint("Tìm theo tiêu đề, tên hoặc ID (không dấu cũng được)");
             statusFilter.setAdapter(new com.rescuefarm.ui.common.CodeLabelAdapter(requireContext(),
                     getResources().getStringArray(R.array.admin_status_filters)));
             statusFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
@@ -322,14 +321,35 @@ public final class AdminResourceFragment extends Fragment {
             actions.addView(upload);
             Button toggle = listButton(item.isActive() ? "Ẩn" : "Hiện", getString(item.isActive()
                     ? R.string.admin_disable_action : R.string.admin_enable_action));
-            toggle.setOnClickListener(v -> viewModel.setActive(item.getId(), !item.isActive(),
-                    reason.getText().toString().trim()));
+            toggle.setOnClickListener(v -> changeCatalogVisibility(item, toggle));
             actions.addView(toggle);
         }
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         cardParams.topMargin = listDp(6); cardParams.bottomMargin = listDp(6);
         container.addView(row, cardParams);
+    }
+
+    private void changeCatalogVisibility(AdminListItem item, Button toggle) {
+        boolean show = !item.isActive();
+        if (section == Section.CATEGORIES) {
+            toggle.setEnabled(false);
+            viewModel.setActive(item.getId(), show, "");
+            return;
+        }
+        if (show) {
+            toggle.setEnabled(false);
+            viewModel.setActive(item.getId(), true, "");
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Ẩn nội dung")
+                .setMessage("Bạn có muốn ẩn nội dung này không?")
+                .setNegativeButton("Hủy", null)
+                .setPositiveButton("Ẩn", (d, which) -> {
+                    toggle.setEnabled(false);
+                    viewModel.setActive(item.getId(), false, "");
+                }).show();
     }
 
     private void addListText(LinearLayout parent, String value, int size, boolean bold) {
@@ -413,7 +433,8 @@ public final class AdminResourceFragment extends Fragment {
                 chooseBannerCampaign(campaignField, selectedCampaignId));
         final EditText startField = start, endField = end;
         CheckBox active = new CheckBox(requireContext()); active.setText("Đang hiển thị"); active.setChecked(true); fields.addView(active);
-        EditText note = editor("Lý do quản trị (bắt buộc khi tắt) "); note.setMinLines(2); fields.addView(note);
+        EditText note = editor("Lý do quản trị (bắt buộc khi tắt) "); note.setMinLines(2);
+        if (!category) fields.addView(note);
         final boolean[] detailLoaded = {!editing};
         upload.setEnabled(!editing);
         if (editing) {
@@ -471,14 +492,14 @@ public final class AdminResourceFragment extends Fragment {
             String resourceId = id.getText().toString().trim();
             String resourceName = name.getText().toString().trim();
             String displayImage = image.getText().toString().trim();
-            String reasonText = note.getText().toString().trim();
+            String reasonText = category ? "" : note.getText().toString().trim();
             if (!com.rescuefarm.service.admin.CatalogImagePolicy.isAllowed(displayImage, originalImageUrl[0])) {
                 image.setVisibility(View.VISIBLE); image.setError("Nhập đường dẫn ảnh HTTPS hợp lệ."); return;
             }
             if (resourceName.length() < (category ? 2 : 3) || resourceName.length() > 120) {
                 name.setError(category ? "Tên danh mục phải có từ 2 đến 120 ký tự." : "Tiêu đề phải có từ 3 đến 120 ký tự."); return;
             }
-            if (!active.isChecked() && reasonText.length() < 3) {
+            if (!category && !active.isChecked() && reasonText.length() < 3) {
                 note.setError("Nhập lý do tắt hiển thị (ít nhất 3 ký tự)."); return;
             }
             int displayOrder;
@@ -547,9 +568,10 @@ public final class AdminResourceFragment extends Fragment {
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, names);
                 list.setAdapter(adapter);
                 Runnable filter = () -> {
-                    String term = search.getText().toString().trim().toLowerCase(Locale.ROOT);
+                    String term = search.getText().toString().trim();
                     visible.clear(); names.clear();
-                    for (AdminListItem campaign : campaigns) if (campaign.getTitle().toLowerCase(Locale.ROOT).contains(term)) {
+                    for (AdminListItem campaign : campaigns) if (com.rescuefarm.service.admin.AdminSearchText
+                            .contains(campaign.getTitle(), term)) {
                         visible.add(campaign); names.add(campaign.getTitle());
                     }
                     adapter.notifyDataSetChanged();

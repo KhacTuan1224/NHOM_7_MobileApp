@@ -75,6 +75,7 @@ public class BatchManagerFragment extends Fragment {
                 productId, text(harvest), text(expiry), text(quantity), editingVersion));
         view.findViewById(R.id.cancelBatchEditButton).setOnClickListener(v -> clearEditor());
         viewModel.refreshBatches(productId);
+        com.rescuefarm.ui.common.ExpiryUiRefresh.bind(this, () -> render(batches));
     }
     private void render(List<ProductBatch> values) {
         batches = values == null ? new ArrayList<>() : new ArrayList<>(values);
@@ -92,8 +93,11 @@ public class BatchManagerFragment extends Fragment {
     private View card(ProductBatch batch, Date now) {
         SellerUiStyles.Row row = SellerUiStyles.row(requireContext(), SellerUiStyles.Section.BATCHES);
         row.title("Lô hàng"); row.metadata("ID: " + batch.getId());
+        row.body(String.format(java.util.Locale.forLanguageTag("vi-VN"),
+                "Được phép bán: %.2f • Tồn chưa bán (kể cả hết hạn): %.2f",
+                batch.getSellableQuantity(now), batch.getAvailableQuantity()));
         row.body(getString(R.string.batch_info_format,
-                batch.getAvailableQuantity(), batch.getReservedQuantity(), batch.getSoldQuantity(),
+                batch.getSellableQuantity(now), batch.getReservedQuantity(), batch.getSoldQuantity(),
                 EnumLabels.label(batch.getStatus()), batch.getInventoryVersion()));
         TextView alerts = row.body("");
         StringBuilder warning = new StringBuilder();
@@ -118,7 +122,8 @@ public class BatchManagerFragment extends Fragment {
                 ? R.color.rescue_critical : R.color.rescue_on_surface_variant, requireContext().getTheme()));
         alerts.setVisibility(warning.length() == 0 ? View.GONE : View.VISIBLE);
         Button edit = row.action("Sửa", getString(R.string.edit_action), v -> edit(batch));
-        edit.setEnabled(batch.getStatus() != BatchStatus.ARCHIVED);
+        edit.setEnabled(batch.getStatus() != BatchStatus.ARCHIVED
+                && batch.getStatus() != BatchStatus.EXPIRED && !batch.isExpired(now));
         Button delete = row.action("Lưu trữ", "Lưu trữ lô hàng", v -> viewModel.deleteBatch(batch.getId(), batch.getInventoryVersion()));
         delete.setEnabled(batch.getStatus() != BatchStatus.ARCHIVED && batch.getReservedQuantity() == 0D && batch.getSoldQuantity() == 0D
                 && (batch.getActiveCampaignId() == null || batch.getActiveCampaignId().isEmpty()));

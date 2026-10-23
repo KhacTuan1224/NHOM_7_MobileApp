@@ -88,11 +88,13 @@ test('approval rejects uncommitted, external and wrong-cloud image references',a
   await f.db.runTransaction(tx=>assertApprovalMedia(tx,f.db,'campaign',c,'cloud'));
   await assert.rejects(()=>f.db.runTransaction(tx=>assertApprovalMedia(tx,f.db,'campaign',c,'wrong-cloud')),e=>e.status===409);
 });
-test('advertised volume threshold has the same unit price in authoritative checkout',()=>{
-  const {price}=require('./commerce');const now=Date.now();
-  const product={originalPrice:100000,rescuePrice:80000};const promo={active:true,type:'VOLUME',value:0,quantityDiscountTiers:{'1.5':12.5},startDate:new Timestamp(now-1000),endDate:new Timestamp(now+1000)};
-  assert.equal(price(product,promo,1.5,now).unit,70000);assert.equal(price(product,promo,1,now).unit,80000);
-  assert.equal(price(product,promo,1.5,now+1001).unit,80000);
+test('checkout uses unchanged rescue unit price for every quantity',()=>{
+  const {price}=require('./commerce');
+  const product={originalPrice:100000,rescuePrice:80000};
+  for(const quantity of [1,1.5,5,20]) {
+    assert.equal(price(product,quantity).unit,80000);
+    assert.equal(price(product,quantity).subtotal,Math.round(80000*quantity));
+  }
 });
 
 test('Campaign approval during an in-flight upload prevents finalizing the new image',async()=>{

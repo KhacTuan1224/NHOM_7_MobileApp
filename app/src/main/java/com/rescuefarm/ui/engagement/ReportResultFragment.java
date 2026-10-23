@@ -37,8 +37,17 @@ public final class ReportResultFragment extends Fragment {
         com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
         ownerUid = user == null ? "" : user.getUid();
         reportId = getArguments() == null ? "" : getArguments().getString("reportId", ""); cursor = ""; loading = false;
-        addText(reportId.isEmpty() ? "Báo cáo của tôi" : "Kết quả báo cáo", 26);
-        Button back = button(); back.setText("Quay lại"); back.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack()); content.addView(back);
+        LinearLayout header = new LinearLayout(requireContext());
+        header.setGravity(Gravity.CENTER_VERTICAL); content.addView(header);
+        com.rescuefarm.ui.common.AppBackButton back = new com.rescuefarm.ui.common.AppBackButton(requireContext());
+        int target = Math.round(48 * getResources().getDisplayMetrics().density);
+        header.addView(back, new LinearLayout.LayoutParams(target, target));
+        back.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
+        TextView title = new TextView(requireContext());
+        title.setText(reportId.isEmpty() ? "Báo cáo của tôi" : "Kết quả báo cáo"); title.setTextAppearance(com.rescuefarm.R.style.TextAppearance_RescueFarm_Detail_PageTitle);
+        title.setTextColor(requireContext().getColor(com.rescuefarm.R.color.rescue_on_surface));
+        com.rescuefarm.ui.common.AppTypography.title(title);
+        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         status = addText("", 14); more = button(); more.setText("Tải lại");
         more.setOnClickListener(v -> load()); content.addView(more); load();
     }
@@ -51,7 +60,7 @@ public final class ReportResultFragment extends Fragment {
         button.setCornerRadius(Math.round(14 * getResources().getDisplayMetrics().density)); button.setAllCaps(false); return button;
     }
     private TextView addText(String value, int size) {
-        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(size); text.setPadding(0, 12, 0, 12);
+        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(size >= 18 ? 18 : 15); com.rescuefarm.ui.common.AppTypography.body(text); text.setPadding(0, 12, 0, 12);
         text.setTextColor(requireContext().getColor(com.rescuefarm.R.color.rescue_on_surface));
         content.addView(text); return text;
     }

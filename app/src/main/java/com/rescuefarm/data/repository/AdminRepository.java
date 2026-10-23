@@ -26,7 +26,7 @@ public interface AdminRepository {
     }
 
     enum ErrorCode { UNAUTHENTICATED, FORBIDDEN, NETWORK, VALIDATION, NOT_FOUND, CONFLICT, UNKNOWN }
-    enum ReportAction { MARK_IN_REVIEW, DISMISS, HIDE_TARGET, BLOCK_USER }
+    enum ReportAction { MARK_IN_REVIEW, DISMISS, HIDE_TARGET, SHOW_TARGET, BLOCK_USER }
 
     interface DashboardCallback {
         void onSuccess(AdminDashboardSnapshot snapshot);

@@ -17,6 +17,20 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 public class DiscoveryEngineTest {
+    @Test public void minimumStockUsesTotalEligibleBatchesAndStillExcludesExpiredStock() {
+        Product p = Product.restore("p", "s", "fruit", "Xoài", "", 50, 30, "kg", "", "",
+            Collections.emptyList(), 0, 0, ProductStatus.ACTIVE);
+        Date now = new Date(2000);
+        com.rescuefarm.domain.model.ProductBatch a = com.rescuefarm.domain.model.ProductBatch.restore(
+            "a", "p", null, new Date(1), new Date(3000), 6, 6, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        com.rescuefarm.domain.model.ProductBatch b = com.rescuefarm.domain.model.ProductBatch.restore(
+            "b", "p", null, new Date(1), new Date(4000), 6, 6, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        DiscoveryQuery q = new DiscoveryQuery("", "", "", null, null, null, DiscoveryQuery.Sort.RELEVANCE, 0, Double.MAX_VALUE, 0, 0, 10);
+        java.util.Map<String, List<com.rescuefarm.domain.model.ProductBatch>> batches = Collections.singletonMap("p", Arrays.asList(a,b));
+        DiscoveryEngine engine = new DiscoveryEngine();
+        assertEquals(1, engine.search(Collections.singletonList(p), Collections.emptyList(), batches, q, null, null, now).size());
+        assertTrue(engine.search(Collections.singletonList(p), Collections.emptyList(), batches, q, null, null, new Date(3000)).isEmpty());
+    }
     @Test public void catalogProvinceNames_matchShortSavedNames_andStayAppliedWhileTyping() {
         Product mango = Product.restore("mango", "s", "fruit", "Xoài cát", "Nông sản",
                 50D, 30D, "kg", "Vườn nhà", "Đồng Tháp", Collections.emptyList(),
@@ -29,12 +43,13 @@ public class DiscoveryEngineTest {
         DiscoveryEngine engine = new DiscoveryEngine();
         List<Product> products = Arrays.asList(mango, otherProvince);
         List<DiscoveryResult> result = engine.search(products, Collections.emptyList(),
+                stock(products),
                 filter.withText("xoai"), null, null, new Date());
         assertEquals(1, result.size());
         assertEquals("mango", result.get(0).getProduct().getId());
-        assertTrue(engine.search(products, Collections.emptyList(), filter.withText("bo"),
+        assertTrue(engine.search(products, Collections.emptyList(), stock(products), filter.withText("bo"),
                 null, null, new Date()).isEmpty());
-        assertEquals(2, engine.search(products, Collections.emptyList(), DiscoveryQuery.empty(),
+        assertEquals(2, engine.search(products, Collections.emptyList(), stock(products), DiscoveryQuery.empty(),
                 null, null, new Date()).size());
     }
 
@@ -45,7 +60,7 @@ public class DiscoveryEngineTest {
         DiscoveryQuery query = new DiscoveryQuery("", "", "Thành phố Hồ Chí Minh", null, null, null,
                 DiscoveryQuery.Sort.RELEVANCE);
         assertEquals(1, new DiscoveryEngine().search(Collections.singletonList(product),
-                Collections.emptyList(), query, null, null, new Date()).size());
+                Collections.emptyList(), stock(Collections.singletonList(product)), query, null, null, new Date()).size());
     }
 
     @Test public void textSearch_isAccentInsensitive_andCriticalComesFirst() {
@@ -58,7 +73,7 @@ public class DiscoveryEngineTest {
         DiscoveryQuery query = new DiscoveryQuery("xoai", "", "", null, null, null,
                 DiscoveryQuery.Sort.RELEVANCE);
         List<DiscoveryResult> onlyProduct = new DiscoveryEngine().search(
-                Collections.singletonList(mango), Collections.emptyList(), query, null, null, now);
+                Collections.singletonList(mango), Collections.emptyList(), stock(Collections.singletonList(mango)), query, null, null, now);
         assertEquals("p", onlyProduct.get(0).getProduct().getId());
 
         List<DiscoveryResult> all = new DiscoveryEngine().search(Collections.singletonList(mango),
@@ -80,6 +95,30 @@ public class DiscoveryEngineTest {
                 null, null, DiscoveryQuery.Sort.DISTANCE);
         assertTrue(new DiscoveryEngine().search(Collections.emptyList(),
                 Collections.singletonList(stale), query, 10D, 106D, now).isEmpty());
+    }
+
+    private java.util.Map<String, List<com.rescuefarm.domain.model.ProductBatch>> stock(List<Product> products) {
+        java.util.Map<String, List<com.rescuefarm.domain.model.ProductBatch>> result = new java.util.HashMap<>();
+        for (Product product : products) result.put(product.getId(), Collections.singletonList(
+            com.rescuefarm.domain.model.ProductBatch.restore("b-" + product.getId(), product.getId(), null,
+                new Date(1), new Date(Long.MAX_VALUE), 10, 10, 0, 0,
+                com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1)));
+        return result;
+    }
+
+    @Test public void defaultAndCategorySearchHideExpiredStockAndReviveWithNewBatch() {
+        Product p = Product.restore("p", "s", "fruit", "Xoài", "Nông sản", 50, 30, "kg", "", "",
+            Collections.emptyList(), 0, 0, ProductStatus.ACTIVE);
+        Date now = new Date(2000);
+        com.rescuefarm.domain.model.ProductBatch old = com.rescuefarm.domain.model.ProductBatch.restore(
+            "old", "p", null, new Date(1), now, 10, 10, 0, 0, com.rescuefarm.domain.enums.BatchStatus.AVAILABLE, 1);
+        DiscoveryEngine engine = new DiscoveryEngine();
+        List<Product> products = Collections.singletonList(p);
+        java.util.Map<String, List<com.rescuefarm.domain.model.ProductBatch>> batches = Collections.singletonMap("p", Collections.singletonList(old));
+        assertTrue(engine.search(products, Collections.emptyList(), batches, DiscoveryQuery.empty(), null, null, now).isEmpty());
+        DiscoveryQuery category = new DiscoveryQuery("", "fruit", "", null, null, null, DiscoveryQuery.Sort.RELEVANCE);
+        assertTrue(engine.search(products, Collections.emptyList(), batches, category, null, null, now).isEmpty());
+        assertEquals(1, engine.search(products, Collections.emptyList(), stock(products), category, null, null, now).size());
     }
 
     private RescueCampaign campaign(String id, UrgencyLevel urgency, Date now) {

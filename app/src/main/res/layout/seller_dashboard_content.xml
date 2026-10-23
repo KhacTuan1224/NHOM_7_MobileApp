@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/sellerDashboardContent" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical">
+        <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center_vertical" android:orientation="horizontal"
+            android:paddingStart="16dp" android:paddingEnd="16dp" android:background="@color/rescue_surface">
+            <com.google.android.material.button.MaterialButton android:id="@+id/sellerDashboardMenuButton"
+                style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="48dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:minWidth="0dp" android:padding="0dp"
+                android:text="☰" android:textSize="24sp" android:textColor="@color/rescue_on_surface"
+                android:contentDescription="Mở menu cửa hàng" />
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Quản trị Cửa hàng" android:textStyle="bold" android:textSize="16sp"
+                android:textColor="@color/rescue_on_surface" android:paddingStart="8dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/refreshSellerDashboardButton"
+                style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="48dp"
+                android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:minWidth="0dp" android:padding="0dp"
+                android:text="↻" android:textSize="24sp" android:textColor="@color/rescue_primary"
+                android:contentDescription="@string/refresh_seller_dashboard" />
+        </com.rescuefarm.ui.common.ResponsiveActionLayout>
+
+        <com.rescuefarm.ui.common.NavigationAwareNestedScrollView android:layout_width="match_parent"
+            android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true"
+            android:clipToPadding="false">
+            <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
+
+                <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/seller_dashboard_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"
+                    android:paddingTop="4dp" />
+                <TextView android:id="@+id/sellerDashboardMessage" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:paddingTop="8dp"
+                    android:textColor="@color/rescue_on_surface_variant" />
+                <ProgressBar android:id="@+id/sellerDashboardProgress" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp" android:text="KỲ THỐNG KÊ"
+                    android:textSize="12sp" android:textStyle="bold" android:textColor="@color/rescue_primary" />
+                <Spinner android:id="@+id/sellerStatsPeriodSpinner" android:layout_width="match_parent"
+                    android:layout_height="@dimen/touch_target_min"
+                    android:contentDescription="@string/seller_stats_period_label" />
+                <LinearLayout android:id="@+id/sellerDashboardStats" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical" />
+
+                <com.google.android.material.button.MaterialButton android:id="@+id/sellerHomeOrdersButton"
+                    style="@style/Widget.RescueFarm.AdminOutlinedButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:minHeight="48dp" android:layout_marginTop="16dp" android:text="Quản lý đơn hàng" />
+                <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp" android:text="@string/seller_recent_orders_title"
+                    android:textAppearance="@style/TextAppearance.RescueFarm.SectionTitle" />
+                <LinearLayout android:id="@+id/sellerRecentOrders" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical" />
+                <LinearLayout android:id="@+id/sellerDashboardAnalytics" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical" />
+
+            </com.rescuefarm.ui.common.ResponsiveContentLayout>
+        </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>
+    </LinearLayout>

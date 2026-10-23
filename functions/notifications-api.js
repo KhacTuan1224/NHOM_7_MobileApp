@@ -2,7 +2,7 @@ const express = require('express');
 const {enqueueNotification, digest} = require('./notification-outbox');
 const text = v => typeof v === 'string' ? v.trim() : '';
 const fail = (status, message) => Object.assign(Error(message), {status});
-const collections = {ORDER: 'orders', SELLER_APPLICATION: 'sellerApplications', CAMPAIGN: 'campaigns', REPORT: 'reports', PRODUCT: 'products', PROMOTION: 'products', REVIEW: 'reviews', USER: 'users'};
+const collections = {ORDER: 'orders', SELLER_APPLICATION: 'sellerApplications', CAMPAIGN: 'campaigns', REPORT: 'reports', PRODUCT: 'products', REVIEW: 'reviews', USER: 'users'};
 const sections = {ORDER: 'ORDERS', SELLER_APPLICATION: 'SELLER_APPLICATIONS', CAMPAIGN: 'CAMPAIGNS', REPORT: 'REPORTS', PRODUCT: 'PRODUCTS', REVIEW: 'REVIEWS', USER: 'USERS'};
 function createNotificationsApi({db, admin, authenticate}) {
   const router = express.Router();
@@ -11,13 +11,14 @@ function createNotificationsApi({db, admin, authenticate}) {
     const inbox = await db.collection('notifications').doc(id).get();
     if (!inbox.exists || inbox.get('userId') !== caller.uid) throw fail(403, 'Thông báo không thuộc tài khoản hiện tại.');
     const n = inbox.data(), referenceId = text(n.referenceId);
-    let type = text(n.resourceType) || ({ORDER: 'ORDER', CAMPAIGN: 'CAMPAIGN', PROMOTION: 'PROMOTION'})[n.type];
+    let type = text(n.resourceType) || ({ORDER: 'ORDER', CAMPAIGN: 'CAMPAIGN'})[n.type];
     if (!type && caller.role === 'ADMIN' && n.type === 'MODERATION') {
       const candidates = await Promise.all(['CAMPAIGN', 'REPORT', 'SELLER_APPLICATION'].map(async type =>
         ({type, exists: (await db.collection(collections[type]).doc(referenceId).get()).exists})));
       const found = candidates.filter(c => c.exists);
       if (found.length === 1) type = found[0].type;
     }
+    if (type === 'RESCUE_OFFER') return {destination: 'rescueHubFragment', args: referenceId ? {offerId: referenceId} : {}};
     if (!type || !referenceId) return {destination: 'notificationFragment', args: {}, message: 'Thông báo cũ chưa có thông tin điều hướng cụ thể.'};
     if (!Object.hasOwn(collections, type)) return {destination: 'notificationFragment', args: {}, message: 'Nội dung thông báo không còn khả dụng.'};
     const source = await db.collection(collections[type]).doc(referenceId).get();
@@ -42,7 +43,7 @@ function createNotificationsApi({db, admin, authenticate}) {
     }
     const owner = source.get('sellerId') === caller.uid;
     if (type === 'CAMPAIGN' && (owner || source.get('status') === 'ACTIVE')) return {destination: 'campaignDetailFragment', args: {campaignId: referenceId}};
-    if (['PRODUCT', 'PROMOTION'].includes(type) && (owner || source.get('status') === 'ACTIVE')) return {destination: 'productDetailFragment', args: {productId: referenceId}};
+    if (type === 'PRODUCT' && (owner || source.get('status') === 'ACTIVE')) return {destination: 'productDetailFragment', args: {productId: referenceId}};
     if (type === 'USER' && referenceId === caller.uid) return {destination: 'profileFragment', args: {}};
     if (type === 'REVIEW' && source.get('customerId') === caller.uid) return {destination: 'reviewFragment', args: {productId: source.get('productId')}};
     throw fail(403, 'Nội dung không khả dụng với tài khoản hiện tại.');
@@ -112,23 +113,20 @@ function createNotificationsApi({db, admin, authenticate}) {
     try {
       const caller = await authenticate(req, ['SELLER', 'CUSTOMER', 'ADMIN']);
       const type = text(req.body.type), id = text(req.body.referenceId);
-      if (!['ORDER', 'CAMPAIGN', 'PROMOTION'].includes(type)) throw fail(400, 'Thông báo hệ thống phải xuất phát từ sự kiện nghiệp vụ.');
-      const name = type === 'PROMOTION' ? 'promotions' : collections[type];
+      if (!['ORDER', 'CAMPAIGN'].includes(type)) throw fail(400, 'Thông báo hệ thống phải xuất phát từ sự kiện nghiệp vụ.');
+      const name = collections[type];
       const source = await db.collection(name).doc(id).get();
       if (!source.exists || caller.role !== 'ADMIN' && ![source.get('sellerId'), source.get('ownerId')].includes(caller.uid)) throw fail(403, 'Không có quyền gửi thông báo này.');
       const version = source.get('updatedAt') || source.get('createdAt');
       if (!version) throw fail(409, 'Nội dung cũ thiếu ngày cập nhật; cần đối soát.');
-      if (type === 'PROMOTION' && (!source.get('active') || source.get('endDate').toMillis() <= Date.now())
-          || type === 'CAMPAIGN' && source.get('status') !== 'ACTIVE') return res.json({ok: true, skipped: true});
+      if (type === 'CAMPAIGN' && source.get('status') !== 'ACTIVE') return res.json({ok: true, skipped: true});
       if (type === 'ORDER' && source.get('ownerType') !== 'CUSTOMER') return res.json({ok: true, skipped: true});
       const payment = type === 'ORDER' && source.get('paymentMethod') === 'BANK_TRANSFER' && source.get('paymentStatus') === 'PAID';
       const decision = payment ? 'PAYMENT_PAID' : source.get('status');
       const events = await db.collection('notificationOutbox').where('resourceId', '==', id).get();
       const existing = events.docs.some(event => event.get('resourceType') === type && (type === 'CAMPAIGN' && event.get('kind') === 'CAMPAIGN'
         || type === 'ORDER' && (payment ? event.get('kind') === 'ORDER_PAYMENT' || event.get('decision') === decision
-          : event.get('decision') === decision && event.get('recipientUid') === source.get('ownerId'))
-        || type === 'PROMOTION' && (() => { const at = event.get('sourceUpdatedAt') || event.get('createdAt');
-          return at && at.seconds === version.seconds && at.nanoseconds === version.nanoseconds; })()));
+          : event.get('decision') === decision && event.get('recipientUid') === source.get('ownerId'))));
       if (!existing) {
         const eventId = 'compat_' + digest(`${type}|${id}|${version.seconds}|${version.nanoseconds}|${decision || ''}`);
         await db.runTransaction(async tx => {

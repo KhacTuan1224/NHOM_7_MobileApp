@@ -29,6 +29,9 @@ public class ProfileFragment extends Fragment {
     private TextView businessInfo;
     private ImageView avatarView;
     private View progress, addressButton, sellerButton, favoritesButton;
+    private User profileUser;
+    private com.rescuefarm.domain.model.SellerApplication sellerApplication;
+    private boolean observingApplication;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
@@ -36,20 +39,22 @@ public class ProfileFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        profileUser = null; sellerApplication = null; observingApplication = false;
         nameView = view.findViewById(R.id.profileName);
         emailView = view.findViewById(R.id.profileEmail);
         roleView = view.findViewById(R.id.profileRole);
         statusView = view.findViewById(R.id.profileStatus);
         avatarView = view.findViewById(R.id.profileAvatar);
         businessInfo = new TextView(requireContext()); businessInfo.setVisibility(View.GONE);
+        businessInfo.setTextSize(14);
+        businessInfo.setTextColor(requireContext().getColor(R.color.rescue_on_surface_variant));
+        businessInfo.setPadding(0, Math.round(8 * getResources().getDisplayMetrics().density), 0, 0);
         android.view.ViewGroup form = (android.view.ViewGroup)statusView.getParent(); form.addView(businessInfo, form.indexOfChild(statusView) + 1);
         progress = view.findViewById(R.id.profileProgress);
         addressButton = view.findViewById(R.id.addressesButton);
         addressButton.setVisibility(View.GONE);
         sellerButton = view.findViewById(R.id.sellerProfileButton);
         favoritesButton = view.findViewById(R.id.favoritesButton);
-        view.findViewById(R.id.profilePromotionWalletButton).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         view.findViewById(R.id.editProfileButton).setOnClickListener(
                 Navigation.createNavigateOnClickListener(R.id.action_profileFragment_to_editProfileFragment));
         addressButton.setOnClickListener(Navigation.createNavigateOnClickListener(
@@ -104,20 +109,31 @@ public class ProfileFragment extends Fragment {
 
     private void renderProfile(User user) {
         if (user == null) return;
+        profileUser = user;
         nameView.setText(user.getFullName()); emailView.setText(user.getEmail());
+        renderVerification();
+        if (user instanceof Seller && !observingApplication) {
+            observingApplication = true;
+            viewModel.observeSellerApplication().observe(getViewLifecycleOwner(), application -> {
+                sellerApplication = application;
+                renderVerification();
+            });
+        }
         String avatarUrl = user.getAvatarUrl();
+        android.graphics.drawable.Drawable person = androidx.core.content.ContextCompat.getDrawable(
+                requireContext(), R.drawable.ic_nav_profile).mutate();
+        androidx.core.graphics.drawable.DrawableCompat.setTint(person, android.graphics.Color.WHITE);
+        android.graphics.drawable.Drawable placeholder = new android.graphics.drawable.InsetDrawable(
+                person, Math.round(16 * getResources().getDisplayMetrics().density));
+        avatarView.setPadding(0, 0, 0, 0);
+        avatarView.setImageTintList(null);
         if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
-            avatarView.setPadding(0, 0, 0, 0);
-            avatarView.setImageTintList(null);
             Glide.with(this).load(avatarUrl.trim()).circleCrop()
-                    .placeholder(R.drawable.ic_nav_profile).error(R.drawable.ic_nav_profile)
+                    .placeholder(placeholder).error(placeholder)
                     .into(avatarView);
         } else {
             Glide.with(this).clear(avatarView);
-            avatarView.setPadding(16, 16, 16, 16);
-            avatarView.setImageResource(R.drawable.ic_nav_profile);
-            avatarView.setImageTintList(android.content.res.ColorStateList.valueOf(
-                    requireContext().getColor(R.color.rescue_primary)));
+            avatarView.setImageDrawable(placeholder);
         }
         businessInfo.setVisibility(View.GONE);
         if (user instanceof com.rescuefarm.domain.model.Customer && ((com.rescuefarm.domain.model.Customer)user).getCustomerType()
@@ -129,13 +145,36 @@ public class ProfileFragment extends Fragment {
         addressButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         sellerButton.setVisibility(user.getRole() == UserRole.SELLER ? View.VISIBLE : View.GONE);
         favoritesButton.setVisibility(user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
-        requireView().findViewById(R.id.profilePromotionWalletButton).setVisibility(
-                user.getRole() == UserRole.CUSTOMER ? View.VISIBLE : View.GONE);
         if (user instanceof Seller) {
             Seller seller = (Seller) user;
             statusView.setText(seller.canSell()
                     ? R.string.seller_approved_message : R.string.seller_pending_message);
         } else statusView.setText(user.getRole() == UserRole.ADMIN
                 ? R.string.admin_access_message : R.string.customer_profile_message);
+    }
+
+    private void renderVerification() {
+        if (!(profileUser instanceof Seller)) {
+            nameView.setCompoundDrawablesRelative(null, null, null, null);
+            nameView.setContentDescription(null);
+            return;
+        }
+        boolean verified = profileUser.isActive() && ((Seller) profileUser).canSell()
+                && sellerApplication != null
+                && profileUser.getId().equals(sellerApplication.getSellerId())
+                && sellerApplication.getStatus() == com.rescuefarm.domain.enums.ApplicationStatus.APPROVED
+                && sellerApplication.getProofImageUrl() != null
+                && sellerApplication.getProofImageUrl().trim().toLowerCase(java.util.Locale.ROOT).startsWith("https://");
+        android.graphics.drawable.Drawable tick = androidx.core.content.ContextCompat.getDrawable(
+                requireContext(), R.drawable.ic_shop_verified);
+        if (tick != null) {
+            tick = tick.mutate();
+            tick.setTint(requireContext().getColor(verified ? R.color.rescue_primary : R.color.rescue_on_surface_variant));
+            int size = Math.round(16 * getResources().getDisplayMetrics().density);
+            tick.setBounds(0, 0, size, size);
+        }
+        nameView.setCompoundDrawablesRelative(null, null, tick, null);
+        nameView.setContentDescription(getString(verified ? R.string.article_verified_description
+                : R.string.article_unverified_description, nameView.getText()));
     }
 }

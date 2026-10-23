@@ -1,0 +1,14 @@
+<resources>
+    <string name="article_shop_avatar">Ảnh cửa hàng công khai</string>
+    <string name="article_shop_default">Cửa hàng nông sản</string>
+    <string name="article_unverified_description">%1$s, chưa xác minh đăng ký kinh doanh</string>
+    <string name="article_verified_description">%1$s, đăng ký kinh doanh đã được duyệt</string>
+    <string name="article_campaign_image">Ảnh chiến dịch giải cứu</string>
+    <string name="article_open_campaign">Xem chiến dịch giải cứu</string>
+    <string name="article_unknown_time">Chưa có thời gian đăng</string>
+    <string name="article_posted_at">Đăng %1$s</string>
+    <string name="article_batch_summary">%1$d lô nông sản cần giải cứu</string>
+    <style name="ShapeAppearanceOverlay.RescueFarm.ArticleImage" parent="">
+        <item name="cornerFamily">rounded</item><item name="cornerSize">10dp</item>
+    </style>
+</resources>

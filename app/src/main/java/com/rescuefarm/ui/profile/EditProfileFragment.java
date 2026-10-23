@@ -69,7 +69,7 @@ public class EditProfileFragment extends Fragment {
             new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissionResult);
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle state) {
+                                                 @Nullable ViewGroup container, @Nullable Bundle state) {
         return inflater.inflate(R.layout.fragment_edit_profile, container, false);
     }
 
@@ -226,10 +226,6 @@ public class EditProfileFragment extends Fragment {
         settings.setDomStorageEnabled(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
-        settings.setAllowFileAccessFromFileURLs(false);
-        settings.setAllowUniversalAccessFromFileURLs(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setSafeBrowsingEnabled(true);
         String defaultUserAgent = settings.getUserAgentString();
         settings.setUserAgentString(defaultUserAgent + " RescueFarmAndroidApp/1.0 (com.example.nhom_7_mobileapp)");
         locationMap.setBackgroundColor(android.graphics.Color.TRANSPARENT);
@@ -243,46 +239,26 @@ public class EditProfileFragment extends Fragment {
                             return new WebResourceResponse(path.endsWith(".js") ? "text/javascript" : "text/css",
                                     "UTF-8", view.getContext().getAssets().open("maps/leaflet/" + uri.getLastPathSegment()));
                         } catch (java.io.IOException error) {
-                            if (com.rescuefarm.BuildConfig.DEBUG)
-                                Log.e("ProfileMap", "Missing bundled map library", error);
+                            Log.e("ProfileMap", "Missing bundled map library", error);
                             return new WebResourceResponse("text/plain", "UTF-8",
                                     new java.io.ByteArrayInputStream(new byte[0]));
                         }
                     }
-                    return blockedMapResource();
                 }
-                String path = uri.getPath() == null ? "" : uri.getPath();
-                if ("https".equals(uri.getScheme())
-                        && "server.arcgisonline.com".equalsIgnoreCase(uri.getHost())
-                        && path.matches("/ArcGIS/rest/services/World_Street_Map/MapServer/tile/[0-9]+/[0-9]+/[0-9]+"))
-                    return super.shouldInterceptRequest(view, request);
-                return blockedMapResource();
-            }
-
-            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                Uri uri = request.getUrl();
-                // The map uses remote tiles as subresources only; do not let links navigate this WebView.
-                return true;
+                return super.shouldInterceptRequest(view, request);
             }
 
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                if (com.rescuefarm.BuildConfig.DEBUG)
-                    Log.w("ProfileMap", "Map resource failed, code=" + error.getErrorCode());
+                Log.w("ProfileMap", "Resource failed: " + request.getUrl().getHost() + ", code=" + error.getErrorCode());
             }
         });
         locationMap.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onConsoleMessage(ConsoleMessage message) {
-                if (com.rescuefarm.BuildConfig.DEBUG
-                        && message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
+                if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
                     Log.e("ProfileMap", message.message());
                 return true;
             }
         });
-    }
-
-    private WebResourceResponse blockedMapResource() {
-        return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked",
-                java.util.Collections.emptyMap(), new java.io.ByteArrayInputStream(new byte[0]));
     }
 
     private void showMap(double lat, double lon) {
@@ -337,7 +313,7 @@ public class EditProfileFragment extends Fragment {
         String attribution = sellerMap
                 ? "Sources: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, &copy; OpenStreetMap contributors"
                 : "Sources: <a href=\"https://www.esri.com/\">Esri</a>, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, "
-                        + "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, and the GIS User Community";
+                + "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, and the GIS User Community";
         return "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">"
                 + "<link rel=\"stylesheet\" href=\"leaflet.css\">"
                 + "<style>html,body,#map{height:100%;width:100%;margin:0;background:#f8faf6}"
@@ -366,7 +342,7 @@ public class EditProfileFragment extends Fragment {
             avatarPreview.setImageResource(R.drawable.ic_nav_profile);
             avatarStatus.setText(R.string.no_avatar_selected);
         } else {
-            Glide.with(this).load(com.rescuefarm.service.media.SecureMediaUrl.from(url)).circleCrop().placeholder(R.drawable.ic_nav_profile)
+            Glide.with(this).load(url.trim()).circleCrop().placeholder(R.drawable.ic_nav_profile)
                     .error(R.drawable.ic_nav_profile).into(avatarPreview);
             avatarStatus.setText(R.string.account_avatar_saved_status);
         }

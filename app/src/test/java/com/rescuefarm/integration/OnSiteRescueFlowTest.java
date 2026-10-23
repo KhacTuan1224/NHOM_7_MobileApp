@@ -44,7 +44,7 @@ public class OnSiteRescueFlowTest {
                 "Rescue produce", "", "kg", 20D, 15D, 15D, 2D);
         Order order = Order.create("order-1", OrderOwnerType.CUSTOMER, "customer-1", "RFDEMO01",
                 "seller-1", "campaign-1", FulfillmentType.ON_SITE_RESCUE,
-                "Demo customer", "0900000000", "", 10D, 106D, 30D, 0D, 0D,
+                "Demo customer", "0900000000", "", 10D, 106D, 30D, 0D,
                 PaymentMethod.CASH_ON_SITE, PaymentStatus.UNPAID, "", Collections.singletonList(item), now);
         OrderLifecycleService lifecycle = new OrderLifecycleService();
         InventoryService inventory = new InventoryService();
@@ -78,6 +78,7 @@ public class OnSiteRescueFlowTest {
 
     @Test public void cancelledOnSiteOrder_releasesBatchAndCampaignReservation() {
         ProductBatch batch = new ProductBatch("batch-2", "product-2", 5D);
+        batch.updateDetails(new java.util.Date(1), new java.util.Date(Long.MAX_VALUE), 5, new java.util.Date());
         RescueCampaign campaign = new RescueCampaign("campaign-2", "seller-1", 5D);
         InventoryService inventory = new InventoryService();
         OrderLifecycleService lifecycle = new OrderLifecycleService();

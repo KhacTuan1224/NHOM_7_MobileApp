@@ -55,6 +55,29 @@ async function seed(values) {
   });
 }
 
+test('Expired batch cannot extend dates or replenish stock but can be archived without deleting history', async () => {
+  const path = 'productBatches/batch-a';
+  await seed({[path]: {id: 'batch-a', productId: 'product-a', activeCampaignId: '',
+    harvestDate: Timestamp.fromMillis(now - 2 * 86400000), expiryDate: past,
+    initialQuantity: 80, availableQuantity: 80, reservedQuantity: 0, soldQuantity: 0,
+    inventoryVersion: 2, status: 'AVAILABLE', createdAt: past, updatedAt: past, everOrdered: false}});
+  const db = env.authenticatedContext('seller').firestore(), ref = doc(db, path);
+  await assertFails(updateDoc(ref, {expiryDate: future, inventoryVersion: 3, updatedAt: serverTimestamp()}));
+  await assertFails(updateDoc(ref, {initialQuantity: 100, availableQuantity: 100, inventoryVersion: 3, updatedAt: serverTimestamp()}));
+  await assertSucceeds(updateDoc(ref, {status: 'ARCHIVED', inventoryVersion: 3, updatedAt: serverTimestamp()}));
+  assert.equal((await getDoc(ref)).data().availableQuantity, 80);
+  await assertFails(deleteDoc(ref));
+});
+
+test('Batch expiry detection ledger is private to seller and admin and never client-writable', async () => {
+  const path = 'batchExpiryEvents/batch-a';
+  await seed({[path]: {batchId: 'batch-a', productId: 'product-a', sellerId: 'seller', availableQuantityAtDetection: 80}});
+  await assertSucceeds(getDoc(doc(env.authenticatedContext('seller').firestore(), path)));
+  await assertFails(getDoc(doc(env.authenticatedContext('customer-a').firestore(), path)));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), path)));
+  await assertFails(updateDoc(doc(env.authenticatedContext('seller').firestore(), path), {availableQuantityAtDetection: 0}));
+});
+
 test('Favorite state query handles first use, add and remove without leaking another customer', async () => {
   const db = env.authenticatedContext('customer-a').firestore();
   const stateQuery = query(collection(db, 'favorites'),
@@ -202,14 +225,7 @@ test('existing orders remain private, including collection queries', async () =>
   await assertFails(getDocs(collection(other, 'orders')));
 });
 
-test('promotion fallback is limited to active customers and active products', async () => {
-  const customer = env.authenticatedContext('customer-a').firestore();
-  assert.equal((await assertSucceeds(getDoc(doc(customer, 'promotions/product-a')))).exists(), false);
-  await assertFails(getDoc(doc(customer, 'promotions/hidden')));
-  await assertFails(getDoc(doc(customer, 'promotions/nonexistent-product')));
-  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'promotions/product-a')));
-  await assertFails(getDoc(doc(env.authenticatedContext('blocked').firestore(), 'promotions/product-a')));
-});
+
 
 // Mirrors the Android transaction's initial read, promotion read and atomic writes.
 async function checkout(db, overrideFee = null) {
@@ -221,7 +237,6 @@ async function checkout(db, overrideFee = null) {
     const fee = overrideFee ?? profile.shippingFee;
     await tx.get(doc(db, 'products/product-a'));
     const batch = (await tx.get(doc(db, 'productBatches/batch-a'))).data();
-    await tx.get(doc(db, 'promotions/product-a'));
     const order = {
       id: 'new-order', requestId: 'new-order', ownerType: 'CUSTOMER', ownerId: 'customer-a',
       sellerId: 'seller', campaignId: '', orderCode: 'RF-TEST', fulfillmentType: 'DELIVERY',
@@ -535,6 +550,56 @@ test('customer cannot create an unreserved order or append items/payments/shipme
   assert.equal((await getDoc(doc(db, 'productBatches/batch-a'))).data().availableQuantity, 10);
 });
 
+test('Seller batch edit updates 80 to 15 without replacing creation and lifecycle metadata', async () => {
+  const path = 'productBatches/batch-a';
+  await seed({[path]: {id: 'batch-a', productId: 'product-a', activeCampaignId: '',
+    harvestDate: past, expiryDate: future, initialQuantity: 80, availableQuantity: 80,
+    reservedQuantity: 0, soldQuantity: 0, inventoryVersion: 2, status: 'AVAILABLE',
+    createdAt: past, updatedAt: past, everOrdered: false}});
+  const db = env.authenticatedContext('seller').firestore();
+  const edit = {harvestDate: Timestamp.fromMillis(now - 3600000),
+    expiryDate: Timestamp.fromMillis(now + 10 * 86400000), initialQuantity: 15,
+    availableQuantity: 15, status: 'AVAILABLE', inventoryVersion: 3, updatedAt: serverTimestamp()};
+  // The former Android set() payload removed server-owned metadata and was denied.
+  await assertFails(setDoc(doc(db, path), {id: 'batch-a', productId: 'product-a',
+    activeCampaignId: '', reservedQuantity: 0, soldQuantity: 0, ...edit}));
+  await assertSucceeds(runTransaction(db, async tx => {
+    await tx.get(doc(db, 'products/product-a'));
+    await tx.get(doc(db, path));
+    tx.update(doc(db, path), edit);
+  }));
+  const saved = (await getDoc(doc(db, path))).data();
+  assert.equal(saved.initialQuantity, 15);
+  assert.equal(saved.availableQuantity, 15);
+  assert.equal(saved.reservedQuantity, 0);
+  assert.equal(saved.soldQuantity, 0);
+  assert.equal(saved.inventoryVersion, 3);
+  assert.ok(saved.createdAt.isEqual(past));
+  assert.equal(saved.activeCampaignId, '');
+  assert.equal(saved.everOrdered, false);
+  await assertFails(updateDoc(doc(db, path), {...edit, initialQuantity: 14, availableQuantity: 14}));
+});
+
+test('Seller batch edit still rejects nonowners, unapproved sellers and reserved or sold inventory', async () => {
+  const path = 'productBatches/batch-a';
+  const edit = {initialQuantity: 15, availableQuantity: 15,
+    inventoryVersion: 1, updatedAt: serverTimestamp()};
+  await seed({'users/other-seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'}});
+  for (const uid of ['customer-a', 'other-seller'])
+    await assertFails(updateDoc(doc(env.authenticatedContext(uid).firestore(), path), edit));
+  await seed({'users/seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'PENDING'}});
+  const db = env.authenticatedContext('seller').firestore();
+  await assertFails(updateDoc(doc(db, path), edit));
+  await seed({'users/seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'}});
+  for (const [reservedQuantity, soldQuantity] of [[1, 0], [0, 1]]) {
+    await seed({[path]: {id: 'batch-a', productId: 'product-a', activeCampaignId: '',
+      harvestDate: past, expiryDate: future, initialQuantity: 10, availableQuantity: 9,
+      reservedQuantity, soldQuantity, inventoryVersion: 0, status: 'AVAILABLE',
+      createdAt: past, updatedAt: past}});
+    await assertFails(updateDoc(doc(db, path), edit));
+  }
+});
+
 test('batch referenced by a cancelled order cannot be deleted; archiving preserves the reference', async () => {
   await seed({'orders/cancelled': {ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller', status: 'CANCELLED'},
     'orders/cancelled/items/batch-a': {batchId: 'batch-a', productId: 'product-a'},
@@ -573,7 +638,7 @@ test('Admin can moderate Campaign comments while Customer cannot bypass moderati
   });
   const owner = env.authenticatedContext('customer-a').firestore();
   const admin = env.authenticatedContext('admin').firestore();
-  const moderation = {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+  const moderation = {status: 'HIDDEN', moderationPreviousStatus: 'ACTIVE', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
     moderationReason: 'Inappropriate content', updatedAt: serverTimestamp()};
   await assertFails(updateDoc(doc(owner, path), moderation));
   await assertSucceeds(updateDoc(doc(admin, path), moderation));
@@ -680,56 +745,58 @@ test('Seller application submission and its Admin event are committed together',
   batch.set(doc(db, 'notificationOutbox/application'), outboxData('seller', 'SELLER_APPLICATION', 'seller'));
   await assertSucceeds(batch.commit());
 });
-test('future Promotion can persist its scheduled notification event atomically', async () => {
-  const db = env.authenticatedContext('seller').firestore(), batch = writeBatch(db);
-  batch.set(doc(db, 'promotions/product-a'), {id: 'product-a', productId: 'product-a', sellerId: 'seller', type: 'PERCENT',
-    value: 10, quantityDiscountTiers: {}, active: true, startDate: Timestamp.fromMillis(now + 86400000),
-    endDate: future, createdAt: serverTimestamp(), updatedAt: serverTimestamp()});
-  batch.set(doc(db, 'notificationOutbox/promotion'), outboxData('seller', 'PROMOTION', 'product-a', 'PROMOTION'));
-  await assertSucceeds(batch.commit());
-});
-test('seller promotion transaction can read missing promotion then create and update with its notification', async () => {
-  const db = env.authenticatedContext('seller').firestore();
-  const save = (value, eventId) => runTransaction(db, async tx => {
-    await tx.get(doc(db, 'products/product-a'));
-    const existing = await tx.get(doc(db, 'promotions/product-a'));
-    tx.set(doc(db, 'promotions/product-a'), {id: 'product-a', productId: 'product-a', sellerId: 'seller',
-      type: 'PERCENT', value, quantityDiscountTiers: {}, active: true, startDate: past, endDate: future,
-      createdAt: existing.exists() ? existing.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp()});
-    tx.set(doc(db, `notificationOutbox/${eventId}`), outboxData('seller', 'PROMOTION', 'product-a', 'PROMOTION'));
-  });
-  await assertSucceeds(save(5, 'promo-created'));
-  await assertSucceeds(save(10, 'promo-updated'));
-  assert.equal((await getDoc(doc(db, 'promotions/product-a'))).data().value, 10);
-});
 
-test('customer wallet is private and cannot be forged or modified directly by any client', async () => {
-  await seed({'customerPromotionWallets/customer-a': {customerId: 'customer-a'},
-    'customerPromotionWallets/customer-a/items/product-a': {customerId: 'customer-a', productId: 'product-a', sellerId: 'seller'}});
-  const owner = env.authenticatedContext('customer-a').firestore();
-  await assertSucceeds(getDoc(doc(owner, 'customerPromotionWallets/customer-a/items/not-saved')));
-  await assertSucceeds(getDocs(collection(owner, 'customerPromotionWallets/customer-a/items')));
-  for (const uid of ['customer-a', 'customer-b', 'seller', 'admin']) {
-    const db = env.authenticatedContext(uid).firestore();
-    await assertFails(setDoc(doc(db, 'customerPromotionWallets/customer-a/items/forged'), {productId: 'forged'}));
-    await assertFails(deleteDoc(doc(db, 'customerPromotionWallets/customer-a/items/product-a')));
-    if (uid !== 'customer-a') await assertFails(getDoc(doc(db, 'customerPromotionWallets/customer-a/items/product-a')));
+for (const initialStatus of ['PENDING_APPROVAL', 'APPROVED']) {
+  for (const target of ['APPROVED', 'REJECTED']) {
+    test(`Admin moderates mixed-case Seller UID atomically: ${initialStatus} to ${target}`, async () => {
+      const uid = 'SellerUidMixedAbC123';
+      const proofImageUrl = 'https://example.com/application-proof.jpg';
+      const originalSeller = (await getDoc(doc(env.authenticatedContext('admin').firestore(), 'users/seller'))).data();
+      await seed({
+        [`users/${uid}`]: {...originalSeller, id: uid, sellerStatus: initialStatus},
+        [`sellerApplications/${uid}`]: {id: uid, sellerId: uid, representativeName: 'Test Seller',
+          shopName: 'Test shop', address: 'Test address', proofImageUrl, status: 'PENDING',
+          rejectionReason: '', submittedAt: past, updatedAt: past}
+      });
+      const db = env.authenticatedContext('admin').firestore();
+      const applicationRef = doc(db, `sellerApplications/${uid}`);
+      // Reproduce the old Android bug: uppercasing an enum is safe, a UID is not.
+      await assert.rejects(runTransaction(db, async tx => {
+        const application = await tx.get(applicationRef);
+        const wrongSeller = await tx.get(doc(db, `users/${application.data().sellerId.toUpperCase()}`));
+        if (!wrongSeller.exists()) throw new Error('SELLER_NOT_FOUND');
+      }), /SELLER_NOT_FOUND/);
+      const reason = target === 'REJECTED' ? 'Proof needs correction' : '';
+      const moderation = {moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+        moderationReason: reason, updatedAt: serverTimestamp()};
+      // Rules still require the linked account and application to agree.
+      if (initialStatus !== target) await assertFails(updateDoc(applicationRef, {...moderation,
+        status: target, rejectionReason: reason}));
+      await assertSucceeds(runTransaction(db, async tx => {
+        const application = await tx.get(applicationRef);
+        const sellerRef = doc(db, `users/${application.data().sellerId}`);
+        const seller = await tx.get(sellerRef);
+        assert.equal(seller.data().role, 'SELLER');
+        tx.update(sellerRef, {...moderation, sellerStatus: target});
+        tx.update(applicationRef, {...moderation, status: target, rejectionReason: reason});
+        tx.set(doc(db, `adminAuditLogs/application-${target}`), {adminId: 'admin',
+          resourceType: 'SELLER_APPLICATIONS', resourceId: uid, fromState: 'PENDING',
+          toState: target, reason, createdAt: serverTimestamp()});
+      }));
+      assert.equal((await getDoc(applicationRef)).data().status, target);
+      assert.equal((await getDoc(applicationRef)).data().proofImageUrl, proofImageUrl);
+      assert.equal((await getDoc(doc(db, `users/${uid}`))).data().sellerStatus, target);
+      assert.equal((await getDoc(doc(db, `adminAuditLogs/application-${target}`))).data().resourceId, uid);
+      assert.equal((await getDoc(doc(db, `users/${uid.toUpperCase()}`))).exists(), false);
+    });
   }
-  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'customerPromotionWallets/customer-a/items/product-a')));
-});
+}
 
-test('missing promotion read is limited to approved seller owning the product', async () => {
-  await seed({
-    'users/other-seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'APPROVED'},
-    'users/pending-seller': {role: 'SELLER', status: 'ACTIVE', sellerStatus: 'PENDING'},
-    'products/pending-product': {sellerId: 'pending-seller', status: 'ACTIVE'}
-  });
-  await assertSucceeds(getDoc(doc(env.authenticatedContext('seller').firestore(), 'promotions/hidden')));
-  await assertFails(getDoc(doc(env.authenticatedContext('seller').firestore(), 'promotions/no-product')));
-  await assertFails(getDoc(doc(env.authenticatedContext('other-seller').firestore(), 'promotions/product-a')));
-  await assertFails(getDoc(doc(env.authenticatedContext('pending-seller').firestore(), 'promotions/pending-product')));
-  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'promotions/product-a')));
-});
+
+
+
+
+
 
 test('bank payment and confirmation require trusted API instead of direct client writes', async () => {
   await seed({'orders/bank': {id: 'bank', ownerType: 'CUSTOMER', ownerId: 'customer-a', sellerId: 'seller',
@@ -766,7 +833,7 @@ test('Admin can hide the exact Campaign comment and audit its parent without cha
   await seed({'campaigns/p': {status: 'ACTIVE'}, 'campaigns/c': {status: 'ACTIVE'},
     'campaigns/p/comments/same': {...common, campaignId: 'p'}, 'campaigns/c/comments/same': {...common, campaignId: 'c'}});
   const db = env.authenticatedContext('admin').firestore(), batch = writeBatch(db);
-  batch.update(doc(db, 'campaigns/p/comments/same'), {status: 'HIDDEN', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
+  batch.update(doc(db, 'campaigns/p/comments/same'), {status: 'HIDDEN', moderationPreviousStatus: 'ACTIVE', moderatedBy: 'admin', moderatedAt: serverTimestamp(),
     moderationReason: 'Violation', updatedAt: serverTimestamp()});
   batch.set(doc(db, 'adminAuditLogs/legacy-hide'), {adminId: 'admin', resourceType: 'COMMENTS', resourceId: 'same',
     resourcePath: 'campaigns/p/comments/same', fromState: 'ACTIVE', toState: 'HIDDEN', reason: 'Violation', createdAt: serverTimestamp()});
@@ -847,7 +914,7 @@ test('Admin edits legacy category metadata while preserving seed image and missi
   const saved = (await getDoc(doc(db, 'categories/cat-grains'))).data();
   assert.equal(saved.name, 'Củ và Hạt'); assert.equal(saved.imageUrl, oldImage); assert.equal(saved.displayOrder, 4);
   await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, imageUrl: 'https://example.com/replacement.png'}));
-  await assertFails(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false}));
+  await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false}));
   await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: false, moderationReason: 'Tạm ngừng danh mục'}));
   await assertSucceeds(updateDoc(doc(db, 'categories/cat-grains'), {...changes, active: true,
     imageUrl: 'https://res.cloudinary.com/demo/image/upload/category.png'}));
@@ -875,12 +942,38 @@ test('Admin catalog accepts uploaded and external HTTPS images while rejecting u
   await assertFails(updateDoc(doc(env.authenticatedContext('customer-a').firestore(), 'categories/no-image'), {...moderation, name: 'Giả mạo'}));
 });
 
- test('retired Post collection is denied for every client role', async () => {
+test('rescue ledgers and nearby coordinates are backend-only', async () => {
+  const names = ['rescueOffers', 'rescueClaims', 'rescueSubscriptions', 'rescueNearbyPreferences', 'rescueImpact'];
+  for (const name of names) {
+    await seed({[name + '/private']: {sellerId: 'seller', customerId: 'customer-a', status: 'OPEN'}});
+    for (const uid of ['customer-a', 'seller', 'admin']) {
+      const db = env.authenticatedContext(uid).firestore();
+      await assertFails(getDoc(doc(db, name, 'private')));
+      await assertFails(setDoc(doc(db, name, 'forged'), {status: 'VERIFIED'}));
+    }
+    await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), name)));
+  }
+});
+
+test('retired Post collection is denied for every client role', async () => {
   await seed({'posts/retired': {status: 'PUBLISHED', sellerId: 'seller'}});
   for (const uid of ['customer-a', 'seller', 'admin']) {
     const db = env.authenticatedContext(uid).firestore();
     await assertFails(getDoc(doc(db, 'posts/retired')));
     await assertFails(setDoc(doc(db, 'posts/new'), {sellerId: uid, status: 'PUBLISHED'}));
     await assertFails(updateDoc(doc(db, 'posts/retired'), {status: 'HIDDEN'}));
+  }
+});
+
+test('retired promotion and wallet paths deny all client actors including admin', async () => {
+  await seed({'promotions/product-a': {active:true, sellerId:'seller', productId:'product-a'},
+    'customerPromotionWallets/customer-a/items/product-a': {customerId:'customer-a'}});
+  for (const uid of [null,'customer-a','seller','admin']) {
+    const db = uid ? env.authenticatedContext(uid).firestore() : env.unauthenticatedContext().firestore();
+    for (const path of ['promotions/product-a','customerPromotionWallets/customer-a','customerPromotionWallets/customer-a/items/product-a','platformDiscountClaims/claim']) {
+      await assertFails(getDoc(doc(db,path)));
+      await assertFails(setDoc(doc(db,path),{active:true}));
+      await assertFails(deleteDoc(doc(db,path)));
+    }
   }
 });

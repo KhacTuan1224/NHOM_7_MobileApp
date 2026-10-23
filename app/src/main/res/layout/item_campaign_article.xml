@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="14dp"
+    app:cardCornerRadius="16dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/rescue_surface"
+    app:strokeWidth="1dp" app:strokeColor="@color/rescue_outline">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="14dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <ImageView android:id="@+id/articleShopAvatar" android:layout_width="38dp" android:layout_height="38dp"
+                android:src="@drawable/ic_store" android:background="@drawable/bg_profile_avatar_circle"
+                android:clipToOutline="true" android:scaleType="centerCrop" android:contentDescription="@string/article_shop_avatar" />
+            <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="10dp">
+                <TextView android:id="@+id/articleShopName" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:fontFamily="@font/ibm_plex_sans" android:textStyle="bold" android:textSize="14sp"
+                    android:textColor="@color/rescue_on_surface" android:maxLines="2" android:ellipsize="end"
+                    android:drawablePadding="4dp" android:text="@string/article_shop_default" />
+            </FrameLayout>
+        </LinearLayout>
+        <TextView android:id="@+id/articleMetadata" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="7dp" android:fontFamily="@font/barlow" android:textSize="12sp"
+            android:textColor="@color/rescue_on_surface_variant" android:maxLines="2" android:ellipsize="end" />
+        <TextView android:id="@+id/articleTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:fontFamily="@font/ibm_plex_sans" android:textStyle="bold"
+            android:textSize="16sp" android:textColor="@color/rescue_on_surface" android:maxLines="2" android:ellipsize="end" />
+        <TextView android:id="@+id/articleStory" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="5dp" android:fontFamily="@font/barlow" android:textSize="14sp"
+            android:textColor="@color/rescue_on_surface_variant" android:maxLines="2" android:ellipsize="end" />
+        <TextView android:id="@+id/articleProducts" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="7dp" android:fontFamily="@font/barlow" android:textSize="12sp"
+            android:textColor="@color/rescue_on_surface_variant" android:maxLines="2" android:ellipsize="end" />
+        <ProgressBar android:id="@+id/articleProgress" style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent" android:layout_height="5dp" android:layout_marginTop="10dp"
+            android:progressTint="@color/rescue_primary" android:progressBackgroundTint="@color/rescue_outline" android:max="100" />
+        <TextView android:id="@+id/articleProgressText" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="5dp" android:fontFamily="@font/barlow" android:textSize="12sp"
+            android:textStyle="bold" android:textColor="@color/rescue_primary" android:maxLines="2" android:ellipsize="end" />
+        <com.google.android.material.imageview.ShapeableImageView android:id="@+id/articleImage"
+            android:layout_width="match_parent" android:layout_height="168dp" android:layout_marginTop="11dp"
+            android:scaleType="centerCrop" android:contentDescription="@string/article_campaign_image"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.RescueFarm.ArticleImage" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/articleOpenButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="44dp"
+            android:layout_marginTop="10dp" android:text="@string/article_open_campaign" android:textAllCaps="false"
+            android:fontFamily="@font/barlow" android:textSize="14sp" android:textColor="@color/rescue_primary"
+            app:backgroundTint="@android:color/transparent" app:strokeColor="@color/rescue_primary"
+            app:strokeWidth="1dp" app:cornerRadius="10dp" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

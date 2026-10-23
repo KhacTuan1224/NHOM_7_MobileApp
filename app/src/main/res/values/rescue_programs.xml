@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rescue_hub_title">Giải cứu mở rộng</string>
+    <string name="rescue_hub_intro">Mỗi cách nhận, thêm một cơ hội cứu nông sản.</string>
+    <string name="rescue_hub_policy">Nhận tại điểm · thanh toán khi nhận.</string>
+    <string name="rescue_create">Tạo gói giải cứu</string>
+    <string name="rescue_nearby">Tìm quanh tôi</string>
+    <string name="rescue_alerts">Thông báo giờ chót</string>
+    <string name="rescue_empty">Chưa có nội dung phù hợp trong phần đã tải.</string>
+    <string name="rescue_entry_description">Hộp bí ẩn, giải cứu giờ chót.</string>
+    <string-array name="rescue_type_labels">
+        <item>Tất cả phương thức</item><item>Hộp bí ẩn</item>
+        <item>Giờ chót</item>
+    </string-array>
+</resources>

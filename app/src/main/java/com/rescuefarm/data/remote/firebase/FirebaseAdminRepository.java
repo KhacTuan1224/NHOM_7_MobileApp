@@ -15,6 +15,7 @@ import com.rescuefarm.data.repository.AdminRepository;
 import com.rescuefarm.data.repository.admin.AdminDashboardSnapshot;
 import com.rescuefarm.data.repository.admin.AdminListItem;
 import com.rescuefarm.service.admin.AdminTransitionPolicy;
+import com.rescuefarm.service.admin.AdminSearchText;
 import com.rescuefarm.service.backend.RenderBackendClient;
 import org.json.JSONObject;
 import com.rescuefarm.service.network.NetworkStatusProvider;
@@ -112,6 +113,11 @@ public final class FirebaseAdminRepository implements AdminRepository {
                         }).addOnFailureListener(error -> fail(error, callback));
                 return;
             }
+            if (!search.isEmpty() && !isStructuredSearch(section, search)) {
+                loadNormalizedSearchPage(section, requestedFilter, search, trim(cursor),
+                        Math.max(1, Math.min(100, limit)), fromDate, throughDate, callback);
+                return;
+            }
             com.google.firebase.firestore.Query query = db.collection(section.getCollection());
             String field = search.isEmpty() ? "" : searchField(section, search);
             String value = search.isEmpty() ? "" : searchValue(section, search);
@@ -147,6 +153,82 @@ public final class FirebaseAdminRepository implements AdminRepository {
                             search.isEmpty() ? trim(cursor) : "", pageLimit, fromDate, throughDate, callback))
                     .addOnFailureListener(error -> fail(error, callback));
         }, callback);
+    }
+
+    private static boolean isStructuredSearch(Section section, String search) {
+        String lower = search.toLowerCase(java.util.Locale.ROOT);
+        return (section == Section.ORDERS && (lower.startsWith("seller:")
+                || lower.startsWith("customer:") || lower.startsWith("code:")))
+                || (section == Section.REPORTS && lower.startsWith("target:"));
+    }
+
+    private void loadNormalizedSearchPage(Section section, String filter, String search,
+            String cursor, int limit, Date fromDate, Date throughDate, PageCallback callback) {
+        List<DocumentSnapshot> documents = new ArrayList<>();
+        collectSearchDocuments(db.collection(section.getCollection()), null, documents, result -> {
+            if (result != null) { fail(result, callback); return; }
+            String term = normalizeSearch(search);
+            if (search.toLowerCase(java.util.Locale.ROOT).startsWith("title:"))
+                term = normalizeSearch(search.substring("title:".length()));
+            List<AdminListItem> matches = new ArrayList<>();
+            for (DocumentSnapshot document : documents) {
+                AdminListItem item = mapItem(section, document);
+                Date createdAt = document.getDate("createdAt");
+                boolean inDateRange = (fromDate == null || (createdAt != null && !createdAt.before(fromDate)))
+                        && (throughDate == null || (createdAt != null && createdAt.before(throughDate)));
+                if (inDateRange && matchesSectionFilter(section, filter, document, item)
+                        && matchesNormalizedSearch(section, document, item, term)) matches.add(item);
+            }
+            int start = 0;
+            if (!cursor.isEmpty()) for (int index = 0; index < matches.size(); index++)
+                if (matches.get(index).getId().equals(cursor)) { start = index + 1; break; }
+            int end = Math.min(matches.size(), start + limit);
+            List<AdminListItem> page = new ArrayList<>(matches.subList(start, end));
+            callback.onSuccess(page, end == 0 ? "" : matches.get(end - 1).getId(), end < matches.size());
+        });
+    }
+
+    private interface SearchDocumentsCallback { void onComplete(Exception error); }
+
+    private void collectSearchDocuments(com.google.firebase.firestore.Query base,
+            DocumentSnapshot last, List<DocumentSnapshot> documents, SearchDocumentsCallback callback) {
+        com.google.firebase.firestore.Query page = base.orderBy(
+                com.google.firebase.firestore.FieldPath.documentId()).limit(250);
+        if (last != null) page = page.startAfter(last);
+        page.get().addOnSuccessListener(snapshot -> {
+            documents.addAll(snapshot.getDocuments());
+            if (snapshot.size() == 250) collectSearchDocuments(base,
+                    snapshot.getDocuments().get(snapshot.size() - 1), documents, callback);
+            else callback.onComplete(null);
+        }).addOnFailureListener(callback::onComplete);
+    }
+
+    private static boolean matchesNormalizedSearch(Section section, DocumentSnapshot document,
+            AdminListItem item, String term) {
+        if (term.isEmpty()) return true;
+        if (containsNormalized(item.getTitle(), term) || containsNormalized(item.getSubtitle(), term)
+                || containsNormalized(item.getId(), term)) return true;
+        String[] fields;
+        switch (section) {
+            case CAMPAIGNS: case BANNERS: fields = new String[]{"title", "name"}; break;
+            case PRODUCTS: case CATEGORIES: fields = new String[]{"name", "title"}; break;
+            case SELLER_APPLICATIONS: fields = new String[]{"shopName", "representativeName", "email"}; break;
+            case USERS: fields = new String[]{"fullName", "shopName", "email"}; break;
+            case REVIEWS: fields = new String[]{"content", "productId"}; break;
+            case REPORTS: fields = new String[]{"reason", "targetId", "targetType"}; break;
+            case ORDERS: fields = new String[]{"orderCode", "sellerId", "ownerId"}; break;
+            default: fields = new String[0];
+        }
+        for (String field : fields) if (containsNormalized(text(document, field), term)) return true;
+        return false;
+    }
+
+    private static boolean containsNormalized(String value, String term) {
+        return AdminSearchText.contains(value, term);
+    }
+
+    private static String normalizeSearch(String value) {
+        return AdminSearchText.normalize(value);
     }
 
     private void fetchSectionPage(Section section, String filter, String search,
@@ -298,8 +380,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             callback.onError(ErrorCode.VALIDATION, "Chỉ category và banner hỗ trợ bật/tắt."); return;
         }
         String id = trim(resourceId), note = reason == null ? "" : reason.trim();
-        if (id.isEmpty() || (!active && note.length() < 3)) {
-            callback.onError(ErrorCode.VALIDATION, "Cần nhập lý do khi tắt nội dung."); return;
+        if (id.isEmpty()) {
+            callback.onError(ErrorCode.VALIDATION, "Không tìm thấy nội dung cần cập nhật."); return;
         }
         ensureAdmin(() -> {
             String adminId = auth.getCurrentUser().getUid();
@@ -374,9 +456,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
                 || name.length() < (section == Section.CATEGORIES ? 2 : 3) || name.length() > 120
                 || (section == Section.CATEGORIES && description.length() > 500)
                 || displayOrder < 0 || displayOrder > 10000
-                || (section == Section.BANNERS && active && imageUrl.isEmpty())
-                || (!active && note.length() < 3)) {
-            callback.onError(ErrorCode.VALIDATION, "Kiểm tra tên, thứ tự từ 0 đến 10000 và lý do khi tắt hiển thị. Banner đang hiển thị phải có ảnh."); return;
+                || (section == Section.BANNERS && active && imageUrl.isEmpty())) {
+            callback.onError(ErrorCode.VALIDATION, "Kiểm tra tên, thứ tự từ 0 đến 10000. Banner đang hiển thị phải có ảnh."); return;
         }
         Date startDate = input.get("startDate") instanceof Date ? (Date) input.get("startDate") : null;
         Date endDate = input.get("endDate") instanceof Date ? (Date) input.get("endDate") : null;
@@ -569,7 +650,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
         db.collection(USERS).whereEqualTo("role", "SELLER")
                 .orderBy(com.google.firebase.firestore.FieldPath.documentId()).get()
                 .addOnSuccessListener(snapshot -> {
-                    String needle = search.toLowerCase(java.util.Locale.ROOT);
+                    String needle = normalizeSearch(search);
                     if (needle.startsWith("id:")) needle = needle.substring(3).trim();
                     List<AdminListItem> sellers = new ArrayList<>();
                     for (DocumentSnapshot user : snapshot.getDocuments()) {
@@ -579,9 +660,9 @@ public final class FirebaseAdminRepository implements AdminRepository {
                         String id = user.getId();
                         String title = first(user, "shopName", "representativeName", "fullName", "email");
                         String email = text(user, "email");
-                        if (!needle.isEmpty() && !(id.toLowerCase(java.util.Locale.ROOT).contains(needle)
-                                || title.toLowerCase(java.util.Locale.ROOT).contains(needle)
-                                || email.toLowerCase(java.util.Locale.ROOT).contains(needle))) continue;
+                        if (!needle.isEmpty() && !(containsNormalized(id, needle)
+                                || containsNormalized(title, needle)
+                                || containsNormalized(email, needle))) continue;
                         sellers.add(mapSellerAccount(user));
                     }
                     int start = 0;
@@ -797,7 +878,7 @@ public final class FirebaseAdminRepository implements AdminRepository {
             ActionCallback callback) {
         if (!online(callback)) return;
         String id = trim(reportId), note = reason == null ? "" : reason.trim();
-        if (id.isEmpty() || action == null || (action != ReportAction.MARK_IN_REVIEW && note.length() < 3)) {
+        if (id.isEmpty() || action == null || (requiresReportReason(action) && note.length() < 3)) {
             callback.onError(ErrorCode.VALIDATION, "Cần nhập lý do xử lý từ 3 ký tự."); return;
         }
         ensureAdmin(() -> db.collection("reports").document(id).get().addOnSuccessListener(report -> {
@@ -819,6 +900,10 @@ public final class FirebaseAdminRepository implements AdminRepository {
         }).addOnFailureListener(error -> fail(error, callback)), callback);
     }
 
+    private static boolean requiresReportReason(ReportAction action) {
+        return action == ReportAction.DISMISS || action == ReportAction.BLOCK_USER;
+    }
+
     private void runReportResolution(String reportId, ReportAction action, String note,
             DocumentReference commentRef, ActionCallback callback) {
         String adminId = auth.getCurrentUser().getUid();
@@ -827,7 +912,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             DocumentSnapshot report = tx.get(reportRef);
             if (!report.exists()) throw new IllegalStateException("REPORT_NOT_FOUND");
             String currentStatus = clean(report.getString("status"));
-            if (!currentStatus.equals("PENDING") && !currentStatus.equals("IN_REVIEW"))
+            boolean showTarget = action == ReportAction.SHOW_TARGET;
+            if (!showTarget && !currentStatus.equals("PENDING") && !currentStatus.equals("IN_REVIEW"))
                 throw new IllegalStateException("REPORT_ALREADY_CLOSED");
             if (action == ReportAction.MARK_IN_REVIEW && !currentStatus.equals("PENDING"))
                 throw new IllegalStateException("REPORT_TRANSITION_INVALID");
@@ -867,18 +953,21 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     throw new SecurityException("TARGET_USER_FORBIDDEN");
             }
             if (action == ReportAction.HIDE_TARGET) validateHideTarget(targetCollection, targetStatus);
+            if (showTarget && (!"comments".equals(targetCollection) || !"HIDDEN".equals(targetStatus)))
+                throw new IllegalStateException("REPORT_TARGET_CANNOT_BE_SHOWN");
             Map<String, Object> reportChanges = new HashMap<>();
             reportChanges.put("status", action == ReportAction.MARK_IN_REVIEW ? "IN_REVIEW"
                     : action == ReportAction.DISMISS ? "REJECTED" : "RESOLVED");
             reportChanges.put("resolvedBy", adminId); reportChanges.put("resolutionNote", note);
             reportChanges.put("updatedAt", FieldValue.serverTimestamp());
-            tx.update(reportRef, reportChanges);
+            if (!showTarget) tx.update(reportRef, reportChanges);
             String before = currentStatus;
-            String after = String.valueOf(reportChanges.get("status"));
+            String after = showTarget ? currentStatus : String.valueOf(reportChanges.get("status"));
             if (action == ReportAction.HIDE_TARGET) {
                 Map<String, Object> changes = moderation(adminId, note);
                 changes.put("status", "campaigns".equals(targetCollection) ? "STOPPED" : "HIDDEN");
                 if ("products".equals(targetCollection)) changes.put("moderationPreviousStatus", targetStatus);
+                if ("comments".equals(targetCollection)) changes.put("moderationPreviousStatus", targetStatus);
                 tx.update(targetRef, changes);
                 Map<String, Object> targetAudit = auditMap(adminId,
                         sectionForCollection(targetCollection), target.getId(), targetStatus,
@@ -899,6 +988,18 @@ public final class FirebaseAdminRepository implements AdminRepository {
                     batchAudit.put("reportId", reportId);
                     tx.set(db.collection(AUDIT).document(), batchAudit);
                 }
+            } else if (showTarget) {
+                String previous = clean(target.getString("moderationPreviousStatus"));
+                if (!"ACTIVE".equals(previous) && !"EDITED".equals(previous)) previous = "ACTIVE";
+                Map<String, Object> changes = moderation(adminId, note);
+                changes.put("status", previous);
+                changes.put("moderationPreviousStatus", FieldValue.delete());
+                tx.update(targetRef, changes);
+                Map<String, Object> targetAudit = auditMap(adminId, "COMMENTS", target.getId(),
+                        "HIDDEN", previous, note);
+                targetAudit.put("resourcePath", targetRef.getPath());
+                targetAudit.put("reportId", reportId);
+                tx.set(db.collection(AUDIT).document(), targetAudit);
             } else if (action == ReportAction.BLOCK_USER) {
                 Map<String, Object> changes = moderation(adminId, note); changes.put("status", "BLOCKED");
                 tx.update(targetRef, changes);
@@ -1011,9 +1112,8 @@ public final class FirebaseAdminRepository implements AdminRepository {
             }
             if (section == Section.SELLER_APPLICATIONS) {
                 changes.put("rejectionReason", target.equals("REJECTED") ? note : "");
-                String userId = clean(current.getString("sellerId"));
-                if (userId.isEmpty()) userId = clean(current.getString("id"));
-                if (userId.isEmpty()) userId = id;
+                String userId = com.rescuefarm.service.admin.SellerApplicationIdentity.resolve(
+                        current.getString("sellerId"), current.getString("id"), id);
                 DocumentReference userRef = db.collection(USERS).document(userId);
                 DocumentSnapshot seller = tx.get(userRef);
                 if (!seller.exists()) {

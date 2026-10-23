@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+    android:gravity="center" android:paddingTop="14dp" android:paddingBottom="8dp">
+    <LinearLayout android:id="@+id/openFlashSaleButton" android:orientation="vertical"
+        android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginEnd="6dp"
+        android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground"
+        android:contentDescription="Flash Sale, xem nông sản giảm giá giờ chót">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="16dp">
+            <ImageView android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_rescue_flash_plain" android:contentDescription="@null" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FLASH SALE" android:textSize="16sp" android:textStyle="bold" android:textColor="#D83A21" android:layout_marginTop="8dp" android:fontFamily="@font/ibm_plex_sans" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Giá tốt, chớp ngay" android:textSize="12sp" android:textColor="#805D53" android:fontFamily="@font/barlow" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/openMysteryBoxButton" android:orientation="vertical"
+        android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="6dp"
+        android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground"
+        android:contentDescription="Hộp bí ẩn, mở quà nông sản">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="16dp">
+            <ImageView android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_rescue_gift_plain" android:contentDescription="@null" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Hộp bí ẩn" android:textSize="16sp" android:textStyle="bold" android:textColor="#6445AB" android:layout_marginTop="8dp" android:fontFamily="@font/ibm_plex_sans" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Chạm mở bất ngờ" android:textSize="12sp" android:textColor="#746784" android:fontFamily="@font/barlow" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

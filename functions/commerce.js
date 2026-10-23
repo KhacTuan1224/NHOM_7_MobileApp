@@ -5,7 +5,6 @@ const {normalizeUnit, campaignUnit} = require('./quantity-units');
 const {enqueueNotification} = require('./notification-outbox');
 const crypto = require("node:crypto");
 const {createCampaignLifecycle, readAllocations} = require('./campaign-lifecycle');
-const {createPromotionWallet, walletItem, available: promotionAvailable} = require('./promotion-wallet');
 
 const text = value => typeof value === "string" ? value.trim() : "";
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
@@ -18,22 +17,14 @@ const phone = value => text(value).replace(/[\s().-]/g, "").replace(/^\+84/, "0"
 const coordinates = (lat, lng) => Number.isFinite(lat) && lat >= -90 && lat <= 90
   && Number.isFinite(lng) && lng >= -180 && lng <= 180 && !(lat === 0 && lng === 0);
 
-function price(product, promotion, quantity, now) {
+function price(product, quantity) {
   const original = number(product.originalPrice), rescue = number(product.rescuePrice);
   if (!(original > 0 && rescue > 0 && rescue <= original)) throw error(409, "Giá sản phẩm chưa hợp lệ.");
-  let discount = 0, tier = 0;
-  if (promotion && promotion.active === true && time(promotion.startDate) <= now && time(promotion.endDate) > now) {
-    if (promotion.type === "PERCENT") discount = rescue * number(promotion.value, 0) / 100;
-    if (promotion.type === "FIXED") discount = number(promotion.value, 0);
-    for (const [threshold, percent] of Object.entries(promotion.quantityDiscountTiers || {})) {
-      if (quantity >= Number(threshold)) tier = Math.max(tier, number(percent, 0));
-    }
-  }
-  const unit = money(Math.max(0, rescue - Math.min(rescue, discount)) * (1 - Math.min(100, tier) / 100));
+  const unit = money(rescue);
   return {unit, subtotal: money(unit * quantity), originalSubtotal: money(original * quantity)};
 }
 
-function validateSelection(data) {
+function validateSelection(data, allowMultiple = false) {
   if (!Array.isArray(data.items) || !data.items.length || data.items.length > 20) {
     throw error(400, "Chọn từ 1 đến 20 lô hàng để đặt đơn.");
   }
@@ -53,7 +44,8 @@ function validateSelection(data) {
     batches.add(item.batchId); sellers.add(item.sellerId);
     return {productId: item.productId, batchId: item.batchId, sellerId: item.sellerId, quantity: item.quantity};
   });
-  if (sellers.size !== 1) throw error(400, "Hãy đặt riêng từng cửa hàng.");
+  if (!allowMultiple && sellers.size !== 1) throw error(400, "Hãy đặt riêng từng cửa hàng.");
+  if (sellers.size > 5) throw error(400, "Mỗi lần thanh toán tối đa 5 cửa hàng.");
   return items;
 }
 
@@ -89,8 +81,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     for (const item of items) {
       const p = await read(db.collection('products').doc(item.productId));
       const b = await read(db.collection('productBatches').doc(item.batchId));
-      const promo = await read(db.collection('promotions').doc(item.productId));
-      const saved = identity?.ownerType === 'CUSTOMER' ? await read(walletItem(db, identity.ownerId, item.productId)) : null;
       if (!p.exists || p.get('sellerId') !== sellerId || p.get('status') !== 'ACTIVE') throw error(409, "Sản phẩm không còn bán.");
       if (!b.exists || b.get('productId') !== p.id || !['AVAILABLE', 'RESERVED_PARTIAL'].includes(b.get('status'))
           || time(b.get('expiryDate')) <= now || number(b.get('availableQuantity'), 0) < item.quantity) {
@@ -100,12 +90,11 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       if (!Number.isFinite(batch.initialQuantity) || !Number.isFinite(batch.reservedQuantity)
           || !Number.isFinite(batch.soldQuantity) || Math.abs(batch.initialQuantity - batch.availableQuantity
             - batch.reservedQuantity - batch.soldQuantity) > 0.000001) throw error(409, "Tồn kho lô hàng chưa nhất quán.");
-      const canUsePromotion = !!saved?.exists && saved.get('customerId') === identity.ownerId
-        && saved.get('sellerId') === sellerId && promo.exists
-        && promotionAvailable(promo.data(), p.data(), seller.data(), now);
-      const calculated = price(p.data(), canUsePromotion ? promo.data() : null, item.quantity, now);
+      const calculated = price(p.data(), item.quantity);
+      calculated.subtotal = money(calculated.unit * item.quantity);
+      calculated.originalSubtotal = money(p.get("originalPrice") * item.quantity);
       rows.push({item, product: p.data(), batch, batchRef: b.ref,
-        promotionApplied: canUsePromotion && calculated.unit < money(p.get('rescuePrice')), price: calculated});
+        price: calculated});
     }
     const campaignIds = [...new Set(rows.map(row => text(row.batch.activeCampaignId)).filter(Boolean))];
     if (campaignIds.length > 1 || (data.fulfillmentType === 'ON_SITE_RESCUE' && !campaignIds.length)) {
@@ -167,12 +156,12 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     if (data.paymentMethod === 'BANK_TRANSFER' && !['bankCode', 'bankAccountName', 'bankAccountNumber'].every(key => text(paymentProfile[key]))) {
       throw error(409, "Cửa hàng chưa cấu hình đủ tài khoản nhận chuyển khoản.");
     }
-    const lines = rows.map(({item, product, price: value, promotionApplied}) => ({...item, productName: text(product.name), promotionApplied,
+    const lines = rows.map(({item, product, price: value}) => ({...item, productName: text(product.name),
       unit: text(product.unit), subtotal: value.subtotal, finalUnitPrice: value.unit, originalSubtotal: value.originalSubtotal}));
     const subtotal = lines.reduce((sum, line) => sum + line.subtotal, 0);
     const originalSubtotal = lines.reduce((sum, line) => sum + line.originalSubtotal, 0);
     return {rows, campaign, campaignRef, campaignQuantity, allocation, profile, paymentProfile, sellerId,
-      public: {promotionPolicy: 'SAVED_CUSTOMER_ONLY', lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
+      public: {pricingVersion: 3, lines, subtotal, originalSubtotal, totalDiscount: Math.max(0, originalSubtotal - subtotal), shippingFee,
         availablePaymentMethods: availablePaymentMethods(data.fulfillmentType, verification.available ? paymentProfile : null),
         bankTransferVerification: verification,
         sellerName: text(seller.get('fullName')), sellerAddress: profile ? text(profile.address) : '',
@@ -186,6 +175,21 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         quoteIsEstimate: true}};
   }
 
+  async function basketQuote(read, data, now = Date.now(), identity = null) {
+    const items = validateSelection(data, true);
+    const sellerIds = [...new Set(items.map(item => item.sellerId))].sort();
+    const groups = [];
+    for (const sellerId of sellerIds) groups.push(await quote(read,
+      {...data, items: items.filter(item => item.sellerId === sellerId)}, now, identity));
+    const summary = {...groups[0].public, groups: groups.map(group => group.public),
+      sellerCount: sellerIds.length, lines: groups.flatMap(group => group.public.lines)};
+    for (const key of ['subtotal', 'originalSubtotal', 'totalDiscount', 'shippingFee', 'total'])
+      summary[key] = groups.reduce((sum, group) => sum + group.public[key], 0);
+    summary.availablePaymentMethods = groups[0].public.availablePaymentMethods.filter(method =>
+      groups.every(group => group.public.availablePaymentMethods.includes(method)));
+    return {groups, public: summary};
+  }
+
   function guestIdentity(data) {
     if (!/^guest_[a-f0-9-]{36}$/i.test(text(data.guestId)) || !/^[a-f0-9]{64}$/i.test(text(data.guestToken))) {
       throw error(400, "Phiên mua hàng Guest không hợp lệ.");
@@ -193,44 +197,11 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
     return {ownerType: 'GUEST', ownerId: data.guestId, tokenHash: hash(data.guestToken)};
   }
 
-  async function checkout(data, identity) {
-    const items = validateSelection(data), requestId = text(data.requestId);
-    if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(requestId)) throw error(400, "Mã yêu cầu đặt hàng không hợp lệ.");
-    const receiverPhone = phone(data.receiverPhone), receiverName = text(data.receiverName);
-    if (receiverName.length < 2 || receiverName.length > 100 || !/^0\d{8,11}$/.test(receiverPhone)
-        || text(data.receiverAddress).length > 500 || text(data.note).length > 1000
-        || (data.fulfillmentType === 'DELIVERY' && !text(data.receiverAddress))) throw error(400, "Kiểm tra tên, số điện thoại và địa chỉ nhận hàng.");
-    const normalized = {items: [...items].sort((a, b) => a.batchId.localeCompare(b.batchId)), receiverName,
-      receiverPhone, receiverAddress: text(data.receiverAddress), latitude: number(data.latitude, 0), longitude: number(data.longitude, 0),
-      fulfillmentType: data.fulfillmentType, paymentMethod: data.paymentMethod, note: text(data.note)};
-    if (normalized.latitude < -90 || normalized.latitude > 90 || normalized.longitude < -180 || normalized.longitude > 180) throw error(400, "Tọa độ nhận hàng chưa hợp lệ.");
-    const fingerprint = hash(JSON.stringify(normalized)), orderRef = db.collection('orders').doc(requestId);
+  function writeOrder(tx, normalized, identity, q, requestId, fingerprint, groupId, orderIds) {
+    const items = normalized.items, orderRef = db.collection('orders').doc(requestId);
     const receiptRef = db.collection('checkoutReceipts').doc(requestId);
-    await lifecycle.reconcileItems(items);
-    const result = await db.runTransaction(async tx => {
-      const existing = await tx.get(orderRef), receipt = await tx.get(receiptRef);
-      if (existing.exists) {
-        if (!receipt.exists || existing.get('ownerId') !== identity.ownerId || existing.get('ownerType') !== identity.ownerType
-            || receipt.get('fingerprint') !== fingerprint || (identity.ownerType === 'GUEST' && receipt.get('tokenHash') !== identity.tokenHash)) {
-          throw error(409, "Mã yêu cầu đã được dùng cho thông tin đặt hàng khác.");
-        }
-        return {order: existing.data(), replay: true};
-      }
-      // All reads precede writes, and inventory is re-read inside this transaction.
-      if (identity.ownerType === 'CUSTOMER') {
-        const account = await tx.get(db.collection('users').doc(identity.ownerId));
-        if (!account.exists || account.get('role') !== 'CUSTOMER' || account.get('status') !== 'ACTIVE') throw error(403, "Tài khoản Customer không còn hoạt động.");
-      }
-      const q = await quote(ref => tx.get(ref), normalized, Date.now(), identity);
-      const cartRef = db.collection('customerCarts').doc(identity.ownerId);
-      const cart = identity.ownerType === 'CUSTOMER' ? await tx.get(cartRef) : null;
-      const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
-      const code = identity.ownerType === 'GUEST' ? await tx.get(codeRef) : null;
-      if (code && code.exists) throw error(409, "Mã đơn bị trùng. Hãy thử lại.");
-      if (Number.isFinite(data.expectedSubtotal) && Math.abs(data.expectedSubtotal - q.public.subtotal) > 0.5
-          || Number.isFinite(data.expectedShippingFee) && Math.abs(data.expectedShippingFee - q.public.shippingFee) > 0.5) {
-        throw error(409, "QUOTE_CHANGED: Giá hoặc phí giao hàng đã thay đổi. Hãy kiểm tra báo giá mới.");
-      }
+    const receiverPhone = normalized.receiverPhone;
+    const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
       const paymentStatus = normalized.paymentMethod === 'BANK_TRANSFER' ? 'PENDING' : 'UNPAID';
       const bankTransfer = normalized.paymentMethod === 'BANK_TRANSFER'
         ? paymentDetails(q.sellerId, q.paymentProfile, env) : {verificationProvider: '', transferContent: ''};
@@ -238,7 +209,9 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         throw error(409, 'Cửa hàng chưa kết nối xác minh chuyển khoản SePay. Vui lòng chọn thanh toán khi nhận hàng hoặc chờ cửa hàng hoàn tất kết nối; chưa chuyển tiền.');
       const order = {id: requestId, requestId, ownerType: identity.ownerType, ownerId: identity.ownerId,
         orderCode: `RF-${requestId.replace(/-/g, '').toUpperCase()}`, sellerId: q.sellerId, campaignId: q.public.campaignId,
-        ...normalized, subtotal: q.public.subtotal, quantityDiscount: 0, shippingFee: q.public.shippingFee,
+        ...normalized, subtotal: q.public.subtotal,
+        sellerReceivableAmount: q.public.subtotal + q.public.shippingFee,
+        pricingVersion: 3, checkoutGroupId: groupId, shippingFee: q.public.shippingFee,
         totalAmount: q.public.total, paymentStatus, status: 'PENDING', campaignReservedQuantity: q.campaignQuantity,
         batchReservations: Object.fromEntries(items.map(item => [item.batchId, item.quantity])),
         campaignBatchReservations: Object.fromEntries(q.rows.filter(row => text(row.batch.activeCampaignId))
@@ -252,7 +225,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
           orderId: requestId, sellerId: q.sellerId, createdAt: stamp()
         });
       tx.create(receiptRef, {ownerId: identity.ownerId, ownerType: identity.ownerType, fingerprint,
-        tokenHash: identity.tokenHash || '', createdAt: stamp()});
+        tokenHash: identity.tokenHash || '', orderIds, createdAt: stamp()});
       const sellerNotificationId = `${requestId}_SELLER_PENDING`;
       tx.create(db.collection('notifications').doc(sellerNotificationId), {
         id: sellerNotificationId, userId: q.sellerId, type: 'ORDER',
@@ -266,8 +239,7 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
           productId: item.productId, batchId: item.batchId, productNameSnapshot: text(p.name),
           productImageSnapshot: Array.isArray(p.imageUrls) ? text(p.imageUrls[0]) : '', unitSnapshot: normalizeUnit(p.unit),
           originalPriceSnapshot: p.originalPrice, rescuePriceSnapshot: p.rescuePrice, finalPriceSnapshot: row.price.unit,
-          quantity: item.quantity, subtotal: row.price.subtotal, promotionApplied: row.promotionApplied,
-          promotionIdSnapshot: row.promotionApplied ? item.productId : ''});
+          quantity: item.quantity, subtotal: row.price.subtotal});
         tx.update(row.batchRef, {availableQuantity: batch.availableQuantity - item.quantity,
           reservedQuantity: batch.reservedQuantity + item.quantity, status: 'RESERVED_PARTIAL',
           inventoryVersion: number(batch.inventoryVersion, 0) + 1, lastReservationOrderId: requestId,
@@ -293,16 +265,6 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
         pickupLongitude: q.public.sellerLongitude, receiverAddress: normalized.receiverAddress,
         receiverLatitude: normalized.latitude, receiverLongitude: normalized.longitude,
         distanceKm: q.public.distanceKm, shippingFee: q.public.shippingFee, createdAt: stamp(), updatedAt: stamp()});
-      if (cart && cart.exists) {
-        const quantities = new Map(items.map(item => [`${item.productId}::${item.batchId}`, item.quantity]));
-        const remaining = (cart.get('items') || []).flatMap(item => {
-          const bought = quantities.get(item.id);
-          if (!bought) return [item];
-          if (!(number(item.quantity) >= bought)) throw error(409, "QUOTE_CHANGED: Giỏ hàng đã thay đổi.");
-          return item.quantity - bought > 0.000001 ? [{...item, quantity: item.quantity - bought}] : [];
-        });
-        tx.update(cartRef, {items: remaining, updatedAt: stamp()});
-      }
       if (identity.ownerType === 'CUSTOMER') tx.create(db.collection('notifications').doc(`${requestId}_PENDING`), {
         id: `${requestId}_PENDING`, userId: identity.ownerId, type: 'ORDER', title: 'Đã tiếp nhận đơn hàng',
         body: 'Đơn hàng đang chờ cửa hàng xác nhận.', referenceId: requestId, orderStatus: 'PENDING',
@@ -313,10 +275,78 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
       enqueueNotification(tx, db, admin, `order_${requestId}_admins`, {kind: 'ADMINS', resourceType: 'ORDER', resourceId: requestId});
       if (identity.ownerType === 'CUSTOMER') enqueueNotification(tx, db, admin, `order_${requestId}_PENDING`, {
         kind: 'DIRECT', resourceType: 'ORDER', resourceId: requestId, recipientUid: identity.ownerId, decision: 'PENDING', inboxId: `${requestId}_PENDING`});
-      return {order, replay: false};
+      return order;
+  }
+
+  async function checkout(data, identity) {
+    const items = validateSelection(data, true), requestId = text(data.requestId);
+    if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(requestId)) throw error(400, "Mã yêu cầu đặt hàng không hợp lệ.");
+    const receiverPhone = phone(data.receiverPhone), receiverName = text(data.receiverName);
+    if (receiverName.length < 2 || receiverName.length > 100 || !/^0\d{8,11}$/.test(receiverPhone)
+        || text(data.receiverAddress).length > 500 || text(data.note).length > 1000
+        || (data.fulfillmentType === 'DELIVERY' && !text(data.receiverAddress))) throw error(400, "Kiểm tra tên, số điện thoại và địa chỉ nhận hàng.");
+    const normalized = {items: [...items].sort((a, b) => a.batchId.localeCompare(b.batchId)), receiverName,
+      receiverPhone, receiverAddress: text(data.receiverAddress), latitude: number(data.latitude, 0), longitude: number(data.longitude, 0),
+      fulfillmentType: data.fulfillmentType, paymentMethod: data.paymentMethod, note: text(data.note)};
+    if (normalized.latitude < -90 || normalized.latitude > 90 || normalized.longitude < -180 || normalized.longitude > 180) throw error(400, "Tọa độ nhận hàng chưa hợp lệ.");
+    const fingerprint = hash(JSON.stringify(normalized)), orderRef = db.collection('orders').doc(requestId);
+    const receiptRef = db.collection('checkoutReceipts').doc(requestId);
+    await lifecycle.reconcileItems(items);
+    const result = await db.runTransaction(async tx => {
+      const existing = await tx.get(orderRef), receipt = await tx.get(receiptRef);
+      if (existing.exists) {
+        if (!receipt.exists || existing.get('ownerId') !== identity.ownerId || existing.get('ownerType') !== identity.ownerType
+            || receipt.get('fingerprint') !== fingerprint || (identity.ownerType === 'GUEST' && receipt.get('tokenHash') !== identity.tokenHash)) {
+          throw error(409, "Mã yêu cầu đã được dùng cho thông tin đặt hàng khác.");
+        }
+        return {order: existing.data(), orderIds: receipt.get("orderIds") || [requestId], replay: true};
+      }
+      // All reads precede writes, and inventory is re-read inside this transaction.
+      if (identity.ownerType === 'CUSTOMER') {
+        const account = await tx.get(db.collection('users').doc(identity.ownerId));
+        if (!account.exists || account.get('role') !== 'CUSTOMER' || account.get('status') !== 'ACTIVE') throw error(403, "Tài khoản Customer không còn hoạt động.");
+      }
+      const q = await basketQuote(ref => tx.get(ref), normalized, Date.now(), identity);
+      const orderIds = q.groups.map((group, index) => {
+        if (index === 0) return requestId;
+        const hex = hash(requestId + '|' + group.sellerId).slice(0, 32);
+        return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+      });
+      for (let i = 1; i < orderIds.length; i++) {
+        if ((await tx.get(db.collection('orders').doc(orderIds[i]))).exists
+            || (await tx.get(db.collection('guestOrderCodes').doc(`RF-${orderIds[i].replace(/-/g, '').toUpperCase()}`))).exists)
+          throw error(409, 'Mã đơn con bị trùng. Vui lòng thử lại.');
+      }
+      const cartRef = db.collection('customerCarts').doc(identity.ownerId);
+      const cart = identity.ownerType === 'CUSTOMER' ? await tx.get(cartRef) : null;
+      const codeRef = db.collection('guestOrderCodes').doc(`RF-${requestId.replace(/-/g, '').toUpperCase()}`);
+      const code = identity.ownerType === 'GUEST' ? await tx.get(codeRef) : null;
+      if (code && code.exists) throw error(409, "Mã đơn bị trùng. Hãy thử lại.");
+      // Older APKs can submit a quote taken before discount retirement. Never
+      // silently charge a higher total; already-created orders replay above.
+      if (number(data.expectedQuantityDiscount, 0) > 0
+          || Number.isFinite(data.expectedSubtotal) && Math.abs(data.expectedSubtotal - q.public.subtotal) > 0.5
+          || Number.isFinite(data.expectedShippingFee) && Math.abs(data.expectedShippingFee - q.public.shippingFee) > 0.5) {
+        throw error(409, "QUOTE_CHANGED: Giá hoặc phí giao hàng đã thay đổi. Hãy kiểm tra báo giá mới.");
+      }
+      const orders = q.groups.map((group, index) => writeOrder(tx,
+        {...normalized, items: normalized.items.filter(item => item.sellerId === group.sellerId)}, identity,
+        group, orderIds[index], fingerprint, requestId, orderIds));
+      if (cart && cart.exists) {
+        const quantities = new Map(items.map(item => [`${item.productId}::${item.batchId}`, item.quantity]));
+        const remaining = (cart.get('items') || []).flatMap(item => {
+          const bought = quantities.get(item.id);
+          if (!bought) return [item];
+          if (!(number(item.quantity) >= bought)) throw error(409, "QUOTE_CHANGED: Giỏ hàng đã thay đổi.");
+          return item.quantity - bought > 0.000001 ? [{...item, quantity: item.quantity - bought}] : [];
+        });
+        tx.update(cartRef, {items: remaining, updatedAt: stamp()});
+      }
+      return {order: orders[0], orderIds, replay: false};
     });
     // Re-read committed server timestamps; never serialize FieldValue sentinels to Android.
-    result.order = (await orderRef.get()).data();
+    result.orders = await Promise.all(result.orderIds.map(async id => (await db.collection('orders').doc(id).get()).data()));
+    result.order = result.orders[0];
     if (identity.ownerType === 'GUEST') result.accessToken = data.guestToken;
     return serialize(result);
   }
@@ -333,10 +363,9 @@ function createCommerce({db, admin, authenticate, campaignLifecycle = null, env 
   const route = (path, handler) => router.post(path, async (req, res, next) => {
     try { res.json(await handler(req)); } catch (failure) { next(failure); }
   });
-  router.use(createPromotionWallet({db, admin, authenticate, limit}).router);
   async function reconciledQuote(data, identity = null) {
-    await lifecycle.reconcileItems(validateSelection(data));
-    return (await quote(ref => ref.get(), data, Date.now(), identity)).public;
+    await lifecycle.reconcileItems(validateSelection(data, true));
+    return (await basketQuote(ref => ref.get(), data, Date.now(), identity)).public;
   }
   route('/quoteCustomerCheckout', async req => {
     const caller = await authenticate(req, ['CUSTOMER']);

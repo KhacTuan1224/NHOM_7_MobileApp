@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.rescuefarm.ui.common.NavigationAwareNestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/rescue_background" android:fillViewport="true">
+    <com.rescuefarm.ui.common.ResponsiveContentLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" android:orientation="vertical"
+        android:padding="16dp" app:maxContentWidth="@dimen/content_max_width">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <com.rescuefarm.ui.common.AppBackButton android:id="@+id/categoryBackButton" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
+            <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.PageTitle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Danh mục nông sản" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/categoryRefreshButton" style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_target_min" android:text="@string/refresh_action" />
+        </LinearLayout>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp" app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/rescue_primary_container">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+                <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Name" android:id="@+id/categoryDetailName"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" />
+                <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:text="@string/category_detail_intro" android:textColor="@color/rescue_on_primary_container" />
+                <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body" android:id="@+id/categoryDetailSummary"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="@color/rescue_on_primary_container" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <ProgressBar android:id="@+id/categoryDetailProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent" android:layout_height="4dp"
+            android:indeterminate="true" android:visibility="gone" />
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Body" android:id="@+id/categoryDetailStatus"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:paddingTop="8dp" android:paddingBottom="12dp"
+            android:textColor="@color/rescue_on_surface_variant" android:visibility="gone" />
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp" android:text="@string/category_detail_products" android:accessibilityHeading="true" />
+        <com.rescuefarm.ui.common.ResponsiveGridLayout android:id="@+id/categoryDetailProducts"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" />
+        <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="24dp"
+            android:layout_marginBottom="12dp" android:text="@string/category_detail_articles" android:accessibilityHeading="true" />
+        <LinearLayout android:id="@+id/categoryDetailArticles"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </com.rescuefarm.ui.common.ResponsiveContentLayout>
+</com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

@@ -25,10 +25,25 @@ public class AdminTransitionPolicyTest {
     }
 
     @Test public void restrictiveTransitionsRequireAuditReason() {
-        assertThrows(IllegalArgumentException.class,
-                () -> policy.validate(Section.PRODUCTS, "ACTIVE", "HIDDEN", ""));
-        policy.validate(Section.PRODUCTS, "ACTIVE", "HIDDEN", "Vi phạm nội dung");
-        policy.validate(Section.CAMPAIGNS, "ACTIVE", "STOPPED", "Sai thông tin");
+        Section[] sections = {Section.PRODUCTS, Section.REVIEWS, Section.CAMPAIGNS,
+                Section.USERS, Section.SELLER_APPLICATIONS};
+        String[] current = {"ACTIVE", "PUBLISHED", "ACTIVE", "ACTIVE", "PENDING"};
+        String[] targets = {"HIDDEN", "HIDDEN", "STOPPED", "BLOCKED", "REJECTED"};
+        for (int i = 0; i < targets.length; i++) {
+            final int index = i;
+            assertTrue(policy.requiresReason(targets[i]));
+            for (String reason : new String[]{null, "", "   ", "ab", "  ab  "}) {
+                assertThrows(IllegalArgumentException.class,
+                        () -> policy.validate(sections[index], current[index], targets[index], reason));
+            }
+            policy.validate(sections[i], current[i], targets[i], "Lý do kiểm duyệt hợp lệ");
+            policy.validate(sections[i], current[i], targets[i], " abc ");
+        }
+        assertTrue(policy.requiresReason(" hidden "));
+        assertFalse(policy.requiresReason("ACTIVE"));
+        assertFalse(policy.requiresReason("APPROVED"));
+        policy.validate(Section.USERS, "BLOCKED", "ACTIVE", "");
+        policy.validate(Section.SELLER_APPLICATIONS, "PENDING", "APPROVED", null);
     }
 
     @Test public void transactionalResourcesHaveNoAdminTransition() {

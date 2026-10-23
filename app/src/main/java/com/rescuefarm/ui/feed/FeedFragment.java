@@ -64,6 +64,7 @@ public class FeedFragment extends Fragment {
     private void renderPage(List<RescueCampaign> campaigns) {
         if (!isAdded() || container == null) return;
         container.removeAllViews();
+        renderer.beginPage(campaigns);
         if (campaigns.isEmpty()) {
             container.addView(renderer.message("Chưa có chiến dịch giải cứu đang hoạt động."));
             return;
@@ -75,5 +76,10 @@ public class FeedFragment extends Fragment {
                         R.id.action_feedFragment_to_campaignDetailFragment, args);
             }));
         }
+    }
+    @Override public void onDestroyView() {
+        if (renderer != null) renderer.clear();
+        container = null; progress = null;
+        super.onDestroyView();
     }
 }

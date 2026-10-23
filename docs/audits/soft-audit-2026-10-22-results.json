@@ -1,0 +1,388 @@
+{
+  "date": "2026-10-22",
+  "production_writes": false,
+  "device_tests_run": false,
+  "android": {
+    "tests": 246,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "test_classes": 73
+  },
+  "lint_counts": {
+    "Warning": 620,
+    "Error": 2
+  },
+  "lint_by_id": {
+    "EmptySuperCall": 8,
+    "DefaultLocale": 2,
+    "UnusedAttribute": 5,
+    "WrongConstant": 2,
+    "InflateParams": 1,
+    "AndroidGradlePluginVersion": 1,
+    "GradleDependency": 3,
+    "VisibleForTests": 5,
+    "DiscouragedApi": 2,
+    "UseCompatTextViewDrawableXml": 1,
+    "PluralsCandidate": 10,
+    "SetJavaScriptEnabled": 1,
+    "DrawAllocation": 4,
+    "NotifyDataSetChanged": 1,
+    "ObsoleteSdkInt": 3,
+    "UseCompoundDrawables": 1,
+    "DisableBaselineAlignment": 3,
+    "NestedWeights": 3,
+    "Overdraw": 58,
+    "UnusedResources": 102,
+    "UselessParent": 2,
+    "TypographyEllipsis": 1,
+    "IconXmlAndPng": 2,
+    "MonochromeLauncherIcon": 2,
+    "IconLocation": 1,
+    "TextFields": 18,
+    "Autofill": 26,
+    "ViewConstructor": 1,
+    "ContentDescription": 1,
+    "LabelFor": 1,
+    "SetTextI18n": 143,
+    "HardcodedText": 202,
+    "RtlSymmetry": 6
+  },
+  "lint_errors": [
+    {
+      "severity": "Error",
+      "id": "WrongConstant",
+      "message": "Must be one of: LinearLayout.HORIZONTAL, LinearLayout.VERTICAL",
+      "locations": [
+        {
+          "file": "D:\\NHOM_7_MobileApp\\app\\src\\main\\java\\com\\rescuefarm\\ui\\rescue\\RescueMarketFragment.java",
+          "line": "77",
+          "column": "98"
+        }
+      ]
+    },
+    {
+      "severity": "Error",
+      "id": "WrongConstant",
+      "message": "Must be one of: LinearLayout.HORIZONTAL, LinearLayout.VERTICAL",
+      "locations": [
+        {
+          "file": "D:\\NHOM_7_MobileApp\\app\\src\\main\\java\\com\\rescuefarm\\ui\\rescue\\RescueMarketUi.java",
+          "line": "19",
+          "column": "97"
+        }
+      ]
+    }
+  ],
+  "test_suites": {
+    "backend-unit": {
+      "tests": [
+        150,
+        8
+      ],
+      "passes": [
+        150,
+        8
+      ],
+      "failures": [
+        0,
+        0
+      ],
+      "failed_names": []
+    },
+    "scripts": {
+      "tests": [
+        9
+      ],
+      "passes": [
+        9
+      ],
+      "failures": [
+        0
+      ],
+      "failed_names": []
+    },
+    "firestore": {
+      "tests": [
+        116
+      ],
+      "passes": [
+        113
+      ],
+      "failures": [
+        3
+      ],
+      "failed_names": [
+        "Admin can moderate Campaign comments while Customer cannot bypass moderation or forge its fields",
+        "Admin can hide the exact Campaign comment and audit its parent without changing another same-ID comment",
+        "Admin edits legacy category metadata while preserving seed image and missing embedded ID"
+      ]
+    },
+    "auth": {
+      "tests": [
+        5
+      ],
+      "passes": [
+        5
+      ],
+      "failures": [
+        0
+      ],
+      "failed_names": []
+    },
+    "firestore-probes": {
+      "tests": [
+        3
+      ],
+      "passes": [
+        3
+      ],
+      "failures": [
+        0
+      ],
+      "failed_names": []
+    }
+  },
+  "navigation_destinations": [
+    {
+      "id": "@+id/flashSaleFragment",
+      "class": "com.rescuefarm.ui.rescue.FlashSaleFragment"
+    },
+    {
+      "id": "@+id/mysteryBoxFragment",
+      "class": "com.rescuefarm.ui.rescue.MysteryBoxFragment"
+    },
+    {
+      "id": "@+id/rescueHubFragment",
+      "class": "com.rescuefarm.ui.rescue.RescueHubFragment"
+    },
+    {
+      "id": "@+id/rescueOfferEditorFragment",
+      "class": "com.rescuefarm.ui.rescue.RescueOfferEditorFragment"
+    },
+    {
+      "id": "@+id/mysteryBoxEditorFragment",
+      "class": "com.rescuefarm.ui.rescue.MysteryBoxEditorFragment"
+    },
+    {
+      "id": "@+id/flashRescueEditorFragment",
+      "class": "com.rescuefarm.ui.rescue.FlashRescueEditorFragment"
+    },
+    {
+      "id": "@+id/launchLoadingFragment",
+      "class": "com.rescuefarm.ui.auth.LaunchLoadingFragment"
+    },
+    {
+      "id": "@+id/splashFragment",
+      "class": "com.rescuefarm.ui.auth.SplashFragment"
+    },
+    {
+      "id": "@+id/onboardingFragment",
+      "class": "com.rescuefarm.ui.auth.OnboardingFragment"
+    },
+    {
+      "id": "@+id/registrationChoiceFragment",
+      "class": "com.rescuefarm.ui.auth.RegistrationChoiceFragment"
+    },
+    {
+      "id": "@+id/guestHomeFragment",
+      "class": "com.rescuefarm.ui.home.GuestHomeFragment"
+    },
+    {
+      "id": "@+id/discoveryFragment",
+      "class": "com.rescuefarm.ui.home.DiscoveryFragment"
+    },
+    {
+      "id": "@+id/categoryDetailFragment",
+      "class": "com.rescuefarm.ui.home.CategoryDetailFragment"
+    },
+    {
+      "id": "@+id/allCategoriesFragment",
+      "class": "com.rescuefarm.ui.home.AllCategoriesFragment"
+    },
+    {
+      "id": "@+id/allCriticalCampaignsFragment",
+      "class": "com.rescuefarm.ui.home.AllCriticalCampaignsFragment"
+    },
+    {
+      "id": "@+id/allValueProductsFragment",
+      "class": "com.rescuefarm.ui.home.AllValueProductsFragment"
+    },
+    {
+      "id": "@+id/allActiveCampaignsFragment",
+      "class": "com.rescuefarm.ui.home.AllActiveCampaignsFragment"
+    },
+    {
+      "id": "@+id/loginFragment",
+      "class": "com.rescuefarm.ui.auth.LoginFragment"
+    },
+    {
+      "id": "@+id/registerFragment",
+      "class": "com.rescuefarm.ui.auth.RegisterFragment"
+    },
+    {
+      "id": "@+id/forgotPasswordFragment",
+      "class": "com.rescuefarm.ui.auth.ForgotPasswordFragment"
+    },
+    {
+      "id": "@+id/profileFragment",
+      "class": "com.rescuefarm.ui.profile.ProfileFragment"
+    },
+    {
+      "id": "@+id/guestProfileFragment",
+      "class": "com.rescuefarm.ui.profile.GuestProfileFragment"
+    },
+    {
+      "id": "@+id/editProfileFragment",
+      "class": "com.rescuefarm.ui.profile.EditProfileFragment"
+    },
+    {
+      "id": "@+id/addressListFragment",
+      "class": "com.rescuefarm.ui.profile.AddressListFragment"
+    },
+    {
+      "id": "@+id/addressEditorFragment",
+      "class": "com.rescuefarm.ui.profile.AddressEditorFragment"
+    },
+    {
+      "id": "@+id/sellerProfileFragment",
+      "class": "com.rescuefarm.ui.profile.SellerProfileFragment"
+    },
+    {
+      "id": "@+id/sellerApplicationFragment",
+      "class": "com.rescuefarm.ui.profile.SellerApplicationFragment"
+    },
+    {
+      "id": "@+id/productListFragment",
+      "class": "com.rescuefarm.ui.product.ProductListFragment"
+    },
+    {
+      "id": "@+id/productDetailFragment",
+      "class": "com.rescuefarm.ui.product.ProductDetailFragment"
+    },
+    {
+      "id": "@+id/cartFragment",
+      "class": "com.rescuefarm.ui.cart.CartFragment"
+    },
+    {
+      "id": "@+id/checkoutFragment",
+      "class": "com.rescuefarm.ui.checkout.CheckoutFragment"
+    },
+    {
+      "id": "@+id/orderConfirmationFragment",
+      "class": "com.rescuefarm.ui.checkout.OrderConfirmationFragment"
+    },
+    {
+      "id": "@+id/customerOrderListFragment",
+      "class": "com.rescuefarm.ui.order.CustomerOrderListFragment"
+    },
+    {
+      "id": "@+id/orderDetailFragment",
+      "class": "com.rescuefarm.ui.order.OrderDetailFragment"
+    },
+    {
+      "id": "@+id/sellerOrderListFragment",
+      "class": "com.rescuefarm.ui.order.SellerOrderListFragment"
+    },
+    {
+      "id": "@+id/sellerDashboardFragment",
+      "class": "com.rescuefarm.ui.seller.SellerDashboardFragment"
+    },
+    {
+      "id": "@+id/sellerStatisticsFragment",
+      "class": "com.rescuefarm.ui.seller.SellerStatisticsFragment"
+    },
+    {
+      "id": "@+id/sellerProductListFragment",
+      "class": "com.rescuefarm.ui.product.SellerProductListFragment"
+    },
+    {
+      "id": "@+id/productEditorFragment",
+      "class": "com.rescuefarm.ui.product.ProductEditorFragment"
+    },
+    {
+      "id": "@+id/batchManagerFragment",
+      "class": "com.rescuefarm.ui.product.BatchManagerFragment"
+    },
+    {
+      "id": "@+id/sellerPromotionListFragment",
+      "class": "com.rescuefarm.ui.product.SellerPromotionListFragment"
+    },
+    {
+      "id": "@+id/promotionEditorFragment",
+      "class": "com.rescuefarm.ui.product.PromotionEditorFragment"
+    },
+    {
+      "id": "@+id/campaignListFragment",
+      "class": "com.rescuefarm.ui.campaign.CampaignListFragment"
+    },
+    {
+      "id": "@+id/campaignDetailFragment",
+      "class": "com.rescuefarm.ui.campaign.CampaignDetailFragment"
+    },
+    {
+      "id": "@+id/sellerCampaignListFragment",
+      "class": "com.rescuefarm.ui.campaign.SellerCampaignListFragment"
+    },
+    {
+      "id": "@+id/campaignEditorFragment",
+      "class": "com.rescuefarm.ui.campaign.CampaignEditorFragment"
+    },
+    {
+      "id": "@+id/mobileRescueFragment",
+      "class": "com.rescuefarm.ui.campaign.MobileRescueFragment"
+    },
+    {
+      "id": "@+id/feedFragment",
+      "class": "com.rescuefarm.ui.feed.FeedFragment"
+    },
+    {
+      "id": "@+id/favoriteFragment",
+      "class": "com.rescuefarm.ui.engagement.FavoriteFragment"
+    },
+    {
+      "id": "@+id/reviewFragment",
+      "class": "com.rescuefarm.ui.engagement.ReviewFragment"
+    },
+    {
+      "id": "@+id/storefrontFragment",
+      "class": "com.rescuefarm.ui.profile.StorefrontFragment"
+    },
+    {
+      "id": "@+id/publicSellerProfileFragment",
+      "class": "com.rescuefarm.ui.profile.PublicSellerProfileFragment"
+    },
+    {
+      "id": "@+id/reportResultFragment",
+      "class": "com.rescuefarm.ui.engagement.ReportResultFragment"
+    },
+    {
+      "id": "@+id/reportFragment",
+      "class": "com.rescuefarm.ui.engagement.ReportFragment"
+    },
+    {
+      "id": "@+id/notificationFragment",
+      "class": "com.rescuefarm.ui.engagement.NotificationFragment"
+    },
+    {
+      "id": "@+id/adminReportFragment",
+      "class": "com.rescuefarm.ui.engagement.AdminReportFragment"
+    },
+    {
+      "id": "@+id/adminDashboardFragment",
+      "class": "com.rescuefarm.ui.admin.AdminDashboardFragment"
+    },
+    {
+      "id": "@+id/adminResourceFragment",
+      "class": "com.rescuefarm.ui.admin.AdminResourceFragment"
+    },
+    {
+      "id": "@+id/adminDetailFragment",
+      "class": "com.rescuefarm.ui.admin.AdminDetailFragment"
+    },
+    {
+      "id": "@+id/promotionWalletFragment",
+      "class": "com.rescuefarm.ui.product.PromotionWalletFragment"
+    }
+  ]
+}

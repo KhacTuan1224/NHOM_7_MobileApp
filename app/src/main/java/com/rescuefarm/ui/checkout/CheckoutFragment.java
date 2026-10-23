@@ -105,8 +105,6 @@ public class CheckoutFragment extends Fragment {
             return;
         }
         name = view.findViewById(R.id.checkoutName); phone = view.findViewById(R.id.checkoutPhone);
-        view.findViewById(R.id.checkoutPromotionWalletButton).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         address = view.findViewById(R.id.checkoutAddress); note = view.findViewById(R.id.checkoutNote);
         gpsStatus = view.findViewById(R.id.checkoutGpsStatus);
         selectedAddressText = view.findViewById(R.id.checkoutSelectedAddress);
@@ -205,13 +203,20 @@ public class CheckoutFragment extends Fragment {
             if (result.getStatus() == CheckoutState.Status.SUCCESS && vm.consumeCheckoutSuccessNavigation()) {
                 Order order = result.getOrder();
                 new com.rescuefarm.data.local.preferences.SharedPreferencesGuestSessionRepository(requireContext())
-                        .saveRecentGuestOrder(order.getId(), order.getOrderCode(), order.getReceiverPhone());
+                        .saveRecentGuestOrder(order.getId(), order.getOrderCode(), order.getReceiverPhone(),
+                                order.getTotalAmount(),
+                                order.getStatus() == null ? "PENDING" : order.getStatus().name(),
+                                order.getPaymentMethod() == null ? "COD" : order.getPaymentMethod().name());
                 Bundle args = new Bundle();
+                java.util.ArrayList<String> orderIds = new java.util.ArrayList<>(), orderCodes = new java.util.ArrayList<>();
+                for (Order child : order.getCheckoutOrders()) { orderIds.add(child.getId()); orderCodes.add(child.getOrderCode()); }
+                args.putStringArrayList("checkoutOrderIds", orderIds); args.putStringArrayList("checkoutOrderCodes", orderCodes);
                 args.putString("orderId", order.getId());
                 args.putString("orderCode", order.getOrderCode());
                 args.putString("phone", order.getReceiverPhone());
                 args.putString("status", order.getStatus() == null ? "PENDING" : order.getStatus().name());
                 args.putString("paymentMethod", order.getPaymentMethod() == null ? "COD" : order.getPaymentMethod().name());
+                args.putDouble("totalAmount", order.getTotalAmount());
                 Navigation.findNavController(view).navigate(R.id.action_checkoutFragment_to_orderConfirmationFragment, args);
             } else if (result.getStatus() == CheckoutState.Status.ERROR) {
                 Toast.makeText(requireContext(), result.getMessage(), Toast.LENGTH_LONG).show();
@@ -433,10 +438,9 @@ public class CheckoutFragment extends Fragment {
         RenderBackendClient.Callback quoteCallback = new RenderBackendClient.Callback() {
             @Override public void onSuccess(JSONObject quote) {
                 if (version != quoteVersion || !isAdded()) return;
-                if (!"SAVED_CUSTOMER_ONLY".equals(quote.optString("promotionPolicy"))) {
-                    quoteReady = false;
-                    String error = "Máy chủ cần cập nhật tính năng kho khuyến mãi trước khi thanh toán. Vui lòng thử lại sau.";
-                    estimate.setText(error); message.setText(error); message.setVisibility(View.VISIBLE);
+                if (quote.optInt("pricingVersion") != 3) {
+                    quoteReady = false; enableCheckoutSubmit();
+                    estimate.setText("Máy chủ cần cập nhật cách tính giá mới. Vui lòng thử lại sau.");
                     return;
                 }
                 JSONArray methods = quote.optJSONArray("availablePaymentMethods");
@@ -451,22 +455,23 @@ public class CheckoutFragment extends Fragment {
                     summary.append("• ").append(line.optString("productName")).append(" · ")
                             .append(line.optDouble("quantity")).append(' ').append(line.optString("unit"))
                             .append(" · ").append(money.format(line.optDouble("subtotal")))
-                            .append(line.optBoolean("promotionApplied") ? " · Đã áp dụng khuyến mãi đã lưu" : "").append('\n');
+                            .append('\n');
                 }
                 summary.append("Tiền hàng: ").append(money.format(quotedSubtotal))
-                        .append("\nGiảm giá: ").append(money.format(quote.optDouble("totalDiscount")))
                         .append("\nPhí giao: ").append(money.format(quotedShippingFee))
-                        .append("\nTổng: ").append(money.format(quote.optDouble("total")));
-                if (fulfillment.getSelectedItem() == FulfillmentType.DELIVERY)
-                    summary.append("\nKhoảng cách GPS đường chim bay: ")
-                            .append(String.format(Locale.US, "%.2f km", quote.optDouble("distanceKm")));
-                String campaignId = quote.optString("campaignId", "");
-                if (!campaignId.isEmpty()) summary.append("\nChiến dịch: ").append(quote.optString("campaignTitle"));
-                if (fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE)
-                    summary.append("\nĐiểm nhận: ").append(quote.optString("campaignLocationName"));
-                sellerAddress.setText(fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE
-                        ? "Điểm nhận tại chiến dịch: " + quote.optString("campaignLocationName")
-                        : quote.optString("sellerName") + "\n" + quote.optString("sellerAddress", "Chưa cập nhật"));
+                        .append("\nTổng cần trả: ").append(money.format(quote.optDouble("total")));
+                JSONArray sellerGroups = quote.optJSONArray("groups");
+                StringBuilder addresses = new StringBuilder();
+                if (sellerGroups != null) for (int i = 0; i < sellerGroups.length(); i++) {
+                    JSONObject group = sellerGroups.optJSONObject(i); if (group == null) continue;
+                    summary.append("\n\n").append(group.optString("sellerName")).append(": ").append(money.format(group.optDouble("total")))
+                            .append(" · phí giao ").append(money.format(group.optDouble("shippingFee")));
+                    addresses.append(group.optString("sellerName")).append("\n").append(
+                            fulfillment.getSelectedItem() == FulfillmentType.ON_SITE_RESCUE
+                                    ? group.optString("campaignLocationName") : group.optString("sellerAddress")).append("\n");
+                }
+                if (quote.optInt("sellerCount", 1) > 1) summary.append("\nMỗi cửa hàng có đơn, phí giao và thanh toán riêng.");
+                sellerAddress.setText(addresses.toString());
                 estimate.setText(summary.toString());
                 message.setText("");
                 quoteReady = Double.isFinite(quotedSubtotal)
@@ -531,6 +536,15 @@ public class CheckoutFragment extends Fragment {
         String sellerId = "";
         if (currentCart != null) for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems())
             if (item.isSelected()) { sellerId = item.getSellerId(); break; }
+        java.util.Set<String> selectedSellers = new java.util.HashSet<>();
+        if (currentCart != null) for (com.rescuefarm.domain.model.CartItem item : currentCart.getItems())
+            if (item.isSelected()) selectedSellers.add(item.getSellerId());
+        if (selectedSellers.size() > 1) {
+            bankLoadVersion++; bankTransferAvailable = false; applyPaymentMethods();
+            paymentStatus.setVisibility(View.VISIBLE);
+            paymentStatus.setText("Phương thức chung được kiểm tra cho tất cả cửa hàng. Chuyển khoản từng đơn riêng nếu được hỗ trợ.");
+            scheduleShippingEstimate(); return;
+        }
         final String selectedSeller = sellerId;
         int version = ++bankLoadVersion;
         if (!selectedSeller.equals(paymentSellerId)) {

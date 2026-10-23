@@ -11,6 +11,18 @@ import java.util.Date;
 import java.util.List;
 
 public class Order {
+    private boolean expiryReviewRequired;
+    private String cancellationReason = "";
+    public Order withExpiryReview(boolean required, String reason) {
+        expiryReviewRequired = required; cancellationReason = reason == null ? "" : reason; return this;
+    }
+    public boolean isExpiryReviewRequired() { return expiryReviewRequired; }
+    public String getCancellationReason() { return cancellationReason; }
+    private java.util.List<Order> checkoutOrders;
+    public void setCheckoutOrders(java.util.List<Order> values) { checkoutOrders = new java.util.ArrayList<>(values); }
+    public java.util.List<Order> getCheckoutOrders() {
+        return checkoutOrders == null ? java.util.Collections.singletonList(this) : new java.util.ArrayList<>(checkoutOrders);
+    }
     private String id;
     private OrderOwnerType ownerType;
     private String ownerId;
@@ -24,6 +36,7 @@ public class Order {
     private double receiverLatitude;
     private double receiverLongitude;
     private double subtotal;
+    // Read-only historical order adjustment. New checkout never creates a discount.
     private double quantityDiscount;
     private double shippingFee;
     private double totalAmount;
@@ -45,7 +58,7 @@ public class Order {
             String sellerId, String campaignId, FulfillmentType fulfillmentType,
             String receiverName, String receiverPhone, String receiverAddress,
             double receiverLatitude, double receiverLongitude, double subtotal,
-            double quantityDiscount, double shippingFee, PaymentMethod paymentMethod,
+            double shippingFee, PaymentMethod paymentMethod,
             PaymentStatus paymentStatus, String note, List<OrderItem> items, Date now) {
         if (ownerType == null || fulfillmentType == null || paymentMethod == null) {
             throw new IllegalArgumentException("Order type, fulfillment and payment are required");
@@ -58,8 +71,7 @@ public class Order {
         value.receiverPhone = required(receiverPhone, "Receiver phone");
         value.receiverAddress = clean(receiverAddress); value.receiverLatitude = receiverLatitude;
         value.receiverLongitude = receiverLongitude; value.subtotal = nonNegative(subtotal, "Subtotal");
-        value.quantityDiscount = nonNegative(quantityDiscount, "Quantity discount");
-        value.shippingFee = nonNegative(shippingFee, "Shipping fee"); value.totalAmount = value.calculateTotal();
+        value.shippingFee = nonNegative(shippingFee, "Shipping fee"); value.totalAmount = value.subtotal + value.shippingFee;
         value.paymentMethod = paymentMethod; value.paymentStatus = paymentStatus == null
                 ? PaymentStatus.UNPAID : paymentStatus; value.status = OrderStatus.PENDING;
         value.note = clean(note); value.items = new ArrayList<>(items);
@@ -85,7 +97,7 @@ public class Order {
         value.items = items == null ? new ArrayList<>() : new ArrayList<>(items); return value;
     }
 
-    public double calculateTotal() { return Math.max(0.0, subtotal - quantityDiscount + shippingFee); }
+    public double calculateTotal() { return totalAmount; }
     public boolean canCancel() { return status == OrderStatus.PENDING || status == OrderStatus.CONFIRMED || status == OrderStatus.PREPARING; }
     public boolean isDeliveryRequired() { return fulfillmentType == FulfillmentType.DELIVERY; }
     public String getId() { return id; }

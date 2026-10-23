@@ -66,6 +66,7 @@ public class OrderDetailFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.common.DetailTypography.bindHeader(this, view, "Chi tiết đơn hàng");
         if (state != null) {
             paymentSuccessShown = state.getBoolean("paymentSuccessShown");
             String previous = state.getString("previousPaymentStatus", "");
@@ -75,6 +76,8 @@ public class OrderDetailFragment extends Fragment {
         orderCodeView = view.findViewById(R.id.orderDetailCode);
         orderStatusView = view.findViewById(R.id.orderDetailStatus);
         orderInfo = view.findViewById(R.id.orderDetailInfoContainer);
+        OrderReconciliationFragment.addEntry(this, orderInfo, "Bằng chứng giao nhận / Đối soát",
+            getArguments() == null ? "" : getArguments().getString("orderId", ""));
         instructions = view.findViewById(R.id.paymentInstructionsText);
         message = view.findViewById(R.id.orderLifecycleMessage); bankInfo = view.findViewById(R.id.orderBankInfo);
         qrImage = view.findViewById(R.id.orderBankQr); items = view.findViewById(R.id.orderItemsContainer);
@@ -159,6 +162,9 @@ public class OrderDetailFragment extends Fragment {
             if (shipment != null && shipment.getDistanceKm() > 0D)
                 addInfoRow("Khoảng cách", String.format(Locale.getDefault(), "%.1f km", shipment.getDistanceKm()), false);
         }
+        addInfoRow("Tiền hàng", money.format(order.getSubtotal()), false);
+        double historicalAdjustment = Math.max(0, order.getSubtotal() + order.getShippingFee() - order.getTotalAmount());
+        if (historicalAdjustment > 0) addInfoRow("Điều chỉnh giá đã chốt (đơn cũ)", "−" + money.format(historicalAdjustment), false);
         addInfoRow("Tổng thanh toán", money.format(order.getTotalAmount()), true);
     }
 
@@ -170,12 +176,12 @@ public class OrderDetailFragment extends Fragment {
         row.setPadding(0, vertical, 0, vertical);
         TextView labelView = new TextView(requireContext());
         labelView.setText(label);
-        labelView.setTextSize(13);
+        com.rescuefarm.ui.common.DetailTypography.meta(labelView);
         labelView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                 R.color.rescue_on_surface_variant));
         TextView valueView = new TextView(requireContext());
         valueView.setText(value);
-        valueView.setTextSize(emphasized ? 15 : 14);
+        com.rescuefarm.ui.common.DetailTypography.body(valueView);
         valueView.setGravity(android.view.Gravity.END);
         valueView.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                 emphasized ? R.color.rescue_primary : R.color.rescue_on_surface));
@@ -225,6 +231,12 @@ public class OrderDetailFragment extends Fragment {
         orderCodeView.setText("Mã đơn " + order.getOrderCode());
         orderStatusView.setText(paymentStatusLabel(order.getStatus(), payment));
         renderOrderInfo(order, payment, shipment);
+        if (order.isExpiryReviewRequired()) {
+            addInfoRow("Cần đối soát", "Lô hàng hết hạn hoặc đơn có yêu cầu đối soát. Mở Bằng chứng giao nhận / Đối soát để xử lý.", false);
+        }
+        if (!order.getCancellationReason().isEmpty()) addInfoRow("Lý do hủy", order.getCancellationReason().equals("BATCH_EXPIRED")
+            ? "Lô hàng hết hạn trước khi nhận" : order.getCancellationReason().startsWith("RECONCILIATION_")
+            ? "Đơn đã được Admin đối soát và chốt hủy" : order.getCancellationReason(), false);
         renderTimeline(order, payment);
         instructions.setText(paymentInstructions(payment));
         String uid = FirebaseAuth.getInstance().getCurrentUser() == null ? ""
@@ -237,7 +249,7 @@ public class OrderDetailFragment extends Fragment {
             displayedTargets = nextStatuses;
             target.setAdapter(new EnumLabelAdapter<>(requireContext(), nextStatuses));
         }
-        boolean canTransition = seller && !nextStatuses.isEmpty();
+        boolean canTransition = seller && !nextStatuses.isEmpty() && !order.isExpiryReviewRequired();
         transitionButton.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         target.setVisibility(canTransition ? View.VISIBLE : View.GONE);
         statusActionTitle.setVisibility(canTransition ? View.VISIBLE : View.GONE);
@@ -260,13 +272,13 @@ public class OrderDetailFragment extends Fragment {
             if (!shipmentTracking.hasFocus()) shipmentTracking.setText(shipment.getTrackingCode());
         }
         boolean buyer = (!uid.isEmpty() && uid.equals(order.getOwnerId())) || vm.canConfirmGuestReceipt(order.getId());
-        boolean canReceive = buyer && !seller && lifecycleService.canConfirmReceipt(
+        boolean canReceive = buyer && !seller && !order.isExpiryReviewRequired() && lifecycleService.canConfirmReceipt(
                 order.getFulfillmentType(), order.getStatus(), payment.getMethod(), payment.getStatus());
         receiptButton.setVisibility(canReceive ? View.VISIBLE : View.GONE);
         receiptButton.setText(payment.getMethod() == PaymentMethod.COD ? "Đã thanh toán và nhận đơn" : "Đã nhận hàng");
         boolean customer = !uid.isEmpty() && uid.equals(order.getOwnerId()) && order.getStatus() == OrderStatus.DELIVERED;
         renderItems(order, customer);
-        if (bank && payment.usesAutomaticVerification() && !seller && payment.getStatus() == PaymentStatus.PENDING
+        if (bank && !order.isExpiryReviewRequired() && payment.usesAutomaticVerification() && !seller && payment.getStatus() == PaymentStatus.PENDING
                 && order.getStatus() != OrderStatus.CANCELLED) showSellerBankInfo(order, payment);
         else { bankInfo.setVisibility(View.GONE); qrImage.setVisibility(View.GONE); }
     }
@@ -391,7 +403,7 @@ public class OrderDetailFragment extends Fragment {
                 : current ? (status == OrderStatus.DELIVERED ? R.string.order_timeline_finished
                 : R.string.order_timeline_current) : complete ? R.string.order_timeline_complete
                 : R.string.order_timeline_upcoming);
-        caption.setTextSize(12);
+        com.rescuefarm.ui.common.DetailTypography.meta(caption);
         caption.setTextColor(requireContext().getColor(R.color.rescue_on_surface_variant));
         text.addView(caption);
         row.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -419,14 +431,14 @@ public class OrderDetailFragment extends Fragment {
             row.setPadding(0, vertical, 0, vertical);
             TextView productName = new TextView(requireContext());
             productName.setText(item.getProductNameSnapshot());
-            productName.setTextSize(15);
+            com.rescuefarm.ui.common.DetailTypography.body(productName);
             productName.setTypeface(productName.getTypeface(), android.graphics.Typeface.BOLD); com.rescuefarm.ui.common.AppTypography.title(productName);
             productName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                     R.color.rescue_on_surface));
             TextView productDetails = new TextView(requireContext());
             productDetails.setText(item.getQuantity() + " " + item.getUnitSnapshot() + "  ·  "
                     + NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(item.getSubtotal()));
-            productDetails.setTextSize(13);
+            com.rescuefarm.ui.common.DetailTypography.meta(productDetails);
             productDetails.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
                     R.color.rescue_on_surface_variant));
             row.addView(productName);
@@ -494,6 +506,8 @@ public class OrderDetailFragment extends Fragment {
     }
 
     private String paymentInstructions(Payment payment) {
+        if (payment.getStatus() == PaymentStatus.REFUNDED)
+            return "Đã ghi nhận hoàn đủ tiền theo kết quả đối soát của Admin. Mở Bằng chứng giao nhận / Đối soát để xem kết quả.";
         if (payment.getMethod() == PaymentMethod.BANK_TRANSFER && payment.usesAutomaticVerification()) {
             if (payment.getStatus() == PaymentStatus.PAID)
                 return "Hệ thống đã xác minh chuyển khoản thành công. Người mua xác nhận Đã nhận hàng sau khi nhận đủ hàng.";

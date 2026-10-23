@@ -96,12 +96,7 @@
                 android:layout_width="20dp" android:layout_height="20dp" android:visibility="gone" />
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/homePromotionWalletButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" android:layout_marginBottom="12dp"
-            android:text="@string/promotion_wallet_title" android:textAllCaps="false" />
+        <include layout="@layout/view_rescue_programs_entry" />
         <LinearLayout android:id="@+id/categoryHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <com.rescuefarm.ui.common.ResponsiveActionLayout
@@ -112,12 +107,14 @@
             android:gravity="center_vertical">
 
             <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/categoryTitle"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Danh mục nông sản"
-                android:textColor="@color/rescue_on_surface" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/rescue_primary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreCategoriesButton"
@@ -154,12 +151,14 @@
             android:gravity="center_vertical">
 
             <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/criticalTitle"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Cần giải cứu gấp"
-                android:textColor="@color/rescue_on_surface" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/rescue_primary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreCriticalButton"
@@ -201,10 +200,15 @@
 
         <LinearLayout android:id="@+id/nearbyMobileHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearbyMobileTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearbyMobileTitle"
+            style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="0dp" android:text="Điểm giải cứu di động gần bạn"
-            android:textColor="@color/rescue_on_surface" />
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="8dp"
+            android:text="Điểm giải cứu di động gần bạn"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/rescue_primary" />
         <HorizontalScrollView android:id="@+id/nearbyMobileScroll" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
             <LinearLayout android:id="@+id/nearbyMobileSection" android:layout_width="wrap_content"
@@ -214,10 +218,15 @@
 
         <LinearLayout android:id="@+id/nearbyFixedHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearbyFixedTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearbyFixedTitle"
+            style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="0dp" android:text="Điểm giải cứu cố định gần bạn"
-            android:textColor="@color/rescue_on_surface" />
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="8dp"
+            android:text="Điểm giải cứu cố định gần bạn"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/rescue_primary" />
         <HorizontalScrollView android:id="@+id/nearbyFixedScroll" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
             <LinearLayout android:id="@+id/nearbyFixedSection" android:layout_width="wrap_content"
@@ -227,10 +236,15 @@
 
         <LinearLayout android:id="@+id/endingSoonHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/endingSoonTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/endingSoonTitle"
+            style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="0dp" android:text="Sắp hết thời gian"
-            android:textColor="@color/rescue_on_surface" />
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="8dp"
+            android:text="Sắp hết thời gian"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/rescue_primary" />
         <HorizontalScrollView android:id="@+id/endingSoonScroll" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none">
             <LinearLayout android:id="@+id/endingSoonSection" android:layout_width="wrap_content"
@@ -240,10 +254,15 @@
 
         <LinearLayout android:id="@+id/nearExpiryHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
-        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearExpiryTitle" style="@style/TextAppearance.Material3.TitleMedium"
+        <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/nearExpiryTitle"
+            style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="0dp" android:text="Nông sản gần hết hạn"
-            android:textColor="@color/rescue_on_surface" />
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="8dp"
+            android:text="Nông sản gần hết hạn"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/rescue_primary" />
         <com.rescuefarm.ui.common.ResponsiveGridLayout android:id="@+id/nearExpirySection" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" />
         </LinearLayout>
@@ -258,12 +277,14 @@
             android:gravity="center_vertical">
 
             <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/valueTitle"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Nông sản giá tốt"
-                android:textColor="@color/rescue_on_surface" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/rescue_primary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreValueButton"
@@ -294,12 +315,14 @@
             android:gravity="center_vertical">
 
             <TextView android:fontFamily="@font/ibm_plex_sans" android:id="@+id/campaignTitle"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                style="@style/TextAppearance.RescueFarm.HomeSectionTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Chiến dịch đang diễn ra"
-                android:textColor="@color/rescue_on_surface" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/rescue_primary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/seeMoreCampaignsButton"

@@ -182,6 +182,7 @@
     <string name="seller_approval_catalog_notice">Chỉ seller đã được phê duyệt mới có thể tạo hoặc sửa sản phẩm và batch.</string>
     <string name="add_product_action">Thêm sản phẩm</string>
     <string name="manage_batches_action">Quản lý lô hàng</string>
+    <string name="manage_promotion_action">Quản lý khuyến mãi</string>
     <string name="seller_batch_products_title">Chọn sản phẩm để quản lý batch</string>
     <string name="seller_batch_products_notice">Batch là các lô hàng của một sản phẩm. Chọn sản phẩm để xem, tạo hoặc cập nhật lô và tồn kho.</string>
     <string name="open_product_batches_action">Quản lý batch và tồn kho</string>
@@ -254,19 +255,10 @@
     <string name="comment_hint">Viết bình luận (tối đa 500 ký tự)</string>
     <string name="send_comment_action">Gửi bình luận</string>
     <string name="comments_title">Bình luận</string>
-    <string name="manage_promotion_action">Khuyến mãi &amp; giá sỉ</string>
-    <string name="promotion_editor_title">Quản lý khuyến mãi</string>
-    <string name="promotion_single_source_notice">Giá luôn được tính theo: giá gốc → giá giải cứu → khuyến mãi → giảm theo số lượng.</string>
-    <string name="promotion_type_label">Loại khuyến mãi</string>
-    <string name="promotion_value_hint" formatted="false">Giá trị (% hoặc số tiền; giảm theo số lượng nhập 0)</string>
-    <string name="promotion_tiers_hint">Mỗi dòng: số_lượng=phần_trăm (ví dụ 5=3)</string>
-    <string name="promotion_active_label">Đang bật</string>
-    <string name="save_promotion_action">Lưu khuyến mãi</string>
     <string name="pricing_quantity_hint">Số lượng</string>
     <string name="recalculate_price_action">Tính giá</string>
     <string name="invalid_pricing_quantity">Số lượng phải là số dương.</string>
-    <string name="price_breakdown_format">Giá gốc: %1$s\nGiá giải cứu: %2$s\nGiảm promotion: %3$s\nGiảm số lượng: %4$.2f%%\nĐơn giá cuối: %5$s\nThành tiền: %6$s</string>
-    <string name="promotion_preview_title">Xem trước giá (số lượng 1)</string>
+    <string name="price_breakdown_format">Giá gốc: %1$s\nGiá giải cứu: %2$s\nĐơn giá: %3$s\nThành tiền: %4$s</string>
     <string name="cart_title">Giỏ nông sản</string>
     <string name="open_cart_action">Giỏ hàng</string>
     <string name="add_to_cart_action">Thêm vào giỏ</string>
@@ -275,8 +267,8 @@
     <string name="cart_update_action">Cập nhật</string>
     <string name="cart_remove_action">Xóa</string>
     <string name="cart_empty">Giỏ hiện đang trống.</string>
-    <string name="guest_cart_storage_notice">Guest cart • lưu Room trên thiết bị và giữ lại sau khi mở lại app.</string>
-    <string name="customer_cart_storage_notice">Customer cart • đồng bộ với Firestore theo tài khoản hiện tại.</string>
+    <string name="guest_cart_storage_notice">Guest cart - lưu Room trên thiết bị và giữ lại sau khi mở lại app.</string>
+    <string name="customer_cart_storage_notice">Customer cart - đồng bộ với Firestore theo tài khoản hiện tại.</string>
     <string name="cart_summary_format">Đã chọn %1$d sản phẩm từ %2$d người bán\nTạm tính: %3$s</string>
     <string name="cart_seller_format">Người bán: %1$s</string>
     <string name="cart_item_price_format">Đơn giá %1$s • Thành tiền %2$s</string>
@@ -287,11 +279,49 @@
     <string name="checkout_gps_success">Đã tự động điền địa chỉ từ vị trí hiện tại.</string>
     <string name="receiver_name_hint">Tên người nhận</string><string name="receiver_phone_hint">Số điện thoại người nhận</string><string name="receiver_address_hint">Địa chỉ nhận hàng</string>
     <string name="fulfillment_label">Hình thức nhận hàng</string><string name="payment_method_label">Phương thức thanh toán</string><string name="order_note_hint">Ghi chú đơn hàng</string>
-    <string name="place_order_action">Đặt hàng</string><string name="checkout_summary_format">%1$d sản phẩm • %2$d người bán\nTổng tiền: %3$s</string>
+    <string name="place_order_action">Đặt hàng</string><string name="checkout_summary_format">%1$d sản phẩm • %2$d người bán\nTiền hàng tạm tính: %3$s</string>
     <string name="order_confirmation_title">Xác nhận đơn hàng</string><string name="guest_tracking_title">Tra cứu bằng mã đơn + số điện thoại</string><string name="order_code_hint">Mã đơn RF-…</string><string name="track_order_action">Tra cứu đơn</string>
     <string name="order_created_format">Đã tạo đơn %1$s • %2$s. Hàng đã được giữ; số lượng giải cứu được ghi nhận khi hoàn tất đơn.</string>
     <string name="order_tracking_format">Đơn %1$s\nTrạng thái: %2$s\nThanh toán: %3$s\nTổng: %4$.0f ₫</string>
     <string name="open_order_detail_action">Thanh toán &amp; trạng thái giao nhận</string>
+    <string name="recent_guest_orders_title">Đơn hàng gần đây</string>
+    <string name="recent_guest_orders_hint">Chạm vào thẻ đơn để mở trực tiếp chi tiết</string>
+    <string name="recent_guest_order_tap_hint">Chạm để mở chi tiết →</string>
+    <string name="recent_guest_order_phone_format">SĐT: %1$s</string>
+    <string name="guest_profile_title">Hồ sơ khách</string>
+    <string name="guest_profile_name">Khách vãng lai</string>
+    <string name="guest_profile_subtitle">Chưa đăng nhập - Phiên khách lưu trên máy</string>
+    <string name="guest_login_register_action">Đăng nhập / Đăng ký</string>
+    <string name="guest_profile_utilities_title">Tiện ích cho khách</string>
+    <string name="guest_menu_track_order_title">Tra cứu đơn hàng</string>
+    <string name="guest_menu_track_order_sub">Kiểm tra tình trạng đơn qua mã RF-... và số điện thoại</string>
+    <string name="guest_menu_recent_orders_title">Danh sách đơn đã đặt trên máy</string>
+    <string name="guest_menu_recent_orders_sub">Xem và mở nhanh 5 đơn hàng bạn vừa đặt trên thiết bị này</string>
+    <string name="guest_menu_location_title">Cài đặt vị trí</string>
+    <string name="guest_menu_location_sub">Kiểm tra quyền GPS và vị trí tìm nông sản giải cứu gần bạn</string>
+    <string name="guest_menu_help_title">Trung tâm trợ giúp / Liên hệ cứu trợ</string>
+    <string name="guest_menu_help_sub">Hotline cứu trợ nông sản, hướng dẫn mua hàng và giải đáp khiếu nại</string>
+    <string name="guest_recent_orders_count_format">%1$d đơn</string>
+    <string name="guest_location_dialog_title">Cài đặt vị trí &amp; GPS</string>
+    <string name="guest_location_permission_granted">Quyền vị trí: Đã được cấp</string>
+    <string name="guest_location_permission_denied">Quyền vị trí: Chưa được cấp</string>
+    <string name="guest_location_desc">RescueFarm dùng vị trí để tính khoảng cách đến điểm giải cứu, tối ưu phí giao hàng và gợi ý nông sản gần bạn.</string>
+    <string name="guest_location_refresh_action">Lấy vị trí GPS hiện tại</string>
+    <string name="guest_location_open_settings_action">Mở cài đặt ứng dụng</string>
+    <string name="guest_help_dialog_title">Bộ phận hỗ trợ ứng dụng RescueFarm</string>
+    <string name="guest_help_hotline_label">Hotline cứu trợ nông sản 24/7:</string>
+    <string name="guest_help_hotline_val">0399746618</string>
+    <string name="guest_help_email_label">Email hỗ trợ khách hàng:</string>
+    <string name="guest_help_email_val">datruong.work@gmail.com</string>
+    <string name="guest_help_call_action">Gọi tổng đài</string>
+    <string name="guest_help_email_action">Gửi email hỗ trợ</string>
+
+    <string name="close_action">Đóng</string>
+
+    <string name="guest_notification_dialog_title">Đăng nhập để xem thông báo</string>
+    <string name="guest_notification_dialog_message">Bạn đang trải nghiệm với vai trò Khách vãng lai. Vui lòng đăng nhập hoặc đăng ký tài khoản để xem thông báo chiến dịch giải cứu và cập nhật đơn hàng.</string>
+    <string name="guest_notification_dialog_positive">Đăng nhập / Đăng ký</string>
+    <string name="guest_notification_dialog_negative">Để sau</string>
 
     <string name="order_detail_title">Thanh toán &amp; giao nhận</string>
     <string name="order_detail_format">Đơn %1$s\nTrạng thái đơn: %2$s\nNhận hàng: %3$s\nPhương thức: %4$s\nThanh toán: %5$s\nShipment: %6$s\nTổng: %7$s</string>
@@ -312,7 +342,7 @@
     <string name="favorites_title">Sản phẩm yêu thích</string><string name="favorites_empty">Chưa có sản phẩm yêu thích.</string><string name="favorite_product_format">Sản phẩm %1$s</string><string name="toggle_favorite_action">Thêm / bỏ yêu thích</string><string name="add_favorite_action">Thêm vào yêu thích</string><string name="remove_favorite_action">Bỏ khỏi yêu thích</string><string name="sign_in_to_favorite_action">Đăng nhập để theo dõi sản phẩm</string><string name="favorite_state_unavailable">Không tải được trạng thái yêu thích</string><string name="feed_empty_message">Chưa có bài viết giải cứu đã được duyệt. Hãy làm mới sau.</string>
     <string name="reviews_title">Review đã mua hàng</string><string name="review_order_id_hint">Mã đơn hàng đã giao</string><string name="review_order_item_hint">Mã mặt hàng trong đơn</string><string name="review_rating_hint">Điểm 1–5</string><string name="review_content_hint">Nội dung review</string><string name="review_images_hint">Tối đa 5 URL ảnh</string><string name="save_review_action">Gửi review</string><string name="review_row_format">%1$d★ — %2$s</string>
     <string name="report_action">Báo cáo nội dung</string><string name="report_target_hint">ID đối tượng</string><string name="report_reason_hint">Lý do</string><string name="report_description_hint">Mô tả chi tiết</string><string name="submit_report_action">Gửi báo cáo</string>
-    <string name="notifications_title">Thông báo</string><string name="notifications_empty">Chưa có thông báo.</string><string name="enable_notifications_action">Bật thông báo đẩy</string><string name="notification_permission_denied">Bạn chưa cấp quyền hiển thị thông báo.</string><string name="fcm_token_failed">Không lấy được FCM token. Hãy kiểm tra Firebase config/mạng.</string><string name="deep_link_unavailable">Không mở được nội dung liên kết.</string><string name="notification_channel_name">Cập nhật RescueFarm</string><string name="notification_channel_description">Đơn hàng, chiến dịch, khuyến mãi và kiểm duyệt.</string>
+    <string name="notifications_title">Thông báo</string><string name="notifications_empty">Chưa có thông báo.</string><string name="enable_notifications_action">Bật thông báo đẩy</string><string name="notification_permission_denied">Bạn chưa cấp quyền hiển thị thông báo.</string><string name="fcm_token_failed">Không lấy được FCM token. Hãy kiểm tra Firebase config/mạng.</string><string name="deep_link_unavailable">Không mở được nội dung liên kết.</string><string name="notification_channel_name">Cập nhật RescueFarm</string><string name="notification_channel_description">Đơn hàng, chiến dịch và kiểm duyệt.</string>
     <string name="admin_reports_title">Kiểm duyệt báo cáo</string><string name="report_admin_row_format">%1$s %2$s\n%3$s • %4$s</string><string name="review_report_action">Bắt đầu xử lý</string><string name="resolve_report_action">Đánh dấu đã xử lý</string><string name="reject_report_action">Từ chối báo cáo</string>
     <string name="seller_dashboard_title">Dashboard cửa hàng</string><string name="refresh_seller_dashboard">Tải lại dashboard</string><string name="seller_shipments_action">Giao hàng &amp; shipment</string><string name="seller_recent_orders_title">Đơn gần đây</string><string name="seller_more_orders_notice">Còn thêm đơn hàng — mở Quản lý đơn để xem toàn bộ.</string>
     <string name="seller_statistics_action">Xem thống kê giải cứu</string>
@@ -340,7 +370,6 @@
     <string name="batch_alert_near_expiry">SẮP HẾT HẠN · còn %1$d ngày</string>
     <string name="batch_alert_expired">ĐÃ HẾT HẠN · không được bán</string>
     <string name="batch_alert_sold_out">ĐÃ HẾT TỒN KHẢ DỤNG</string>
-    <string name="seller_dashboard_stats_format">Sản phẩm: %1$d (%2$d đang bán)\nCampaign: %3$d (%4$d đang hoạt động, %5$d di động)\nĐơn mới nhất đã tải (tối đa 50): %6$d (%7$d đang xử lý, %8$d giao tận nơi)\nPromotion: %9$d\nDoanh thu đơn đã giao trong kỳ: %10$s\nKhối lượng giải cứu toàn bộ campaign: %11$.2f kg</string>
     <string name="seller_recent_order_format">%1$s • %2$s • %3$.0f ₫</string>
     <string name="admin_dashboard_title">Dashboard quản trị</string>
     <string name="admin_access_message">Tài khoản quản trị.</string>
@@ -362,7 +391,7 @@
         <item>90 ngày gần nhất</item>
         <item>Toàn bộ 50 đơn mới nhất</item>
     </string-array>
-    <string name="admin_reason_hint">Lý do kiểm duyệt (bắt buộc khi từ chối, ẩn, dừng hoặc khóa)</string>
+    <string name="admin_reason_hint">Lý do kiểm duyệt (bắt buộc khi từ chối hoặc khóa)</string>
     <string name="admin_disable_action">Tắt / ẩn</string>
     <string name="admin_enable_action">Bật lại</string>
     <string name="admin_add_catalog_resource">Thêm mới danh mục / banner</string>
@@ -378,4 +407,9 @@
     <string name="campaign_decrease_quantity">Giảm số lượng</string>
     <string name="campaign_increase_quantity">Tăng số lượng</string>
     <string name="checkout_sender_title">Thông tin người gửi</string>
+    <!-- Rescue Progress Stages -->
+    <string name="rescue_progress_stage_low">Tiến độ thấp (Cần cứu gấp)</string>
+    <string name="rescue_progress_stage_medium">Đang tiến triển tốt</string>
+    <string name="rescue_progress_stage_high">Sắp đạt mục tiêu</string>
+    <string name="rescue_progress_stage_completed">Đã hoàn thành giải cứu</string>
 </resources>

@@ -7,7 +7,6 @@ import com.rescuefarm.data.local.mapper.CatalogCacheMapper;
 import com.rescuefarm.domain.model.Category;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.ProductBatch;
-import com.rescuefarm.domain.model.Promotion;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -74,6 +73,7 @@ public class OfflineProductRepository implements ProductRepository {
         callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
     }
     @Override public void hideProduct(String productId, ActionCallback callback) { unavailable(callback); }
+    @Override public void showProduct(String productId, ActionCallback callback) { unavailable(callback); }
     @Override public void saveBatch(ProductBatch batch, long expectedVersion, BatchCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
     }
@@ -84,18 +84,8 @@ public class OfflineProductRepository implements ProductRepository {
             double quantity, BatchCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
     }
-    @Override public void getPromotion(String productId, PromotionCallback callback) {
-        callback.onSuccess(null);
-    }
-    @Override public void getSellerPromotions(String sellerId, PromotionListCallback callback) {
-        callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
-    }
-    @Override public void savePromotion(Promotion promotion, PromotionCallback callback) {
-        callback.onError(ErrorCode.NOT_CONFIGURED, MESSAGE);
-    }
-    @Override public void setPromotionActive(String productId, boolean active, ActionCallback callback) {
-        unavailable(callback);
-    }
+
+
     @Override public void getCartQuote(String productId, String batchId, CartQuoteCallback callback) {
         callback.onError(ErrorCode.NOT_CONFIGURED, "Đang offline; giá và tồn kho chưa được revalidate.");
     }

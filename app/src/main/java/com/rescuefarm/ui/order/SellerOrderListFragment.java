@@ -35,6 +35,7 @@ public class SellerOrderListFragment extends Fragment {
     }
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         container = view.findViewById(R.id.sellerOrderContainer);
+        OrderReconciliationFragment.addEntry(this, container, "Đơn cần đối soát", "");
         empty = view.findViewById(R.id.sellerOrderEmpty);
         title = view.findViewById(R.id.sellerOrderTitle);
         Bundle args = getArguments(); deliveryOnly = args != null && args.getBoolean("deliveryOnly", false);

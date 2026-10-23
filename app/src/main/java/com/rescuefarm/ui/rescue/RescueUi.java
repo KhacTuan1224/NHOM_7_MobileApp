@@ -1,0 +1,77 @@
+package com.rescuefarm.ui.rescue;
+
+import android.content.Context;
+import android.text.InputType;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+import com.rescuefarm.R;
+import org.json.JSONObject;
+import java.text.NumberFormat;
+import java.util.Locale;
+
+final class RescueUi {
+    static final String[] TYPES = {"", "MYSTERY_BOX", "FLASH"};
+    static JSONObject body(Object... values) {
+        JSONObject result = new JSONObject();
+        try { for (int i = 0; i < values.length; i += 2) result.put((String) values[i], values[i + 1]); }
+        catch (org.json.JSONException error) { throw new IllegalArgumentException(error); }
+        return result;
+    }
+    static String type(String type) {
+        switch (type) {
+            case "MYSTERY_BOX": return "Hộp bí ẩn";
+            case "FLASH": return "Giải cứu giờ chót";
+            default: return type;
+        }
+    }
+    static String status(String value) {
+        switch (value) {
+            case "OPEN": return "Đang nhận đăng ký"; case "LOCKED": return "Đã chốt đăng ký";
+            case "EXPIRED": return "Đã hết giờ nhận";
+            case "CANCELLED": return "Đã hủy";
+            case "RESERVED": return "Đã giữ suất"; case "READY": return "Sẵn sàng nhận";
+            case "COMPLETED": return "Đã nhận nông sản";
+            default: return value;
+        }
+    }
+    static String money(double amount) { return NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(amount); }
+    static String date(long value) { return RescueTime.format(value); }
+    static int dp(Context context, int value) { return Math.round(value * context.getResources().getDisplayMetrics().density); }
+    static LinearLayout column(Context context) {
+        LinearLayout result = new LinearLayout(context); result.setOrientation(LinearLayout.VERTICAL); return result;
+    }
+    static LinearLayout card(LinearLayout parent) {
+        Context context = parent.getContext();
+        MaterialCardView card = new MaterialCardView(context); card.setRadius(dp(context, 18)); card.setCardElevation(0);
+        card.setStrokeWidth(dp(context, 1)); card.setStrokeColor(context.getColor(R.color.rescue_outline));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2); params.topMargin = dp(context, 12);
+        parent.addView(card, params);
+        LinearLayout content = column(context); content.setPadding(dp(context, 16), dp(context, 16), dp(context, 16), dp(context, 16));
+        card.addView(content); return content;
+    }
+    static TextView text(LinearLayout parent, String value, boolean title) {
+        TextView view = new TextView(parent.getContext()); view.setText(value); if (title) com.rescuefarm.ui.common.DetailTypography.section(view);
+        else com.rescuefarm.ui.common.DetailTypography.body(view);
+        view.setTextColor(parent.getContext().getColor(R.color.rescue_on_surface));
+        view.setPadding(0, dp(parent.getContext(), 6), 0, dp(parent.getContext(), 6));
+        if (title) { com.rescuefarm.ui.common.AppTypography.title(view); view.setAccessibilityHeading(true); }
+        parent.addView(view, new LinearLayout.LayoutParams(-1, -2)); return view;
+    }
+    static MaterialButton button(LinearLayout parent, String label, Runnable action) {
+        MaterialButton button = new MaterialButton(parent.getContext(), null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle);
+        button.setText(label); button.setAllCaps(false); button.setOnClickListener(v -> action.run());
+        parent.addView(button, new LinearLayout.LayoutParams(-1, -2)); return button;
+    }
+    static EditText field(LinearLayout parent, String label, boolean decimal) {
+        TextInputLayout layout = new TextInputLayout(parent.getContext()); layout.setHint(label);
+        TextInputEditText edit = new TextInputEditText(parent.getContext());
+        edit.setInputType(decimal ? InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL : InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        layout.addView(edit, new LinearLayout.LayoutParams(-1, -2)); parent.addView(layout, new LinearLayout.LayoutParams(-1, -2)); return edit;
+    }
+}

@@ -29,6 +29,8 @@ public class OrderCacheEntity {
     public String paymentStatus;
     public String status;
     public String note;
+    public boolean expiryReviewRequired;
+    public String cancellationReason;
     public long createdAtEpochMillis;
     public long updatedAtEpochMillis;
     public long cachedAtEpochMillis;

@@ -1,7 +1,7 @@
 package com.rescuefarm.ui.feed;
-import com.rescuefarm.ui.common.EnumLabels;
 
-import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -9,130 +9,162 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
-import com.google.android.material.card.MaterialCardView;
 import com.rescuefarm.R;
-import com.rescuefarm.domain.enums.RescueMode;
-import com.rescuefarm.domain.enums.UrgencyLevel;
 import com.rescuefarm.domain.model.Product;
 import com.rescuefarm.domain.model.RescueCampaign;
+import com.rescuefarm.service.backend.RenderBackendClient;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-/** Public campaign article card; title, story and rescue operation are one object. */
-final class CampaignFeedCardRenderer {
+/** Compact public campaign article. Private account profiles are never queried. */
+public final class CampaignFeedCardRenderer {
     private final Fragment fragment;
-    CampaignFeedCardRenderer(Fragment fragment) { this.fragment = fragment; }
+    private final Map<String, View> visible = new HashMap<>();
+    private final Map<String, JSONObject> cached = new HashMap<>();
+    private final Map<String, Long> loadedAt = new HashMap<>(), attemptedAt = new HashMap<>();
+    private final java.util.Set<String> inFlight = new java.util.HashSet<>();
+    private int generation;
+    public CampaignFeedCardRenderer(Fragment fragment) { this.fragment = fragment; }
 
-    View card(RescueCampaign campaign, List<Product> products, View.OnClickListener listener) {
-        MaterialCardView card = new MaterialCardView(fragment.requireContext());
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
-        cardParams.bottomMargin = dp(12); card.setLayoutParams(cardParams);
-        card.setRadius(dp(16)); card.setStrokeWidth(dp(1));
-        card.setStrokeColor(fragment.getResources().getColor(R.color.rescue_outline,
-                fragment.requireContext().getTheme()));
-        card.setCardElevation(0);
-        LinearLayout content = new LinearLayout(fragment.requireContext());
-        content.setOrientation(LinearLayout.VERTICAL); content.setPadding(dp(14), dp(14), dp(14), dp(14));
-
-        if (!campaign.getImageUrls().isEmpty()) {
-            ImageView image = new ImageView(fragment.requireContext());
-            image.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(190)));
-            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            image.setContentDescription("Ảnh nội dung chiến dịch giải cứu");
-            Glide.with(fragment).load(campaign.getImageUrls().get(0)).centerCrop().into(image);
-            content.addView(image);
-        } else if (products != null && !products.isEmpty() && !products.get(0).getImageUrls().isEmpty()) {
-            ImageView image = new ImageView(fragment.requireContext());
-            image.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(170)));
-            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            image.setContentDescription("Ảnh sản phẩm trong chiến dịch");
-            Glide.with(fragment).load(products.get(0).getImageUrls().get(0)).centerCrop().into(image);
-            content.addView(image);
+    /** One bounded request per visible page; callbacks cannot bind views from an old page. */
+    public void beginPage(List<RescueCampaign> campaigns) {
+        visible.clear();
+        int requestGeneration = generation;
+        long now = android.os.SystemClock.elapsedRealtime();
+        List<String> ids = new ArrayList<>();
+        for (RescueCampaign campaign : campaigns) {
+            String id = campaign.getId();
+            if (!inFlight.contains(id) && now - attemptedAt.getOrDefault(id, -60000L) >= 60000L && !ids.contains(id)) ids.add(id);
         }
-        String urgency = campaign.getUrgencyLevel() == UrgencyLevel.CRITICAL
-                ? "CẦN GIẢI CỨU GẤP" : campaign.getHighlightLabel();
-        addText(content, urgency.isEmpty() ? "CHIẾN DỊCH GIẢI CỨU" : urgency,
-                12, true, R.color.rescue_critical);
-        addText(content, campaign.getTitle(), 19, true, R.color.rescue_on_surface);
-        if (campaign.getDescription() != null && !campaign.getDescription().trim().isEmpty()) {
-            String description = campaign.getDescription().trim();
-            addText(content, description.length() > 190 ? description.substring(0, 190) + "…" : description,
-                    14, false, R.color.rescue_on_surface_variant);
-        }
-
-        StringBuilder productsLine = new StringBuilder("Sản phẩm: ");
-        if (products != null && !products.isEmpty()) {
-            for (int i = 0; i < products.size(); i++) {
-                if (i > 0) productsLine.append(", ");
-                productsLine.append(products.get(i).getName());
-                if (i == 2 && products.size() > 3) {
-                    productsLine.append(" và ").append(products.size() - 3).append(" sản phẩm khác");
-                    break;
+        for (int offset = 0; offset < ids.size(); offset += 12) {
+            JSONArray batch = new JSONArray(ids.subList(offset, Math.min(ids.size(), offset + 12)));
+            JSONObject request = new JSONObject();
+            try { request.put("campaignIds", batch); } catch (org.json.JSONException ignored) { continue; }
+            List<String> requested = new ArrayList<>(ids.subList(offset, Math.min(ids.size(), offset + 12)));
+            for (String id : requested) { inFlight.add(id); attemptedAt.put(id, now); }
+            RenderBackendClient.postGuest("/campaigns/cards", request, new RenderBackendClient.Callback() {
+                public void onSuccess(JSONObject response) {
+                    if (requestGeneration != generation || !fragment.isAdded() || fragment.getView() == null) return;
+                    inFlight.removeAll(requested);
+                    JSONObject cards = response.optJSONObject("cards"); if (cards == null) return;
+                    java.util.Iterator<String> keys = cards.keys();
+                    while (keys.hasNext()) {
+                        String id = keys.next(); JSONObject value = cards.optJSONObject(id); if (value == null) continue;
+                        cached.put(id, value); loadedAt.put(id, android.os.SystemClock.elapsedRealtime());
+                        View root = visible.get(id);
+                        if (root != null) bindMetadata(root, value);
+                    }
                 }
-            }
-        } else {
-            productsLine.append(campaign.getBatchTargets().size()).append(" lô giải cứu");
+                public void onError(String message) {
+                    if (requestGeneration == generation) inFlight.removeAll(requested);
+                    // Keep safe defaults, never infer approval from a campaign or account avatar.
+                }
+            });
         }
-        addText(content, productsLine.toString(), 13, true, R.color.rescue_on_surface);
-        String reason = campaign.getRescueReason() == null ? "" : EnumLabels.label(campaign.getRescueReason());
-        String mode = campaign.getRescueMode() == RescueMode.MOBILE_POINT
-                ? "Điểm giải cứu di động" : "Điểm giải cứu cố định";
-        addText(content, reason + " · " + mode, 12, false, R.color.rescue_on_surface_variant);
+    }
 
-        ProgressBar progress = new ProgressBar(fragment.requireContext(), null,
-                android.R.attr.progressBarStyleHorizontal);
-        progress.setMax(100); progress.setProgress((int) Math.round(campaign.calculateProgress()));
-        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, dp(7));
-        progressParams.topMargin = dp(10); content.addView(progress, progressParams);
+    public View card(RescueCampaign campaign, List<Product> products, View.OnClickListener listener) {
+        View root = LayoutInflater.from(fragment.requireContext()).inflate(R.layout.item_campaign_article, null, false);
+        root.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        ((LinearLayout.LayoutParams) root.getLayoutParams()).bottomMargin = dp(14);
+        ((TextView) root.findViewById(R.id.articleTitle)).setText(campaign.getTitle());
+        TextView story = root.findViewById(R.id.articleStory);
+        story.setText(campaign.getDescription());
+        story.setVisibility(clean(campaign.getDescription()).isEmpty() ? View.GONE : View.VISIBLE);
+        TextView productLine = root.findViewById(R.id.articleProducts);
+        StringBuilder names = new StringBuilder();
+        if (products != null) for (int i = 0; i < Math.min(products.size(), 2); i++) {
+            if (i > 0) names.append(" · "); names.append(products.get(i).getName());
+        }
+        productLine.setText(names.length() == 0 ? fragment.getString(R.string.article_batch_summary,
+                campaign.getBatchTargets().size()) : names.toString());
+        ProgressBar progress = root.findViewById(R.id.articleProgress);
+        TextView progressText = root.findViewById(R.id.articleProgressText);
+        double progressPercent = campaign.calculateProgress();
+        com.rescuefarm.ui.common.RescueProgressUtils.applyProgress(progress, progressPercent);
         if ("REVIEW_REQUIRED".equals(campaign.getUnitStatus())) {
-            progress.setVisibility(View.GONE);
-            addText(content, "Cần đối soát đơn vị chiến dịch", 13, true, R.color.rescue_on_surface_variant);
+            progress.setVisibility(View.GONE); progressText.setText("Đang đối soát đơn vị giải cứu");
         } else {
-        String unit = campaign.getQuantityUnitLabel();
-        addText(content, String.format(Locale.forLanguageTag("vi-VN"),
-                "Đã giải cứu %.2f / %.2f %s (%.0f%%)", campaign.getRescuedQuantity(),
-                campaign.getTargetQuantity(), unit, campaign.calculateProgress()),
-                13, true, R.color.rescue_on_surface);
-        addText(content, String.format(Locale.forLanguageTag("vi-VN"),
-                "Đang giữ %.2f · còn khả dụng %.2f %s", campaign.getReservedQuantity(),
-                campaign.calculateRemainingQuantity(), unit), 12, false,
-                R.color.rescue_on_surface_variant);
+            NumberFormat quantity = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+            quantity.setMaximumFractionDigits(2);
+            progressText.setText("Đã cứu " + quantity.format(campaign.getRescuedQuantity()) + " / "
+                    + quantity.format(campaign.getTargetQuantity()) + " " + campaign.getQuantityUnitLabel()
+                    + " · " + Math.round(progressPercent) + "%");
+            progressText.setTextColor(com.rescuefarm.ui.common.RescueProgressUtils.getProgressColor(fragment.requireContext(), progressPercent));
         }
-        if (campaign.getRescueMode() == RescueMode.MOBILE_POINT) {
-            String location = campaign.isLocationFresh(new java.util.Date())
-                    ? "Đang chia sẻ vị trí · " + safe(campaign.getLocationName())
-                    : "Điểm mobile · vị trí cập nhật " + formatAge(campaign.getLocationUpdatedAt());
-            addText(content, location, 12, false, R.color.rescue_on_surface_variant);
-        }
-        TextView cta = addText(content, "Xem chiến dịch và các lô hàng  →", 14, true,
-                R.color.rescue_primary);
-        cta.setPadding(0, dp(8), 0, 0);
-        card.addView(content); card.setOnClickListener(listener);
-        return card;
+        ImageView image = root.findViewById(R.id.articleImage);
+        String url = campaign.getImageUrls().isEmpty() ? "" : campaign.getImageUrls().get(0);
+        if (url.isEmpty() && products != null && !products.isEmpty() && !products.get(0).getImageUrls().isEmpty())
+            url = products.get(0).getImageUrls().get(0);
+        if (url.isEmpty()) image.setVisibility(View.GONE);
+        else Glide.with(fragment).load(url).centerCrop().into(image);
+        root.findViewById(R.id.articleOpenButton).setOnClickListener(listener);
+        root.setOnClickListener(listener);
+        JSONObject initial = new JSONObject();
+        try { initial.put("location", clean(campaign.getLocationName())); } catch (org.json.JSONException ignored) { }
+        bindMetadata(root, initial);
+        if (cached.containsKey(campaign.getId()) && android.os.SystemClock.elapsedRealtime()
+                - loadedAt.getOrDefault(campaign.getId(), 0L) < 60000L) bindMetadata(root, cached.get(campaign.getId()));
+        visible.put(campaign.getId(), root);
+        return root;
     }
 
-    View message(String value) {
-        TextView text = new TextView(fragment.requireContext());
-        text.setText(value); text.setPadding(dp(16), dp(18), dp(16), dp(18));
-        text.setTextColor(fragment.getResources().getColor(R.color.rescue_on_surface_variant,
-                fragment.requireContext().getTheme()));
-        return text;
+    private void bindMetadata(View root, JSONObject value) {
+        TextView shop = root.findViewById(R.id.articleShopName);
+        String name = value.optString("shopName").trim();
+        shop.setText(name.isEmpty() ? fragment.getString(R.string.article_shop_default) : name);
+        ImageView avatar = root.findViewById(R.id.articleShopAvatar);
+        String avatarUrl = value.optString("avatarUrl");
+        Glide.with(fragment).load(avatarUrl.startsWith("https://") ? avatarUrl : null)
+                .placeholder(R.drawable.ic_store).error(R.drawable.ic_store).fallback(R.drawable.ic_store).circleCrop().into(avatar);
+        boolean verified = value.optBoolean("verified", false);
+        Drawable tick = androidx.core.content.ContextCompat.getDrawable(fragment.requireContext(), R.drawable.ic_shop_verified);
+        if (tick != null) {
+            tick = tick.mutate();
+            tick.setTint(color(verified ? R.color.rescue_primary : R.color.rescue_on_surface_variant));
+            tick.setBounds(0, 0, dp(16), dp(16));
+        }
+        shop.setCompoundDrawablesRelative(null, null, tick, null);
+        shop.setContentDescription(fragment.getString(verified ? R.string.article_verified_description
+                : R.string.article_unverified_description, shop.getText()));
+        long postedAt = value.optLong("postedAt", 0);
+        String when = postedAt > 0 ? fragment.getString(R.string.article_posted_at,
+                new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("vi-VN")).format(new Date(postedAt)))
+                : fragment.getString(R.string.article_unknown_time);
+        String location = value.optString("location").trim();
+        TextView details = root.findViewById(R.id.articleMetadata);
+        String distance = details.getTag() instanceof String ? (String) details.getTag() : "";
+        details.setText(when + (location.isEmpty() ? "" : " · " + location) + (distance.isEmpty() ? "" : " · " + distance));
+        JSONArray products = value.optJSONArray("products");
+        if (products != null && products.length() > 0) {
+            StringBuilder line = new StringBuilder();
+            NumberFormat money = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"));
+            for (int i = 0; i < Math.min(2, products.length()); i++) {
+                JSONObject product = products.optJSONObject(i); if (product == null) continue;
+                if (line.length() > 0) line.append(" · "); line.append(product.optString("name"));
+                if (i == 0 && product.optDouble("rescuePrice", 0) > 0)
+                    line.append(" — ").append(money.format(product.optDouble("rescuePrice"))).append("/").append(product.optString("unit"));
+            }
+            ((TextView) root.findViewById(R.id.articleProducts)).setText(line.toString());
+        }
     }
-
-    private TextView addText(LinearLayout parent, String value, int size, boolean bold, int color) {
+    public void clear() {
+        ++generation; visible.clear(); cached.clear(); loadedAt.clear(); attemptedAt.clear(); inFlight.clear();
+    }
+    public View message(String value) {
         TextView text = new TextView(fragment.requireContext()); text.setText(value);
-        text.setTextSize(size); text.setTextColor(fragment.getResources().getColor(color,
-                fragment.requireContext().getTheme()));
-        if (bold) text.setTypeface(text.getTypeface(), Typeface.BOLD);
-        if (bold && size >= 18) com.rescuefarm.ui.common.AppTypography.title(text);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.topMargin = dp(5); parent.addView(text, params); return text;
+        com.rescuefarm.ui.common.AppTypography.body(text);
+        text.setPadding(dp(16), dp(18), dp(16), dp(18)); text.setTextColor(color(R.color.rescue_on_surface_variant)); return text;
     }
-    private String formatAge(java.util.Date updated) {
-        if (updated == null) return "chưa có vị trí mới";
-        long minutes = Math.max(0L, (System.currentTimeMillis() - updated.getTime()) / 60000L);
-        return minutes == 0 ? "vừa xong" : minutes + " phút trước";
-    }
-    private String safe(String value) { return value == null || value.trim().isEmpty() ? "chưa rõ địa điểm" : value.trim(); }
+    private int color(int id) { return androidx.core.content.ContextCompat.getColor(fragment.requireContext(), id); }
+    private String clean(String value) { return value == null ? "" : value.trim(); }
     private int dp(int value) { return Math.round(value * fragment.getResources().getDisplayMetrics().density); }
 }

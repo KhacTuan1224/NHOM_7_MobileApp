@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const {MemoryFirestore, Timestamp, admin} = require('./test-support/memory-firestore.cjs');
 const {createCampaignLifecycle, readAllocations} = require('./campaign-lifecycle');
 const {createCommerce} = require('./commerce');
+const {createBatchExpiry} = require('./batch-expiry');
 const ts = delta => new Timestamp(Date.now() + delta);
 const seller = {uid: 'seller', role: 'SELLER'}, moderator = {uid: 'admin', role: 'ADMIN'};
 function setup(overrides = {}) {
@@ -39,6 +40,135 @@ async function finish(fixture, id) {
   for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'DELIVERED'])
     await fixture.lifecycle.transitionOrder(targetStatus === 'DELIVERED' ? buyer : seller, {orderId: id, targetStatus});
 }
+
+function expireA(f) {
+  f.db.documents.set('productBatches/a', {...f.db.snapshot('productBatches/a').data(), expiryDate: ts(-1000)});
+}
+
+const resolution = (orderId, mode = 'REFUND_CANCEL') => ({orderId, mode, requestId: 'resolution-1', reason: 'Đã đối chiếu chứng từ thực tế',
+  evidenceUrl: 'https://example.test/proof.png', refundReference: 'REFUND-001', confirmRefunded: true});
+function markPaid(f, id) {
+  for (const path of ['orders/' + id, 'payments/' + id]) f.db.documents.set(path,
+    {...f.db.snapshot(path).data(), ...(path.startsWith('orders') ? {paymentStatus: 'PAID', expiryReviewRequired: true} : {status: 'PAID'})});
+}
+test('admin full-refund reconciliation returns stock and campaign allocation once and preserves payment proof', async () => {
+  const f = setup(); await activate(f); const request = data(); await f.commerce.checkout(request, identity);
+  markPaid(f, request.requestId); expireA(f);
+  const command = {...resolution(request.requestId), refundAmount: f.db.snapshot('orders/' + request.requestId).get('totalAmount')};
+  await assert.rejects(f.lifecycle.resolveOrder(seller, command), e => e.status === 403);
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, {...command, refundAmount: 1}));
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 10);
+  await f.lifecycle.resolveOrder(moderator, command);
+  assert.equal((await f.lifecycle.resolveOrder(moderator, command)).replay, true);
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, {...command, reason: 'changed'}), e => e.status === 409);
+  assert.equal(f.db.snapshot('orders/' + request.requestId).get('status'), 'CANCELLED');
+  assert.equal(f.db.snapshot('orders/' + request.requestId).get('expiryReviewRequired'), false);
+  assert.equal(f.db.snapshot('payments/' + request.requestId).get('status'), 'REFUNDED');
+  assert.equal(f.db.snapshot('productBatches/a').get('availableQuantity'), 200);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 0);
+  assert.equal(f.db.snapshot('campaigns/campaign').get('reservedByBatch').a, 0);
+});
+test('late receipt requires server-recorded pre-expiry handover and buyer acknowledgment; no backdating', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); markPaid(f, request.requestId); expireA(f);
+  const command = resolution(request.requestId, 'LATE_RECEIPT');
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, command));
+  const orderPath = 'orders/' + request.requestId;
+  f.db.documents.set(orderPath, {...f.db.snapshot(orderPath).data(), handoverRecordedAt: ts(-5000), handoverEvidenceUrl: 'https://example.test/handover', buyerReceiptAcknowledgedAt: ts(-1)});
+  await f.lifecycle.resolveOrder(moderator, command);
+  assert.equal(f.db.snapshot(orderPath).get('status'), 'DELIVERED');
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 0);
+});
+test('shipped or handed-over stock cannot be released by refund resolution without recorded physical return', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); markPaid(f, request.requestId); expireA(f);
+  const orderPath = 'orders/' + request.requestId;
+  f.db.documents.set(orderPath, {...f.db.snapshot(orderPath).data(), handoverRecordedAt: ts(-5000)});
+  const command = {...resolution(request.requestId), refundAmount: f.db.snapshot(orderPath).get('totalAmount'), confirmReturned: true};
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, command));
+  f.db.documents.set(orderPath, {...f.db.snapshot(orderPath).data(), returnRecordedAt: ts(-100), returnEvidenceUrl: 'https://example.test/returned'});
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, {...command, mode: 'LATE_RECEIPT'}), e => e.status === 409);
+  await f.lifecycle.resolveOrder(moderator, command);
+  assert.equal(f.db.snapshot(orderPath).get('status'), 'CANCELLED');
+});
+test('reconciliation never reports success for a legacy terminal order without a matching resolution record', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); await finish(f, request.requestId);
+  await assert.rejects(f.lifecycle.resolveOrder(moderator, resolution(request.requestId, 'LATE_RECEIPT')), e => e.status === 409);
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+  assert.equal((await f.db.collection('orderReconciliationEvents').get()).size, 0);
+});
+
+test('expired batches block forward order transitions atomically including pickup receipt', async () => {
+  const f = setup(), request = data();
+  await f.commerce.checkout(request, identity);
+  for (const targetStatus of ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'])
+    await f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus});
+  expireA(f);
+  await assert.rejects(() => f.lifecycle.transitionOrder(buyer, {orderId: request.requestId, targetStatus: 'DELIVERED'}), /hết hạn/);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 10);
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 0);
+  assert.equal(f.db.snapshot(`orders/${request.requestId}`).get('status'), 'READY_FOR_PICKUP');
+});
+
+test('expiry sweep cancels unpaid cash orders once, records detection and preserves physical stock', async () => {
+  const f = setup(); await activate(f); const request = data();
+  await f.commerce.checkout(request, identity); expireA(f);
+  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle});
+  await worker.reconcile(); await worker.reconcile();
+  const batch = f.db.snapshot('productBatches/a').data();
+  assert.equal(batch.status, 'EXPIRED'); assert.equal(batch.availableQuantity, 200);
+  assert.equal(batch.reservedQuantity, 0); assert.equal(batch.soldQuantity, 0);
+  assert.equal(batch.initialQuantity, batch.availableQuantity + batch.reservedQuantity + batch.soldQuantity);
+  assert.equal(f.db.snapshot(`orders/${request.requestId}`).get('cancellationReason'), 'BATCH_EXPIRED');
+  assert.equal(f.db.snapshot('campaigns/campaign').get('reservedByBatch').a, 0);
+  assert.equal((await f.db.collection('batchExpiryEvents').get()).size, 1);
+  assert.equal(f.db.snapshot('batchExpiryEvents/a').get('availableQuantityAtDetection'), 190);
+});
+
+test('expiry sweep retains paid orders for review without fabricated refunds or consumed stock', async () => {
+  const f = setup(), request = data(); await legacyBankCheckout(f, request);
+  await f.lifecycle.confirmBankTransfer(seller, {orderId: request.requestId, referenceCode: 'BANK-EXPIRY'});
+  expireA(f);
+  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle});
+  await worker.reconcile(); await worker.reconcile();
+  const order = f.db.snapshot(`orders/${request.requestId}`).data();
+  assert.equal(order.paymentStatus, 'PAID'); assert.equal(order.status, 'CONFIRMED');
+  assert.equal(order.expiryReviewRequired, true);
+  assert.equal(f.db.snapshot('productBatches/a').get('reservedQuantity'), 10);
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 0);
+  await assert.rejects(() => f.lifecycle.transitionOrder(seller, {orderId: request.requestId, targetStatus: 'PREPARING'}), /đối soát/);
+});
+test('expiry sweep skips finalized order history and avoids rereading already-audited batches every minute',async()=>{
+  const f=setup();
+  f.db.documents.set('productBatches/a',{...f.db.snapshot('productBatches/a').data(),status:'EXPIRED',expiryDate:ts(-1000),expiredAt:ts(-500)});
+  f.db.documents.set('orders/done',{status:'DELIVERED',batchReservations:{a:1},inventoryFinalized:true});
+  let transactions=0;const run=f.db.runTransaction.bind(f.db);
+  f.db.runTransaction=async callback=>{transactions++;return run(callback);};
+  const worker=createBatchExpiry({db:f.db,admin,campaignLifecycle:f.lifecycle});
+  const first=await worker.reconcile(),second=await worker.reconcile();
+  assert.equal(first.orders,0);assert.equal(second.orders,0);assert.equal(transactions,0);
+});
+test('quota failure never advances the historical expiry cursor past unfinished audit work',async()=>{
+  const f=setup();
+  f.db.documents.set('productBatches/a',{...f.db.snapshot('productBatches/a').data(),status:'EXPIRED',expiryDate:ts(-1000)});
+  let fail=true;const run=f.db.runTransaction.bind(f.db);
+  f.db.runTransaction=async callback=>{if(fail){fail=false;throw Object.assign(Error('Quota exceeded'),{code:8});}return run(callback);};
+  const worker=createBatchExpiry({db:f.db,admin,campaignLifecycle:f.lifecycle});
+  await assert.rejects(()=>worker.reconcile(),e=>e.code===8);
+  await worker.reconcile();assert.equal(f.db.snapshot('batchExpiryEvents/a').exists,true);
+});
+
+test('expiry pagination eventually visits later batches, preserves archived status and completed history', async () => {
+  const f = setup(), request = data(); await f.commerce.checkout(request, identity); await finish(f, request.requestId);
+  expireA(f);
+  f.db.documents.set('productBatches/b', {...f.db.snapshot('productBatches/b').data(), expiryDate: ts(-500), status: 'ARCHIVED'});
+  let clock = Date.now();
+  const worker = createBatchExpiry({db: f.db, admin, campaignLifecycle: f.lifecycle, pageSize: 1, now: () => clock});
+  await worker.reconcile(); clock += 3600001; await worker.reconcile(); clock += 3600001; await worker.reconcile();
+  assert.equal((await f.db.collection('batchExpiryEvents').get()).size, 2);
+  assert.equal(f.db.snapshot('productBatches/b').get('status'), 'ARCHIVED');
+  assert.equal(f.db.snapshot(`orders/${request.requestId}`).get('status'), 'DELIVERED');
+  assert.equal(f.db.snapshot('productBatches/a').get('soldQuantity'), 10);
+});
 
 test('approval links batches atomically, initializes allocation maps, and is idempotent', async () => {
   const f = setup(); await activate(f);

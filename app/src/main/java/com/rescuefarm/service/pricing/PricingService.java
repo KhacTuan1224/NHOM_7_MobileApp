@@ -1,42 +1,21 @@
 package com.rescuefarm.service.pricing;
 
-import com.rescuefarm.domain.enums.PromotionType;
-import com.rescuefarm.domain.model.Promotion;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Date;
 
 public class PricingService {
 
-    public double calculateFinalUnitPrice(double rescuePrice, double quantity, Promotion promotion) {
-        return calculatePrice(rescuePrice, rescuePrice, quantity, promotion, new Date()).getFinalUnitPrice();
+    public double calculateFinalUnitPrice(double rescuePrice, double quantity) {
+        return calculatePrice(rescuePrice, rescuePrice, quantity).getFinalUnitPrice();
     }
 
-    public PriceBreakdown calculatePrice(double originalPrice, double rescuePrice, double quantity,
-            Promotion promotion, Date now) {
+    public PriceBreakdown calculatePrice(double originalPrice, double rescuePrice, double quantity) {
         validatePriceAndQuantity(originalPrice, quantity);
         validatePriceAndQuantity(rescuePrice, quantity);
         if (rescuePrice > originalPrice) throw new IllegalArgumentException("Rescue price cannot exceed original price");
-        if (now == null) throw new IllegalArgumentException("Pricing time is required");
-
-        double promotionDiscount = 0D;
-        double volumeDiscountPercent = 0D;
-        boolean applied = promotion != null && promotion.isValid(now);
-        if (applied) {
-            if (promotion.getType() == PromotionType.PERCENT) {
-                promotionDiscount = rescuePrice * promotion.getValue() / 100D;
-            } else if (promotion.getType() == PromotionType.FIXED) {
-                promotionDiscount = promotion.getValue();
-            }
-            promotionDiscount = Math.min(rescuePrice, promotionDiscount);
-            volumeDiscountPercent = promotion.calculateDiscount(quantity);
-        }
-        double afterPromotion = Math.max(0D, rescuePrice - promotionDiscount);
-        double finalUnitPrice = roundVnd(afterPromotion * (1D - volumeDiscountPercent / 100D));
-        double subtotal = roundVnd(finalUnitPrice * quantity);
+        double finalUnitPrice = roundVnd(rescuePrice);
         return new PriceBreakdown(roundVnd(originalPrice), roundVnd(rescuePrice),
-                roundVnd(promotionDiscount), volumeDiscountPercent, finalUnitPrice,
-                quantity, subtotal, applied);
+                finalUnitPrice, quantity, roundVnd(finalUnitPrice * quantity));
     }
 
     public double calculateLineSubtotal(double finalUnitPrice, double quantity) {

@@ -60,8 +60,6 @@ public class CartFragment extends Fragment {
             return;
         }
         groups = view.findViewById(R.id.cartSellerGroups);
-        view.findViewById(R.id.cartPromotionWalletButton).setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.promotionWalletFragment));
         summary = view.findViewById(R.id.cartSummaryText);
         noticeCard = view.findViewById(R.id.cartNoticeCard);
         noticeText = view.findViewById(R.id.cartNoticeText);
@@ -279,6 +277,7 @@ public class CartFragment extends Fragment {
 
         return row;
     }
+
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);

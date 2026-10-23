@@ -4,13 +4,14 @@
     android:background="@color/rescue_background" android:fillViewport="true" android:clipToPadding="false" xmlns:app="http://schemas.android.com/apk/res-auto">
     <com.rescuefarm.ui.common.ResponsiveContentLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="20dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/content_max_width">
-        <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="match_parent" android:layout_height="wrap_content"
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <com.rescuefarm.ui.common.AppBackButton android:id="@+id/sellerStatisticsBack" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical" android:contentDescription="@string/navigation_back" />
+            <TextView android:fontFamily="@font/ibm_plex_sans" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
             android:text="Thống kê cửa hàng" android:textSize="24sp" android:textStyle="bold"
             android:textColor="@color/rescue_on_surface" android:accessibilityHeading="true" />
+        </LinearLayout>
         <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/sellerStatisticsBack"
-                style="@style/Widget.RescueFarm.AdminOutlinedButton" android:layout_width="0dp" android:layout_weight="1"
-                android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginEnd="8dp" android:text="Quay lại" />
+
             <com.google.android.material.button.MaterialButton android:id="@+id/sellerStatisticsRefresh"
                 style="@style/Widget.RescueFarm.AdminOutlinedButton" android:layout_width="0dp" android:layout_weight="1"
                 android:layout_height="wrap_content" android:minHeight="48dp" android:text="Làm mới" />

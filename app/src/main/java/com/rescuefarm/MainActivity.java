@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         });
         profileButton.setOnClickListener(unused -> {
             if (!AuthRepositoryFactory.create(this).isAuthenticated()) {
-                navController.navigate(R.id.loginFragment);
+                navigateTo(navController, R.id.guestProfileFragment);
             } else {
                 navigateTo(navController, R.id.profileFragment);
             }
@@ -186,6 +186,8 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
     public UserRole getResolvedActorRole() { return currentRole; }
     @Override protected void onNewIntent(android.content.Intent intent) {
         super.onNewIntent(intent); setIntent(intent); captureNotificationIntent(intent);
+        if (intent.getData() != null && "rescuefarm".equals(intent.getData().getScheme())
+                && "rescue".equals(intent.getData().getHost())) navController.handleDeepLink(intent);
         if (currentRole == null && FirebaseAuth.getInstance().getCurrentUser() != null) restoreActorRole(); else openPendingNotification();
     }
     private void captureNotificationIntent(android.content.Intent intent) {
@@ -253,6 +255,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
             case "reviewFragment": return R.id.reviewFragment;
             case "profileFragment": return R.id.profileFragment;
             case "notificationFragment": return R.id.notificationFragment;
+            case "rescueHubFragment": return R.id.rescueHubFragment;
             default: return 0;
         }
     }
@@ -319,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                                         ImageView profileButton,
                                         NavDestination destination) {
         int destinationId = destination.getId();
-        
+
         boolean sellerSurface = currentRole == UserRole.SELLER && isSellerSurface(destinationId);
         boolean adminSurface = currentRole == UserRole.ADMIN
                 && (destinationId == R.id.adminDashboardFragment || destinationId == R.id.adminResourceFragment);
@@ -330,9 +333,17 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.orderConfirmationFragment
                 || destinationId == R.id.customerOrderListFragment
                 || destinationId == R.id.profileFragment
+                || destinationId == R.id.guestProfileFragment
                 || destinationId == R.id.sellerProfileFragment
                 // Home related
                 || destinationId == R.id.allCategoriesFragment
+                || destinationId == R.id.categoryDetailFragment
+                || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.flashSaleFragment
+                || destinationId == R.id.mysteryBoxFragment
+                || destinationId == R.id.rescueOfferEditorFragment
+                || destinationId == R.id.mysteryBoxEditorFragment
+                || destinationId == R.id.flashRescueEditorFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment
@@ -342,7 +353,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.addressListFragment
                 || destinationId == R.id.addressEditorFragment
                 || destinationId == R.id.favoriteFragment
-                || destinationId == R.id.promotionWalletFragment
                 // Product/Campaign
                 || destinationId == R.id.productDetailFragment
                 || destinationId == R.id.publicSellerProfileFragment
@@ -377,20 +387,26 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         bottomNavigationHidden = false;
         scrollDirectionDistance = 0;
         ViewCompat.requestApplyInsets(findViewById(R.id.mainRoot));
-        
+
         int inactive = ContextCompat.getColor(this, R.color.rescue_on_surface_variant);
         int active = ContextCompat.getColor(this, R.color.rescue_splash_green);
-        
+
         // Highlight home button for home and related fragments
         boolean isHomeActive = destinationId == R.id.guestHomeFragment
                 || destinationId == R.id.sellerProductListFragment
                 || destinationId == R.id.productEditorFragment
                 || destinationId == R.id.batchManagerFragment
-                || destinationId == R.id.promotionEditorFragment
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment
                 || destinationId == R.id.allCategoriesFragment
+                || destinationId == R.id.categoryDetailFragment
+                || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.flashSaleFragment
+                || destinationId == R.id.mysteryBoxFragment
+                || destinationId == R.id.rescueOfferEditorFragment
+                || destinationId == R.id.mysteryBoxEditorFragment
+                || destinationId == R.id.flashRescueEditorFragment
                 || destinationId == R.id.allCriticalCampaignsFragment
                 || destinationId == R.id.allValueProductsFragment
                 || destinationId == R.id.allActiveCampaignsFragment
@@ -400,24 +416,24 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.campaignDetailFragment
                 || destinationId == R.id.productListFragment
                 || destinationId == R.id.campaignListFragment;
-        
+
         // Highlight community button for feed related
         boolean isCommunityActive = destinationId == R.id.feedFragment;
-        
+
         // Highlight orders button for order related
         boolean isOrdersActive = destinationId == R.id.orderConfirmationFragment
                 || destinationId == R.id.sellerOrderListFragment
                 || destinationId == R.id.customerOrderListFragment
                 || destinationId == R.id.orderDetailFragment
                 || destinationId == R.id.checkoutFragment;
-        
+
         // Highlight profile button for profile related
         boolean isProfileActive = destinationId == R.id.profileFragment
+                || destinationId == R.id.guestProfileFragment
                 || destinationId == R.id.editProfileFragment
                 || destinationId == R.id.addressListFragment
                 || destinationId == R.id.addressEditorFragment
                 || destinationId == R.id.favoriteFragment
-                || destinationId == R.id.promotionWalletFragment
                 || destinationId == R.id.notificationFragment
                 || destinationId == R.id.reviewFragment
                 || destinationId == R.id.reportFragment;
@@ -425,7 +441,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         boolean isCenterActive = sellerSurface && (destinationId == R.id.sellerDashboardFragment
                     || destinationId == R.id.sellerProfileFragment)
                 || adminSurface;
-        
+
         tintNavigationIcon(homeButton, isHomeActive, active, inactive);
         tintNavigationIcon(communityButton, isCommunityActive, active, inactive);
         tintNavigationIcon(ordersButton, isOrdersActive, active, inactive);
@@ -441,7 +457,6 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.sellerProductListFragment
                 || destinationId == R.id.productEditorFragment
                 || destinationId == R.id.batchManagerFragment
-                || destinationId == R.id.promotionEditorFragment
                 || destinationId == R.id.sellerCampaignListFragment
                 || destinationId == R.id.campaignEditorFragment
                 || destinationId == R.id.mobileRescueFragment

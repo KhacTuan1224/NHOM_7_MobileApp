@@ -7,153 +7,85 @@
     <com.rescuefarm.ui.common.ResponsiveContentLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal" android:orientation="vertical"
-        android:padding="@dimen/space_lg" app:maxContentWidth="@dimen/reading_max_width">
+        android:padding="24dp" app:maxContentWidth="@dimen/reading_max_width">
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/profile_title" android:textAppearance="@style/TextAppearance.RescueFarm.Display"
-            android:textColor="@color/rescue_on_surface" />
+            android:text="@string/profile_title" android:fontFamily="@font/ibm_plex_sans"
+            android:textSize="32sp" android:textStyle="bold"
+            android:textColor="@color/rescue_on_surface" android:accessibilityHeading="true" />
 
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" app:cardBackgroundColor="@color/rescue_surface"
-            app:cardCornerRadius="20dp" app:cardElevation="1dp"
-            app:strokeColor="@color/rescue_outline" app:strokeWidth="1dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:orientation="vertical">
-                    <TextView android:id="@+id/profileName" android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.RescueFarm.SectionTitle" />
-                    <TextView android:id="@+id/profileEmail" android:layout_width="match_parent"
-                        android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xs"
-                        android:textColor="@color/rescue_on_surface_variant" />
-                    <TextView android:id="@+id/profileRole" android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
-                        android:background="@drawable/bg_profile_avatar_circle" android:paddingStart="10dp"
-                        android:paddingTop="4dp" android:paddingEnd="10dp" android:paddingBottom="4dp"
-                        android:textColor="@color/rescue_primary" android:textStyle="bold" />
-                    <TextView android:id="@+id/profileStatus" android:layout_width="match_parent"
-                        android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"
-                        android:textColor="@color/rescue_on_surface_variant" />
-                </LinearLayout>
-                <ImageView android:id="@+id/profileAvatar" android:layout_width="72dp"
-                    android:layout_height="72dp" android:layout_marginStart="12dp"
-                    android:background="@drawable/bg_profile_avatar_circle" android:clipToOutline="true"
-                    android:contentDescription="@string/profile_avatar_description"
-                    android:padding="16dp" android:scaleType="centerCrop" android:src="@drawable/ic_nav_profile" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" android:gravity="center_vertical" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/profileName" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:fontFamily="@font/ibm_plex_sans"
+                    android:drawablePadding="4dp" android:maxLines="2" android:ellipsize="end"
+                    android:textSize="20sp" android:textStyle="bold" android:textColor="@color/rescue_on_surface" />
+                <TextView android:id="@+id/profileEmail" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="4dp"
+                    android:textSize="14sp" android:textColor="@color/rescue_on_surface_variant" />
+                <TextView android:id="@+id/profileRole" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                    android:textSize="14sp" android:textStyle="bold" android:textColor="@color/rescue_on_surface" />
+                <TextView android:id="@+id/profileStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="6dp"
+                    android:textSize="14sp" android:textColor="@color/rescue_on_surface_variant" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            <ImageView android:id="@+id/profileAvatar" android:layout_width="72dp"
+                android:layout_height="72dp" android:layout_marginStart="16dp"
+                android:background="@drawable/bg_account_profile_avatar" android:clipToOutline="true"
+                android:contentDescription="@string/profile_avatar_description"
+                android:scaleType="centerCrop" android:src="@drawable/ic_nav_profile" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton android:id="@+id/editProfileButton"
-            style="@style/Widget.RescueFarm.ProfilePrimaryButton"
+            app:icon="@drawable/ic_profile_edit"
+            style="@style/Widget.RescueFarm.AccountProfilePrimary"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" android:minHeight="48dp"
-            android:text="@string/edit_profile_action" app:icon="@drawable/ic_nav_profile"
-            app:iconGravity="textStart" app:iconPadding="10dp" app:iconTint="@color/rescue_on_primary" />
+            android:layout_marginTop="24dp" android:text="@string/edit_profile_action" />
 
-        <com.google.android.material.card.MaterialCardView
+        <com.google.android.material.button.MaterialButton android:id="@+id/addressesButton"
+            app:icon="@drawable/ic_home_location"
+            style="@style/Widget.RescueFarm.AccountProfileSecondary"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" app:cardBackgroundColor="@color/rescue_surface"
-            app:cardCornerRadius="18dp" app:cardElevation="0dp"
-            app:strokeColor="@color/rescue_outline" app:strokeWidth="1dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:paddingStart="8dp" android:paddingEnd="8dp">
+            android:layout_marginTop="8dp" android:visibility="gone" android:text="@string/manage_addresses_action" />
 
-                <LinearLayout android:id="@+id/addressesButton" android:layout_width="match_parent"
-                    android:layout_height="52dp" android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true" android:gravity="center_vertical"
-                    android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_home_location" android:tint="@color/rescue_primary" />
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp" android:layout_weight="1"
-                        android:text="@string/manage_addresses_action" android:textColor="@color/rescue_on_surface"
-                        android:textSize="15sp" />
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_forward" android:tint="@color/rescue_on_surface_variant" />
-                </LinearLayout>
-                <View android:layout_width="match_parent" android:layout_height="1dp"
-                    android:layout_marginStart="48dp" android:background="@color/rescue_outline" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/sellerProfileButton"
+            app:icon="@drawable/ic_store"
+            style="@style/Widget.RescueFarm.AccountProfileSecondary"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:visibility="gone" android:text="@string/seller_profile_action" />
 
-                <LinearLayout android:id="@+id/sellerProfileButton" android:layout_width="match_parent"
-                    android:layout_height="52dp" android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true" android:gravity="center_vertical"
-                    android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_store" android:tint="@color/rescue_primary" />
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp" android:layout_weight="1"
-                        android:text="@string/seller_profile_action" android:textColor="@color/rescue_on_surface"
-                        android:textSize="15sp" />
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_forward" android:tint="@color/rescue_on_surface_variant" />
-                </LinearLayout>
-                <View android:layout_width="match_parent" android:layout_height="1dp"
-                    android:layout_marginStart="48dp" android:background="@color/rescue_outline" />
 
-                <LinearLayout android:id="@+id/profilePromotionWalletButton" android:layout_width="match_parent"
-                    android:layout_height="52dp" android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true" android:gravity="center_vertical"
-                    android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_nav_cart" android:tint="@color/rescue_primary" />
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp" android:layout_weight="1"
-                        android:text="@string/promotion_wallet_title" android:textColor="@color/rescue_on_surface"
-                        android:textSize="15sp" />
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_forward" android:tint="@color/rescue_on_surface_variant" />
-                </LinearLayout>
-                <View android:layout_width="match_parent" android:layout_height="1dp"
-                    android:layout_marginStart="48dp" android:background="@color/rescue_outline" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/favoritesButton"
+            app:icon="@drawable/ic_heart"
+            style="@style/Widget.RescueFarm.AccountProfileSecondary"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:visibility="gone" android:text="@string/favorites_title" />
 
-                <LinearLayout android:id="@+id/favoritesButton" android:layout_width="match_parent"
-                    android:layout_height="52dp" android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true" android:gravity="center_vertical"
-                    android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_heart" android:tint="@color/rescue_primary" />
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp" android:layout_weight="1"
-                        android:text="@string/favorites_title" android:textColor="@color/rescue_on_surface"
-                        android:textSize="15sp" />
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_forward" android:tint="@color/rescue_on_surface_variant" />
-                </LinearLayout>
-                <View android:layout_width="match_parent" android:layout_height="1dp"
-                    android:layout_marginStart="48dp" android:background="@color/rescue_outline" />
-
-                <FrameLayout android:layout_width="match_parent" android:layout_height="52dp">
-                    <LinearLayout android:id="@+id/notificationsButton" android:layout_width="match_parent"
-                        android:layout_height="match_parent" android:background="?attr/selectableItemBackground"
-                        android:clickable="true" android:focusable="true" android:gravity="center_vertical"
-                        android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
-                        <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                            android:src="@drawable/ic_home_notifications" android:tint="@color/rescue_primary" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp" android:layout_weight="1"
-                            android:text="@string/notifications_title" android:textColor="@color/rescue_on_surface"
-                            android:textSize="15sp" />
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                            android:src="@drawable/ic_arrow_forward" android:tint="@color/rescue_on_surface_variant" />
-                    </LinearLayout>
-                    <TextView android:id="@+id/profileNotificationBadge"
-                        style="@style/Widget.RescueFarm.NotificationBadge"
-                        android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:layout_gravity="end|center_vertical" android:layout_marginEnd="36dp" />
-                </FrameLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/notificationsButton"
+            app:icon="@drawable/ic_home_notifications"
+                style="@style/Widget.RescueFarm.AccountProfileSecondary"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingStart="40dp" android:paddingEnd="40dp" android:text="@string/notifications_title" />
+            <TextView android:id="@+id/profileNotificationBadge"
+                style="@style/Widget.RescueFarm.NotificationBadge"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical" android:layout_marginEnd="16dp"
+                android:importantForAccessibility="no" android:clickable="false" android:focusable="false" />
+        </FrameLayout>
 
         <com.google.android.material.button.MaterialButton android:id="@+id/logoutButton"
-            style="@style/Widget.RescueFarm.ProfileLogoutButton"
+            app:icon="@drawable/ic_profile_logout"
+            style="@style/Widget.RescueFarm.AccountProfileLogout"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" android:minHeight="48dp"
-            android:text="@string/logout_action" />
+            android:layout_marginTop="16dp" android:text="@string/logout_action" />
 
-        <ProgressBar android:id="@+id/profileProgress" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/space_md" android:visibility="gone" />
+        <ProgressBar android:id="@+id/profileProgress" android:layout_width="32dp"
+            android:layout_height="32dp" android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp" android:visibility="gone" />
     </com.rescuefarm.ui.common.ResponsiveContentLayout>
 </com.rescuefarm.ui.common.NavigationAwareNestedScrollView>

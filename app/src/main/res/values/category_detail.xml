@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="category_detail_title">Danh mục nông sản</string>
+    <string name="category_detail_back">Quay lại</string>
+    <string name="category_detail_intro">Sản phẩm và câu chuyện giải cứu trong danh mục bạn quan tâm.</string>
+    <string name="category_detail_summary">Đã tải: %1$d sản phẩm · %2$d bài viết</string>
+    <string name="category_detail_products">Sản phẩm</string>
+    <string name="category_detail_articles">Bài viết &amp; chiến dịch</string>
+    <string name="category_detail_no_products">Chưa có sản phẩm trong danh mục này.</string>
+    <string name="category_detail_no_articles">Chưa có bài viết giải cứu liên quan đến danh mục này.</string>
+    <string name="category_detail_more_products">Chưa có sản phẩm phù hợp trong phần đã tải. Nhấn “Xem thêm” để tiếp tục.</string>
+    <string name="category_detail_more_articles">Chưa có bài viết phù hợp trong phần đã tải. Nhấn “Xem thêm” để tiếp tục.</string>
+    <string name="category_detail_loading">Đang tải nội dung danh mục…</string>
+</resources>

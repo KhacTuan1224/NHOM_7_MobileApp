@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const {isQuotaError} = require('./read-cache');
 const digest = value => crypto.createHash('sha256').update(value).digest('hex');
 const time = value => value && typeof value.toMillis === 'function' ? value.toMillis() : 0;
 function compareTimestamp(a, b) {
@@ -23,7 +24,18 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
   const admins = async () => (await db.collection('users').where('role', '==', 'ADMIN').get()).docs
     .filter(doc => doc.get('status') === 'ACTIVE').map(doc => doc.id);
 
+  async function nearbyAllowed(uid, offerId) {
+    const [preference, offer] = await Promise.all([db.collection('rescueNearbyPreferences').doc(uid).get(), db.collection('rescueOffers').doc(offerId).get()]);
+    if (!preference.exists || !preference.get('enabled') || time(preference.get('expiresAt')) <= now()
+        || !offer.exists || offer.get('status') !== 'OPEN' || offer.get('closesAt') <= now() || offer.get('availableUnits') <= 0) return false;
+    const seller = await db.collection('users').doc(offer.get('sellerId')).get();
+    return seller.exists && seller.get('status') === 'ACTIVE' && seller.get('sellerStatus') === 'APPROVED'
+      && require('./rescue-policy').distanceKm(preference.data(), offer.data()) <= preference.get('radiusKm');
+  }
+
   async function audience(event) {
+    if (event.resourceType === 'RESCUE_OFFER' && !text(event.resourceId)) return [];
+    if (event.kind === 'RESCUE_NEARBY') return await nearbyAllowed(event.recipientUid, event.resourceId) ? [event.recipientUid] : [];
     if (event.kind === 'DIRECT') return [event.recipientUid];
     if (event.kind === 'ORDER_PAYMENT') {
       const order = await db.collection('orders').doc(event.resourceId).get();
@@ -37,15 +49,6 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
             || compareTimestamp(source.get('updatedAt'), event.sourceUpdatedAt || event.createdAt) !== 0) return [];
       }
       return admins();
-    }
-    if (event.kind === 'PROMOTION') {
-      const doc = await db.collection('promotions').doc(event.resourceId).get();
-      if (!doc.exists || !doc.get('active') || time(doc.get('endDate')) <= now()
-          || compareTimestamp(doc.get('updatedAt'), event.sourceUpdatedAt || event.createdAt) !== 0) return [];
-      if (time(doc.get('startDate')) > now()) throw Object.assign(new Error('Promotion scheduled'), {nextAt: time(doc.get('startDate'))});
-      const product = await db.collection('products').doc(event.resourceId).get();
-      if (!product.exists || product.get('status') !== 'ACTIVE') return [];
-      return [...new Set((await db.collection('favorites').where('productId', '==', event.resourceId).get()).docs.map(d => d.get('customerId')))];
     }
     if (event.kind === 'CAMPAIGN') {
       const doc = await db.collection('campaigns').doc(event.resourceId).get();
@@ -61,11 +64,11 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
 
   function payload(event) {
     const resourceType = event.resourceType, referenceId = event.resourceId;
-    const titles = {ORDER: 'Cập nhật đơn hàng', CAMPAIGN: 'Cập nhật chiến dịch', PROMOTION: 'Sản phẩm yêu thích có ưu đãi',
+    const titles = {ORDER: 'Cập nhật đơn hàng', CAMPAIGN: 'Cập nhật chiến dịch',
       SELLER_APPLICATION: 'Kết quả hồ sơ người bán', REPORT: 'Cập nhật báo cáo', PRODUCT: 'Kết quả kiểm duyệt sản phẩm', REVIEW: 'Kết quả kiểm duyệt đánh giá', USER: 'Cập nhật tài khoản'};
     const pending = event.kind === 'ADMINS';
-    return {type: resourceType === 'ORDER' ? 'ORDER' : resourceType === 'PROMOTION' ? 'PROMOTION' : event.kind === 'CAMPAIGN' ? 'CAMPAIGN' : 'MODERATION',
-      resourceType, referenceId, action: pending ? 'REVIEW' : event.kind === 'CAMPAIGN' || event.kind === 'PROMOTION' ? 'VIEW' : 'RESULT',
+    return {type: resourceType === 'RESCUE_OFFER' ? 'SYSTEM' : resourceType === 'ORDER' ? 'ORDER' : event.kind === 'CAMPAIGN' ? 'CAMPAIGN' : 'MODERATION',
+      resourceType, referenceId, action: pending ? 'REVIEW' : event.kind === 'CAMPAIGN' ? 'VIEW' : 'RESULT',
       title: text(event.title) || (pending ? 'Có nội dung mới cần xử lý' : titles[resourceType] || 'Cập nhật RescueFarm'),
       body: text(event.publicMessage) || (event.kind === 'ORDER_PAYMENT' ? 'Cửa hàng đã xác nhận thanh toán chuyển khoản.' : pending ? 'Mở để xem và xử lý nội dung.' : `Trạng thái: ${decisionLabel(text(event.decision)) || 'Đã cập nhật'}`)};
   }
@@ -76,17 +79,18 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
       const recipients = (await audience(event)).filter(Boolean), data = payload(event);
       for (const uid of recipients) {
         const user = await db.collection('users').doc(uid).get();
-        if (!user.exists || ((event.kind === 'CAMPAIGN' || event.kind === 'PROMOTION') && user.get('role') !== 'CUSTOMER')) continue;
+        if (!user.exists || ((event.kind === 'CAMPAIGN') && user.get('role') !== 'CUSTOMER')) continue;
         const id = digest(doc.id + '|' + uid), ref = db.collection('notificationDeliveries').doc(id);
         await db.runTransaction(async tx => {
           if ((await tx.get(ref)).exists) return;
-          tx.create(ref, {...data, id: event.inboxId || id, eventId: doc.id, sourceUpdatedAt: event.sourceUpdatedAt || event.createdAt, userId: uid, status: 'PENDING', inboxCreated: false,
+          tx.create(ref, {...data, audiencePolicy: event.kind === 'RESCUE_NEARBY' ? 'RESCUE_NEARBY' : '', id: event.inboxId || id, eventId: doc.id, sourceUpdatedAt: event.sourceUpdatedAt || event.createdAt, userId: uid, status: 'PENDING', inboxCreated: false,
             pushAttempted: false, pushDelivered: false, deliveredTokenIds: [], retryCount: 0, nextAttemptAt: ts(now()), createdAt: stamp()});
         });
       }
       await update(doc.ref, {status: 'EXPANDED', recipientCount: recipients.length, expandedAt: stamp()});
       return {expanded: true};
     } catch (error) {
+      if (isQuotaError(error)) throw error;
       await update(doc.ref, {retryCount: (event.retryCount || 0) + (error.nextAt ? 0 : 1), lastError: String(error.message).slice(0, 500),
         nextAttemptAt: ts(error.nextAt || now() + Math.min(3600000, 10000 * 2 ** Math.min(event.retryCount || 0, 8)))});
       return {attentionRequired: !error.nextAt && (event.retryCount || 0) + 1 >= 5};
@@ -109,6 +113,14 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     });
     const inbox = db.collection('notifications').doc(delivery.id);
     try {
+      if (delivery.resourceType === 'RESCUE_OFFER' && !text(delivery.referenceId)) {
+        await ownedUpdate({status: 'SKIPPED', lastError: 'Thông báo không còn gói giải cứu để mở.', leaseUntil: ts(0)});
+        return {skipped: true};
+      }
+      if (delivery.audiencePolicy === 'RESCUE_NEARBY' && !await nearbyAllowed(delivery.userId, delivery.referenceId)) {
+        await ownedUpdate({status: 'SKIPPED', lastError: 'Đã tắt nhắc, hết hạn vị trí hoặc gói không còn phù hợp.', leaseUntil: ts(0)});
+        return {skipped: true};
+      }
       await db.runTransaction(async tx => {
         const [existing, current] = await Promise.all([tx.get(inbox), tx.get(ref)]);
         if (current.get('leaseId') !== leaseId) throw Error('Delivery lease changed');
@@ -118,11 +130,10 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
         else tx.update(inbox, {resourceType: delivery.resourceType, action: delivery.action, eventId: delivery.eventId});
         tx.update(ref, {inboxCreated: true});
       });
-      if (delivery.action === 'VIEW' && ['PROMOTION', 'CAMPAIGN'].includes(delivery.resourceType)) {
-        const source = await db.collection(delivery.resourceType === 'PROMOTION' ? 'promotions' : 'campaigns').doc(delivery.referenceId).get();
+      if (delivery.action === 'VIEW' && delivery.resourceType === 'CAMPAIGN') {
+        const source = await db.collection('campaigns').doc(delivery.referenceId).get();
         if (!source.exists || time(source.get('endDate')) <= now()
-            || (delivery.resourceType === 'PROMOTION' ? source.get('active') !== true
-              || delivery.sourceUpdatedAt && compareTimestamp(source.get('updatedAt'), delivery.sourceUpdatedAt) !== 0 : source.get('status') !== 'ACTIVE')) {
+            || source.get('status') !== 'ACTIVE') {
           await ownedUpdate({status: 'SKIPPED', lastError: 'Nội dung ưu đãi/chiến dịch đã kết thúc trước khi gửi push.', leaseUntil: ts(0)});
           return {skipped: true};
         }
@@ -163,6 +174,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
       await ownedUpdate({status: 'SENT', pushDelivered: true, deliveredAt: stamp(), lastError: '', leaseUntil: ts(0)});
       return {sent: true};
     } catch (error) {
+      if (isQuotaError(error)) throw error;
       await ownedUpdate({status: 'PENDING', retryCount: (delivery.retryCount || 0) + (error.wait ? 0 : 1),
         lastError: String(error.message).slice(0, 500), leaseUntil: ts(0),
         nextAttemptAt: ts(now() + (error.wait ? 3600000 : Math.min(3600000, 10000 * 2 ** Math.min(delivery.retryCount || 0, 8))))});
@@ -199,11 +211,11 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     }
   }
 
-  // One-time compatibility migration for pending work and already-scheduled promotions.
+  // One-time compatibility migration for pending moderation work.
   async function backfillSources() {
     const marker = db.collection('notificationWorkerState').doc('sourceBackfillV1');
     if ((await marker.get()).exists) return;
-    for (const [name, resourceType] of [['sellerApplications', 'SELLER_APPLICATION'], ['campaigns', 'CAMPAIGN'], ['reports', 'REPORT'], ['promotions', 'PROMOTION']]) {
+    for (const [name, resourceType] of [['sellerApplications', 'SELLER_APPLICATION'], ['campaigns', 'CAMPAIGN'], ['reports', 'REPORT']]) {
       let cursor = null;
       while (true) {
         let query = db.collection(name).orderBy(admin.firestore.FieldPath.documentId()).limit(100);
@@ -212,7 +224,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
         for (const source of page.docs) {
           const version = source.get('updatedAt');
           const pending = ['PENDING', 'PENDING_APPROVAL'].includes(source.get('status'));
-          if (!pending && !(resourceType === 'PROMOTION' && source.get('active') && time(source.get('endDate')) > now())) continue;
+          if (!pending) continue;
           if (!version) { console.error('Notification source needs date reconciliation:', name, source.id); continue; }
           const existingEvents = await db.collection('notificationOutbox').where('resourceId', '==', source.id).get();
           if (existingEvents.docs.some(event => event.get('resourceType') === resourceType
@@ -222,7 +234,7 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
             const event = await tx.get(db.collection('notificationOutbox').doc(id));
             const current = await tx.get(source.ref);
             if (event.exists || !current.exists || compareTimestamp(current.get('updatedAt'), version) !== 0) return;
-            enqueueNotification(tx, db, admin, id, {kind: resourceType === 'PROMOTION' ? 'PROMOTION' : 'ADMINS', resourceType,
+            enqueueNotification(tx, db, admin, id, {kind: 'ADMINS', resourceType,
               resourceId: source.id, sourceUpdatedAt: version});
           });
         }
@@ -238,14 +250,20 @@ function createNotificationWorker({db, admin, messaging = () => admin.messaging(
     try {
       let attentionRequired = false;
       try { await backfillSources(); await auditDecisions(); }
-      catch (error) { attentionRequired = true; console.error('Audit notification stream needs retry:', error.message); }
+      catch (error) {
+        if (isQuotaError(error)) throw error;
+        attentionRequired = true; console.error('Audit notification stream needs retry:', error.message);
+      }
       const events = await db.collection('notificationOutbox').where('status', '==', 'PENDING').where('nextAttemptAt', '<=', ts(now())).limit(25).get();
       for (const doc of events.docs) { const result = await expand(doc); attentionRequired = attentionRequired || !!(result && result.attentionRequired); }
       const deliveries = await db.collection('notificationDeliveries').where('status', '==', 'PENDING').where('nextAttemptAt', '<=', ts(now())).limit(20).get();
       for (let offset = 0; offset < deliveries.docs.length; offset += 5) {
         const results = await Promise.all(deliveries.docs.slice(offset, offset + 5).map(async doc => {
           try { return await deliver(doc.ref); }
-          catch (error) { console.error('Notification delivery needs retry:', doc.id, error.message); return {attentionRequired: true}; }
+          catch (error) {
+            if (isQuotaError(error)) throw error;
+            console.error('Notification delivery needs retry:', doc.id, error.message); return {attentionRequired: true};
+          }
         }));
         attentionRequired = attentionRequired || results.some(result => result && result.attentionRequired);
       }

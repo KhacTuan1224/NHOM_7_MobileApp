@@ -140,6 +140,7 @@ public class CampaignDetailFragment extends Fragment {
     }
     
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        com.rescuefarm.ui.common.DetailTypography.bindHeader(this, view, "Chi tiết chiến dịch");
         campaignId = getArguments() == null ? "" : getArguments().getString("campaignId", "");
         locationProvider = LocationProviderFactory.create(requireContext());
         
@@ -311,18 +312,17 @@ public class CampaignDetailFragment extends Fragment {
                 EnumLabels.label(value.getRescueReason()), EnumLabels.label(value.getUrgencyLevel())));
         set(view, R.id.campaignViewCount, value.getViewCount() + " lượt xem");
         
-        // Progress Bar & 3 Metrics
-        int progress = (int) Math.round(value.calculateProgress());
+        // Progress Bar & 3 Metrics (3 mốc: Đỏ < 30%, Vàng 30-69%, Xanh >= 70%)
+        double progressPercent = value.calculateProgress();
+        int progress = (int) Math.round(progressPercent);
         ProgressBar progressBar = view.findViewById(R.id.campaignProgressBar);
-        if (progressBar != null) {
-            progressBar.setMax(100);
-            progressBar.setProgress(progress);
-        }
-
         TextView percentText = view.findViewById(R.id.campaignProgressPercent);
         if (percentText != null) {
+            percentText.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
+                    com.rescuefarm.ui.common.CampaignProgressColors.forPercent(value.calculateProgress())));
             percentText.setText(String.format(Locale.getDefault(), "%d%%", progress));
         }
+        com.rescuefarm.ui.common.RescueProgressUtils.applyProgressWithText(progressBar, percentText, progressPercent);
 
         TextView targetText = view.findViewById(R.id.campaignTargetQuantity);
         if (targetText != null) {
@@ -527,7 +527,7 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private TextView commentText(String value) {
-        TextView text = new TextView(requireContext()); text.setText(value); text.setTextSize(16); text.setPadding(8, 10, 8, 10); return text;
+        TextView text = new TextView(requireContext()); text.setText(value); com.rescuefarm.ui.common.DetailTypography.body(text); text.setPadding(8, 10, 8, 10); return text;
     }
 
     @Override public void onDestroy() {

@@ -56,9 +56,9 @@ public final class DiscoveryEngine {
             List<ProductBatch> productBatches = batches.get(product.getId());
             ProductBatch candidate = selectBatch(product, productBatches, q, at, campaignById);
             boolean needsBatch = q.needsBatchData();
-            if (needsBatch && candidate == null) continue;
+            if (candidate == null) continue;
             if (needsBatch && q.getMinStock() > 0D
-                    && available(productBatches, at, q, campaignById) < q.getMinStock()) continue;
+                    && available(product, productBatches, at, q, campaignById) < q.getMinStock()) continue;
 
             RescueCampaign matchedCampaign = candidate == null ? null
                     : campaignById.get(candidate.getActiveCampaignId());
@@ -111,7 +111,6 @@ public final class DiscoveryEngine {
                 : now.getTime() + q.getExpiryWithinDays() * 86400000L;
         for (ProductBatch batch : values) {
             if (batch == null || !batch.isSellable(now)) continue;
-            if (q.getMinStock() > 0D && batch.getAvailableQuantity() < q.getMinStock()) continue;
             if (q.getExpiryWithinDays() > 0 && (batch.getExpiryDate() == null
                     || batch.getExpiryDate().getTime() > expiryLimit)) continue;
             String campaignId = clean(batch.getActiveCampaignId());
@@ -121,15 +120,11 @@ public final class DiscoveryEngine {
                     && (campaign == null || !matchesProvince(campaign.getLocationName(), q.getProvince()))) continue;
             candidates.add(batch);
         }
-        candidates.sort(Comparator
-                .comparingInt((ProductBatch batch) -> urgencyRank(campaigns.get(batch.getActiveCampaignId())))
-                .thenComparingLong(batch -> batch.getExpiryDate() == null
-                        ? Long.MAX_VALUE : batch.getExpiryDate().getTime())
-                .thenComparing(ProductBatch::getId));
+        candidates.sort(ProductBatch.expiryOrder());
         return candidates.isEmpty() ? null : candidates.get(0);
     }
 
-    private double available(List<ProductBatch> values, Date now, DiscoveryQuery q,
+    private double available(Product product, List<ProductBatch> values, Date now, DiscoveryQuery q,
             Map<String, RescueCampaign> campaigns) {
         if (values == null) return 0D;
         double total = 0D;
@@ -141,6 +136,8 @@ public final class DiscoveryEngine {
                     || batch.getExpiryDate().getTime() > expiryLimit)) continue;
             RescueCampaign campaign = campaigns.get(clean(batch.getActiveCampaignId()));
             if (hasCampaignFilter(q) && (campaign == null || !matchesCampaign(campaign, q, now))) continue;
+            if (!q.getProvince().isEmpty() && !matchesProvince(product.getProvince(), q.getProvince())
+                    && (campaign == null || !matchesProvince(campaign.getLocationName(), q.getProvince()))) continue;
             total += batch.getAvailableQuantity();
         }
         return total;
@@ -190,11 +187,17 @@ public final class DiscoveryEngine {
                     || product.getRescuePrice() < q.getMinPrice() || product.getRescuePrice() > q.getMaxPrice()) continue;
             List<ProductBatch> values = byProduct.get(product.getId());
             if (values == null) continue;
+            double totalAvailable = 0;
+            for (ProductBatch batch : values) if (batch != null && campaign.getBatchTargets().containsKey(batch.getId())
+                    && campaign.getId().equals(batch.getActiveCampaignId()) && batch.isSellable(now)
+                    && (q.getExpiryWithinDays() == 0 || batch.getExpiryDate().getTime() <= expiryLimit))
+                totalAvailable += Math.min(batch.getAvailableQuantity(), campaign.calculateRemainingForBatch(batch.getId()));
+            if (totalAvailable < q.getMinStock()) continue;
             for (ProductBatch batch : values) {
                 if (batch == null || !campaign.getBatchTargets().containsKey(batch.getId())
                         || !campaign.getId().equals(batch.getActiveCampaignId()) || !batch.isSellable(now)) continue;
                 double available = Math.min(batch.getAvailableQuantity(), campaign.calculateRemainingForBatch(batch.getId()));
-                if (available <= 0 || available < q.getMinStock()
+                if (available <= 0
                         || (q.getExpiryWithinDays() > 0 && (batch.getExpiryDate() == null
                         || batch.getExpiryDate().getTime() > expiryLimit))) continue;
                 found = true; price = Math.min(price, product.getRescuePrice());

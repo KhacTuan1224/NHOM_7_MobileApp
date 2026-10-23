@@ -21,6 +21,10 @@ rotation and split-screen windows. No orientation is locked.
 - Discovery, checkout and product detail use two panes only at an available width
   of at least **840dp** (`layout-w840dp`). Portrait and wide versions expose the
   same field/action IDs. Narrow landscape windows use the normal scrolling layout.
+- Admin and Seller dashboards use a permanent, independently scrolling navigation
+  sidebar at an available width of **600dp** or more (`layout-w600dp`). Each overview occupies
+  the remaining width without a modal scrim. Smaller windows retain the hamburger
+  drawer; both layouts share the same menu buttons and navigation actions.
 - The floating navigation is centered and limited to 560dp. MainActivity handles
   system bars, display cutouts and the keyboard; navigation hides while the keyboard
   is visible. Navigation-aware scroll containers reserve the bottom scroll range.

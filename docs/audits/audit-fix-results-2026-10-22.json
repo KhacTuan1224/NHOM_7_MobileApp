@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-22",
+  "phase": "after remediation",
+  "production_writes": false,
+  "aud06": "WONT_FIX",
+  "android": {
+    "tests": 247,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Warning": 626
+  },
+  "backend-unit": {
+    "tests": [
+      156,
+      8
+    ],
+    "pass": [
+      156,
+      8
+    ],
+    "fail": [
+      0,
+      0
+    ]
+  },
+  "firestore": {
+    "tests": [
+      125
+    ],
+    "pass": [
+      125
+    ],
+    "fail": [
+      0
+    ]
+  },
+  "sepay_module_unchanged": true,
+  "legacy_confirm_function_unchanged": true,
+  "focused_api": {
+    "tests": [
+      6
+    ],
+    "pass": [
+      6
+    ],
+    "fail": [
+      0
+    ]
+  },
+  "sqlite_probe": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "navigation_destinations": 61
+}
