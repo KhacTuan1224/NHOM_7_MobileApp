@@ -87,11 +87,9 @@ public final class CampaignFeedCardRenderer {
         productLine.setText(names.length() == 0 ? fragment.getString(R.string.article_batch_summary,
                 campaign.getBatchTargets().size()) : names.toString());
         ProgressBar progress = root.findViewById(R.id.articleProgress);
-        progress.setProgress((int) Math.max(0, Math.min(100, Math.round(campaign.calculateProgress()))));
-        int progressColor = color(com.rescuefarm.ui.common.CampaignProgressColors.forPercent(campaign.calculateProgress()));
-        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(progressColor));
         TextView progressText = root.findViewById(R.id.articleProgressText);
-        progressText.setTextColor(progressColor);
+        double progressPercent = campaign.calculateProgress();
+        com.rescuefarm.ui.common.RescueProgressUtils.applyProgress(progress, progressPercent);
         if ("REVIEW_REQUIRED".equals(campaign.getUnitStatus())) {
             progress.setVisibility(View.GONE); progressText.setText("Đang đối soát đơn vị giải cứu");
         } else {
@@ -99,7 +97,8 @@ public final class CampaignFeedCardRenderer {
             quantity.setMaximumFractionDigits(2);
             progressText.setText("Đã cứu " + quantity.format(campaign.getRescuedQuantity()) + " / "
                     + quantity.format(campaign.getTargetQuantity()) + " " + campaign.getQuantityUnitLabel()
-                    + " · " + Math.round(campaign.calculateProgress()) + "%");
+                    + " · " + Math.round(progressPercent) + "%");
+            progressText.setTextColor(com.rescuefarm.ui.common.RescueProgressUtils.getProgressColor(fragment.requireContext(), progressPercent));
         }
         ImageView image = root.findViewById(R.id.articleImage);
         String url = campaign.getImageUrls().isEmpty() ? "" : campaign.getImageUrls().get(0);
