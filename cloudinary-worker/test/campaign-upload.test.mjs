@@ -3,6 +3,19 @@ import worker,{resolveAsset,imageMime,readCampaignImage,uploadCampaign} from '..
 const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
 const image=(bytes=png,mime='image/png')=>new Request('https://worker/upload-campaign?resourceId=campaign&slot=0',{method:'POST',headers:{'Content-Type':mime},body:bytes});
 
+test('Fund evidence is immutable, role-scoped and cannot be deleted by clients',async()=>{
+  const input={assetType:'fundDelivery',resourceId:'job',slot:0};
+  const first=await resolveAsset(input,'seller',{role:'SELLER'}),second=await resolveAsset(input,'seller',{role:'SELLER'});
+  assert.match(first.publicId,/^rescuefarm\/fund-deliveries\/seller\/job\/image-[a-f0-9-]{36}$/);
+  assert.equal(first.immutable,true);assert.notEqual(first.publicId,second.publicId);
+  assert.equal(await resolveAsset(input,'customer',{role:'CUSTOMER'}),null);
+  assert.equal(await resolveAsset({...input,assetType:'fundReceipt'},'seller',{role:'SELLER'}),null);
+  const receipt=await resolveAsset({...input,assetType:'fundReceipt'},'admin',{role:'ADMIN'});
+  assert.match(receipt.publicId,/^rescuefarm\/fund-receipts\/admin\/job\//);assert.equal(receipt.immutable,true);
+  assert.equal(await resolveAsset({assetType:'delete',publicId:first.publicId},'seller',{role:'SELLER'}),null);
+  assert.equal(await resolveAsset({assetType:'delete',publicId:receipt.publicId},'admin',{role:'ADMIN'}),null);
+});
+
 test('retired Post assets cannot be signed or deleted through shared media routes',async()=>{
   const profile={role:'SELLER',sellerStatus:'APPROVED'};
   assert.equal(await resolveAsset({assetType:'post',resourceId:'retired',slot:0},'seller',profile),null);

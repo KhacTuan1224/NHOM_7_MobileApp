@@ -18,6 +18,14 @@ async function upload(f,slot=0) {
   const url='https://res.cloudinary.com/cloud/image/upload/v1/'+asset.publicId+'.jpg';
   await f.media.uploaded({leaseId:asset.leaseId,publicId:asset.publicId,secureUrl:url});return {...asset,url};
 }
+
+test('Fund evidence guard only accepts immutable paths owned by the appropriate role',async()=>{
+  const f=fixture(),key='12345678-1234-1234-1234-123456789abc';
+  const publicId=`rescuefarm/fund-deliveries/seller/job/image-${key}`;
+  assert.deepEqual(await f.media.assetGuard({uid:'seller',role:'SELLER'},{publicId}),{protected:false});
+  await assert.rejects(()=>f.media.assetGuard({uid:'other',role:'SELLER'},{publicId}),e=>e.status===403);
+  await assert.rejects(()=>f.media.assetGuard({uid:'seller',role:'ADMIN'},{publicId}),e=>e.status===403);
+});
 test('each campaign upload uses a different immutable public ID, even in the same slot',async()=>{
   const f=fixture(),a=await upload(f),b=await upload(f);assert.notEqual(a.publicId,b.publicId);assert.notEqual(a.leaseId,b.leaseId);
   assert.equal(f.db.documents.get('campaignMediaDrafts/campaign').ownerUid,'seller');

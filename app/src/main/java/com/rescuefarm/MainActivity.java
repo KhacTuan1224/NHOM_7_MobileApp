@@ -266,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
         switch (name) {
             case "adminDetailFragment": return R.id.adminDetailFragment;
             case "reportResultFragment": return R.id.reportResultFragment;
+            case "rescueFundFragment": return R.id.rescueFundFragment;
             case "sellerApplicationFragment": return R.id.sellerApplicationFragment;
             case "sellerProfileFragment": return R.id.sellerProfileFragment;
             case "orderDetailFragment": return R.id.orderDetailFragment;
@@ -358,6 +359,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.rescueFundFragment
                 || destinationId == R.id.flashSaleFragment
                 || destinationId == R.id.mysteryBoxFragment
                 || destinationId == R.id.rescueOfferEditorFragment
@@ -421,6 +423,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.allCategoriesFragment
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
+                || destinationId == R.id.rescueFundFragment
                 || destinationId == R.id.flashSaleFragment
                 || destinationId == R.id.mysteryBoxFragment
                 || destinationId == R.id.rescueOfferEditorFragment
