@@ -178,8 +178,12 @@ public final class RescueFundFragment extends Fragment {
     }
     private void config() {
         body.removeAllViews(); heading(body, "Cấu hình hũ");
-        EditText name = field("Tên hũ", "name", TEXT), charity = field("Tổ chức nhận", "charityName", TEXT), address = field("Địa chỉ", "address", TEXT), phone = field("Điện thoại nơi nhận", "phone", InputType.TYPE_CLASS_PHONE);
-        EditText lat = field("Vĩ độ", "latitude", NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED), lon = field("Kinh độ", "longitude", NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        EditText name = field("Tên hũ", "name", TEXT), charity = field("Tổ chức nhận", "charityName", TEXT);
+        text(body, "Địa chỉ nơi nhận");
+        com.rescuefarm.ui.common.VietnamAddressView address = new com.rescuefarm.ui.common.VietnamAddressView(requireContext());
+        body.addView(address, new LinearLayout.LayoutParams(-1, -2));
+        address.setFormattedAddress(fund.optString("address", ""));
+        EditText phone = field("Điện thoại nơi nhận", "phone", InputType.TYPE_CLASS_PHONE);
         EditText daily = field("Ngân sách mỗi ngày (VND)", "dailyBudget", NUMBER), seller = field("Tối đa mỗi Seller/ngày (VND)", "perSellerBudget", NUMBER);
         if (value(daily).isEmpty()) daily.setText("500000"); if (value(seller).isEmpty()) seller.setText("100000");
         Spinner idle = hours("Không có giao dịch mua thành công trong", fund.optInt("idleHours", 12));
@@ -187,12 +191,15 @@ public final class RescueFundFragment extends Fragment {
         Switch active = new Switch(requireContext()); active.setText("Mở hũ nhận ủng hộ và phân bổ"); active.setChecked(fund.optBoolean("active")); body.addView(active);
         text(body, "Tài khoản nhận và kết nối SePay được cấu hình bảo mật trên backend. Thay đổi địa điểm không sửa chuyến đã phân bổ.");
         button(body, "Lưu cấu hình", v -> {
-            try { request("admin/save", json("name", value(name), "charityName", value(charity), "address", value(address), "phone", value(phone),
-                    "latitude", Double.parseDouble(value(lat)), "longitude", Double.parseDouble(value(lon)),
+            if (!address.validate()) return;
+            // Compatibility with deployed backends requiring numeric coordinates.
+            // Zero means unspecified; map navigation uses the formatted address.
+            try { request("admin/save", json("name", value(name), "charityName", value(charity), "address", address.formattedAddress(), "phone", value(phone),
+                    "latitude", 0, "longitude", 0,
                     "dailyBudget", Long.parseLong(value(daily)), "perSellerBudget", Long.parseLong(value(seller)),
                     "idleHours", idle.getSelectedItemPosition() == 0 ? 12 : 24, "expiryHours", expiry.getSelectedItemPosition() == 0 ? 12 : 24,
                     "active", active.isChecked()), result -> load());
-            } catch (NumberFormatException error) { status.setText("Kiểm tra tọa độ và số tiền."); }
+            } catch (NumberFormatException error) { status.setText("Kiểm tra số tiền."); }
         }); button(body, "Hủy chỉnh sửa", v -> load());
     }
     private EditText field(String hint, String key, int type) { EditText field = input(body, hint, type); field.setText(fund.optString(key, "")); return field; }
@@ -269,7 +276,7 @@ public final class RescueFundFragment extends Fragment {
         heading(box,j.optString("productName")); text(box,state(j.optString("status"))+"\n"+j.optDouble("quantity")+" "+j.optString("unit")+" · "+money(j.optDouble("amount"))
             +"\n"+j.optString("fundName")+"\n"+j.optString("campaignTitle")+"\nGiao trước: "+date(j.optLong("deadline"))
             +"\n"+j.optString("charityName")+"\n"+j.optString("address")+"\n"+j.optString("phone"));
-        button(box,"Xem vị trí nhận",v->{Intent map=new Intent(Intent.ACTION_VIEW,Uri.parse("geo:"+j.optDouble("latitude")+","+j.optDouble("longitude")+"?q="+j.optDouble("latitude")+","+j.optDouble("longitude")+"("+Uri.encode(j.optString("charityName"))+")"));
+        button(box,"Xem vị trí nhận",v->{Intent map=new Intent(Intent.ACTION_VIEW,Uri.parse("geo:0,0?q="+Uri.encode(j.optString("address"))));
             try{startActivity(map);}catch(android.content.ActivityNotFoundException error){status.setText("Thiết bị chưa có ứng dụng bản đồ.");}});
         if(!j.optString("proofUrl").isEmpty()){ImageView image=new ImageView(requireContext());box.addView(image,new LinearLayout.LayoutParams(-1,dp(requireContext(),180)));Glide.with(this).load(j.optString("proofUrl")).fitCenter().into(image);}
         String s=j.optString("status");
