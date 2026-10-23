@@ -1235,6 +1235,16 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+    // Fund money, receipts and inventory allocation are trusted-backend only.
+    match /rescueFunds/{id} { allow read, write: if false; }
+    match /rescueFundDonations/{id} { allow read, write: if false; }
+    match /rescueFundReferences/{id} { allow read, write: if false; }
+    match /rescueFundWebhookEvents/{id} { allow read, write: if false; }
+    match /rescueFundBankTransactions/{id} { allow read, write: if false; }
+    match /rescueFundLedger/{id} { allow read, write: if false; }
+    match /rescueFundDeliveries/{id} { allow read, write: if false; }
+    match /rescueFundRuns/{id} { allow read, write: if false; }
+    match /rescueFundPayoutReferences/{id} { allow read, write: if false; }
     match /cartMigrationReceipts/{receiptId} { allow read, write: if false; }
 
     match /adminAuditLogs/{auditId} {

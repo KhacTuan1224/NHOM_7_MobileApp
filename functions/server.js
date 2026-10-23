@@ -13,8 +13,10 @@ function noteQuota(error) {
 }
 const app = express();
 app.use(express.json({limit: "256kb", verify: (req, res, bytes) => {
-  if (req.originalUrl.startsWith('/webhooks/sepay/')) req.rawBody = Buffer.from(bytes);
+  if (req.originalUrl.startsWith('/webhooks/sepay/') || req.originalUrl.startsWith('/webhooks/rescue-fund/sepay')) req.rawBody = Buffer.from(bytes);
 }}));
+const rescueFund = require('./rescue-fund').createRescueFund({db, admin, authenticate: auth});
+app.use(rescueFund.webhookRouter);
 app.use(require('./sepay').createSePayApi({db, admin}).router);
 // SePay keeps its existing verification/retry path above. This gate only pauses
 // other API work; never acknowledge a payment without the existing transaction.
@@ -106,6 +108,7 @@ app.get("/health", (_, res) => {
     retryAfterSeconds: quotaGuard.remainingSeconds()});
 });
 app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: auth}).router);
+app.use(rescueFund.router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
 app.use(require('./campaign-cards').createCampaignCardsApi({db}).router);
 app.use(require('./seller-payment-options').createSellerPaymentOptionsApi({db}).router);
@@ -132,6 +135,7 @@ app.post('/internal/notifications/run', async (req, res, next) => {
       throw httpError(403, 'Worker credentials required');
     await campaignLifecycle.reconcileExpired();
     const rescueResult = await rescuePrograms.reconcile();
+    await rescueFund.reconcile();
     const result = await worker.runOnce();
     result.rescuePrograms = rescueResult;
     result.mediaCleanup = await campaignMedia.reconcile();
@@ -270,7 +274,7 @@ prepareBackend().catch(error => {
     try {
       if (!migrationsReady) await prepareBackend();
       const jobs = [() => campaignLifecycle.reconcileExpired(), () => batchExpiry.reconcile(),
-        () => worker.runOnce(), () => campaignMedia.reconcile(), () => rescuePrograms.reconcile()];
+        () => worker.runOnce(), () => campaignMedia.reconcile(), () => rescuePrograms.reconcile(), () => rescueFund.reconcile()];
       for (const job of jobs) {
         try { await job(); }
         catch (error) {

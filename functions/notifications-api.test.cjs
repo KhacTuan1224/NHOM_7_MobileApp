@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {MemoryFirestore, admin} = require('./test-support/memory-firestore.cjs');
 const {createNotificationsApi} = require('./notifications-api');
 function fixture(type, role, source = {}) {
-  const collections = {ORDER: 'orders', CAMPAIGN: 'campaigns', SELLER_APPLICATION: 'sellerApplications', REPORT: 'reports', PRODUCT: 'products'};
+  const collections = {ORDER: 'orders', CAMPAIGN: 'campaigns', SELLER_APPLICATION: 'sellerApplications', REPORT: 'reports', PRODUCT: 'products', RESCUE_FUND: 'rescueFundDeliveries'};
   const db = new MemoryFirestore({'notifications/n': {userId: 'recipient', resourceType: type, referenceId: 'record', action: 'REVIEW'},
     [collections[type] + '/record']: source});
   const api = createNotificationsApi({db, admin, authenticate: async () => ({uid: 'recipient', role})});
@@ -22,6 +22,16 @@ for (const [type, section] of [['CAMPAIGN', 'CAMPAIGNS'], ['SELLER_APPLICATION',
     assert.equal(result.destination, 'adminDetailFragment'); assert.equal(result.args.section, section); assert.equal(result.args.itemId, 'record');
   });
 }
+test('Fund delivery notifications route to the fund and enforce the assigned Seller',async()=>{
+  const f=fixture('RESCUE_FUND','SELLER',{sellerId:'recipient'});
+  assert.deepEqual(await f.resolve(),{destination:'rescueFundFragment',args:{deliveryId:'record'}});
+  f.db.documents.set('rescueFundDeliveries/record',{sellerId:'other'});
+  await assert.rejects(f.resolve,e=>e.status===403);
+});
+test('Admin fund delivery notification opens the fund rather than generic moderation',async()=>{
+  const f=fixture('RESCUE_FUND','ADMIN',{sellerId:'seller'});
+  assert.equal((await f.resolve()).destination,'rescueFundFragment');
+});
 test('Customer report opens only their own result; cannot use Admin routes', async () => {
   const f = fixture('REPORT', 'CUSTOMER', {reporterId: 'recipient'});
   assert.equal((await f.resolve()).destination, 'reportResultFragment');

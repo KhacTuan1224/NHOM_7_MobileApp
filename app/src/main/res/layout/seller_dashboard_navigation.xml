@@ -44,6 +44,9 @@
                 android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"
                 android:gravity="start|center_vertical" android:text="Gói cửa hàng"
                 app:icon="@drawable/ic_nav_orders" app:iconGravity="textStart" app:iconTint="@color/rescue_primary" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dashboardRescueFund"
+                style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Hũ giải cứu · giao thiện nguyện" android:gravity="start|center_vertical" app:icon="@drawable/ic_rescue_fund" />
             <com.google.android.material.button.MaterialButton android:id="@+id/dashboardRescueImpact"
                 style="@style/Widget.RescueFarm.AdminDrawerButton" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min"

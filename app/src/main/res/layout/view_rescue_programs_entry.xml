@@ -22,4 +22,12 @@
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Chạm mở bất ngờ" android:textSize="12sp" android:textColor="#746784" android:fontFamily="@font/barlow" />
         </LinearLayout>
     </LinearLayout>
+    <LinearLayout android:id="@+id/openRescueFundButton" android:orientation="vertical"
+        android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+        android:gravity="center" android:padding="8dp" android:clickable="true" android:focusable="true"
+        android:foreground="?attr/selectableItemBackground" android:contentDescription="Hũ giải cứu, ủng hộ nông sản cho thiện nguyện">
+        <ImageView android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_rescue_fund" android:contentDescription="@null" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Hũ giải cứu" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/rescue_primary" android:layout_marginTop="8dp" android:fontFamily="@font/ibm_plex_sans" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Góp rau lành" android:textSize="12sp" android:fontFamily="@font/barlow" android:textColor="@color/rescue_on_surface_variant" />
+    </LinearLayout>
 </LinearLayout>
