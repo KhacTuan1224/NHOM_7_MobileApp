@@ -85,6 +85,16 @@ test('source changes push only a revision and invalidate cached API projections 
   assert.deepEqual(Object.keys(signal).sort(), ['revision', 'unavailable', 'updatedAt']);
   assert.equal(JSON.stringify(signal).includes('seller'), false);
 });
+
+test('opening a source listener does not evict warm caches, subsequent changes still invalidate', async t => {
+  const f = fixture(); t.after(() => f.api.close());
+  const cache = createReadCache(); let reads = 0;
+  await cache.get('dashboard', async () => ++reads);
+  await f.call('watch', {scope:'seller_statistics'}); await pause(20);
+  assert.equal(await cache.get('dashboard', async () => ++reads), 1);
+  f.db.emit('products');
+  assert.equal(await cache.get('dashboard', async () => ++reads), 2);
+});
 test('listener errors cannot be cleared by a different successful source; reconnect releases the session', async t => {
   const f = fixture(); t.after(() => f.api.close());
   const lease = await f.call('watch', {scope: 'seller_statistics'});

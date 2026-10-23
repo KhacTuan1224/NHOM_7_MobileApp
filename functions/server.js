@@ -150,10 +150,11 @@ app.post('/internal/notifications/run', async (req, res, next) => {
 });
 const commerce = require('./commerce').createCommerce({db, admin, authenticate: auth, campaignLifecycle});
 app.use(commerce.router);
+const dashboardCache = require('./read-cache').createReadCache({ttlMs: 60000, maxEntries: 1});
 app.post("/admin/dashboard", async (req, res, next) => {
   try {
     await auth(req, ["ADMIN"]);
-    await campaignLifecycle.reconcileExpired();
+    const response = await dashboardCache.get('dashboard', async () => {
     const now = Date.now();
     const count = query => query.count().get().then(result => result.data().count || 0);
     const sum = async (query, field) => {
@@ -167,12 +168,8 @@ app.post("/admin/dashboard", async (req, res, next) => {
       "CATEGORIES", "BANNERS", "REVIEWS", "REPORTS", "ORDERS"];
     const totals = Object.fromEntries(totalKeys.map((key, index) => [key, totalValues[index]]));
     const {allPages} = require('./seller-analytics');
-    const [projectionCampaigns, projectionBatches, projectionProducts] = await Promise.all([
-      allPages(db.collection('campaigns').where('status', '==', 'ACTIVE'), admin),
-      allPages(db.collection('productBatches'), admin),
-      allPages(db.collection('products').where('status', '==', 'ACTIVE'), admin)]);
-    const publicProducts = new Set(projectionProducts.map(d => d.id));
-    const batches = projectionBatches.map(d => ({...d.data(), id: d.id})).filter(b => publicProducts.has(b.productId));
+    const projectionCampaigns = await allPages(db.collection('campaigns').where('status', '==', 'ACTIVE'), admin);
+    const batches = await require('./campaign-inventory').campaignInventory(db, projectionCampaigns);
     const activeProjection = projectionCampaigns.map(d => require('./campaign-projection').projectCampaign({...d.data(), id: d.id}, batches, now)).filter(c => c.active);
     const approvedCampaigns = db.collection("campaigns").where("status", "in", ["ACTIVE", "COMPLETED", "EXPIRED", "STOPPED"]);
     const kgProgress = async () => {
@@ -206,13 +203,15 @@ app.post("/admin/dashboard", async (req, res, next) => {
       && Math.abs(campaign.get("currentLatitude")) <= 90
       && Math.abs(campaign.get("currentLongitude")) <= 180
       && !(campaign.get("currentLatitude") === 0 && campaign.get("currentLongitude") === 0)).length;
-    res.json({ok: true, totals,
+    return {ok: true, totals,
       pendingSellers, pendingCampaigns, pendingReviews,
       openReports: pendingReport + inReviewReport,
       deliveredRevenue, activeCampaigns, criticalCampaigns, liveMobilePoints,
       totalRescuedQuantity,
       completionRate: approvedTargetQuantity > 0 ? Math.min(100, totalRescuedQuantity * 100 / approvedTargetQuantity) : 0,
-      calculatedAt: new Date(now).toISOString()});
+      calculatedAt: new Date(now).toISOString()};
+    });
+    res.json(response);
   } catch (error) { next(error); }
 });
 
@@ -296,7 +295,13 @@ prepareBackend().catch(error => {
       else console.error('Legacy Campaign link repair failed:', error.message);
     });
   reconcile();
-  setInterval(reconcile, 60000).unref();
+  // Financial/stock writes still validate expiry synchronously. Background
+  // housekeeping may lag by up to five minutes instead of rereading every minute.
+  const configuredInterval = Number(process.env.BACKGROUND_RECONCILE_INTERVAL_MS);
+  const interval = Number.isFinite(configuredInterval) && configuredInterval >= 60000
+    ? Math.min(configuredInterval, 900000) : 300000;
+  console.log('[maintenance] intervalMs=' + interval);
+  setInterval(reconcile, interval).unref();
 }).catch(error => {
   console.error("Startup migration failed; API will not start:", error);
   process.exit(1);

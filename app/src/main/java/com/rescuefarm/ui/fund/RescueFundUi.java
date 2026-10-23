@@ -58,44 +58,99 @@ final class RescueFundUi {
         androidx.core.view.ViewCompat.setAccessibilityHeading(text, true);
     }
 
+    static LinearLayout rankingTop(LinearLayout parent) {
+        Context context = parent.getContext();
+        LinearLayout panel = CustomerUi.column(context);
+        panel.setPadding(dp(context, 12), dp(context, 20), dp(context, 12), dp(context, 22));
+        GradientDrawable gradient = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{context.getColor(R.color.fund_rank_purple_light), context.getColor(R.color.fund_rank_purple_deep)});
+        float radius = dp(context, 24);
+        gradient.setCornerRadii(new float[]{radius,radius,radius,radius,radius,radius,radius,radius});
+        panel.setBackground(gradient);
+        parent.addView(panel, new LinearLayout.LayoutParams(-1, -2));
+        TextView title = label(panel, "NHỮNG TẤM LÒNG SẺ CHIA", 14, R.color.rescue_on_primary, true);
+        title.setGravity(Gravity.CENTER); title.setLetterSpacing(.06f);
+        TextView subtitle = label(panel, "Top lượt ủng hộ đã xác nhận", 12, R.color.fund_rank_lavender, false);
+        subtitle.setGravity(Gravity.CENTER);
+        LinearLayout winners = row(panel);
+        winners.setGravity(Gravity.BOTTOM);
+        winners.setPadding(0, dp(context, 18), 0, 0);
+        return winners;
+    }
+
+    private static String donorName(String name) {
+        return name == null || name.trim().isEmpty() ? "Người ủng hộ ẩn danh" : name.trim();
+    }
+
+    private static android.widget.FrameLayout rankAvatar(Context context, String name, int size, boolean winner) {
+        android.widget.FrameLayout avatar = new android.widget.FrameLayout(context);
+        GradientDrawable circle = background(context, R.color.fund_rank_avatar, 64, false);
+        circle.setStroke(dp(context, winner ? 3 : 2), context.getColor(winner ? R.color.fund_gold : R.color.fund_rank_lavender));
+        avatar.setBackground(circle);
+        int inset = dp(context, 8);
+        avatar.setPadding(inset, inset, inset, inset);
+        if (name == null || name.isEmpty() || name.equals("Người ủng hộ ẩn danh")) {
+            ImageView person = new ImageView(context);
+            person.setImageResource(R.drawable.ic_nav_profile);
+            person.setImageTintList(ColorStateList.valueOf(context.getColor(R.color.rescue_on_primary)));
+            person.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            avatar.addView(person, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        } else {
+            TextView initial = new TextView(context);
+            AppTypography.title(initial);
+            initial.setText(name.substring(0, name.offsetByCodePoints(0, 1)).toUpperCase(java.util.Locale.forLanguageTag("vi-VN")));
+            initial.setTextSize(size >= 72 ? 26 : 18);
+            initial.setGravity(Gravity.CENTER);
+            initial.setTextColor(context.getColor(R.color.rescue_on_primary));
+            initial.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            avatar.addView(initial, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        }
+        avatar.setLayoutParams(new LinearLayout.LayoutParams(dp(context, size), dp(context, size)));
+        return avatar;
+    }
+
     static void podium(LinearLayout parent, int rank, String name, String amount) {
         Context context = parent.getContext();
+        boolean present = name != null;
         LinearLayout place = CustomerUi.column(context);
         place.setGravity(Gravity.CENTER_HORIZONTAL);
-        place.setPadding(dp(context, 4), dp(context, 12), dp(context, 4), 0);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, 1);
-        params.setMargins(dp(context, 3), dp(context, 12), dp(context, 3), dp(context, 16));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, rank == 1 ? 1.16f : 1f);
+        params.setMargins(dp(context, 3), 0, dp(context, 3), 0);
         parent.addView(place, params);
-        TextView number = label(place, String.valueOf(rank), rank == 1 ? 30 : 24, R.color.rescue_primary, true);
-        number.setGravity(Gravity.CENTER);
-        int size = dp(context, rank == 1 ? 64 : 48);
-        number.setLayoutParams(new LinearLayout.LayoutParams(size, size));
-        number.setBackground(background(context, R.color.rescue_primary_container, 32, false));
-        TextView donor = label(place, name, 13, R.color.rescue_on_surface, true);
-        donor.setGravity(Gravity.CENTER); donor.setMinLines(2); donor.setMaxLines(3);
+        if (rank == 1) icon(place, R.drawable.ic_fund_crown, 30);
+        place.addView(rankAvatar(context, present ? donorName(name) : null, rank == 1 ? 76 : 54, rank == 1));
+        TextView position = label(place, "Hạng " + rank, 11, R.color.fund_rank_lavender, false);
+        position.setGravity(Gravity.CENTER);
+        TextView total = label(place, present ? amount : "—", rank == 1 ? 18 : 15, R.color.rescue_on_primary, true);
+        total.setGravity(Gravity.CENTER); total.setMinLines(1);
+        TextView donor = label(place, present ? donorName(name) : "Chờ sẻ chia", 12, R.color.fund_rank_lavender, false);
+        donor.setGravity(Gravity.CENTER); donor.setLines(2);
         donor.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        TextView total = label(place, amount, 13, R.color.rescue_primary, true);
-        total.setGravity(Gravity.CENTER);
-        TextView base = label(place, "Hạng " + rank, 12, R.color.rescue_primary, true);
-        base.setGravity(Gravity.CENTER);
-        base.setBackground(background(context, R.color.rescue_primary_container, 10, false));
-        base.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(context, rank == 1 ? 56 : rank == 2 ? 40 : 32)));
+        donor.setContentDescription(present ? "Hạng " + rank + ", " + donorName(name) + ", " + amount : "Hạng " + rank + " chưa có lượt ủng hộ");
+        if (!present) place.setAlpha(.55f);
     }
 
     static void rankRow(LinearLayout parent, int rank, String name, String amount) {
         Context context = parent.getContext();
+        String displayName = donorName(name);
+        LinearLayout row = row(parent);
+        row.setPadding(dp(context, 12), dp(context, 14), dp(context, 12), dp(context, 14));
+        TextView number = label(row, String.valueOf(rank), 14, R.color.rescue_on_surface_variant, false);
+        number.setGravity(Gravity.CENTER);
+        number.setLayoutParams(new LinearLayout.LayoutParams(dp(context, 26), -2));
+        row.addView(rankAvatar(context, displayName, 34, false));
+        TextView donor = label(row, displayName, 13, R.color.rescue_on_surface, true);
+        donor.setPadding(dp(context, 10), 0, dp(context, 8), 0);
+        donor.setMaxLines(2); donor.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        donor.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+        TextView total = label(row, amount, 13, R.color.fund_rank_purple_deep, true);
+        total.setGravity(Gravity.END);
+        total.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
         View divider = new View(context);
         divider.setBackgroundColor(context.getColor(R.color.rescue_outline));
-        parent.addView(divider, new LinearLayout.LayoutParams(-1, dp(context, 1)));
-        LinearLayout row = row(parent);
-        row.setPadding(0, dp(context, 10), 0, dp(context, 10));
-        TextView number = label(row, String.valueOf(rank), 16, R.color.rescue_on_surface_variant, true);
-        number.setGravity(Gravity.CENTER);
-        number.setLayoutParams(new LinearLayout.LayoutParams(dp(context, 36), -2));
-        LinearLayout copy = CustomerUi.column(context);
-        row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
-        label(copy, name, 15, R.color.rescue_on_surface, true);
-        label(copy, amount, 14, R.color.rescue_primary, true);
+        LinearLayout.LayoutParams line = new LinearLayout.LayoutParams(-1, dp(context, 1));
+        line.setMargins(dp(context, 16), 0, dp(context, 16), 0);
+        parent.addView(divider, line);
     }
 
     static LinearLayout row(LinearLayout parent) {

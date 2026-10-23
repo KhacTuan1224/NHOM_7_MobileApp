@@ -48,7 +48,7 @@ public final class RescueFundFragment extends Fragment {
         @Override public void run() {
             if (!showingReceipt || getView() == null || !isResumed()) return;
             if (!busy) receipt();
-            poller.postDelayed(this, 15000);
+            poller.postDelayed(this, 30000);
         }
     };
     private int generation;
@@ -100,7 +100,7 @@ public final class RescueFundFragment extends Fragment {
             progress.setVisibility(View.GONE); showStatus(state.getMessage());
         }
     }
-    @Override public void onResume() { super.onResume(); if (showingReceipt) poller.postDelayed(poll, 15000); }
+    @Override public void onResume() { super.onResume(); poller.removeCallbacks(poll); if (showingReceipt) poller.postDelayed(poll, 30000); }
     @Override public void onPause() { poller.removeCallbacks(poll); super.onPause(); }
     @Override public void onDestroyView() {
         generation++; busy = false; showingReceipt = false; receiptVisible = false; poller.removeCallbacks(poll);
@@ -298,8 +298,9 @@ public final class RescueFundFragment extends Fragment {
     private void renderRanking() {
         heading(body, "Bảng xếp hạng sẻ chia");
         LinearLayout ranking = RescueFundUi.card(body);
-        RescueFundUi.label(ranking, "50 lượt ủng hộ cao nhất đã xác nhận · xếp theo số tiền từng lượt, không cộng theo tên.",
-                13, R.color.rescue_on_surface_variant, false);
+        ranking.setPadding(0, 0, 0, dp(requireContext(), 12));
+        RescueFundUi.label(body, "Xếp theo số tiền từng lượt ủng hộ · tối đa 50 lượt", 12,
+                R.color.rescue_on_surface_variant, false);
         LinearLayout content = column(requireContext());
         ranking.addView(content, new LinearLayout.LayoutParams(-1, -2));
         RescueFundUi.label(content, "Đang tải bảng xếp hạng…", 14, R.color.rescue_on_surface_variant, false);
@@ -316,19 +317,22 @@ public final class RescueFundFragment extends Fragment {
                     RescueFundUi.label(content, "Chưa có lượt ủng hộ đã xác nhận.", 14, R.color.rescue_on_surface_variant, false);
                     return;
                 }
-                LinearLayout podium = RescueFundUi.row(content);
-                podium.setGravity(Gravity.BOTTOM);
+                LinearLayout podium = RescueFundUi.rankingTop(content);
                 for (int position : new int[]{1, 0, 2}) {
-                    if (position >= items.length()) continue;
                     JSONObject item = items.optJSONObject(position);
-                    if (item != null) RescueFundUi.podium(podium, position + 1,
-                            item.optString("name", "Người ủng hộ ẩn danh"), money(item.optDouble("amount")));
+                    String name = item == null ? null : item.optString("name", "").trim();
+                    RescueFundUi.podium(podium, position + 1,
+                            item == null ? null : name.isEmpty() ? "Người ủng hộ ẩn danh" : name,
+                            item == null ? null : money(item.optDouble("amount")));
                 }
                 for (int i = 3; i < items.length(); i++) {
                     JSONObject item = items.optJSONObject(i);
                     if (item != null) RescueFundUi.rankRow(content, i + 1,
                             item.optString("name", "Người ủng hộ ẩn danh"), money(item.optDouble("amount")));
                 }
+                TextView thanks = RescueFundUi.label(content, "Cảm ơn bạn đã cùng sẻ chia", 13, R.color.rescue_on_surface_variant, false);
+                thanks.setGravity(Gravity.CENTER);
+                thanks.setPadding(dp(requireContext(), 12), dp(requireContext(), 16), dp(requireContext(), 12), dp(requireContext(), 8));
             }
             public void onError(String error) {
                 if (getView() == null || expected != generation || ranking.getParent() != body) return;
@@ -348,7 +352,7 @@ public final class RescueFundFragment extends Fragment {
         boolean paid = d.optString("status").equals("PAID");
         boolean pending = !paid && d.optLong("expiresAt") > System.currentTimeMillis();
         clearPage(true); receiptVisible = true; showingReceipt = pending;
-        poller.removeCallbacks(poll); if (showingReceipt && isResumed()) poller.postDelayed(poll, 15000);
+        poller.removeCallbacks(poll); if (showingReceipt && isResumed()) poller.postDelayed(poll, 30000);
         heading(body, getString(paid ? R.string.fund_paid_title : pending ? R.string.fund_qr_title : R.string.fund_receipt_expired));
         if (paid || pending) RescueFundUi.label(body, getString(paid ? R.string.fund_paid_description : R.string.fund_qr_description),
                 15, R.color.rescue_on_surface_variant, false);

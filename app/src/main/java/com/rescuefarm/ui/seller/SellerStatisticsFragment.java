@@ -30,7 +30,7 @@ public final class SellerStatisticsFragment extends Fragment {
             if (getView() != null && viewModel != null && (viewModel.getState().getValue() == null
                     || viewModel.getState().getValue().status != SellerStatisticsViewModel.Status.LOADING))
                 viewModel.load(viewModel.getDays(), true);
-            timeHandler.postDelayed(this, 60000L);
+            timeHandler.postDelayed(this, 300000L);
         }
     };
     private SellerStatisticsViewModel viewModel;
@@ -145,7 +145,7 @@ public final class SellerStatisticsFragment extends Fragment {
     }
     @Override public void onResume() {
         super.onResume(); if (viewModel != null) viewModel.load(viewModel.getDays(), true);
-        timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 60000L);
+        timeHandler.removeCallbacks(timeRefresh); timeHandler.postDelayed(timeRefresh, 300000L);
     }
     @Override public void onPause() { timeHandler.removeCallbacks(timeRefresh); super.onPause(); }
     @Override public void onDestroyView() { content = null; message = null; progress = null; super.onDestroyView(); }
