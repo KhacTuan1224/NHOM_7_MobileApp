@@ -109,7 +109,13 @@ public class ProductDetailFragment extends Fragment {
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
         });
         viewModel.getPriceBreakdown().observe(getViewLifecycleOwner(), value -> renderPrice(view, value));
-        view.findViewById(R.id.recalculatePriceButton).setOnClickListener(v -> recalculate());
+        view.findViewById(R.id.quantityDecrease).setOnClickListener(v -> changeQuantity(-1));
+        view.findViewById(R.id.quantityIncrease).setOnClickListener(v -> changeQuantity(1));
+        quantityInput.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s,int start,int count,int after) { }
+            public void onTextChanged(CharSequence s,int start,int before,int count) { recalculate(); }
+            public void afterTextChanged(android.text.Editable s) { }
+        });
         cartViewModel.getState().observe(getViewLifecycleOwner(), value -> {
             if (value.getStatus() == CartScreenState.Status.SAVED
                     || value.getStatus() == CartScreenState.Status.ERROR
@@ -159,8 +165,7 @@ public class ProductDetailFragment extends Fragment {
         root.findViewById(R.id.openCartButton).setVisibility(visibility);
         bindFavorite(root);
         root.findViewById(R.id.reportProductButton).setVisibility(visibility);
-        root.findViewById(R.id.pricingQuantityInput).setVisibility(visibility);
-        root.findViewById(R.id.recalculatePriceButton).setVisibility(visibility);
+        root.findViewById(R.id.productQuantityControl).setVisibility(visibility);
         root.findViewById(R.id.priceBreakdownText).setVisibility(visibility);
     }
 
@@ -239,11 +244,24 @@ public class ProductDetailFragment extends Fragment {
     private void recalculate() {
         if (currentProduct == null) return;
         try {
-            double quantity = Double.parseDouble(quantityInput.getText().toString().trim());
+            double quantity = Double.parseDouble(quantityInput.getText().toString().trim().replace(',', '.'));
+            if (!Double.isFinite(quantity) || quantity <= 0
+                    || !Double.isFinite(currentProduct.getRescuePrice() * quantity)) throw new NumberFormatException();
+            currentPrice = null;
             viewModel.calculatePrice(currentProduct, quantity);
         } catch (NumberFormatException error) {
-            Toast.makeText(requireContext(), R.string.invalid_pricing_quantity, Toast.LENGTH_SHORT).show();
+            currentPrice = null;
+            if (getView() != null) ((TextView)getView().findViewById(R.id.priceBreakdownText)).setText(R.string.invalid_pricing_quantity);
         }
+    }
+    private void changeQuantity(int step) {
+        java.math.BigDecimal quantity;
+        try { quantity = new java.math.BigDecimal(quantityInput.getText().toString().trim().replace(',', '.')); }
+        catch (NumberFormatException invalid) { quantity = java.math.BigDecimal.ONE; }
+        java.math.BigDecimal result = quantity.add(java.math.BigDecimal.valueOf(step));
+        if (result.signum() <= 0) result = quantity.signum() > 0 ? quantity : java.math.BigDecimal.ONE;
+        quantityInput.setText(result.stripTrailingZeros().toPlainString());
+        quantityInput.setSelection(quantityInput.length());
     }
     private void renderPrice(View view, PriceBreakdown value) {
         if (value == null) return;
@@ -310,7 +328,7 @@ public class ProductDetailFragment extends Fragment {
         if (ActorUiPolicy.isSellerReadOnly(this)) return;
         if (currentProduct == null || currentPrice == null) return;
         double quantity;
-        try { quantity = Double.parseDouble(quantityInput.getText().toString().trim()); }
+        try { quantity = Double.parseDouble(quantityInput.getText().toString().trim().replace(',', '.')); }
         catch (NumberFormatException error) {
             Toast.makeText(requireContext(), R.string.invalid_pricing_quantity, Toast.LENGTH_SHORT).show(); return;
         }
