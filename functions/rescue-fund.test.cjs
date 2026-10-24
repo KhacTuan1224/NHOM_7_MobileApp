@@ -88,7 +88,7 @@ beforeEach(async () => {
     'sellerPaymentProfiles/seller': {bankCode: 'VCB', bankAccountNumber: '987654321', bankAccountName: 'TEST SELLER'},
     'products/p': {name: 'Rau', sellerId: 'seller', status: 'ACTIVE', rescuePrice: 10000, unit: 'kg'},
     'productBatches/b': {productId: 'p', status: 'AVAILABLE', availableQuantity: 10, reservedQuantity: 0, soldQuantity: 0,
-      expiryDate: ts(clock + 20 * 3600000), inventoryVersion: 0}
+      expiryDate: ts(clock + 36 * 3600000), inventoryVersion: 0}
   };
   await Promise.all(Object.entries(seed).map(([path, value]) => db.doc(path).set(value)));
 });
@@ -147,6 +147,8 @@ test('Concurrent allocation reserves money and stock once and respects Seller bu
   await Promise.all([fund.allocation('b', dayKey(clock)), fund.allocation('b', dayKey(clock))]);
   const j = await job(), f = await get('rescueFunds', 'main'), b = await get('productBatches', 'b');
   assert.equal(j.get('amount'), 40000); assert.equal(j.get('quantity'), 4);
+  assert.equal(j.get('deadline').toMillis(), clock + 24 * 3600000);
+  assert.equal(j.get('allocationPolicyVersion'), 2);
   assert.equal(f.get('available'), 60000); assert.equal(f.get('reserved'), 40000);
   assert.equal(b.get('availableQuantity'), 6); assert.equal(b.get('reservedQuantity'), 4);
   assert.equal((await db.collection('notifications').get()).size, 1);
@@ -184,7 +186,7 @@ test('Complete delivery separates verification, stock finalization and real payo
   assert.equal((await get('productBatches','b')).get('soldQuantity'),4);
 });
 test('Expired undelivered allocation returns money and physical expired stock exactly once',async()=>{
-  await fund.allocation('b',dayKey(clock));const j=await job();clock+=25*3600000;
+  await fund.allocation('b',dayKey(clock));const j=await job();clock+=37*3600000;
   assert.equal((await api('delivery/action',{deliveryId:j.id,action:'ACCEPT'},'seller')).status,409);
   await fund.reconcile();await fund.action({deliveryId:j.id,action:'CANCEL',note:'Hết hạn'}, {role:'ADMIN',uid:'admin'});
   const b=await get('productBatches','b'),f=await get('rescueFunds','main');
@@ -194,7 +196,7 @@ test('Expired undelivered allocation returns money and physical expired stock ex
 test('Campaign reservation counters finalize with the charity delivery',async()=>{
   await db.doc('productBatches/b').update({activeCampaignId:'c'});
   await db.doc('campaigns/c').set({sellerId:'seller',title:'Test campaign',status:'ACTIVE',quantityUnit:'kg',
-    startDate:ts(clock-3600000),endDate:ts(clock+18*3600000),batchTargets:{b:3},reservedQuantity:0,rescuedQuantity:0,
+    startDate:ts(clock-3600000),endDate:ts(clock+36*3600000),batchTargets:{b:3},reservedQuantity:0,rescuedQuantity:0,
     reservedByBatch:{},rescuedByBatch:{},allocationVersion:0});
   await fund.allocation('b',dayKey(clock));const j=await job();assert.equal(j.get('quantity'),3);
   assert.equal((await get('campaigns','c')).get('reservedQuantity'),3);
@@ -230,11 +232,68 @@ test('A newly added batch has not yet accumulated the configured idle window',as
   await db.doc('productBatches/b').update({createdAt:ts(clock-3600000)});
   await fund.allocation('b',dayKey(clock));assert.equal((await db.collection('rescueFundDeliveries').get()).size,0);
 });
-test('Late nightly worker does not extend eligibility into the following day',async()=>{
+test('Late nightly worker still excludes batches with less than 24 hours left',async()=>{
   const midnight=Date.parse(dayKey(clock)+'T00:00:00+07:00');clock=midnight+12*3600000;
   await db.doc('productBatches/b').update({expiryDate:ts(midnight+25*3600000)});
   await fund.allocation('b',dayKey(clock));assert.equal((await db.collection('rescueFundDeliveries').get()).size,0);
 });
+test('Legacy fund config still creates a full 24-hour job when the worker runs in the evening',async()=>{
+  const worker=createRescueFund({db,admin:testAdmin,authenticate,env,now:()=>clock});
+  clock=Date.parse(dayKey(clock)+'T21:00:00+07:00');
+  await db.doc('rescueFunds/main').update({expiryHours:12});
+  await db.doc('productBatches/b').update({expiryDate:ts(clock+48*3600000)});
+  await worker.reconcile();const j=await job();
+  assert.equal(j.get('deadline').toMillis(),clock+24*3600000);
+  assert.equal(j.get('allocatedAt').toMillis(),clock);
+  await db.doc('rescueFunds/main').update({active:false});
+  clock+=23*3600000;await worker.reconcile();
+  assert.equal((await get('rescueFundDeliveries',j.id)).get('status'),'RESERVED');
+  clock+=3600000;await worker.reconcile();
+  assert.equal((await get('rescueFundDeliveries',j.id)).get('status'),'CANCELLED');
+  assert.equal((await get('rescueFunds','main')).get('reserved'),0);
+  assert.equal((await get('productBatches','b')).get('status'),'AVAILABLE');
+});
+
+test('Expiry boundaries reserve only stock with a full delivery day and a safety minute',async()=>{
+  for(const hours of [23,24,24+1/60,49]){
+    await db.doc('productBatches/b').update({expiryDate:ts(clock+Math.round(hours*3600000))});
+    await fund.allocation('b',dayKey(clock));
+    assert.equal((await db.collection('rescueFundDeliveries').get()).size,0);
+  }
+  await db.doc('productBatches/b').update({expiryDate:ts(clock+48*3600000)});
+  await fund.allocation('b',dayKey(clock));assert.ok((await job()).exists);
+});
+
+test('Campaigns ending before the full delivery day cannot reserve money or stock',async()=>{
+  await db.doc('productBatches/b').update({activeCampaignId:'c'});
+  await db.doc('campaigns/c').set({sellerId:'seller',title:'Short campaign',status:'ACTIVE',quantityUnit:'kg',
+    startDate:ts(clock-3600000),endDate:ts(clock+23*3600000),batchTargets:{b:3}});
+  await fund.allocation('b',dayKey(clock));
+  assert.equal((await db.collection('rescueFundDeliveries').get()).size,0);
+  assert.equal((await get('rescueFunds','main')).get('reserved'),0);
+});
+
+test('Seller may submit near the 24-hour deadline and Admin may verify and pay later',async()=>{
+  await fund.allocation('b',dayKey(clock));const j=await job();
+  clock=j.get('deadline').toMillis()-1000;
+  await fund.action({deliveryId:j.id,action:'ACCEPT'},{role:'SELLER',uid:'seller'});
+  await fund.action({deliveryId:j.id,action:'DELIVER',proofUrl:proof('fund-deliveries','seller',j.id)},{role:'SELLER',uid:'seller'});
+  clock+=48*3600000;
+  await createRescueFund({db,admin:testAdmin,authenticate,env,now:()=>clock}).reconcile();
+  assert.equal((await get('rescueFundDeliveries',j.id)).get('status'),'DELIVERED');
+  await fund.action({deliveryId:j.id,action:'VERIFY'},{role:'ADMIN',uid:'admin'});
+  await fund.action({deliveryId:j.id,action:'PAY',amount:40000,bankReference:'LATE-REVIEW',proofUrl:proof('fund-receipts','admin',j.id)}, {role:'ADMIN',uid:'admin'});
+  assert.equal((await get('rescueFunds','main')).get('spent'),40000);
+  assert.equal((await get('rescueFunds','main')).get('reserved'),0);
+});
+
+test('New allocation policy does not extend the deadline of an existing delivery',async()=>{
+  await fund.allocation('b',dayKey(clock));const j=await job(), oldDeadline=clock+2*3600000;
+  await j.ref.update({deadline:ts(oldDeadline),allocationPolicyVersion:1});
+  await fund.allocation('b',dayKey(clock));
+  assert.equal((await get('rescueFundDeliveries',j.id)).get('deadline').toMillis(),oldDeadline);
+});
+
 test('A missing Cloudinary image cannot become delivery evidence or change inventory',async()=>{
   await fund.allocation('b',dayKey(clock));const j=await job();
   await fund.action({deliveryId:j.id,action:'ACCEPT'},{role:'SELLER',uid:'seller'});
@@ -248,7 +307,7 @@ test('A missing Cloudinary image cannot become delivery evidence or change inven
 test('One outgoing bank reference cannot pay two different Sellers',async()=>{
   await db.doc('sellerPaymentProfiles/other').set({bankCode:'VCB',bankAccountNumber:'111111111',bankAccountName:'OTHER SELLER'});
   await db.doc('products/p2').set({name:'Other rau',sellerId:'other',status:'ACTIVE',rescuePrice:10000,unit:'kg'});
-  await db.doc('productBatches/b2').set({productId:'p2',status:'AVAILABLE',availableQuantity:10,reservedQuantity:0,soldQuantity:0,expiryDate:ts(clock+20*3600000),inventoryVersion:0});
+  await db.doc('productBatches/b2').set({productId:'p2',status:'AVAILABLE',availableQuantity:10,reservedQuantity:0,soldQuantity:0,expiryDate:ts(clock+36*3600000),inventoryVersion:0});
   await fund.allocation('b',dayKey(clock));await fund.allocation('b2',dayKey(clock));
   const jobs=(await db.collection('rescueFundDeliveries').get()).docs;
   assert.equal(jobs.length,2);

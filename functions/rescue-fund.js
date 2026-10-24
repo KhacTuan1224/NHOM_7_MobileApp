@@ -13,7 +13,9 @@ const money = v => Number.isSafeInteger(v) && v >= 0 && v <= 100000000000;
 const id = v => /^[A-Za-z0-9_-]{1,128}$/.test(text(v));
 const round = v => Math.round(v * 1000) / 1000;
 const dayKey = time => new Date(time + 7 * 3600000).toISOString().slice(0, 10);
-const windowEnd = (day, hours) => Date.parse(day + 'T00:00:00+07:00') + hours * 3600000;
+const DELIVERY_WINDOW_MS = 24 * 3600000;
+const EXPIRY_WINDOW_MS = 48 * 3600000;
+const EXPIRY_BUFFER_MS = 60000;
 function bankConfig(env) {
   let b; try { b = JSON.parse(env.RESCUE_FUND_BANK_JSON || '{}'); } catch (_) { b = {}; }
   requireValue(bankBin(b.bankCode) && /^\d{6,19}$/.test(text(b.accountNumber))
@@ -26,11 +28,12 @@ function settings(input) {
   requireValue(value.name.length >= 3 && value.name.length <= 120 && value.charityName.length >= 3
     && value.charityName.length <= 160 && value.address.length >= 5 && value.address.length <= 500
     && value.phone.length <= 30, 'Nhập đủ tên hũ, tổ chức và địa chỉ nhận.');
-  requireValue([12, 24].includes(input.idleHours) && [12, 24].includes(input.expiryHours)
+  requireValue([12, 24].includes(input.idleHours) && [12, 24, 48].includes(input.expiryHours)
     && money(input.dailyBudget) && input.dailyBudget >= 10000
     && money(input.perSellerBudget) && input.perSellerBudget >= 10000, 'Hạn mức hoặc khung giờ không hợp lệ.');
   return {...value, latitude: 0, longitude: 0, idleHours: input.idleHours,
-    expiryHours: input.expiryHours, dailyBudget: input.dailyBudget, perSellerBudget: input.perSellerBudget,
+    // Accept old clients' 12/24-hour setting, but new allocations always allow a full day to deliver.
+    expiryHours: 48, deliveryWindowHours: 24, dailyBudget: input.dailyBudget, perSellerBudget: input.perSellerBudget,
     active: input.active === true};
 }
 function createRescueFund({db, admin, authenticate, env = process.env, now = Date.now, fetchImpl = fetch}) {
@@ -293,9 +296,10 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
     await db.runTransaction(async tx => {
       const old = await tx.get(jobRef), f = await tx.get(fundRef), run = await tx.get(runRef);
       if (old.exists || !f.exists || !f.get('active')) return;
+      const allocationTime = now(), deadline = allocationTime + DELIVERY_WINDOW_MS;
       const config = f.data(), batchRef = ref('productBatches', batchId), batchSnap = await tx.get(batchRef), batch = data(batchSnap);
       if (!batchSnap.exists || !['AVAILABLE', 'RESERVED_PARTIAL'].includes(batch.status)
-        || ms(batch.expiryDate) <= now() + 2 * 3600000 || ms(batch.expiryDate) > windowEnd(day, config.expiryHours)) return;
+        || ms(batch.expiryDate) <= deadline + EXPIRY_BUFFER_MS || ms(batch.expiryDate) > allocationTime + EXPIRY_WINDOW_MS) return;
       const product = await tx.get(ref('products', batch.productId)), p = data(product);
       if (!product.exists || p.status !== 'ACTIVE' || !id(p.sellerId) || !money(p.rescuePrice) || p.rescuePrice <= 0 || !normalizeUnit(p.unit)) return;
       const seller = await tx.get(ref('users', p.sellerId)), payment = await tx.get(ref('sellerPaymentProfiles', p.sellerId));
@@ -313,7 +317,7 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
       let stock = batch.availableQuantity, campaign = null, campaignRef = null;
       if (batch.activeCampaignId) {
         campaignRef = ref('campaigns', batch.activeCampaignId); campaign = data(await tx.get(campaignRef));
-        if (campaign.status !== 'ACTIVE' || ms(campaign.endDate) <= now() + 2 * 3600000
+        if (campaign.status !== 'ACTIVE' || ms(campaign.endDate) <= deadline + EXPIRY_BUFFER_MS
           || ms(campaign.startDate) > now() || campaign.sellerId !== p.sellerId || normalizeUnit(campaign.quantityUnit) !== normalizeUnit(p.unit)) return;
         stock = Math.min(stock, (campaign.batchTargets?.[batchId] || 0) - (campaign.reservedByBatch?.[batchId] || 0)
           - (campaign.rescuedByBatch?.[batchId] || 0));
@@ -323,10 +327,10 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
       const quantity = Math.floor(Math.min(stock, remaining / p.rescuePrice) * scale) / scale;
       const amount = Math.ceil(quantity * p.rescuePrice);
       if (!(quantity > 0) || !money(amount) || amount <= 0 || amount > remaining) return;
-      const deadline = Math.min(ms(batch.expiryDate), campaign ? ms(campaign.endDate) : Infinity) - 60000;
       const job = {fundId: 'main', fundName: config.name, sellerId: p.sellerId, batchId, productId: product.id,
         productName: text(p.name), unit: text(p.unit), campaignId: batch.activeCampaignId || '', campaignTitle: campaign ? text(campaign.title) : '',
-        quantity, amount, unitPrice: p.rescuePrice, status: 'RESERVED', deadline: ts(deadline), createdAt: stamp(), updatedAt: stamp(),
+        quantity, amount, unitPrice: p.rescuePrice, status: 'RESERVED', deadline: ts(deadline),
+        deliveryWindowHours: 24, allocationPolicyVersion: 2, allocatedAt: ts(allocationTime), createdAt: stamp(), updatedAt: stamp(),
         charityName: config.charityName, address: config.address, latitude: config.latitude, longitude: config.longitude, phone: config.phone,
         sellerBankCode: payment.get('bankCode'), sellerBankAccountNumber: payment.get('bankAccountNumber'),
         sellerBankAccountName: text(payment.get('bankAccountName'))};
@@ -342,7 +346,7 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
       tx.set(runRef, {allocated: (run.get('allocated') || 0) + amount, sellerTotals, updatedAt: stamp()}, {merge: true});
       ledger(tx, 'reserve_' + jobRef.id, 'RESERVE', amount, 'SYSTEM', {deliveryId: jobRef.id});
       notify(tx, jobRef.id + '_reserved', p.sellerId, jobRef.id, 'Hũ giải cứu hỗ trợ giao thiện nguyện',
-        `${config.name} giữ ${amount}đ để giải cứu ${p.name}${campaign ? ' — ' + campaign.title : ''}. Mở Hũ giải cứu để nhận chuyến và xem địa điểm giao. Chưa chuyển tiền cho cửa hàng.`);
+        `${config.name} giữ ${amount}đ để giải cứu ${p.name}${campaign ? ' — ' + campaign.title : ''}. Bạn có 24 giờ kể từ khi tạo chuyến để nhận chuyến, giao và gửi ảnh bằng chứng. Xem hạn giao và nơi nhận trong Hũ giải cứu. Chưa chuyển tiền cho cửa hàng.`);
     });
   }
   async function action(b, caller, system = false) {
@@ -434,7 +438,7 @@ function createRescueFund({db, admin, authenticate, env = process.env, now = Dat
       const stateRef = ref('rescueFundRuns', day), state = await stateRef.get();
       if (state.get('complete')) { completedDay = day; nextScan = now() + 300000; return; }
       let q = db.collection('productBatches').where('status', 'in', ['AVAILABLE', 'RESERVED_PARTIAL'])
-        .where('expiryDate', '>', ts(now() + 2 * 3600000)).where('expiryDate', '<=', ts(windowEnd(day, f.get('expiryHours'))))
+        .where('expiryDate', '>', ts(now() + DELIVERY_WINDOW_MS + EXPIRY_BUFFER_MS)).where('expiryDate', '<=', ts(now() + EXPIRY_WINDOW_MS))
         .orderBy('expiryDate').orderBy(admin.firestore.FieldPath.documentId()).limit(50);
       if (state.get('cursorId')) q = q.startAfter(state.get('cursorExpiry'), state.get('cursorId'));
       const page = await q.get();

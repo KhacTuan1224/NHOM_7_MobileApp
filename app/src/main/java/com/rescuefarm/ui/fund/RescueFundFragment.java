@@ -131,7 +131,7 @@ public final class RescueFundFragment extends Fragment {
         else RenderBackendClient.postGuest("/rescue-fund/" + path, payload, callback);
     }
     private String money(double amount) { return String.format(Locale.forLanguageTag("vi-VN"), "%,.0f đ", amount); }
-    private String date(long value) { return new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("vi-VN")).format(new java.util.Date(value)); }
+    private String date(long value) { return RescueFundTime.format(value); }
     private void showStatus(String message) {
         status.setText(message); status.setVisibility(message == null || message.isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -394,7 +394,7 @@ public final class RescueFundFragment extends Fragment {
         EditText daily = field("Ngân sách mỗi ngày (VND)", "dailyBudget", NUMBER), seller = field("Tối đa mỗi Seller/ngày (VND)", "perSellerBudget", NUMBER);
         if (value(daily).isEmpty()) daily.setText("500000"); if (value(seller).isEmpty()) seller.setText("100000");
         Spinner idle = hours("Không có giao dịch mua thành công trong", fund.optInt("idleHours", 12));
-        Spinner expiry = hours("Còn hạn sử dụng tối đa", fund.optInt("expiryHours", 24));
+        text(body, "Chọn lô còn hạn trên 24 đến 48 giờ (chừa tối thiểu 1 phút trước hạn sử dụng). Seller có 24 giờ từ khi tạo chuyến để nhận, giao và gửi bằng chứng. Admin có thể kiểm tra và ghi chi sau đó.");
         Switch active = new Switch(requireContext()); active.setText("Mở hũ nhận ủng hộ và phân bổ"); active.setChecked(fund.optBoolean("active")); body.addView(active);
         text(body, "Tài khoản nhận và kết nối SePay được cấu hình bảo mật trên backend. Thay đổi địa điểm không sửa chuyến đã phân bổ.");
         button(body, "Lưu cấu hình", v -> {
@@ -404,7 +404,7 @@ public final class RescueFundFragment extends Fragment {
             try { request("admin/save", json("name", value(name), "charityName", value(charity), "address", address.formattedAddress(), "phone", value(phone),
                     "latitude", 0, "longitude", 0,
                     "dailyBudget", Long.parseLong(value(daily)), "perSellerBudget", Long.parseLong(value(seller)),
-                    "idleHours", idle.getSelectedItemPosition() == 0 ? 12 : 24, "expiryHours", expiry.getSelectedItemPosition() == 0 ? 12 : 24,
+                    "idleHours", idle.getSelectedItemPosition() == 0 ? 12 : 24, "expiryHours", 48,
                     "active", active.isChecked()), result -> load());
             } catch (NumberFormatException error) { showStatus("Kiểm tra số tiền."); }
         }); button(body, "Hủy chỉnh sửa", v -> load());
@@ -493,6 +493,8 @@ public final class RescueFundFragment extends Fragment {
                 20, R.color.rescue_primary, true);
         text(box,j.optString("fundName")+"\n"+j.optString("campaignTitle"));
         RescueFundUi.detail(box, R.drawable.ic_admin_shipping, "Giao trước", date(j.optLong("deadline")));
+        if (j.optInt("allocationPolicyVersion") >= 2)
+            text(box, "Thời gian nhận chuyến, giao và gửi bằng chứng: 24 giờ từ khi hệ thống tạo chuyến. Sau khi gửi đúng hạn, Admin có thể đối soát và ghi chi sau hạn giao.");
         RescueFundUi.detail(box, R.drawable.ic_home_location, j.optString("charityName"), j.optString("address")+"\n"+j.optString("phone"));
         button(box,"Xem vị trí nhận",v->{Intent map=new Intent(Intent.ACTION_VIEW,Uri.parse("geo:0,0?q="+Uri.encode(j.optString("address"))));
             try{startActivity(map);}catch(android.content.ActivityNotFoundException error){showStatus("Thiết bị chưa có ứng dụng bản đồ.");}});
