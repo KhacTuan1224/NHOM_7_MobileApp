@@ -1,16 +1,47 @@
 <!doctype html><html lang="vi"><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="leaflet.css"><style>
-html,body,#map{height:100%;margin:0;background:#f8faf6;font-family:sans-serif}
+html,body,#map{height:100%;width:100%;margin:0;background:#f8faf6;font-family:sans-serif}
+.map-pill{position:absolute;z-index:900;display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid #dce6de;border-radius:999px;background:#fffffff2;color:#274c34;box-shadow:0 2px 10px #18352220;font-size:12px;line-height:16px;pointer-events:none}
+.sync{top:12px;right:12px;min-height:16px}.sync-dots{display:inline-flex;align-items:center;gap:3px;height:14px;flex:none}
+.sync-dots i{display:block;height:5px;width:5px;border-radius:50%;background:#87938a}
+.sync-dots.live i,.sync-dots.connecting i{background:#2e6b45;animation:dot-wave 1.2s ease-in-out infinite}
+.sync-dots i:nth-child(2){animation-delay:.16s}.sync-dots i:nth-child(3){animation-delay:.32s}
+@keyframes dot-wave{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+.legend{display:none;position:absolute;z-index:900;top:12px;left:12px;gap:6px;pointer-events:none}.legend .map-pill{position:static}
+.legend-symbol{width:8px;height:8px;background:#2e6b45;border:1px solid #fff;border-radius:50%;flex:none}.legend-symbol.mobile{background:#a64e00;border-radius:2px}
+.filters{display:none;position:absolute;z-index:900;right:12px;bottom:calc(28px + env(safe-area-inset-bottom,0px));flex-direction:column;gap:10px}
+.filter{width:56px;height:56px;box-sizing:border-box;border:1px solid #dce6de;border-radius:50%;background:#fffffff5;color:#305b3c;box-shadow:0 3px 12px #18352229;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:10px/12px sans-serif;cursor:pointer;padding:5px;touch-action:manipulation}
+.filter svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.filter[aria-pressed=true]{background:#2e6b45;border-color:#2e6b45;color:white}.filter:focus-visible{outline:3px solid #92bc97;outline-offset:3px}
+body.expanded .legend,body.expanded .filters{display:flex}body.expanded .legend,body.expanded .sync{top:calc(32px + env(safe-area-inset-top,0px))}
+.leaflet-bottom.leaflet-left{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.map-back{display:none;position:absolute;z-index:900;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);box-sizing:border-box;min-width:144px;min-height:48px;padding:12px 20px;align-items:center;justify-content:center;gap:8px;border:1px solid #dce6de;border-radius:24px;background:#fffffff5;color:#2e6b45;box-shadow:0 3px 12px #18352229;text-decoration:none;font:14px/20px sans-serif}
+.map-back svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}body.expanded .map-back{display:flex}
+.map-back:focus-visible{outline:3px solid #92bc97;outline-offset:3px}
+#notice:empty{display:none}
+@media(max-height:400px){.filters{bottom:calc(20px + env(safe-area-inset-bottom,0px));gap:7px}.filter{width:48px;height:48px}.map-pill{padding:6px 9px}}
+@media(prefers-reduced-motion:reduce){.sync-dots.live i,.sync-dots.connecting i{animation:none}}
 .point{width:20px;height:20px;border:3px solid white;box-shadow:0 1px 5px #3338;background:#2e6b45;border-radius:50%}
 .point.mobile{border-radius:4px;background:#a64e00}.leaflet-popup-content{max-width:240px;font-size:13px;line-height:1.5}
 .leaflet-popup-content a{display:inline-block;padding:8px 0;color:#245c3b}#notice{position:absolute;bottom:24px;left:8px;z-index:800;background:#ffffffe8;padding:5px;font-size:11px;pointer-events:none}
-</style></head><body><div id="map"></div><div id="notice">Đang tải nền bản đồ…</div><script src="leaflet.js"></script><script>
+</style></head><body><div id="map" aria-label="Bản đồ điểm giải cứu"></div>
+<div class="map-pill sync" id="syncStatus" role="status" aria-label="Đang kết nối bản đồ"><span id="syncDot" class="sync-dots connecting" aria-hidden="true"><i></i><i></i><i></i></span><span id="syncLabel">Đang kết nối</span></div>
+<div class="legend" aria-label="Chú giải"><span class="map-pill"><i class="legend-symbol" aria-hidden="true"></i>Cố định</span><span class="map-pill"><i class="legend-symbol mobile" aria-hidden="true"></i>Di động</span></div>
+<div class="filters" role="group" aria-label="Lọc điểm giải cứu">
+<button class="filter" data-mode="ALL" aria-label="Tất cả điểm giải cứu" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg>Tất cả</button>
+<button class="filter" data-mode="FIXED_POINT" aria-label="Điểm cố định" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>Cố định</button>
+<button class="filter" data-mode="MOBILE_POINT" aria-label="Điểm di động" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5h12v12H2zM14 9h4l4 4v4h-8M14 13h8"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>Di động</button>
+</div>
+<a class="map-back" href="rescuefarm-map://back" aria-label="Quay lại trang Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>Quay lại</a>
+<div id="notice">Đang tải nền bản đồ…</div><script src="leaflet.js"></script><script>
 'use strict';
 const expanded=new URLSearchParams(location.search).get('expanded')==='1';
+if(expanded)document.body.classList.add('expanded');
 const map=L.map('map',{scrollWheelZoom:expanded,dragging:expanded,touchZoom:expanded,doubleClickZoom:expanded}).setView([10.7769,106.7009],11);
+if(map.zoomControl)map.zoomControl.setPosition('bottomleft');
+if(!expanded)map.on('click',()=>{window.location.href='rescuefarm-map://expand';});
 const notice=document.getElementById('notice');
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).on('load',()=>notice.textContent='').on('tileerror',()=>notice.textContent='Không tải được nền bản đồ. Kiểm tra kết nối.').addTo(map);
-const markers=new Map();let last=[],live=false,filter='ALL',initialFit=false;
+const markers=new Map();let last=[],live=false,filter='ALL',initialFit=false,truncated=false;
 function text(parent,tag,value){const e=document.createElement(tag);e.textContent=value;parent.appendChild(e);return e;}
 function valid(p){return p&&/^[A-Za-z0-9_-]{1,128}$/.test(p.id)&&Number.isFinite(p.latitude)&&Number.isFinite(p.longitude)&&Math.abs(p.latitude)<=90&&Math.abs(p.longitude)<=180;}
 function animate(marker,target){
@@ -39,14 +70,19 @@ function render(){const now=Date.now(),eligible=last.filter(p=>valid(p)&&p.endAt
   const ids=new Set(visible.map(p=>p.id));
   for(const [id,m] of markers)if(!ids.has(id)){if(m.motion)cancelAnimationFrame(m.motion);map.removeLayer(m);markers.delete(id);}
   for(const p of visible){let m=markers.get(p.id);const to=[p.latitude,p.longitude];
-    if(!m){const mobile=p.mode==='MOBILE_POINT';m=L.marker(to,{icon:L.divIcon({className:'',html:'<div class="point'+(mobile?' mobile':'')+'"></div>',iconSize:[26,26],iconAnchor:[13,13]}),title:p.title||'Điểm giải cứu'}).addTo(map);markers.set(p.id,m);}
+    if(!m){const mobile=p.mode==='MOBILE_POINT';m=L.marker(to,{icon:L.divIcon({className:'',html:'<div class="point'+(mobile?' mobile':'')+'"></div>',iconSize:[26,26],iconAnchor:[13,13]}),title:p.title||'Điểm giải cứu'}).addTo(map);markers.set(p.id,m);
+      if(!expanded)m.on('click',()=>{window.location.href='rescuefarm-map://expand';});}
     else if(m.getLatLng().lat!==to[0]||m.getLatLng().lng!==to[1]){if(p.mode==='MOBILE_POINT')animate(m,to);else m.setLatLng(to);}
-    if(!m.point||JSON.stringify(m.point)!==JSON.stringify(p)||m.live!==live){m.bindPopup(popup(p));m.point=p;m.live=live;}
+    if(!m.point||JSON.stringify(m.point)!==JSON.stringify(p)||m.live!==live){if(expanded)m.bindPopup(popup(p));m.point=p;m.live=live;}
   }
   if(!initialFit&&visible.length){map.fitBounds(visible.map(p=>[p.latitude,p.longitude]),{padding:[28,28],maxZoom:14});initialFit=true;}
+  document.getElementById('syncDot').className='sync-dots'+(live?' live':'');
+  document.getElementById('syncLabel').textContent=live?visible.length+' điểm'+(truncated?' +':''):'Đã lưu';
+  document.getElementById('syncStatus').setAttribute('aria-label',live?'Đang cập nhật trực tiếp · '+visible.length+' điểm':'Chưa có kết nối trực tiếp; đang hiển thị dữ liệu đã lưu và ẩn vị trí xe');
 }
-window.updateRescuePoints=(points,isLive)=>{last=points;live=isLive;render();};
-window.filterRescuePoints=value=>{filter=value;render();};
+window.updateRescuePoints=(points,isLive,limited=false)=>{last=points;live=isLive;truncated=limited;render();};
+window.filterRescuePoints=value=>{filter=value;document.querySelectorAll('.filter').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===filter)));render();};
+document.querySelectorAll('.filter').forEach(button=>button.addEventListener('click',()=>window.filterRescuePoints(button.dataset.mode)));
 window.fitRescuePoints=()=>{if(markers.size)map.fitBounds([...markers.values()].map(m=>m.getLatLng()),{padding:[25,25],maxZoom:15});};
 setInterval(render,10000);window.addEventListener('resize',()=>map.invalidateSize());
 window.rescueMapReady=true;

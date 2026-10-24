@@ -2,11 +2,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 function fixture(){
   let now=1000000;
-  class Element{constructor(tag){this.tag=tag;this.children=[];this.textContent='';}appendChild(child){this.children.push(child);}}
-  class Marker{constructor(at){this.at={lat:at[0],lng:at[1]};}addTo(){return this;}getLatLng(){return this.at;}setLatLng(at){this.at={lat:at[0],lng:at[1]};return this;}bindPopup(p){this.popup=p;return this;}}
-  const map={setView(){return this;},fitBounds(){},removeLayer(){},invalidateSize(){}};
+  class Element{constructor(tag){this.tag=tag;this.children=[];this.textContent='';}appendChild(child){this.children.push(child);}setAttribute(){}}
+  class Marker{constructor(at){this.at={lat:at[0],lng:at[1]};}addTo(){return this;}getLatLng(){return this.at;}setLatLng(at){this.at={lat:at[0],lng:at[1]};return this;}bindPopup(p){this.popup=p;return this;}on(){return this;}}
+  const map={setView(){return this;},fitBounds(){},removeLayer(){},invalidateSize(){},on(){return this;}};
   const ctx={Date:class extends Date{static now(){return now;}},Map,Set,JSON,Number,Math,URLSearchParams,encodeURIComponent,
-    location:{search:''},document:{getElementById:()=>new Element('div'),createElement:t=>new Element(t)},
+    location:{search:'?expanded=1'},document:{body:{classList:{add(){}}},querySelectorAll:()=>[],getElementById:()=>new Element('div'),createElement:t=>new Element(t)},
     L:{map:()=>map,tileLayer:()=>({on(){return this;},addTo(){}}),marker:at=>new Marker(at),divIcon:x=>x},
     performance:{now:()=>0},requestAnimationFrame:cb=>{cb(1000);return 1;},cancelAnimationFrame(){},setInterval(){},window:{addEventListener(){}}};
   vm.createContext(ctx);

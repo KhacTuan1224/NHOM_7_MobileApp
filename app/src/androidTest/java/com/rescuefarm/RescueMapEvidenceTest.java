@@ -64,9 +64,9 @@ public class RescueMapEvidenceTest {
             scenario.onActivity(a->MobileLocationService.start(a,"map-demo-mobile",System.currentTimeMillis()+3600000));
             Thread.sleep(2000);fix(10.781,106.701);
             awaitJs("markers.has('map-demo-mobile') && Math.abs(markers.get('map-demo-mobile').getLatLng().lat-10.781)<0.00001");
-            js("markers.get('map-demo-mobile').openPopup();true");
-            awaitJs("document.querySelector('.leaflet-popup-content') && document.querySelector('.leaflet-popup-content').textContent.includes('Xe giải cứu DEMO')");
-            shot("home-mobile-gps-A-popup");
+            // Home preview opens the large map on tap; popups belong to the large map.
+            awaitJs("!markers.get('map-demo-mobile').getPopup()");
+            shot("home-mobile-gps-A");
             Thread.sleep(11000);fix(10.786,106.706);
             awaitJs("Math.abs(markers.get('map-demo-mobile').getLatLng().lat-10.786)<0.00001");
             shot("home-mobile-gps-B");
