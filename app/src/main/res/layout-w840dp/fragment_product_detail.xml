@@ -21,11 +21,30 @@
             </LinearLayout>
             <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_marginEnd="16dp" android:layout_marginBottom="16dp" app:cardCornerRadius="12dp" app:cardElevation="2dp" app:strokeWidth="0dp" app:cardBackgroundColor="@color/rescue_surface">
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tính giá" android:layout_marginBottom="12dp" />
-                    <com.rescuefarm.ui.common.ResponsiveActionLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
-                        <EditText android:id="@+id/pricingQuantityInput" android:layout_width="0dp" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:layout_weight="1" android:layout_marginEnd="8dp" android:hint="@string/pricing_quantity_hint" android:inputType="numberDecimal" android:text="1" android:background="@color/rescue_primary_container" android:padding="12dp" />
-                        <com.google.android.material.button.MaterialButton android:id="@+id/recalculatePriceButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="@dimen/touch_target_min" android:text="@string/recalculate_price_action" style="@style/Widget.Material3.Button.TonalButton" />
-                    </com.rescuefarm.ui.common.ResponsiveActionLayout>
+                    <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Section" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Số lượng và thành tiền" android:layout_marginBottom="12dp" />
+                <LinearLayout android:id="@+id/productQuantityControl"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/quantityDecrease"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="48dp" android:layout_height="48dp" android:minWidth="0dp"
+                        android:insetTop="0dp" android:insetBottom="0dp" android:padding="0dp"
+                        android:text="−" android:textSize="22sp" android:contentDescription="Giảm số lượng"
+                        app:cornerRadius="24dp" app:strokeColor="@color/rescue_outline" />
+                    <EditText android:id="@+id/pricingQuantityInput"
+                        android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                        android:layout_marginHorizontal="8dp" android:gravity="center"
+                        android:background="@drawable/bg_quantity_stepper" android:inputType="numberDecimal"
+                        android:singleLine="true" android:imeOptions="actionDone" android:selectAllOnFocus="true"
+                        android:hint="@string/pricing_quantity_hint" android:contentDescription="Số lượng sản phẩm"
+                        android:text="1" android:textSize="16sp" android:textColor="@color/rescue_on_surface" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/quantityIncrease"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="48dp" android:layout_height="48dp" android:minWidth="0dp"
+                        android:insetTop="0dp" android:insetBottom="0dp" android:padding="0dp"
+                        android:text="+" android:textSize="22sp" android:contentDescription="Tăng số lượng"
+                        app:cornerRadius="24dp" app:strokeColor="@color/rescue_outline" />
+                </LinearLayout>
                     <TextView android:textAppearance="@style/TextAppearance.RescueFarm.Detail.Meta" android:id="@+id/priceBreakdownText" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="12dp" android:background="@color/rescue_primary_container" android:textColor="@color/rescue_on_primary_container" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
