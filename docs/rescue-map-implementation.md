@@ -2,10 +2,16 @@
 
 Source nền: `b6911d07de2b243b900680d78ed62c4d32d6778c` + working diff. Không commit/push/deploy. Không thay header/logo, giá/số lượng, tìm kiếm, thanh toán, SePay hoặc dữ liệu production. Báo cáo DOCX/PDF trước đó vẫn là snapshot trước tính năng mới này.
 
-## Đã triển khai trong source
+## Điều chỉnh giao diện theo ảnh minh họa
 
-- Home chứa khối Leaflet, chú giải và trạng thái kết nối. Marker cố định hình tròn, di động hình vuông. Chạm marker mở popup tên, địa điểm, loại điểm, lượng còn lại tham khảo, thời điểm GPS và liên kết tới chiến dịch. Các chiến dịch cố định trùng tọa độ tới 6 chữ số thập phân được gom vào một popup có từng liên kết riêng.
-- Nút mở bản đồ lớn hiển thị dialog toàn màn hình, pan/zoom và bộ lọc Tất cả/Cố định/Di động. Preview không giữ cử chỉ kéo của trang Home. Chưa cấp GPS vẫn xem được điểm. Chưa bổ sung vị trí người xem/khoảng cách/nút chỉ đường trong popup ở phiên bản này; liên kết chi tiết chiến dịch vẫn dùng luồng chỉ đường sẵn có.
+Khối Home bo góc 20dp, giữ zoom +/−, không còn tiêu đề hoặc nút mở riêng; chạm nền/marker mở dialog bản đồ lớn. Bản đồ lớn không có tiêu đề; nút Quay lại bo góc ở giữa cạnh dưới đóng dialog, vẫn hỗ trợ Back hệ thống. Cụm +/− được neo góc dưới bên trái để tránh chú giải. Chú giải cố định/di động thành pill nổi cố định trên map; ba bộ lọc là nút tròn xếp dọc góc phải. Ba chấm nhấp nhô lần lượt khi dữ liệu live hoặc đang kết nối, mất kết nối hiển thị dữ liệu đã lưu. Overlay không di chuyển khi pan và không tạo request dữ liệu mới. Popup thông tin hiển thị trên bản đồ lớn. Thay đổi chỉ UI, không thay tần suất GPS/cache/backend.
+
+Đã build/lint lại và chạy 3 test logic HTML hiện có sau sửa (qua). Chưa xác minh trực quan Android theo lựa chọn giữ nguyên emulator5554. Thử preview trình duyệt riêng cũng bị chặn kết nối localhost của môi trường công cụ, không coi đó là kiểm tra hình ảnh thành công.
+
+## Đã triển khai trong source (nghiệp vụ)
+
+- Home chứa khối Leaflet và trạng thái kết nối. Marker cố định hình tròn, di động hình vuông. Trên bản đồ lớn, chạm marker mở popup tên, địa điểm, loại điểm, lượng còn lại tham khảo, thời điểm GPS và liên kết tới chiến dịch. Các chiến dịch cố định trùng tọa độ tới 6 chữ số thập phân được gom vào một popup có từng liên kết riêng.
+- Chạm preview mở dialog toàn màn hình, pan/zoom và bộ lọc Tất cả/Cố định/Di động. Preview không giữ cử chỉ kéo của trang Home. Chưa cấp GPS vẫn xem được điểm. Chưa bổ sung vị trí người xem/khoảng cách/nút chỉ đường trong popup ở phiên bản này; liên kết chi tiết chiến dịch vẫn dùng luồng chỉ đường sẵn có.
 - Marker di động tái sử dụng cùng ID, chuyển trong khoảng 1 giây từ vị trí đã quan sát sang fix mới; không dự đoán đường đi hay giả chuyển động khi chưa nhận GPS. Mặc định ẩn xe khi stream mất kết nối, chia sẻ tắt, điểm hết hạn hoặc GPS quá 10 phút. Điểm cố định cache được đánh dấu dữ liệu đã lưu.
 - Seller có nút bắt đầu chia sẻ và Dừng. `MobileLocationService` là foreground service loại location, có thông báo và nút Dừng, không tự khôi phục khi process khởi động lại. Lấy mẫu mục tiêu 5 giây; ghi tối đa một lần/10 giây nếu dịch chuyển ít nhất 25 m; heartbeat tối đa khoảng 60 giây khi đứng yên. Chỉ nhận fix không quá 15 giây, accuracy không quá 100 m. Thông số là mục tiêu, Android/GPS/mạng không bảo đảm callback/độ trễ đúng từng giây.
 - Một phiên chỉ chia sẻ một chiến dịch từ một điện thoại. Chủ động dừng khi đăng xuất/đổi tài khoản hoặc hết giờ chiến dịch; lỗi quyền/trạng thái từ transaction cũng dừng. Callback GPS cũ không khởi động lại sau STOP; thao tác tắt server được xếp sau publish đang chạy. Nếu mất mạng lúc STOP hoặc hệ điều hành giết process, fix đã gửi có thể còn hiệu lực tới 10 phút; không tuyên bố xóa tức thì ở server trong trường hợp đó.
