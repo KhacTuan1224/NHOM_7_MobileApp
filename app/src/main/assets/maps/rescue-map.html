@@ -8,7 +8,7 @@ html,body,#map{height:100%;width:100%;margin:0;background:#f8faf6;font-family:sa
 .sync-dots i:nth-child(2){animation-delay:.16s}.sync-dots i:nth-child(3){animation-delay:.32s}
 @keyframes dot-wave{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
 .legend{display:none;position:absolute;z-index:900;top:12px;left:12px;gap:6px;pointer-events:none}.legend .map-pill{position:static}
-.legend-symbol{width:8px;height:8px;background:#2e6b45;border:1px solid #fff;border-radius:50%;flex:none}.legend-symbol.mobile{background:#a64e00;border-radius:2px}
+.legend-symbol{width:18px;height:22px;display:block;flex:none}
 .filters{display:none;position:absolute;z-index:900;right:12px;bottom:calc(28px + env(safe-area-inset-bottom,0px));flex-direction:column;gap:10px}
 .filter{width:56px;height:56px;box-sizing:border-box;border:1px solid #dce6de;border-radius:50%;background:#fffffff5;color:#305b3c;box-shadow:0 3px 12px #18352229;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:10px/12px sans-serif;cursor:pointer;padding:5px;touch-action:manipulation}
 .filter svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.filter[aria-pressed=true]{background:#2e6b45;border-color:#2e6b45;color:white}.filter:focus-visible{outline:3px solid #92bc97;outline-offset:3px}
@@ -17,33 +17,71 @@ body.expanded .legend,body.expanded .filters{display:flex}body.expanded .legend,
 .map-back{display:none;position:absolute;z-index:900;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);box-sizing:border-box;min-width:144px;min-height:48px;padding:12px 20px;align-items:center;justify-content:center;gap:8px;border:1px solid #dce6de;border-radius:24px;background:#fffffff5;color:#2e6b45;box-shadow:0 3px 12px #18352229;text-decoration:none;font:14px/20px sans-serif}
 .map-back svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}body.expanded .map-back{display:flex}
 .map-back:focus-visible{outline:3px solid #92bc97;outline-offset:3px}
+body.profile .legend,body.profile .sync,body.profile .filters{display:none}
 #notice:empty{display:none}
 @media(max-height:400px){.filters{bottom:calc(20px + env(safe-area-inset-bottom,0px));gap:7px}.filter{width:48px;height:48px}.map-pill{padding:6px 9px}}
 @media(prefers-reduced-motion:reduce){.sync-dots.live i,.sync-dots.connecting i{animation:none}}
 .point{width:20px;height:20px;border:3px solid white;box-shadow:0 1px 5px #3338;background:#2e6b45;border-radius:50%}
-.point.mobile{border-radius:4px;background:#a64e00}.leaflet-popup-content{max-width:240px;font-size:13px;line-height:1.5}
+.rescue-marker{background:none;border:0}.rescue-marker svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 2px 3px #244b394d)}
+.leaflet-popup-content{max-width:240px;font-size:13px;line-height:1.5}
 .leaflet-popup-content a{display:inline-block;padding:8px 0;color:#245c3b}#notice{position:absolute;bottom:24px;left:8px;z-index:800;background:#ffffffe8;padding:5px;font-size:11px;pointer-events:none}
 </style></head><body><div id="map" aria-label="Bản đồ điểm giải cứu"></div>
+<svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true"><defs>
+<symbol id="rescue-pin" viewBox="0 0 48 56" fill="none" stroke="none">
+<path d="M24 3C13.5 3 6 11 6 21c0 12 18 31 18 31s18-19 18-31C42 11 34.5 3 24 3Z" fill="#4bbd7b" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+<path d="M24 3C13.5 3 6 11 6 21c0 12 18 31 18 31s18-19 18-31C42 11 34.5 3 24 3Z" stroke="#237647" stroke-width="1.6"/>
+<circle cx="24" cy="21" r="11" fill="#efffed"/>
+<path d="M18 27C13 19 21 13 31 13c0 10-4 17-13 14Z" fill="#55a960"/>
+<path d="M17 29 27 18M22 24l-1-4M24 22l4 1" stroke="#efffed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</symbol>
+<symbol id="rescue-truck" viewBox="0 0 56 48" fill="none" stroke="none">
+<path d="M8 12h21a5 5 0 0 1 5 5v3h9c3 0 5 2 6 4l4 7v7H3V18a6 6 0 0 1 5-6Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+<rect x="3" y="12" width="31" height="25" rx="6" fill="#83d6a0" stroke="#2d7851" stroke-width="1.6"/>
+<path d="M34 20h9c2 0 4 1 5 3l5 9v5H34Z" fill="#ffd18b" stroke="#91652e" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M38 23h5l4 7h-9Z" fill="#cceef3" stroke="#91652e" stroke-width="1.3" stroke-linejoin="round"/>
+<path d="M38 33h3" stroke="#91652e" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="14" cy="38" r="5" fill="#35574c"/><circle cx="44" cy="38" r="5" fill="#35574c"/>
+<circle cx="14" cy="38" r="2" fill="#fff6de"/><circle cx="44" cy="38" r="2" fill="#fff6de"/>
+<path d="M18 12c-6 0-8-3-7-6 4 0 7 2 7 6Zm0 0c0-6 3-9 7-8 0 5-2 8-7 8Z" fill="#4eaa64" stroke="#fff" stroke-width="1"/>
+<circle cx="13" cy="24" r="1.3" fill="#285d3c"/><circle cx="23" cy="24" r="1.3" fill="#285d3c"/>
+<path d="M15 28q3 3 6 0" stroke="#285d3c" stroke-width="1.5" stroke-linecap="round"/>
+<ellipse cx="10" cy="27" rx="2" ry="1" fill="#ffb7a6"/><ellipse cx="26" cy="27" rx="2" ry="1" fill="#ffb7a6"/>
+</symbol>
+</defs></svg>
 <div class="map-pill sync" id="syncStatus" role="status" aria-label="Đang kết nối bản đồ"><span id="syncDot" class="sync-dots connecting" aria-hidden="true"><i></i><i></i><i></i></span><span id="syncLabel">Đang kết nối</span></div>
-<div class="legend" aria-label="Chú giải"><span class="map-pill"><i class="legend-symbol" aria-hidden="true"></i>Cố định</span><span class="map-pill"><i class="legend-symbol mobile" aria-hidden="true"></i>Di động</span></div>
+<div class="legend" aria-label="Chú giải"><span class="map-pill"><svg class="legend-symbol" aria-hidden="true"><use href="#rescue-pin"/></svg>Cố định</span><span class="map-pill"><svg class="legend-symbol" aria-hidden="true"><use href="#rescue-truck"/></svg>Di động</span></div>
 <div class="filters" role="group" aria-label="Lọc điểm giải cứu">
 <button class="filter" data-mode="ALL" aria-label="Tất cả điểm giải cứu" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg>Tất cả</button>
-<button class="filter" data-mode="FIXED_POINT" aria-label="Điểm cố định" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>Cố định</button>
-<button class="filter" data-mode="MOBILE_POINT" aria-label="Điểm di động" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5h12v12H2zM14 9h4l4 4v4h-8M14 13h8"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>Di động</button>
+<button class="filter" data-mode="FIXED_POINT" aria-label="Điểm cố định" aria-pressed="false"><svg viewBox="0 0 48 56" aria-hidden="true"><use href="#rescue-pin"/></svg>Cố định</button>
+<button class="filter" data-mode="MOBILE_POINT" aria-label="Điểm di động" aria-pressed="false"><svg viewBox="0 0 56 48" aria-hidden="true"><use href="#rescue-truck"/></svg>Di động</button>
 </div>
-<a class="map-back" href="rescuefarm-map://back" aria-label="Quay lại trang Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>Quay lại</a>
+<a id="mapBack" class="map-back" href="rescuefarm-map://back" aria-label="Quay lại trang Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>Quay lại</a>
 <div id="notice">Đang tải nền bản đồ…</div><script src="leaflet.js"></script><script>
 'use strict';
-const expanded=new URLSearchParams(location.search).get('expanded')==='1';
+const options=window.rescueMapOptions||{},profile=options.profile===true;
+const expanded=options.expanded===true||new URLSearchParams(location.search).get('expanded')==='1';
 if(expanded)document.body.classList.add('expanded');
+if(profile){document.body.classList.add('profile');document.getElementById('map').setAttribute('aria-label','Bản đồ vị trí hồ sơ');document.getElementById('mapBack').setAttribute('aria-label','Quay lại hồ sơ');}
 const map=L.map('map',{scrollWheelZoom:expanded,dragging:expanded,touchZoom:expanded,doubleClickZoom:expanded}).setView([10.7769,106.7009],11);
 if(map.zoomControl)map.zoomControl.setPosition('bottomleft');
 if(!expanded)map.on('click',()=>{window.location.href='rescuefarm-map://expand';});
 const notice=document.getElementById('notice');
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).on('load',()=>notice.textContent='').on('tileerror',()=>notice.textContent='Không tải được nền bản đồ. Kiểm tra kết nối.').addTo(map);
 const markers=new Map();let last=[],live=false,filter='ALL',initialFit=false,truncated=false;
+let profileMarker;
+window.setProfilePoint=(lat,lng)=>{
+  if(!profile||!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180||(lat===0&&lng===0))return;
+  if(!profileMarker){profileMarker=L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div class="point"></div>',iconSize:[26,26],iconAnchor:[13,13]}),title:'Vị trí hồ sơ'}).addTo(map);
+    if(!expanded)profileMarker.on('click',()=>{window.location.href='rescuefarm-map://expand';});
+  }else profileMarker.setLatLng([lat,lng]);
+  if(expanded){const box=document.createElement('div');text(box,'strong','Vị trí hồ sơ');text(box,'div','Vĩ độ '+lat.toFixed(6));text(box,'div','Kinh độ '+lng.toFixed(6));profileMarker.bindPopup(box);}
+  map.setView([lat,lng],15);
+};
 function text(parent,tag,value){const e=document.createElement(tag);e.textContent=value;parent.appendChild(e);return e;}
 function valid(p){return p&&/^[A-Za-z0-9_-]{1,128}$/.test(p.id)&&Number.isFinite(p.latitude)&&Number.isFinite(p.longitude)&&Math.abs(p.latitude)<=90&&Math.abs(p.longitude)<=180;}
+function rescueIcon(mobile){return L.divIcon({className:'rescue-marker',
+  html:'<svg viewBox="'+(mobile?'0 0 56 48':'0 0 48 56')+'" aria-hidden="true"><use href="#'+(mobile?'rescue-truck':'rescue-pin')+'"/></svg>',
+  iconSize:mobile?[52,46]:[38,46],iconAnchor:mobile?[26,41]:[19,44],popupAnchor:mobile?[0,-34]:[0,-42]});}
 function animate(marker,target){
   if(marker.motion)cancelAnimationFrame(marker.motion);
   const from=marker.getLatLng(),start=performance.now();
@@ -61,7 +99,7 @@ function popup(p){const box=document.createElement('div');text(box,'strong',p.ca
     const link=text(box,'a','Xem chiến dịch');link.href='rescuefarm-map://campaign/'+encodeURIComponent(campaign.id);
   }return box;
 }
-function render(){const now=Date.now(),eligible=last.filter(p=>valid(p)&&p.endAt>now&&p.remaining>0
+function render(){if(profile)return;const now=Date.now(),eligible=last.filter(p=>valid(p)&&p.endAt>now&&p.remaining>0
   &&(filter==='ALL'||p.mode===filter)&&(p.mode!=='MOBILE_POINT'||live&&p.updatedAt<=now&&now-p.updatedAt<=600000));
   const grouped=new Map();
   for(const p of eligible){const key=p.mode==='FIXED_POINT'?'fixed:'+p.latitude.toFixed(6)+':'+p.longitude.toFixed(6):p.id;
@@ -70,7 +108,7 @@ function render(){const now=Date.now(),eligible=last.filter(p=>valid(p)&&p.endAt
   const ids=new Set(visible.map(p=>p.id));
   for(const [id,m] of markers)if(!ids.has(id)){if(m.motion)cancelAnimationFrame(m.motion);map.removeLayer(m);markers.delete(id);}
   for(const p of visible){let m=markers.get(p.id);const to=[p.latitude,p.longitude];
-    if(!m){const mobile=p.mode==='MOBILE_POINT';m=L.marker(to,{icon:L.divIcon({className:'',html:'<div class="point'+(mobile?' mobile':'')+'"></div>',iconSize:[26,26],iconAnchor:[13,13]}),title:p.title||'Điểm giải cứu'}).addTo(map);markers.set(p.id,m);
+    if(!m){const mobile=p.mode==='MOBILE_POINT';m=L.marker(to,{icon:rescueIcon(mobile),title:p.title||'Điểm giải cứu'}).addTo(map);markers.set(p.id,m);
       if(!expanded)m.on('click',()=>{window.location.href='rescuefarm-map://expand';});}
     else if(m.getLatLng().lat!==to[0]||m.getLatLng().lng!==to[1]){if(p.mode==='MOBILE_POINT')animate(m,to);else m.setLatLng(to);}
     if(!m.point||JSON.stringify(m.point)!==JSON.stringify(p)||m.live!==live){if(expanded)m.bindPopup(popup(p));m.point=p;m.live=live;}
@@ -80,10 +118,10 @@ function render(){const now=Date.now(),eligible=last.filter(p=>valid(p)&&p.endAt
   document.getElementById('syncLabel').textContent=live?visible.length+' điểm'+(truncated?' +':''):'Đã lưu';
   document.getElementById('syncStatus').setAttribute('aria-label',live?'Đang cập nhật trực tiếp · '+visible.length+' điểm':'Chưa có kết nối trực tiếp; đang hiển thị dữ liệu đã lưu và ẩn vị trí xe');
 }
-window.updateRescuePoints=(points,isLive,limited=false)=>{last=points;live=isLive;truncated=limited;render();};
+window.updateRescuePoints=(points,isLive,limited=false)=>{if(profile)return;last=points;live=isLive;truncated=limited;render();};
 window.filterRescuePoints=value=>{filter=value;document.querySelectorAll('.filter').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===filter)));render();};
 document.querySelectorAll('.filter').forEach(button=>button.addEventListener('click',()=>window.filterRescuePoints(button.dataset.mode)));
 window.fitRescuePoints=()=>{if(markers.size)map.fitBounds([...markers.values()].map(m=>m.getLatLng()),{padding:[25,25],maxZoom:15});};
-setInterval(render,10000);window.addEventListener('resize',()=>map.invalidateSize());
+if(!profile)setInterval(render,10000);window.addEventListener('resize',()=>map.invalidateSize());
 window.rescueMapReady=true;
 </script></body></html>
