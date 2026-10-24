@@ -1,0 +1,42 @@
+[
+  {
+    "suite": "com.rescuefarm.domain.RescueCampaignBoundaryTest",
+    "tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "timestamp": "2026-10-24T14:47:03.407Z"
+  },
+  {
+    "suite": "com.rescuefarm.domain.RescueCampaignTest",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "timestamp": "2026-10-24T14:47:03.433Z"
+  },
+  {
+    "suite": "com.rescuefarm.service.CampaignLocationServiceTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "timestamp": "2026-10-24T14:47:03.438Z"
+  },
+  {
+    "suite": "com.rescuefarm.service.CampaignTimeFormatterTest",
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "timestamp": "2026-10-24T14:47:03.443Z"
+  },
+  {
+    "suite": "com.rescuefarm.ui.home.HomeContentBuilderTest",
+    "tests": 10,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "timestamp": "2026-10-24T14:47:03.467Z"
+  }
+]

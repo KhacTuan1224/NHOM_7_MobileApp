@@ -1,0 +1,53 @@
+<!doctype html><html lang="vi"><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="leaflet.css"><style>
+html,body,#map{height:100%;margin:0;background:#f8faf6;font-family:sans-serif}
+.point{width:20px;height:20px;border:3px solid white;box-shadow:0 1px 5px #3338;background:#2e6b45;border-radius:50%}
+.point.mobile{border-radius:4px;background:#a64e00}.leaflet-popup-content{max-width:240px;font-size:13px;line-height:1.5}
+.leaflet-popup-content a{display:inline-block;padding:8px 0;color:#245c3b}#notice{position:absolute;bottom:24px;left:8px;z-index:800;background:#ffffffe8;padding:5px;font-size:11px;pointer-events:none}
+</style></head><body><div id="map"></div><div id="notice">Đang tải nền bản đồ…</div><script src="leaflet.js"></script><script>
+'use strict';
+const expanded=new URLSearchParams(location.search).get('expanded')==='1';
+const map=L.map('map',{scrollWheelZoom:expanded,dragging:expanded,touchZoom:expanded,doubleClickZoom:expanded}).setView([10.7769,106.7009],11);
+const notice=document.getElementById('notice');
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).on('load',()=>notice.textContent='').on('tileerror',()=>notice.textContent='Không tải được nền bản đồ. Kiểm tra kết nối.').addTo(map);
+const markers=new Map();let last=[],live=false,filter='ALL',initialFit=false;
+function text(parent,tag,value){const e=document.createElement(tag);e.textContent=value;parent.appendChild(e);return e;}
+function valid(p){return p&&/^[A-Za-z0-9_-]{1,128}$/.test(p.id)&&Number.isFinite(p.latitude)&&Number.isFinite(p.longitude)&&Math.abs(p.latitude)<=90&&Math.abs(p.longitude)<=180;}
+function animate(marker,target){
+  if(marker.motion)cancelAnimationFrame(marker.motion);
+  const from=marker.getLatLng(),start=performance.now();
+  // Only interpolate to an observed fix; never extrapolate an invented route.
+  function step(t){const f=Math.min(1,(t-start)/1000);marker.setLatLng([from.lat+(target[0]-from.lat)*f,from.lng+(target[1]-from.lng)*f]);if(f<1)marker.motion=requestAnimationFrame(step);}
+  marker.motion=requestAnimationFrame(step);
+}
+function popup(p){const box=document.createElement('div');text(box,'strong',p.campaigns&&p.campaigns.length>1?'Điểm có '+p.campaigns.length+' chiến dịch':p.title||'Điểm giải cứu');
+  text(box,'div',p.locationName||'');text(box,'div',p.mode==='MOBILE_POINT'?'Điểm di động':'Điểm cố định');
+  text(box,'div','Còn khoảng '+Number(p.remaining).toLocaleString('vi-VN')+' '+(p.unit||''));
+  if(p.updatedAt)text(box,'div','Vị trí cập nhật '+new Date(p.updatedAt).toLocaleTimeString('vi-VN'));
+  if(!live)text(box,'div','Dữ liệu đã lưu; cần kết nối để xác nhận.');
+  for(const campaign of p.campaigns||[p]) {
+    if(p.campaigns&&p.campaigns.length>1)text(box,'div',campaign.title+' · còn khoảng '+Number(campaign.remaining).toLocaleString('vi-VN')+' '+(campaign.unit||''));
+    const link=text(box,'a','Xem chiến dịch');link.href='rescuefarm-map://campaign/'+encodeURIComponent(campaign.id);
+  }return box;
+}
+function render(){const now=Date.now(),eligible=last.filter(p=>valid(p)&&p.endAt>now&&p.remaining>0
+  &&(filter==='ALL'||p.mode===filter)&&(p.mode!=='MOBILE_POINT'||live&&p.updatedAt<=now&&now-p.updatedAt<=600000));
+  const grouped=new Map();
+  for(const p of eligible){const key=p.mode==='FIXED_POINT'?'fixed:'+p.latitude.toFixed(6)+':'+p.longitude.toFixed(6):p.id;
+    if(!grouped.has(key))grouped.set(key,{...p,campaigns:[]});grouped.get(key).campaigns.push(p);}
+  const visible=[...grouped.values()];
+  const ids=new Set(visible.map(p=>p.id));
+  for(const [id,m] of markers)if(!ids.has(id)){if(m.motion)cancelAnimationFrame(m.motion);map.removeLayer(m);markers.delete(id);}
+  for(const p of visible){let m=markers.get(p.id);const to=[p.latitude,p.longitude];
+    if(!m){const mobile=p.mode==='MOBILE_POINT';m=L.marker(to,{icon:L.divIcon({className:'',html:'<div class="point'+(mobile?' mobile':'')+'"></div>',iconSize:[26,26],iconAnchor:[13,13]}),title:p.title||'Điểm giải cứu'}).addTo(map);markers.set(p.id,m);}
+    else if(m.getLatLng().lat!==to[0]||m.getLatLng().lng!==to[1]){if(p.mode==='MOBILE_POINT')animate(m,to);else m.setLatLng(to);}
+    if(!m.point||JSON.stringify(m.point)!==JSON.stringify(p)||m.live!==live){m.bindPopup(popup(p));m.point=p;m.live=live;}
+  }
+  if(!initialFit&&visible.length){map.fitBounds(visible.map(p=>[p.latitude,p.longitude]),{padding:[28,28],maxZoom:14});initialFit=true;}
+}
+window.updateRescuePoints=(points,isLive)=>{last=points;live=isLive;render();};
+window.filterRescuePoints=value=>{filter=value;render();};
+window.fitRescuePoints=()=>{if(markers.size)map.fitBounds([...markers.values()].map(m=>m.getLatLng()),{padding:[25,25],maxZoom:15});};
+setInterval(render,10000);window.addEventListener('resize',()=>map.invalidateSize());
+window.rescueMapReady=true;
+</script></body></html>
