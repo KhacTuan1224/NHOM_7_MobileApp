@@ -1,0 +1,31 @@
+{
+  "pdfPages": 58,
+  "landscapePages": [
+    10,
+    12,
+    18,
+    32,
+    41,
+    50,
+    52
+  ],
+  "imageInstances": 30,
+  "uniqueEmbeddedImages": 30,
+  "tocFields": 3,
+  "figureSequenceFields": 18,
+  "tableSequenceFields": 25,
+  "crossReferenceFields": 155,
+  "externalRelationships": [],
+  "pagesWithShortText": [
+    1,
+    10,
+    12,
+    18,
+    32,
+    41,
+    50,
+    52
+  ],
+  "shortTextExplanation": "Landscape diagrams contain embedded graphics; review portrait short-text pages visually.",
+  "chapter1Preserved": true
+}

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="900" viewBox="0 0 1320 900"><rect width="100%" height="100%" fill="white"/><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#333"/></marker></defs>
+<text x="660.0" y="48" font-family="Arial" font-size="30" font-weight="bold" text-anchor="middle" fill="#172b31">Luồng tổng hợp Hũ giải cứu chính sách phiên bản 2</text>
+<path d="M390.0 175.0 L480.0 175.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M810.0 175.0 L900.0 175.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M1065.0 230.0 L1065.0 350.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="987.0" y="268.0" width="156" height="29" fill="white"/>
+<text x="1065.0" y="288.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">đủ điều kiện</text>
+<path d="M900.0 407.5 L810.0 407.5" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M480.0 407.5 L390.0 407.5" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M225.0 465.0 L225.0 610.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="147.0" y="515.5" width="156" height="29" fill="white"/>
+<text x="225.0" y="535.5" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">ảnh đúng hạn</text>
+<path d="M390.0 667.5 L480.0 667.5" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M1065.0 465.0 L1065.0 610.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="1017.0" y="515.5" width="96" height="29" fill="white"/>
+<text x="1065.0" y="535.5" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">quá hạn</text>
+<path d="M737.8846153846154 465.0 L972.1153846153846 610.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="807.0" y="515.5" width="96" height="29" fill="white"/>
+<text x="855.0" y="535.5" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">quá hạn</text>
+<rect x="60" y="120" width="330" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="225.0" y="151.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Guest / Customer / Seller</text>
+<text x="225.0" y="182.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">QR và mã riêng</text>
+<text x="225.0" y="213.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">PENDING donation</text>
+<rect x="480" y="120" width="330" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="645.0" y="167.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">SePay hợp lệ → PAID</text>
+<text x="645.0" y="198.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">cộng available một lần</text>
+<rect x="900" y="120" width="330" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1065.0" y="151.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Chọn lô tại thời điểm t</text>
+<text x="1065.0" y="182.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">&gt; t + 24h + 1 phút</text>
+<text x="1065.0" y="213.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">≤ t + 48h</text>
+<rect x="900" y="350" width="330" height="115" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1065.0" y="384.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">RESERVED trong transaction</text>
+<text x="1065.0" y="415.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">giữ cả tiền và hàng</text>
+<text x="1065.0" y="446.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">deadline = t + 24h</text>
+<rect x="480" y="350" width="330" height="115" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="645.0" y="399.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Seller ACCEPTED</text>
+<text x="645.0" y="430.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">không đặt lại deadline</text>
+<rect x="60" y="350" width="330" height="115" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="225.0" y="399.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">DELIVERED trước hạn</text>
+<text x="225.0" y="430.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">ảnh gửi lên kịp thời</text>
+<rect x="60" y="610" width="330" height="115" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="225.0" y="644.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Admin VERIFIED sau kiểm tra</text>
+<text x="225.0" y="675.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">chốt kho; tiền còn reserved</text>
+<text x="225.0" y="706.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">có thể duyệt sau deadline</text>
+<rect x="480" y="610" width="330" height="115" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="645.0" y="644.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Chuyển tiền ngoài app</text>
+<text x="645.0" y="675.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">PAY lưu mã + ảnh + số tiền</text>
+<text x="645.0" y="706.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">reserved → spent</text>
+<rect x="900" y="610" width="330" height="115" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1065.0" y="644.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Chưa có ảnh khi quá hạn</text>
+<text x="1065.0" y="675.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">RESERVED / ACCEPTED</text>
+<text x="1065.0" y="706.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">CANCELLED và giải phóng</text>
+<text x="660.0" y="850" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">DELIVERED đúng hạn không bị worker hủy vì Admin duyệt muộn.</text>
+<text x="660.0" y="878" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Giải phóng tiền giữ về available không phải hoàn tiền ngân hàng cho người ủng hộ.</text>
+</svg>

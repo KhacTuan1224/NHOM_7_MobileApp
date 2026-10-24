@@ -1,0 +1,70 @@
+{
+  "clock": "2026-10-25T14:00:01.000Z",
+  "fund": {
+    "available": 36000,
+    "reserved": 36000,
+    "spent": 0,
+    "donated": 72000
+  },
+  "jobs": [
+    {
+      "id": "2026-10-24_a583075ecd013eb8cf24ed219f2f5075",
+      "status": "CANCELLED",
+      "amount": 36000,
+      "allocatedAt": "2026-10-24T14:00:00.000Z",
+      "deadline": "2026-10-25T14:00:00.000Z",
+      "allocationPolicyVersion": 2
+    },
+    {
+      "id": "2026-10-24_b2140450534d92597e98441eaaee78c9",
+      "status": "VERIFIED",
+      "amount": 36000,
+      "allocatedAt": "2026-10-24T14:00:00.000Z",
+      "deadline": "2026-10-25T14:00:00.000Z",
+      "allocationPolicyVersion": 2
+    }
+  ],
+  "ledger": [
+    {
+      "id": "9ffff992-b784-4412-9cb3-6e9d0a825ee5",
+      "kind": "SETTINGS",
+      "amount": 0
+    },
+    {
+      "id": "accept_2026-10-24_b2140450534d92597e98441eaaee78c9",
+      "kind": "ACCEPT",
+      "amount": 0
+    },
+    {
+      "id": "deliver_2026-10-24_b2140450534d92597e98441eaaee78c9",
+      "kind": "DELIVER",
+      "amount": 0
+    },
+    {
+      "id": "donation_462b113a13226b09146f801fd89a27fa8a698eda90f75ff39656b0457643bea6",
+      "kind": "DONATION",
+      "amount": 72000
+    },
+    {
+      "id": "release_2026-10-24_a583075ecd013eb8cf24ed219f2f5075",
+      "kind": "RELEASE",
+      "amount": 36000
+    },
+    {
+      "id": "reserve_2026-10-24_a583075ecd013eb8cf24ed219f2f5075",
+      "kind": "RESERVE",
+      "amount": 36000
+    },
+    {
+      "id": "reserve_2026-10-24_b2140450534d92597e98441eaaee78c9",
+      "kind": "RESERVE",
+      "amount": 36000
+    },
+    {
+      "id": "verify_2026-10-24_b2140450534d92597e98441eaaee78c9",
+      "kind": "VERIFY_DELIVERY",
+      "amount": 0
+    }
+  ],
+  "imageProvider": "HEAD image existence stub; no upload and no real delivery/payout"
+}

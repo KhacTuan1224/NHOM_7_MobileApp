@@ -1,0 +1,67 @@
+[
+  {
+    "path": "README.md",
+    "sha256": "3cb24f7a05ecc826834576d0d0b50499edea84ec2e3d79fae6c5b80d5adc924f",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "final.md",
+    "sha256": "2870b449dd1cf194cccbbaaebe88c68e9edae39afeee6a39d8798fa05ca2d9fd",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "app/build.gradle.kts",
+    "sha256": "91f870c7a6f165a243c16280419473ca9f7580f02a5563cc8c1240258be95099",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "gradle/libs.versions.toml",
+    "sha256": "e448de24105ec87488aa39c4f6c2eaabc21e5c4e92f1be382ae54b5f4394b99d",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "app/src/main/AndroidManifest.xml",
+    "sha256": "555c6931b6092e54ebb3b6dbfaeba62b6e79e540575ddd53968c58ac137b1efd",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "app/src/main/res/navigation/main_navigation.xml",
+    "sha256": "e7e56c13152afc3031b787c88f4401979deb8374b8a53ef0577f0e4bdaabb6ed",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "firestore.rules",
+    "sha256": "d6501d211d829c437ca0468fa6d1331abce4dbaa0dda7f6465d60d91bb5280a9",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "firestore.indexes.json",
+    "sha256": "b36d06beeb81c91719716672edf1698b841571aa8d798cf340e6d5c695da370f",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "functions/rescue-fund.js",
+    "sha256": "34252dfb2a8caeb9e02014c6e0abeffd5847397d4e0a67b69a7f38eb8bffe20d",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "functions/rescue-fund.test.cjs",
+    "sha256": "cc1ff63150c7079dff6ac47b3fe06f6a0884051caa6e3518608a12393099078f",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "docs/rescue-fund.md",
+    "sha256": "d126cddd67decf374f38dd303229206ead96d5ac1461c45fcd666c6104ee99e1",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "docs/rescue-fund-shared-bank.md",
+    "sha256": "d180b3cd32df40aad3d3fca905fb8a258189f7a6f29b93db0cfa962dda38c671",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  },
+  {
+    "path": "docs/report/course-requirements-audit-2026-10-24.md",
+    "sha256": "1fe2363a3524d716a8f531252cc5431b6f8a527b088a95a4f0865af8bf823909",
+    "role": "Current source or historical document cross-checked against source; hash is provenance, not endorsement"
+  }
+]

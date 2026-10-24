@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1380" height="650" viewBox="0 0 1380 650"><rect width="100%" height="100%" fill="white"/><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#333"/></marker></defs>
+<text x="690.0" y="48" font-family="Arial" font-size="30" font-weight="bold" text-anchor="middle" fill="#172b31">Phân rã chức năng theo nghiệp vụ</text>
+<path d="M551.2745098039215 200.0 L302.84313725490193 340.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M615.9803921568628 200.0 L548.7254901960785 340.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M680.686274509804 200.0 L794.6078431372549 340.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M745.3921568627451 200.0 L1040.4901960784314 340.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="460" y="100" width="360" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="640.0" y="142.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">RescueFarm</text>
+<text x="640.0" y="173.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">thương mại điện tử giải cứu</text>
+<rect x="45" y="340" width="285" height="130" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="187.5" y="381.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Khám phá và nội dung</text>
+<text x="187.5" y="412.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Home / tìm kiếm</text>
+<text x="187.5" y="443.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Campaign và tương tác</text>
+<rect x="375" y="340" width="285" height="130" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="517.5" y="381.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Thương mại</text>
+<text x="517.5" y="412.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Product / Batch / Cart</text>
+<text x="517.5" y="443.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Checkout và giao nhận</text>
+<rect x="705" y="340" width="285" height="130" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="847.5" y="381.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Giải cứu mở rộng</text>
+<text x="847.5" y="412.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Flash / Mystery Box</text>
+<text x="847.5" y="443.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Hũ / chuyến / ledger</text>
+<rect x="1035" y="340" width="285" height="130" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1177.5" y="381.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Quản trị trên mobile</text>
+<text x="1177.5" y="412.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">duyệt và kiểm duyệt</text>
+<text x="1177.5" y="443.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">đối soát / cấu hình</text>
+<text x="690.0" y="600" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Chức năng cũ promotions, wallet ưu đãi và bài đăng tổng quát không được khôi phục</text>
+<text x="690.0" y="628" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">chỉ vì tên collection hoặc tài liệu lịch sử còn tồn tại.</text>
+</svg>

@@ -1,0 +1,230 @@
+{
+  "title": "Kiến trúc và ranh giới dữ liệu",
+  "nodes": {
+    "ui": [
+      65,
+      150,
+      285,
+      110,
+      "Fragment và XML Views\nMainActivity / Navigation"
+    ],
+    "vm": [
+      65,
+      350,
+      285,
+      100,
+      "ViewModel và LiveData\ntrạng thái theo vòng đời"
+    ],
+    "repo": [
+      460,
+      350,
+      300,
+      110,
+      "Repository và policy\nkiểm tra nguồn / quyền"
+    ],
+    "room": [
+      460,
+      650,
+      300,
+      110,
+      "Room v11 trên SQLite\ncache đọc và giỏ Guest"
+    ],
+    "worker": [
+      65,
+      650,
+      285,
+      110,
+      "WorkManager\nread sync và retry"
+    ],
+    "fire": [
+      910,
+      150,
+      360,
+      110,
+      "Firebase Auth + Firestore\nRules cho Android SDK"
+    ],
+    "http": [
+      910,
+      350,
+      360,
+      110,
+      "Express trên Render\nAdmin SDK / transaction"
+    ],
+    "media": [
+      910,
+      560,
+      360,
+      110,
+      "Cloudflare Worker\nCloudinary / ký media"
+    ],
+    "bank": [
+      910,
+      760,
+      170,
+      110,
+      "SePay\nwebhook"
+    ],
+    "fcm": [
+      1100,
+      760,
+      170,
+      110,
+      "FCM\npush"
+    ]
+  },
+  "edges": [
+    [
+      "ui",
+      "vm",
+      ""
+    ],
+    [
+      "vm",
+      "repo",
+      ""
+    ],
+    [
+      "repo",
+      "room",
+      "đọc cache"
+    ],
+    [
+      "worker",
+      "room",
+      ""
+    ],
+    [
+      "worker",
+      "repo",
+      "đồng bộ"
+    ],
+    [
+      "repo",
+      "fire",
+      "SDK"
+    ],
+    [
+      "repo",
+      "http",
+      "HTTP online"
+    ],
+    [
+      "ui",
+      "media",
+      "upload\nonline",
+      {
+        "points": [
+          [
+            350,
+            205
+          ],
+          [
+            815,
+            205
+          ],
+          [
+            815,
+            615
+          ],
+          [
+            910,
+            615
+          ]
+        ],
+        "labelAt": [
+          815,
+          520
+        ]
+      }
+    ],
+    [
+      "bank",
+      "http",
+      "SePay vào",
+      {
+        "points": [
+          [
+            910,
+            815
+          ],
+          [
+            870,
+            815
+          ],
+          [
+            870,
+            405
+          ],
+          [
+            910,
+            405
+          ]
+        ],
+        "labelAt": [
+          860,
+          705
+        ]
+      }
+    ],
+    [
+      "http",
+      "fcm",
+      "outbox",
+      {
+        "points": [
+          [
+            1270,
+            405
+          ],
+          [
+            1320,
+            405
+          ],
+          [
+            1320,
+            815
+          ],
+          [
+            1270,
+            815
+          ]
+        ],
+        "labelAt": [
+          1320,
+          690
+        ]
+      }
+    ],
+    [
+      "media",
+      "http",
+      ""
+    ],
+    [
+      "http",
+      "fire",
+      "Admin SDK"
+    ]
+  ],
+  "groups": [
+    [
+      30,
+      80,
+      770,
+      770,
+      "Android client"
+    ],
+    [
+      855,
+      80,
+      510,
+      820,
+      "Dịch vụ bên ngoài thiết bị"
+    ]
+  ],
+  "size": [
+    1400,
+    1030
+  ],
+  "note": "Local: danh mục / sản phẩm / lô / chiến dịch / đơn đã cache.\nOnline bắt buộc: checkout, thanh toán, duyệt, cập nhật tồn và chuyển trạng thái."
+}

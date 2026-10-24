@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1040" viewBox="0 0 1400 1040"><rect width="100%" height="100%" fill="white"/><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#333"/></marker></defs>
+<text x="700.0" y="48" font-family="Arial" font-size="30" font-weight="bold" text-anchor="middle" fill="#172b31">Use case tổng thể RescueFarm</text>
+<rect x="235" y="80" width="1110" height="850" rx="12" fill="none" stroke="#59747b" stroke-width="2"/>
+<text x="250" y="111" font-family="Arial" font-size="21" font-weight="bold" text-anchor="start" fill="#172b31">RescueFarm</text>
+<path d="M150 162 L285.0 181.11940298507463" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 162 L215 162 L215 265 L780 265 L780 230" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 162 L190 162 L190 295 L1125 295 L1125 230" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 367 L285.0 386.1194029850746" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 367 L215 367 L215 470 L780 470 L780 435" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 367 L190 367 L190 500 L1125 500 L1125 435" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 572 L285.0 591.1194029850747" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 572 L215 572 L215 675 L780 675 L780 640" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 572 L190 572 L190 705 L1125 705 L1125 640" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 777 L285.0 796.1194029850747" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 777 L215 777 L215 880 L780 880 L780 845" stroke="#333" stroke-width="2" fill="none"/>
+<path d="M150 777 L190 777 L190 910 L1125 910 L1125 845" stroke="#333" stroke-width="2" fill="none"/>
+<circle cx="100.0" cy="132" r="12" fill="white" stroke="#172b31"/><path d="M100.0 144v41 M50 162h100 M100.0 185l-45.0 22 M100.0 185l45.0 22" fill="none" stroke="#172b31" stroke-width="2"/>
+<text x="100.0" y="232" font-family="Arial" font-size="22" font-weight="bold" text-anchor="middle" fill="#172b31">Guest</text>
+<ellipse cx="435.0" cy="180.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="435.0" y="172.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Khám phá và</text>
+<text x="435.0" y="203.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">tìm kiếm</text>
+<ellipse cx="780.0" cy="180.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="780.0" y="172.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Giỏ cục bộ và</text>
+<text x="780.0" y="203.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">checkout</text>
+<ellipse cx="1125.0" cy="180.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1125.0" y="172.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Xem và</text>
+<text x="1125.0" y="203.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">ủng hộ Hũ</text>
+<circle cx="100.0" cy="337" r="12" fill="white" stroke="#172b31"/><path d="M100.0 349v41 M50 367h100 M100.0 390l-45.0 22 M100.0 390l45.0 22" fill="none" stroke="#172b31" stroke-width="2"/>
+<text x="100.0" y="437" font-family="Arial" font-size="22" font-weight="bold" text-anchor="middle" fill="#172b31">Customer</text>
+<ellipse cx="435.0" cy="385.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="435.0" y="377.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Đơn hàng và</text>
+<text x="435.0" y="408.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">nhận hàng</text>
+<ellipse cx="780.0" cy="385.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="780.0" y="392.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Đánh giá khi đủ điều kiện</text>
+<ellipse cx="1125.0" cy="385.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1125.0" y="377.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Yêu thích và</text>
+<text x="1125.0" y="408.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">tương tác</text>
+<circle cx="100.0" cy="542" r="12" fill="white" stroke="#172b31"/><path d="M100.0 554v41 M50 572h100 M100.0 595l-45.0 22 M100.0 595l45.0 22" fill="none" stroke="#172b31" stroke-width="2"/>
+<text x="100.0" y="642" font-family="Arial" font-size="22" font-weight="bold" text-anchor="middle" fill="#172b31">Seller</text>
+<ellipse cx="435.0" cy="590.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="435.0" y="582.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Sản phẩm và</text>
+<text x="435.0" y="613.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">lô hàng</text>
+<ellipse cx="780.0" cy="590.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="780.0" y="582.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Chiến dịch và</text>
+<text x="780.0" y="613.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">gói giải cứu</text>
+<ellipse cx="1125.0" cy="590.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1125.0" y="582.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Đơn và</text>
+<text x="1125.0" y="613.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">chuyến thiện nguyện</text>
+<circle cx="100.0" cy="747" r="12" fill="white" stroke="#172b31"/><path d="M100.0 759v41 M50 777h100 M100.0 800l-45.0 22 M100.0 800l45.0 22" fill="none" stroke="#172b31" stroke-width="2"/>
+<text x="100.0" y="847" font-family="Arial" font-size="22" font-weight="bold" text-anchor="middle" fill="#172b31">Admin</text>
+<ellipse cx="435.0" cy="795.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="435.0" y="787.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Duyệt Seller và</text>
+<text x="435.0" y="818.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">nội dung</text>
+<ellipse cx="780.0" cy="795.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="780.0" y="787.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Đối soát và</text>
+<text x="780.0" y="818.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">cấu hình</text>
+<ellipse cx="1125.0" cy="795.0" rx="150.0" ry="50.0" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1125.0" y="787.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Xác minh giao và</text>
+<text x="1125.0" y="818.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">ghi chi</text>
+<text x="700.0" y="990" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Customer cũng dùng các use case công khai của Guest. Quyền ghi do Rules và API kiểm tra.</text>
+<text x="700.0" y="1018" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Liên kết là association; không dùng include hoặc extend khi không cần thiết.</text>
+</svg>

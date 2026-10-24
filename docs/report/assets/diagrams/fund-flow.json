@@ -1,0 +1,121 @@
+{
+  "title": "Luồng tổng hợp Hũ giải cứu chính sách phiên bản 2",
+  "nodes": {
+    "don": [
+      60,
+      120,
+      330,
+      110,
+      "Guest / Customer / Seller\nQR và mã riêng\nPENDING donation"
+    ],
+    "hook": [
+      480,
+      120,
+      330,
+      110,
+      "SePay hợp lệ → PAID\ncộng available một lần"
+    ],
+    "select": [
+      900,
+      120,
+      330,
+      110,
+      "Chọn lô tại thời điểm t\n> t + 24h + 1 phút\n≤ t + 48h"
+    ],
+    "reserve": [
+      900,
+      350,
+      330,
+      115,
+      "RESERVED trong transaction\ngiữ cả tiền và hàng\ndeadline = t + 24h"
+    ],
+    "accept": [
+      480,
+      350,
+      330,
+      115,
+      "Seller ACCEPTED\nkhông đặt lại deadline"
+    ],
+    "proof": [
+      60,
+      350,
+      330,
+      115,
+      "DELIVERED trước hạn\nảnh gửi lên kịp thời"
+    ],
+    "verify": [
+      60,
+      610,
+      330,
+      115,
+      "Admin VERIFIED sau kiểm tra\nchốt kho; tiền còn reserved\ncó thể duyệt sau deadline"
+    ],
+    "paid": [
+      480,
+      610,
+      330,
+      115,
+      "Chuyển tiền ngoài app\nPAY lưu mã + ảnh + số tiền\nreserved → spent"
+    ],
+    "cancel": [
+      900,
+      610,
+      330,
+      115,
+      "Chưa có ảnh khi quá hạn\nRESERVED / ACCEPTED\nCANCELLED và giải phóng"
+    ]
+  },
+  "edges": [
+    [
+      "don",
+      "hook",
+      ""
+    ],
+    [
+      "hook",
+      "select",
+      ""
+    ],
+    [
+      "select",
+      "reserve",
+      "đủ điều kiện"
+    ],
+    [
+      "reserve",
+      "accept",
+      ""
+    ],
+    [
+      "accept",
+      "proof",
+      ""
+    ],
+    [
+      "proof",
+      "verify",
+      "ảnh đúng hạn"
+    ],
+    [
+      "verify",
+      "paid",
+      ""
+    ],
+    [
+      "reserve",
+      "cancel",
+      "quá hạn"
+    ],
+    [
+      "accept",
+      "cancel",
+      "quá hạn"
+    ]
+  ],
+  "groups": [],
+  "size": [
+    1320,
+    900
+  ],
+  "note": "DELIVERED đúng hạn không bị worker hủy vì Admin duyệt muộn.\nGiải phóng tiền giữ về available không phải hoàn tiền ngân hàng cho người ủng hộ."
+}

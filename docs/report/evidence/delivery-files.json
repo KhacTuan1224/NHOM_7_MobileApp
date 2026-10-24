@@ -1,0 +1,732 @@
+[
+  {
+    "path": "app/build.gradle.kts",
+    "size": 3196,
+    "sha256": "91f870c7a6f165a243c16280419473ca9f7580f02a5563cc8c1240258be95099"
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/ReportScreenshotEvidenceTest.java",
+    "size": 11891,
+    "sha256": "e3edf73c30d924f138562afa1d528fc4763ac71330367f882b3a08b3b353abf0"
+  },
+  {
+    "path": "app/src/reportDemo/AndroidManifest.xml",
+    "size": 491,
+    "sha256": "70eca67bc552fdeda9367f499b785814259977e5ac46e4cb634840c25f64f2b2"
+  },
+  {
+    "path": "app/src/reportDemo/google-services.json",
+    "size": 704,
+    "sha256": "721371898eea3a265bc881e98fa05241aa22abaffd2a9159bddfa4cc5e227ec1"
+  },
+  {
+    "path": "app/src/reportDemo/java/com/rescuefarm/AppCheckInstaller.java",
+    "size": 246,
+    "sha256": "3d5e48a6d3059579bd4455daa954ae7d2348881ef17ba5e7024b461c6c660926"
+  },
+  {
+    "path": "app/src/reportDemo/java/com/rescuefarm/report/ReportDemoApplication.java",
+    "size": 1169,
+    "sha256": "56652bef341ea9de8acb4077b971ddf5872bc4f2e5977bfe9d12f1d53f460404"
+  },
+  {
+    "path": "docs/MOBILE FINAL PROJECT.pdf",
+    "size": 347700,
+    "sha256": "2a612071aa1b6245295552b1e72c2daaf6ded5c76d439b82afccd65d4f1e5818"
+  },
+  {
+    "path": "docs/report/assets/diagrams/architecture.json",
+    "size": 3570,
+    "sha256": "3152b4e617cdd4dac4e1cb9d1049c28dcb210792f8b3f1a96264e659ea07e417"
+  },
+  {
+    "path": "docs/report/assets/diagrams/architecture.png",
+    "size": 234968,
+    "sha256": "67df5734d842ecad9240b61be77eadfd21c94fb2abd0f0ccd584c935fee16d73"
+  },
+  {
+    "path": "docs/report/assets/diagrams/architecture.svg",
+    "size": 8463,
+    "sha256": "2d06618b0c0f1870b2f198aab1fb785e7da803d29f0bc93db67586d0220f6cb8"
+  },
+  {
+    "path": "docs/report/assets/diagrams/data-model.json",
+    "size": 3109,
+    "sha256": "40a1403287b4968e7ef4500dbca054c4b26728cba7bfbec72c83566b371b77b3"
+  },
+  {
+    "path": "docs/report/assets/diagrams/data-model.png",
+    "size": 233965,
+    "sha256": "91ca85b0c61ab9c2db79c592f8ac63cfa97d70a548c266c25685e4417d1c9bde"
+  },
+  {
+    "path": "docs/report/assets/diagrams/data-model.svg",
+    "size": 8329,
+    "sha256": "fbc81af9783fc4d9ac2003e92ccd5c164f4f05ee5fe36f604c074e8b6525dd1a"
+  },
+  {
+    "path": "docs/report/assets/diagrams/functions.json",
+    "size": 1324,
+    "sha256": "e5bd251c0cde4d672e0df9b704b8cfebdeaa7186d39773a1855cd5f426f1d681"
+  },
+  {
+    "path": "docs/report/assets/diagrams/functions.png",
+    "size": 135109,
+    "sha256": "256f30a67cc7ab46ef2b8cf1530e8ac47724da4424cf56544d69dca847748402"
+  },
+  {
+    "path": "docs/report/assets/diagrams/functions.svg",
+    "size": 4049,
+    "sha256": "69ef7feb601a3c68e986265d87ce43320c5930ea09e7e3a31e796c61f29d63bf"
+  },
+  {
+    "path": "docs/report/assets/diagrams/fund-flow.json",
+    "size": 2307,
+    "sha256": "6e6fafbc5a67d4aaa7079fc91270ef82c1194901e06f23b8d2fcb3639562c5fb"
+  },
+  {
+    "path": "docs/report/assets/diagrams/fund-flow.png",
+    "size": 234810,
+    "sha256": "1f951bb20681609c1e0e0fe12b597d97f5f516f41b72d58186f5ee8ab1fbdcff"
+  },
+  {
+    "path": "docs/report/assets/diagrams/fund-flow.svg",
+    "size": 7336,
+    "sha256": "042572238bb9216d52c44e429e5398bb5bb2e15de8e347b5beb3afead4f1e9c2"
+  },
+  {
+    "path": "docs/report/assets/diagrams/oop.json",
+    "size": 2431,
+    "sha256": "88b0f082b083525395fccb87a3b932ce78ef0b62e3a60acf0bc439a41eedd459"
+  },
+  {
+    "path": "docs/report/assets/diagrams/oop.png",
+    "size": 192759,
+    "sha256": "365a34a4f87d84f0fe0d8240aae4ad28229be4bfe770f84667e45c264df9fdf2"
+  },
+  {
+    "path": "docs/report/assets/diagrams/oop.svg",
+    "size": 7175,
+    "sha256": "4dfc0c93e0830ffe697e6c744a4780857c009c650c52e10e1662f678a6705937"
+  },
+  {
+    "path": "docs/report/assets/diagrams/order-flow.json",
+    "size": 2212,
+    "sha256": "c2d52a3dbec83405337614590deedddb2966579548149e7c141e4d05fbea15f7"
+  },
+  {
+    "path": "docs/report/assets/diagrams/order-flow.png",
+    "size": 196529,
+    "sha256": "4e3c491589826efcb23773172a57b92e955353f4988d661dfbf6c3e9281b32b8"
+  },
+  {
+    "path": "docs/report/assets/diagrams/order-flow.svg",
+    "size": 6800,
+    "sha256": "dc509b80f5c2c00854ae9cb95537823e50ce60f602b788270c14d64362c2bcec"
+  },
+  {
+    "path": "docs/report/assets/diagrams/template-X10.png",
+    "size": 12579,
+    "sha256": "df982179b34dbda6f558aaaf8e79881e6123ca102512b042ba9d6a9271ce0cf5"
+  },
+  {
+    "path": "docs/report/assets/diagrams/use-cases.json",
+    "size": 6213,
+    "sha256": "09ea9c399e55d95f89f9429b4b87749715b83fbd3d517694c9f9ef06119bcdc9"
+  },
+  {
+    "path": "docs/report/assets/diagrams/use-cases.png",
+    "size": 203311,
+    "sha256": "5176c345047772698773dc56c86e8f59b35e929b701353da86dee91b66592898"
+  },
+  {
+    "path": "docs/report/assets/diagrams/use-cases.svg",
+    "size": 8103,
+    "sha256": "dddbc8f7b5b4b70062b127c5b4bd03bd3c575a4c4ccc0b48a9b4db3ca3bac259"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/admin-dashboard.png",
+    "size": 183992,
+    "sha256": "a0d98243584abcd826ab06552daf7c0ec98a8048e7a6f9b4e32add4ac4a2b5e3"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/admin-fund.png",
+    "size": 181134,
+    "sha256": "136dce1999bc93a796d75980bc333532902d64b774705a399c4a07a87c0ac62f"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/admin-products.png",
+    "size": 208856,
+    "sha256": "81aa85726b94e0d414b0a7114f9d5b2edb44686c5cbefb98daad80aab43fce87"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-cancelled-admin-ledger.png",
+    "size": 140030,
+    "sha256": "eda71cb4a77a9abf4aaa13bb9fdbc549a794960d9b8c603181edd0cbae42cf3f"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-delivered-admin-jobs.png",
+    "size": 115898,
+    "sha256": "c857e2035b225e83a179a87e32a41c01513b976896a6555274b62583df1d83f6"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-delivered-admin-top.png",
+    "size": 176630,
+    "sha256": "90bffd8fc06e5e5d26d215939ba37702c1bdc71fee2cbf645f39d6ebd1d5663b"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-paid-admin-jobs.png",
+    "size": 78603,
+    "sha256": "5900e661dc1d839722122a7b8e0f72a47afd41981f621a98766433519a31bf42"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-paid-admin-status.png",
+    "size": 179187,
+    "sha256": "06ce29c63eb12851b9fa44b37b98c9a5f462a8d712c20696010bee2ce0698f72"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-paid-admin-top.png",
+    "size": 181122,
+    "sha256": "535336270499126b5fc76e402db8d90361363cdf7b933440951965e26bc201fc"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-verified-admin-jobs.png",
+    "size": 122384,
+    "sha256": "0a26cc50b2f8157d7040cfdd6c2a5e7cb3c228d65d5212f312efbfc59d3d26f8"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/admin/fund-verified-admin-top.png",
+    "size": 181058,
+    "sha256": "07f2fca2bf2831ea8798fcfea10913646c13e15f9ef138596f26944a1ed40dea"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/customer/customer-cart.png",
+    "size": 107391,
+    "sha256": "2847689414003234ae29f28fe7bce392fce017aad799d54a43066c8f0ad700ee"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/customer/customer-checkout.png",
+    "size": 145906,
+    "sha256": "2f929183ecafff1f89dc67928bd9d623382051b5c02ce8565a110508f4a8d9df"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/customer/customer-orders.png",
+    "size": 73981,
+    "sha256": "6b2a35caeff055876f63f019a7f2a23c2cfa8fa2c7a123582fed5562b5ef8a01"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/catalog-online.png",
+    "size": 122902,
+    "sha256": "30cc146772c39c26512ab418b475cf68a7e4c5cdd880eee36effd29fd11c30f1"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/catalog-room-offline-restart.png",
+    "size": 148674,
+    "sha256": "32b188eb8c8084ec96d31b5b7ac28ec60fcf238b764d2c9d257435d6e9eab8b5"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/catalog-sdk-offline.png",
+    "size": 129214,
+    "sha256": "9c50ca7f59e108f532de4f80e9ea89a6bf4fb4458d380e3f414ddc57bb36d1e5"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/guest-cart.png",
+    "size": 106755,
+    "sha256": "cf1430917a8181c9d115d6a1a9d6659d451596c173d3839c5a1201846d66b09a"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/guest-discovery.png",
+    "size": 190532,
+    "sha256": "fafcd340e86abaf5d4404ea600ac05463433bb2e38443edba769cfee23be1f87"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/guest-home.png",
+    "size": 359526,
+    "sha256": "4c56b95b29e413cbfbc0359afa8e78dead62e0d7d7a1cfd1dfe08d5988ca22b2"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/guest-product.png",
+    "size": 131750,
+    "sha256": "e6b666dc30e12b65842f7698dfb30a43f10e3befb62b6d951b2d70c265a35ce3"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/login-landscape.png",
+    "size": 841252,
+    "sha256": "6d9691e1d32d63cbcb09904d2db1be99c6242c9ef885568ce86c1d728b55bec8"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/guest/login-portrait.png",
+    "size": 580134,
+    "sha256": "ad8adf215bebac1172be00b77f416abf2ab0a3437f820cb21b0a64b79799882c"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/fund-accepted-seller-jobs.png",
+    "size": 172580,
+    "sha256": "7b6c9f1169a65d0a0345d69c5179279392c6ef918292ac05322fcdf8c1bf607a"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/fund-accepted-seller-top.png",
+    "size": 169149,
+    "sha256": "2173227111b61a41ed30c16cd895cd9448b1ac87d61a67a42cb42018288b088d"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/fund-reserved-seller-jobs.png",
+    "size": 172500,
+    "sha256": "1d59dcb098dee4ca1d912c829ab4ab5083804c32151c5da1c3c708095f4764c5"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/fund-reserved-seller-top.png",
+    "size": 169149,
+    "sha256": "2173227111b61a41ed30c16cd895cd9448b1ac87d61a67a42cb42018288b088d"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/seller-batches.png",
+    "size": 155484,
+    "sha256": "7c7854734baece66cc254eacc22a2042aeb07da6787f027b8c909839c2168f24"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/seller-campaigns.png",
+    "size": 56612,
+    "sha256": "e9e19422c97e0a88f84e1e96b34860e061ba295aedc3754ce796e46984df9205"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/seller-dashboard.png",
+    "size": 176128,
+    "sha256": "f617a2a3a561abbc954c961f393c8ca8d08146a875f1a8dd812fdf8bdf5e31f9"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/seller-fund.png",
+    "size": 173505,
+    "sha256": "44d12c5f344b0c4b98b98ae39945b0bcac6182fe5b79fe558fe737635b592364"
+  },
+  {
+    "path": "docs/report/assets/screenshots/originals/seller/seller-products.png",
+    "size": 182033,
+    "sha256": "008e0fd7da735006d44763999089f89962963df41c2740ee71611ce1942982b1"
+  },
+  {
+    "path": "docs/report/audit-matrix.md",
+    "size": 8593,
+    "sha256": "dc2be12f33567819e1c9f7d6b6c527ad42a9fe0f018aa1a9e31098a5363374f3"
+  },
+  {
+    "path": "docs/report/defense-questions.md",
+    "size": 4756,
+    "sha256": "1d6929fb3fc93afa9ea4c5c024e53355f45c9f0b66bea6f8d70bdbcb604a80b5"
+  },
+  {
+    "path": "docs/report/demo-5-minutes.md",
+    "size": 4028,
+    "sha256": "c68f191558e402dd6f7fb203b2b392a5822123e100ab1de9ce70a143481659a2"
+  },
+  {
+    "path": "docs/report/evidence/android-final-diff.log",
+    "size": 5714,
+    "sha256": "53f6fd300dbe27a5429e17800cbdd95a06f08fb6e0c97346a48732ef1e1050a2"
+  },
+  {
+    "path": "docs/report/evidence/android-head.log",
+    "size": 5496,
+    "sha256": "d62c8abc68d2c4bd8873a9cf98dadf0d8e81cb2f1a402f3fdd8e55c145c5c14e"
+  },
+  {
+    "path": "docs/report/evidence/audit-inputs.json",
+    "size": 3326,
+    "sha256": "44b1761d37bf0a84cba8af277ca42a9a744ea3987f900abd276b352f812620cd"
+  },
+  {
+    "path": "docs/report/evidence/audit-results-current.json",
+    "size": 19876,
+    "sha256": "df91469cf9be216a473b242672292acbfac8497d5372f81a9d10e82573bdd391"
+  },
+  {
+    "path": "docs/report/evidence/backend-check.log",
+    "size": 1072,
+    "sha256": "ee2ced4586ea9795db73e11be39a37454c7d0154cdd3c6c580bd7a3a60e315ab"
+  },
+  {
+    "path": "docs/report/evidence/backend-unit.log",
+    "size": 41307,
+    "sha256": "9188c376895d749cee615b4a0216af80fd6393aa80dd8f1fd28bc661ee87431a"
+  },
+  {
+    "path": "docs/report/evidence/demo-backend.log",
+    "size": 67,
+    "sha256": "a95d9af8d9db784935aa0fcdab4937756f65006513d1a7e5cc70e9c1a7bb1236"
+  },
+  {
+    "path": "docs/report/evidence/demo-build-final.log",
+    "size": 5356,
+    "sha256": "7ba7396507a60b8f072e9d0b9dbf008a8f5bc96408c5c7f1611a9513fa95f0fe"
+  },
+  {
+    "path": "docs/report/evidence/demo-build.log",
+    "size": 4848,
+    "sha256": "0eca3122db69ff791e085ee698b37c218c7aaa8ad765c0b10a727d2d940e58cc"
+  },
+  {
+    "path": "docs/report/evidence/demo-seed.log",
+    "size": 107,
+    "sha256": "341f8b3d42df5525e4ee27065263d5585ea0485fd1089afbc09e7b57bb8c6a85"
+  },
+  {
+    "path": "docs/report/evidence/demo-services.log",
+    "size": 1972,
+    "sha256": "6e9ec347fa1eb9954bc49a5d1f7fbf11133446a2ea7f125f539c26f1c3ecc02d"
+  },
+  {
+    "path": "docs/report/evidence/device-apk.txt",
+    "size": 147,
+    "sha256": "e636bdbc3dbee68bbb64760cb15ce7004e19036cbdeb968861a2dfbb44ae0a55"
+  },
+  {
+    "path": "docs/report/evidence/document-qa.json",
+    "size": 565,
+    "sha256": "65129a28c02a2beb74afa9d4879cd32ee61717c68c81bae62e0717a9e241668c"
+  },
+  {
+    "path": "docs/report/evidence/final-evidence-test-build.log",
+    "size": 4342,
+    "sha256": "9c6c29ed30ee9fe4ddbb33c480ea341aa1570967b0d0771b89ef0c7053a51af0"
+  },
+  {
+    "path": "docs/report/evidence/firestore-head-retry.log",
+    "size": 106972,
+    "sha256": "92159005c1943c8244cc4f5c7b2a355c9069a26b3cb00bc08fb189b7097532c2"
+  },
+  {
+    "path": "docs/report/evidence/firestore-head.log",
+    "size": 486,
+    "sha256": "7a2db3638b2b7cfca699ef585dcfb6d07d67305986aec563ccdaf3c85d73656b"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-accept.json",
+    "size": 1399,
+    "sha256": "55ba454728a0f20b7953b123fd9d2bbed53dc57c4725e8e54beb81b26db5d4f5"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-accept.log",
+    "size": 73,
+    "sha256": "5640f24c9a798cb34060b5e9540531d3d3c9dd2e30e8c3f4f8965247af860ca8"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-deliver.json",
+    "size": 1523,
+    "sha256": "acbb374b8bd87e6a197a104a2eb60a035a563edd0460d1e6e167f2fca0d2b1c3"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-deliver.log",
+    "size": 74,
+    "sha256": "0cfee2f28d7cd1b2c506cb543e24d291da523565c3a632b64e571aed3bdf2710"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-expire-verify.json",
+    "size": 1784,
+    "sha256": "19af8d462dc60b917d63f17220c0ec5bac3422ae4fcdf527eb5f18946e834d0e"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-expire-verify.log",
+    "size": 80,
+    "sha256": "eb370768cc24e42e88b1db1f3bf40c91471b1fa99dce6a705abe7c5f1ebbfa26"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-pay.json",
+    "size": 1902,
+    "sha256": "1919a6be471a813ab7aa20fb31420e8e21604673f322c3893e0efe4ad73b7fa3"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-pay.log",
+    "size": 70,
+    "sha256": "181e599a8a93e310e421abb2140307f1072111d891f539d1a52edb484dc8e473"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-setup.json",
+    "size": 1278,
+    "sha256": "0850e797f342d6018a57660f4af6875045b3aca9b7a00710a5b0e416cd220cf7"
+  },
+  {
+    "path": "docs/report/evidence/fund-demo-setup.log",
+    "size": 72,
+    "sha256": "5f98b44c1d3d527a9f7b50fcbd116e58f303d1c9bbbec3973273d9a657c4e692"
+  },
+  {
+    "path": "docs/report/evidence/fund-final-details.log",
+    "size": 923,
+    "sha256": "aa86ab4333fea371e8eb652f3acc4e6a7cfba0c3569c7ebcab2c822c4d9ee614"
+  },
+  {
+    "path": "docs/report/evidence/fund-shot-accepted.log",
+    "size": 908,
+    "sha256": "d382dd09765f43eaa4be32fdb3556975fe533274022b1b4345523dd8788badc0"
+  },
+  {
+    "path": "docs/report/evidence/fund-shot-delivered.log",
+    "size": 908,
+    "sha256": "1de96a2424ad2e1195f51f1e52bb940c7656507a0534f459bebfed35769b0fc5"
+  },
+  {
+    "path": "docs/report/evidence/fund-shot-paid.log",
+    "size": 909,
+    "sha256": "a058573966ac313e9e7a3cb2022bd742dad374a88afd9b9d13b72b88bd7d3e73"
+  },
+  {
+    "path": "docs/report/evidence/fund-shot-reserved.log",
+    "size": 909,
+    "sha256": "0804d8b76833d1a7b5dfd7a06f9e4b30b9485fe7394b53224f3adc9f0b5d0c06"
+  },
+  {
+    "path": "docs/report/evidence/fund-shot-verified.log",
+    "size": 909,
+    "sha256": "b9d982ed9fb5227190741fd08bf1812da58136d52acf1ad7e96365f4edfe37ef"
+  },
+  {
+    "path": "docs/report/evidence/git-evidence.json",
+    "size": 10359,
+    "sha256": "0183f22f771bc4b453792d2b933ca646850be62066ece404396ea4e1d0e3b583"
+  },
+  {
+    "path": "docs/report/evidence/implementation-diff.patch",
+    "size": 896,
+    "sha256": "fc5ce6e9621b12e0dba74c76db1ce56bed04a0d930162ac5770014e9d40e9dfb"
+  },
+  {
+    "path": "docs/report/evidence/instrumentation-demo.log",
+    "size": 7631,
+    "sha256": "c96f4c327258e96a19d46876df81e7f5a621635c7aad1c0fc087c057d90b73bf"
+  },
+  {
+    "path": "docs/report/evidence/instrumentation-final-apk.log",
+    "size": 7631,
+    "sha256": "93f111c3023de39428f8bf26b3d669c0bbdc3dd6feb0e85a7c6158ac2bd44de3"
+  },
+  {
+    "path": "docs/report/evidence/jvm-rerun-final.log",
+    "size": 1359,
+    "sha256": "72edd334cc3791033c48f64301219bccfd5cdb0a7efc473cc71b73f2c5e39243"
+  },
+  {
+    "path": "docs/report/evidence/jvm-rerun.log",
+    "size": 2186,
+    "sha256": "e049afd32dfc0f72a761db43a3620a384b5470c86c581b706c4b6d6319d40666"
+  },
+  {
+    "path": "docs/report/evidence/lint-final-helper.log",
+    "size": 2167,
+    "sha256": "55974e73115da7b3153e1be40b2429039cde7c4a2f4fec7952d691ad03ef9922"
+  },
+  {
+    "path": "docs/report/evidence/navigation-head.log",
+    "size": 54,
+    "sha256": "59c7d2a12a716b04a8558ab8406b436cd0fdc9a869d4c9277e3eafad88606642"
+  },
+  {
+    "path": "docs/report/evidence/offline-device-network-final.log",
+    "size": 958,
+    "sha256": "28a5dfd87f8a4139619a6009ce93701566809307c60fed19c425d9a2f7545dbf"
+  },
+  {
+    "path": "docs/report/evidence/offline-prepare-network-final.log",
+    "size": 769,
+    "sha256": "9d17ecd2aa5e3257b0d851d39d9e389a6cef88e6106504b3d40eeb522e3e22c0"
+  },
+  {
+    "path": "docs/report/evidence/offline-prepare-retry.log",
+    "size": 769,
+    "sha256": "fea7349aa69e46b3955a6f4379e4d3832a901cb1907fdffd82ec3662431f8b46"
+  },
+  {
+    "path": "docs/report/evidence/offline-prepare.log",
+    "size": 90,
+    "sha256": "92e5b4b3f421c5585ecf6a04c8be239279e480ba0046ace63c9af36c53272cbc"
+  },
+  {
+    "path": "docs/report/evidence/offline-restart-retry.log",
+    "size": 958,
+    "sha256": "9a3d2fb45e1ad34955b8a5502853d058023c92111212f1f63af7ec5456058e29"
+  },
+  {
+    "path": "docs/report/evidence/offline-restart.log",
+    "size": 90,
+    "sha256": "92e5b4b3f421c5585ecf6a04c8be239279e480ba0046ace63c9af36c53272cbc"
+  },
+  {
+    "path": "docs/report/evidence/pdf-pages.json",
+    "size": 129475,
+    "sha256": "a7c41c0e939a493ffce42532937a23e4cda52a329ab0bfe0487994cd58d8f520"
+  },
+  {
+    "path": "docs/report/evidence/reference.json",
+    "size": 144,
+    "sha256": "e0bbd8cc048e608e83badf654208c99b016829034e08d3f368c5aaead656d7f8"
+  },
+  {
+    "path": "docs/report/evidence/render-verified/contact-1.jpg",
+    "size": 581931,
+    "sha256": "db240eeb90e13801520ec2e8beceaf9657250f47018052373c42f9d288f3fd09"
+  },
+  {
+    "path": "docs/report/evidence/render-verified/contact-2.jpg",
+    "size": 597894,
+    "sha256": "a3d3651983ee6f55f26c933949aa37549f6a48434cd2f7f91f3527bc3c12ca55"
+  },
+  {
+    "path": "docs/report/evidence/render-verified/contact-3.jpg",
+    "size": 517759,
+    "sha256": "41b3832dd09cefce9d118cdcb615bf256d0d8b014b583ddda91733d7f7462d96"
+  },
+  {
+    "path": "docs/report/evidence/render-verified/contact-4.jpg",
+    "size": 670575,
+    "sha256": "96a3293c65b15ddd1672467e7cd88d2d33d9271c268eeb3c37b0baabfa8e3e9b"
+  },
+  {
+    "path": "docs/report/evidence/render-verified/contact-5.jpg",
+    "size": 503813,
+    "sha256": "c55c482ac0587e300d056e0692e3fa93ee276f08c68c2e0d64ba5abf41f6bf20"
+  },
+  {
+    "path": "docs/report/evidence/renderer-attempt.log",
+    "size": 6102,
+    "sha256": "c26cc0ea98edad83dcfe383a0dd91cc85eb7f58e2b07cb3a2b1ff054989b643d"
+  },
+  {
+    "path": "docs/report/evidence/rotation-stable-pair-retry.log",
+    "size": 927,
+    "sha256": "916bf5425b6e15f5813f957640bd28bec401ed7a0db2adee5d93d540bc70c007"
+  },
+  {
+    "path": "docs/report/evidence/rotation-stable-pair.log",
+    "size": 94,
+    "sha256": "36de2a3105bb027e74a24a422653f65d15ab02f7759310d73978991910a7765a"
+  },
+  {
+    "path": "docs/report/evidence/rotation-test-build.log",
+    "size": 4262,
+    "sha256": "8e997f6ae69191126cffd0024e07f1b433629841b717c1dd4836f88aad148ef2"
+  },
+  {
+    "path": "docs/report/evidence/screenshots-final-apk.log",
+    "size": 943,
+    "sha256": "c4fda1ba039a612b0b2dd4b57b8c36220e8d5a9c8f954de51be810c3000cbace"
+  },
+  {
+    "path": "docs/report/evidence/screenshots-manifest.json",
+    "size": 46254,
+    "sha256": "c7932ed73e6074fd2347ccad7c35f9c6e42bc525deaf760f47e563b230c2e4c1"
+  },
+  {
+    "path": "docs/report/evidence/screenshots-run.log",
+    "size": 943,
+    "sha256": "42e428236bc4a4b158b932ba0a87368cca63bed8c2a8383f176371d53ded02cf"
+  },
+  {
+    "path": "docs/report/evidence/source-inventory.json",
+    "size": 158453,
+    "sha256": "0e524b33d1023fb187eb0584496086014682f769aa90948e3cf46e759ec9d52e"
+  },
+  {
+    "path": "docs/report/evidence/sources.json",
+    "size": 1768,
+    "sha256": "67bfe219948dba1f40f48b08ad4481d38124e8eca14ce1d87db98266d9751fa8"
+  },
+  {
+    "path": "docs/report/evidence/visual-review.json",
+    "size": 1351,
+    "sha256": "7259f64176ba843d7d30f8cc088b2c0505da2ea5c7c5188f97d5e56702846a58"
+  },
+  {
+    "path": "docs/report/evidence/word-render.log",
+    "size": 10,
+    "sha256": "c1118bf32b963e3e4f764b0dacbe34c552bcdcb3c66f7049c5b88dc0b8e0cda2"
+  },
+  {
+    "path": "docs/report/handoff.md",
+    "size": 12896,
+    "sha256": "28306e4cbd34b0f0e5d998f85639396310ee7238bdb36ddd5d47e35447d80ff5"
+  },
+  {
+    "path": "docs/report/report.docx",
+    "size": 6155659,
+    "sha256": "0b9361a7251b0cb3b87c335c013188b3223daf123464677df9ad7f20538ba6c5"
+  },
+  {
+    "path": "docs/report/report.pdf",
+    "size": 3413264,
+    "sha256": "230a4ab5981336d67cbdd8626091d7174f8b4949cca7d4c9dbd93747dbad105f"
+  },
+  {
+    "path": "docs/report/source/artifact.md",
+    "size": 868,
+    "sha256": "0f43f2b18d3d0cf784995bdbb186b01a77aa5a7d0c71438e9a07ba8e88cf9dcf"
+  },
+  {
+    "path": "docs/report/source/build-stats.json",
+    "size": 80,
+    "sha256": "408af9bda7a5baae02bd5f7a0486c34030245f62dd6a88d6e386435efce8f2e0"
+  },
+  {
+    "path": "docs/report/source/build_report.py",
+    "size": 19656,
+    "sha256": "e12e680be4f4b7c0c1451cb1f5d22ba794e2721b62205ffd561ef1203d47bfb4"
+  },
+  {
+    "path": "docs/report/source/demo-backend.cjs",
+    "size": 1440,
+    "sha256": "5d7ff4831118be42f6115fdd75af624cf70d7d83b3bec47381281f8d98e6fb02"
+  },
+  {
+    "path": "docs/report/source/diagrams.py",
+    "size": 15183,
+    "sha256": "8c9ea3b6b60eb6b6756483f79db76dbec1d565dcf9e3d65c906aa5091dd07b96"
+  },
+  {
+    "path": "docs/report/source/evidence.py",
+    "size": 9414,
+    "sha256": "75f952cb8069aa2b00c3244bcdf70146fb476c80dd73b13c69cb3f1d0aea295b"
+  },
+  {
+    "path": "docs/report/source/fund-demo.cjs",
+    "size": 6850,
+    "sha256": "1e6bf946b8aeab03d74a6a0b046f52ede8bf16089d98a8d71b44d84118353f98"
+  },
+  {
+    "path": "docs/report/source/google-services-demo.template.json",
+    "size": 519,
+    "sha256": "5fa370a90d4554eb1f2cef01f211fd7d654104b5907bb485221a6f509f4d9a1c"
+  },
+  {
+    "path": "docs/report/source/package_report.py",
+    "size": 1877,
+    "sha256": "42a60775d9f5f1b67418cf5e71ffafeb57c198da20e8861237d92954817fdb0b"
+  },
+  {
+    "path": "docs/report/source/qa.py",
+    "size": 3262,
+    "sha256": "f799703a3ac7a2e2c3c18109b3bfeebc02608ec0064621c46fca516ba95f96e8"
+  },
+  {
+    "path": "docs/report/source/README.md",
+    "size": 5546,
+    "sha256": "228deb54916c151a75007820aedb2c0b9c08606201a0886833c870910dec1a56"
+  },
+  {
+    "path": "docs/report/source/render-word.ps1",
+    "size": 1168,
+    "sha256": "021d65c7e9e3a94cd95d904e1465eb3c3aba39b407ee6289d602ffd4550401eb"
+  },
+  {
+    "path": "docs/report/source/report-content.md",
+    "size": 83830,
+    "sha256": "4c5fc5dffb5e0596b7ed5fcb9f83422eaa27bdc4c3b9d7c64a3801bf9259c752"
+  },
+  {
+    "path": "docs/report/source/seed-demo.cjs",
+    "size": 3410,
+    "sha256": "cae4f234b15f2c789352bdd50481473a9bf639097a7647af920f28cd4cdc3720"
+  },
+  {
+    "path": "firebase.report-demo.json",
+    "size": 266,
+    "sha256": "32c4cbc5d9b483d4248b335de8f5aad408997e1ce3f72ee4015ee156fe43d827"
+  }
+]
