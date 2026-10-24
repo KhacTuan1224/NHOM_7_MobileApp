@@ -1,0 +1,911 @@
+[
+  {
+    "file": "assets/screenshots/originals/admin/admin-dashboard.png",
+    "sha256": "a0d98243584abcd826ab06552daf7c0ec98a8048e7a6f9b4e32add4ac4a2b5e3",
+    "actor": "admin",
+    "destination": "adminDashboardFragment",
+    "purpose": "admin-dashboard",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.780025+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/admin/admin-fund.png",
+    "sha256": "136dce1999bc93a796d75980bc333532902d64b774705a399c4a07a87c0ac62f",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "admin-fund",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.799613+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/admin/admin-products.png",
+    "sha256": "81aa85726b94e0d414b0a7114f9d5b2edb44686c5cbefb98daad80aab43fce87",
+    "actor": "admin",
+    "destination": "adminResourceFragment",
+    "purpose": "admin-products",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.791576+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/guest/catalog-online.png",
+    "sha256": "30cc146772c39c26512ab418b475cf68a7e4c5cdd880eee36effd29fd11c30f1",
+    "actor": "guest",
+    "destination": "productListFragment",
+    "purpose": "catalog-online",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.695633+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "No disk image cache verified; fixture Product images empty.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/guest/catalog-room-offline-restart.png",
+    "sha256": "32b188eb8c8084ec96d31b5b7ac28ec60fcf238b764d2c9d257435d6e9eab8b5",
+    "actor": "guest",
+    "destination": "productListFragment",
+    "purpose": "catalog-room-offline-restart",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest. Final capture also disables emulator Wi-Fi/data after force-stop; see offline-device-network-final.log.",
+    "timestampUtc": "2026-10-24T09:52:05.455217+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "No disk image cache verified; fixture Product images empty.",
+    "offlineScope": "New process, Firestore persistence disabled, SDK network disabled, Room fallback",
+    "deviceNetwork": "Wi-Fi and cellular data disabled on the dedicated test emulator during capture, restored in finally"
+  },
+  {
+    "file": "assets/screenshots/originals/guest/catalog-sdk-offline.png",
+    "sha256": "9c50ca7f59e108f532de4f80e9ea89a6bf4fb4458d380e3f414ddc57bb36d1e5",
+    "actor": "guest",
+    "destination": "productListFragment",
+    "purpose": "catalog-sdk-offline",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.703143+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "No disk image cache verified; fixture Product images empty.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/customer/customer-cart.png",
+    "sha256": "2847689414003234ae29f28fe7bce392fce017aad799d54a43066c8f0ad700ee",
+    "actor": "customer",
+    "destination": "cartFragment",
+    "purpose": "customer-cart",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.708150+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/customer/customer-checkout.png",
+    "sha256": "2f929183ecafff1f89dc67928bd9d623382051b5c02ce8565a110508f4a8d9df",
+    "actor": "customer",
+    "destination": "checkoutFragment",
+    "purpose": "customer-checkout",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.716077+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/customer/customer-orders.png",
+    "sha256": "6b2a35caeff055876f63f019a7f2a23c2cfa8fa2c7a123582fed5562b5ef8a01",
+    "actor": "customer",
+    "destination": "customerOrderListFragment",
+    "purpose": "customer-orders",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.722596+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/seller/fund-accepted-seller-jobs.png",
+    "sha256": "7b6c9f1169a65d0a0345d69c5179279392c6ef918292ac05322fcdf8c1bf607a",
+    "actor": "seller",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-accepted-seller-jobs",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.922101+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/seller/fund-accepted-seller-top.png",
+    "sha256": "2173227111b61a41ed30c16cd895cd9448b1ac87d61a67a42cb42018288b088d",
+    "actor": "seller",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-accepted-seller-top",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.907910+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-cancelled-admin-ledger.png",
+    "sha256": "eda71cb4a77a9abf4aaa13bb9fdbc549a794960d9b8c603181edd0cbae42cf3f",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-cancelled-admin-ledger",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:02.008658+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_a583075ecd013eb8cf24ed219f2f5075"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-delivered-admin-jobs.png",
+    "sha256": "c857e2035b225e83a179a87e32a41c01513b976896a6555274b62583df1d83f6",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-delivered-admin-jobs",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.936145+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-delivered-admin-top.png",
+    "sha256": "90bffd8fc06e5e5d26d215939ba37702c1bdc71fee2cbf645f39d6ebd1d5663b",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-delivered-admin-top",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.931147+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-paid-admin-jobs.png",
+    "sha256": "5900e661dc1d839722122a7b8e0f72a47afd41981f621a98766433519a31bf42",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-paid-admin-jobs",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.975001+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-paid-admin-status.png",
+    "sha256": "06ce29c63eb12851b9fa44b37b98c9a5f462a8d712c20696010bee2ce0698f72",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-paid-admin-status",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.990068+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-paid-admin-top.png",
+    "sha256": "535336270499126b5fc76e402db8d90361363cdf7b933440951965e26bc201fc",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-paid-admin-top",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.968977+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/seller/fund-reserved-seller-jobs.png",
+    "sha256": "1d59dcb098dee4ca1d912c829ab4ab5083804c32151c5da1c3c708095f4764c5",
+    "actor": "seller",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-reserved-seller-jobs",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.895375+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/seller/fund-reserved-seller-top.png",
+    "sha256": "2173227111b61a41ed30c16cd895cd9448b1ac87d61a67a42cb42018288b088d",
+    "actor": "seller",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-reserved-seller-top",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.865764+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-verified-admin-jobs.png",
+    "sha256": "0a26cc50b2f8157d7040cfdd6c2a5e7cb3c228d65d5212f312efbfc59d3d26f8",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-verified-admin-jobs",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.949924+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/admin/fund-verified-admin-top.png",
+    "sha256": "07f2fca2bf2831ea8798fcfea10913646c13e15f9ef138596f26944a1ed40dea",
+    "actor": "admin",
+    "destination": "rescueFundFragment",
+    "purpose": "fund-verified-admin-top",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.943408+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Fund transitions via actual module API harness; image existence HEAD stub, image URLs do not prove uploads or physical delivery/payout.",
+    "offlineScope": null,
+    "linkedDeliveryId": "2026-10-24_b2140450534d92597e98441eaaee78c9"
+  },
+  {
+    "file": "assets/screenshots/originals/guest/guest-cart.png",
+    "sha256": "cf1430917a8181c9d115d6a1a9d6659d451596c173d3839c5a1201846d66b09a",
+    "actor": "guest",
+    "destination": "cartFragment",
+    "purpose": "guest-cart",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.682602+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/guest/guest-discovery.png",
+    "sha256": "fafcd340e86abaf5d4404ea600ac05463433bb2e38443edba769cfee23be1f87",
+    "actor": "guest",
+    "destination": "discoveryFragment",
+    "purpose": "guest-discovery",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.661026+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/guest/guest-home.png",
+    "sha256": "4c56b95b29e413cbfbc0359afa8e78dead62e0d7d7a1cfd1dfe08d5988ca22b2",
+    "actor": "guest",
+    "destination": "guestHomeFragment",
+    "purpose": "guest-home",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.649846+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/guest/guest-product.png",
+    "sha256": "e6b666dc30e12b65842f7698dfb30a43f10e3befb62b6d951b2d70c265a35ce3",
+    "actor": "guest",
+    "destination": "productDetailFragment",
+    "purpose": "guest-product",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.671561+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/guest/login-landscape.png",
+    "sha256": "6d9691e1d32d63cbcb09904d2db1be99c6242c9ef885568ce86c1d728b55bec8",
+    "actor": "guest",
+    "destination": "loginFragment",
+    "purpose": "login-landscape",
+    "steps": "captureStableRotationPair: sign out demo, disable SDK network, open login; set email; wait for rendered frame; assert/capture portrait; rotate; assert/capture landscape; recreate and assert same email.",
+    "timestampUtc": "2026-10-24T10:00:04.663657+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      2400,
+      1080
+    ],
+    "orientation": "landscape",
+    "environment": "emulator-5580 API33; separate demo APK; endpoints configured localhost; services stopped and Firestore SDK network disabled during final login capture",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "Passed rotation-stable-pair-retry.log; both PNGs visibly contain the same demo email",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/guest/login-portrait.png",
+    "sha256": "ad8adf215bebac1172be00b77f416abf2ab0a3437f820cb21b0a64b79799882c",
+    "actor": "guest",
+    "destination": "loginFragment",
+    "purpose": "login-portrait",
+    "steps": "captureStableRotationPair: sign out demo, disable SDK network, open login; set email; wait for rendered frame; assert/capture portrait; rotate; assert/capture landscape; recreate and assert same email.",
+    "timestampUtc": "2026-10-24T10:00:04.519125+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; separate demo APK; endpoints configured localhost; services stopped and Firestore SDK network disabled during final login capture",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "Passed rotation-stable-pair-retry.log; both PNGs visibly contain the same demo email",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/seller/seller-batches.png",
+    "sha256": "7c7854734baece66cc254eacc22a2042aeb07da6787f027b8c909839c2168f24",
+    "actor": "seller",
+    "destination": "batchManagerFragment",
+    "purpose": "seller-batches",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.758224+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/seller/seller-campaigns.png",
+    "sha256": "e9e19422c97e0a88f84e1e96b34860e061ba295aedc3754ce796e46984df9205",
+    "actor": "seller",
+    "destination": "sellerCampaignListFragment",
+    "purpose": "seller-campaigns",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.761769+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/seller/seller-dashboard.png",
+    "sha256": "f617a2a3a561abbc954c961f393c8ca8d08146a875f1a8dd812fdf8bdf5e31f9",
+    "actor": "seller",
+    "destination": "sellerDashboardFragment",
+    "purpose": "seller-dashboard",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.740138+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/seller/seller-fund.png",
+    "sha256": "44d12c5f344b0c4b98b98ae39945b0bcac6182fe5b79fe558fe737635b592364",
+    "actor": "seller",
+    "destination": "rescueFundFragment",
+    "purpose": "seller-fund",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.768778+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  },
+  {
+    "file": "assets/screenshots/originals/seller/seller-products.png",
+    "sha256": "008e0fd7da735006d44763999089f89962963df41c2740ee71611ce1942982b1",
+    "actor": "seller",
+    "destination": "sellerProductListFragment",
+    "purpose": "seller-products",
+    "steps": "ActivityScenario opens real destination; waits; asserts current destination; UiAutomation.takeScreenshot. See ReportScreenshotEvidenceTest.",
+    "timestampUtc": "2026-10-24T09:31:01.749692+00:00",
+    "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+    "apk": {
+      "package": "com.example.nhom_7_mobileapp.reportdemo",
+      "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+    },
+    "size": [
+      1080,
+      2400
+    ],
+    "orientation": "portrait",
+    "environment": "emulator-5580 API33; demo-rescuefarm; Auth9098/Firestore8088; HTTP3008",
+    "fixture": "source/seed-demo.cjs; fund states source/fund-demo.cjs",
+    "expected": "Data and actor match isolated fixture; destination is real running Fragment",
+    "actual": "PNG captured; relevant assertions passed in selected runner logs",
+    "limits": "Direct destination opening does not test all navigation clicks; no live external provider.",
+    "offlineScope": null
+  }
+]

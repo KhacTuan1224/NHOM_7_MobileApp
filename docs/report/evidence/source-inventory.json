@@ -1,0 +1,5059 @@
+[
+  {
+    "path": "app/src/main/java/com/rescuefarm/MainActivity.java",
+    "sha256": "c3c3cdb1a52149181e990b8e5dc5edb863e46aaba98658f92c6d8dafa7ac4b99",
+    "lines": 494,
+    "classes": [
+      "MainActivity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/RescueFarmApplication.java",
+    "sha256": "2b68833f3b3a08b7db91888ee9d2e8c7fba26c47cfec3a1243d21ba19f819a66",
+    "lines": 15,
+    "classes": [
+      "RescueFarmApplication"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/CacheMetadataStore.java",
+    "sha256": "425bc23ec319a37690b5a87f7173a90f93f67430e304213fd73d0caa0ee82c19",
+    "lines": 39,
+    "classes": [
+      "CacheMetadataStore"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/AdminRepository.java",
+    "sha256": "12cd3387e2c2d12c7231f12401f5d0d6246af0471b6dd0270f98dcd46fee060f",
+    "lines": 91,
+    "classes": [
+      "AdminRepository",
+      "Section",
+      "ErrorCode",
+      "ReportAction",
+      "DashboardCallback",
+      "ListCallback",
+      "ActionCallback",
+      "DetailCallback",
+      "PageCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/AdminRepositoryFactory.java",
+    "sha256": "4b83789f7a76cabd3cb9181fefe328a73ea26b3d33238e36df2c3ea8a847d4c4",
+    "lines": 13,
+    "classes": [
+      "AdminRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/AuthRepository.java",
+    "sha256": "84bb0f4d70eb86120a3f50cf802ef404591aba5bc23435ed71986e26fde97966",
+    "lines": 62,
+    "classes": [
+      "AuthRepository",
+      "ErrorCode",
+      "AuthCallback",
+      "ActionCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/AuthRepositoryFactory.java",
+    "sha256": "8f76e2f64c00693c71e68e76d64e0450e84b0471621f8a5c21d0824e24467599",
+    "lines": 17,
+    "classes": [
+      "AuthRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/CampaignEngagementRepository.java",
+    "sha256": "68565269a9065b7b72a13020cb421ecf8a99e3cf63b5095b3f4ee6db137d8188",
+    "lines": 17,
+    "classes": [
+      "CampaignEngagementRepository",
+      "Callback",
+      "Action",
+      "ViewCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/CampaignEngagementRepositoryFactory.java",
+    "sha256": "1079976abb281346e0d8706658c81ab72f6b86ea6f0119a06f383f237db75d8c",
+    "lines": 14,
+    "classes": [
+      "CampaignEngagementRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/CampaignRepository.java",
+    "sha256": "1c84cb8cf09cc4d4826f8dc059d2e6811d64d4fa429b77142d940bb90b0df151",
+    "lines": 51,
+    "classes": [
+      "CampaignRepository",
+      "ErrorCode",
+      "ReservationMutation",
+      "ActionCallback",
+      "CampaignCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/CampaignRepositoryFactory.java",
+    "sha256": "2c1ded7ec091f1984edffee8b7140589c88073a8209e35c4af7e001ce2b1b273",
+    "lines": 21,
+    "classes": [
+      "CampaignRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/CartRepository.java",
+    "sha256": "db5ec16ca9434f65746061f4aef9612282259afb9b65a277959b28e218e621e8",
+    "lines": 28,
+    "classes": [
+      "CartRepository",
+      "ErrorCode",
+      "ActionCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/CartRepositoryFactory.java",
+    "sha256": "008f4b3140b18f4a9edacb3d111ee999d7af2e098d156e686ee57621f2fcea53",
+    "lines": 22,
+    "classes": [
+      "CartRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/EngagementRepository.java",
+    "sha256": "38569c4c1de5586d7dec2f4d13ab368fe1f2168aaed89f8f4f9ad21c7e2a40fa",
+    "lines": 16,
+    "classes": [
+      "EngagementRepository",
+      "ErrorCode",
+      "ActionCallback",
+      "FavoriteCallback",
+      "ReviewCallback",
+      "ReportCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/EngagementRepositoryFactory.java",
+    "sha256": "ee1047c1db695d7b8e0a1bb96192d893411958b6cb2a4367c70ba674dd72c858",
+    "lines": 2,
+    "classes": [
+      "EngagementRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/GuestCartRepository.java",
+    "sha256": "8647379d3145c2c7248d5de682ebb8b9d3d97295207b7a703b1bc16e89378c7b",
+    "lines": 90,
+    "classes": [
+      "GuestCartRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/GuestSessionRepository.java",
+    "sha256": "6ed7253b68ffc4c192fcb2528333af98b6fb9441b342162c77a6d8041962a69b",
+    "lines": 7,
+    "classes": [
+      "GuestSessionRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/OfflineCampaignRepository.java",
+    "sha256": "4e6422ffff90d43b9dc55e6b1d30545b6047f6861c3f46fc1af0870358ab74e0",
+    "lines": 59,
+    "classes": [
+      "OfflineCampaignRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/OfflineOrderRepository.java",
+    "sha256": "1e4cbc29032ca7fe09ea467d1e0d726a215ea9d9dc1b44348fa676e6b499bc66",
+    "lines": 35,
+    "classes": [
+      "OfflineOrderRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/OfflineProductRepository.java",
+    "sha256": "75550db4377d06b5f78d65500e7bf185ec12229557f99f60dce0c1e4307d206a",
+    "lines": 96,
+    "classes": [
+      "OfflineProductRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/OrderRepository.java",
+    "sha256": "d082fec9ad95a767a8967c28369306154f127fbbfc0c0780eecb2ed9dbe4e17b",
+    "lines": 47,
+    "classes": [
+      "OrderRepository",
+      "ItemCallback",
+      "ErrorCode",
+      "OrderCallback",
+      "ActionCallback",
+      "LifecycleCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/OrderRepositoryFactory.java",
+    "sha256": "78607419936709d714eab7fcd288c151e99e2172970498ae3e167b8cc5de0750",
+    "lines": 12,
+    "classes": [
+      "OrderRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/ProductRepository.java",
+    "sha256": "52dd0fb9dca2aa7eb070b4df25510d2b5c7235fcc6b5baa3a7b60e113790c1e4",
+    "lines": 83,
+    "classes": [
+      "ProductRepository",
+      "ErrorCode",
+      "StockMutation",
+      "ActionCallback",
+      "ProductCallback",
+      "BatchCallback",
+      "ProductListCallback",
+      "BatchListCallback",
+      "CartQuoteCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/ProductRepositoryFactory.java",
+    "sha256": "91d9a0d684ac8c9b55208c33eaa872d643fd409704011e8f527098ed5da5ee33",
+    "lines": 22,
+    "classes": [
+      "ProductRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/RescueProgramsRepository.java",
+    "sha256": "dc4b7bdd943216df6db5edb1a5e03a19c8e99d89c2d17dd3a4fcc2a2b653c3f3",
+    "lines": 14,
+    "classes": [
+      "RescueProgramsRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/SellerStatisticsRepository.java",
+    "sha256": "9e95edbb8f6b9ecbd597d45ef1fbeb5f0a001edacc26fe5a059b46927ce28c51",
+    "lines": 21,
+    "classes": [
+      "SellerStatisticsRepository",
+      "Callback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/SellerStorefront.java",
+    "sha256": "e5ef539f628f36c02fc62924027e43346479806908efe2ea3221b697d0d9ca70",
+    "lines": 56,
+    "classes": [
+      "SellerStorefront"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/StorefrontRepository.java",
+    "sha256": "8c8a25c6b06373c973a8361e82305dccfc8cb9e05676ddc12ec96567272ea04c",
+    "lines": 13,
+    "classes": [
+      "StorefrontRepository",
+      "Callback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/StorefrontRepositoryFactory.java",
+    "sha256": "c6763d11354b5f209939c808027821086f1b7abff969acbde85f4dffb29e7942",
+    "lines": 19,
+    "classes": [
+      "StorefrontRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/UnavailableAuthRepository.java",
+    "sha256": "677f85197c8e3d218069f9ef086c000526ae5302f8d1b509d8f4a904c929b16e",
+    "lines": 53,
+    "classes": [
+      "UnavailableAuthRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/UnavailableUserRepository.java",
+    "sha256": "b24bc6070e1fe7e160ba50358be1343c0107042a6470380797a2967d8505d1d7",
+    "lines": 58,
+    "classes": [
+      "UnavailableUserRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/UserRepository.java",
+    "sha256": "3336d17940802156bc7218c01a8ae150555f729fd155455c3afdc1c211b18073",
+    "lines": 109,
+    "classes": [
+      "UserRepository",
+      "ProfileError",
+      "UserCallback",
+      "AddressListCallback",
+      "AddressCallback",
+      "ApplicationCallback",
+      "ActionCallback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/UserRepositoryFactory.java",
+    "sha256": "2c37ebd0fce2f079cb4f1c7c271d563a32b85d42a64fe52a5da3d19da05a93fb",
+    "lines": 17,
+    "classes": [
+      "UserRepositoryFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/dao/BannerCacheDao.java",
+    "sha256": "0ef003b4a243b57ba3603a1c6a8356ca89c8face8e92258fc3d2f168d55e1c51",
+    "lines": 19,
+    "classes": [
+      "BannerCacheDao"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/dao/CacheMetadataDao.java",
+    "sha256": "626fe7d0b91863e8c117de1cc0986b3fea6bb3d7a1029e9e31cd4a9995cee94c",
+    "lines": 20,
+    "classes": [
+      "CacheMetadataDao"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/dao/CampaignCacheDao.java",
+    "sha256": "4f019a897c8bea69378a823470066df7efb8dbf711940df22b1cee73362ee857",
+    "lines": 35,
+    "classes": [
+      "CampaignCacheDao"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/dao/CartMigrationDao.java",
+    "sha256": "cf461ebb6349bef8e7319edf5b273036dfdd85117ffea7d89d8622730c384693",
+    "lines": 12,
+    "classes": [
+      "CartMigrationDao"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/dao/CatalogCacheDao.java",
+    "sha256": "2ed8227555798b35ebd9b4e7ef6983565b9e1fb8b46d411adb69435e57e4cd87",
+    "lines": 73,
+    "classes": [
+      "CatalogCacheDao"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/dao/GuestCartDao.java",
+    "sha256": "3049bb80f157e5c21d29e4cc3e780eaa0ec0b058cfb36c605455a0f169f801a7",
+    "lines": 36,
+    "classes": [
+      "GuestCartDao"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/dao/OrderCacheDao.java",
+    "sha256": "b566e96d65c5a6e5274f6bc03a11a00c748354221225b7de3c44b5f6ad86874f",
+    "lines": 36,
+    "classes": [
+      "OrderCacheDao"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/database/CacheMigrationContract.java",
+    "sha256": "3b3b82167ef2a547378f4245dfb7a35a51704c49cbdd0d6ea393b315848cfe6e",
+    "lines": 19,
+    "classes": [
+      "CacheMigrationContract"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/database/RescueFarmDatabase.java",
+    "sha256": "e1505cda78d0922f489aa7814d0ae97b1354af9f7ea3f2f7876bbfa9755941b4",
+    "lines": 144,
+    "classes": [
+      "RescueFarmDatabase"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/BannerCacheEntity.java",
+    "sha256": "a007d4d3568cf731950157f2299d9a693d09e16e20e102dbf073c491fc59d69a",
+    "lines": 19,
+    "classes": [
+      "BannerCacheEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/CacheMetadataEntity.java",
+    "sha256": "4812a581bcf4a48ca40abba9620b56e8c8d672c7b2c232e477043e9f6c6691bd",
+    "lines": 16,
+    "classes": [
+      "CacheMetadataEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/CampaignCacheEntity.java",
+    "sha256": "da3bc5b58bc38b9e0acfb06736c00596b2ce9aaaef6b19564ec64e1892fec0ae",
+    "lines": 43,
+    "classes": [
+      "CampaignCacheEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/CartMigrationEntity.java",
+    "sha256": "cda210011f2cc7ad3e95c09dcd8bf69c84bc8373a98f2042b213df4570627902",
+    "lines": 12,
+    "classes": [
+      "CartMigrationEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/CategoryCacheEntity.java",
+    "sha256": "2ee990ded6825af57d80d6e0cfd80a1b35562203c34d69710d8b3c3007f3e0ac",
+    "lines": 19,
+    "classes": [
+      "CategoryCacheEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/GuestCartItemEntity.java",
+    "sha256": "8f02557bda0823885459eaf22f792d19de1e9f3223cca15b34e334b240aedb46",
+    "lines": 22,
+    "classes": [
+      "GuestCartItemEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/OrderCacheEntity.java",
+    "sha256": "31b91b35884cd7ba7e8273900b02b50ddc762b1333f61c7e2064a38c43874b9b",
+    "lines": 39,
+    "classes": [
+      "OrderCacheEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/ProductBatchCacheEntity.java",
+    "sha256": "08ff0f80de0883795965a4608187507a3f1a849e2cf10c338ab552515b1cc81e",
+    "lines": 25,
+    "classes": [
+      "ProductBatchCacheEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/entity/ProductCacheEntity.java",
+    "sha256": "97c5a537b6f1cfc375f9351802860bcb57160f66bf2886ea7529b6d7f2c3f143",
+    "lines": 28,
+    "classes": [
+      "ProductCacheEntity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/mapper/BannerCacheMapper.java",
+    "sha256": "25910bc7cc5c120b7483d6a61aed726c11f1f87c074e185003b5b55bfa751af5",
+    "lines": 31,
+    "classes": [
+      "BannerCacheMapper"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/mapper/CampaignCacheMapper.java",
+    "sha256": "d3342f0372931e6e09e20fd2e987eb391605f9931bc175dd3e8b479cd4825311",
+    "lines": 121,
+    "classes": [
+      "CampaignCacheMapper"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/mapper/CatalogCacheMapper.java",
+    "sha256": "b6abcf760ddfd2c58078e3943da0be5906914123d196e36045f326c4f83eea39",
+    "lines": 96,
+    "classes": [
+      "CatalogCacheMapper"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/mapper/GuestCartMapper.java",
+    "sha256": "7dae9acde49ac92b8fa5c8c24705b806d938b740417cdcc094a9712a73f5bc2d",
+    "lines": 35,
+    "classes": [
+      "GuestCartMapper"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/mapper/OrderCacheMapper.java",
+    "sha256": "9dc6fbcd49695bd337f9b97aeb82235cda3b7ebed705b1a1d8be0fb0da61cbf9",
+    "lines": 62,
+    "classes": [
+      "OrderCacheMapper"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/local/preferences/SharedPreferencesGuestSessionRepository.java",
+    "sha256": "74287e35fc87c609e0ffd37c2bca44e7307d2f17f7ee7a41df38a1ea8a3db48c",
+    "lines": 199,
+    "classes": [
+      "SharedPreferencesGuestSessionRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseAdminRepository.java",
+    "sha256": "7e16dbab345229da33e457c17a270be554388450f8f02479ed4d881584662f4d",
+    "lines": 1263,
+    "classes": [
+      "FirebaseAdminRepository",
+      "SearchDocumentsCallback",
+      "RelatedDocument"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseAuthRepository.java",
+    "sha256": "dbea9ef6701cefd197027b43759a0a8eb00265affd0b1bb7e098cd06348450e5",
+    "lines": 327,
+    "classes": [
+      "FirebaseAuthRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseCampaignEngagementRepository.java",
+    "sha256": "71dfc431e9266b1e6a53427566db17515234761765876301e99ee6510b649662",
+    "lines": 142,
+    "classes": [
+      "FirebaseCampaignEngagementRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseCampaignRepository.java",
+    "sha256": "8057bb18a50bedf906f398314764b4654036258bedd504b28aa5dbe7aa282990",
+    "lines": 517,
+    "classes": [
+      "FirebaseCampaignRepository",
+      "ErrorConsumer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseCartRepository.java",
+    "sha256": "1aec4229c8fc2528d9955030b9bdbd36592c9cb7bdedcaa52935c0fa48b0c8e1",
+    "lines": 202,
+    "classes": [
+      "FirebaseCartRepository",
+      "RemoteCart",
+      "CartMutation"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseConfiguration.java",
+    "sha256": "4aeee57bd4a369b1564e829867ebff9721cd00bdc2b34182083bab99b74b629e",
+    "lines": 18,
+    "classes": [
+      "FirebaseConfiguration"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseEngagementRepository.java",
+    "sha256": "b4ea1ce2be00a8b5ac99dceae61c623f22ef6502dba2e20e4ca6d43b8676b695",
+    "lines": 110,
+    "classes": [
+      "FirebaseEngagementRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseOrderRepository.java",
+    "sha256": "77c9eaa9f8ac0bdb23c45f137e5a43e8c2c7827b0a3c37b5aa0b9b986dafe5ca",
+    "lines": 567,
+    "classes": [
+      "FirebaseOrderRepository",
+      "GuestRefresh",
+      "LiveOrder"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseProductRepository.java",
+    "sha256": "b3772f25945e9c4859986fd31e1f9129d02c7b1923ddec9eea7057482fcb8ac7",
+    "lines": 742,
+    "classes": [
+      "FirebaseProductRepository",
+      "ErrorConsumer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseReviewSummary.java",
+    "sha256": "8647a9188f7bfbc19a06ef036c3b344d832b1e0671baf67a1c61d4cf4149b8fa",
+    "lines": 23,
+    "classes": [
+      "FirebaseReviewSummary"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseStorefrontRepository.java",
+    "sha256": "b9304c8edc336570f1967a6c6e13265f87bac9779133e7b0cacae3d685184cd5",
+    "lines": 107,
+    "classes": [
+      "FirebaseStorefrontRepository"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/FirebaseUserRepository.java",
+    "sha256": "0f3274e2517da3e8cd92dfea5aa4c7766d2975e9488f4b49a35eb5fb5f406e68",
+    "lines": 459,
+    "classes": [
+      "FirebaseUserRepository",
+      "ErrorConsumer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/OrderJsonMapper.java",
+    "sha256": "9c41955a501875ed87e7835fc3e1b92290e76fa90a1f84d98b3469c226d5438c",
+    "lines": 49,
+    "classes": [
+      "OrderJsonMapper"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/remote/firebase/SnapshotLiveData.java",
+    "sha256": "0a5a8b003c30ffa1b1db6054231ffef6b4d8e03c072c2ab9ed2f4a48da0c4f4a",
+    "lines": 152,
+    "classes": [
+      "SnapshotLiveData",
+      "Completion"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/admin/AdminDashboardSnapshot.java",
+    "sha256": "74c2e08e8a8532ab9f56bf512c7221bbbfcaaea00a55c73b4943a5fca2c5bbd2",
+    "lines": 67,
+    "classes": [
+      "AdminDashboardSnapshot"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/data/repository/admin/AdminListItem.java",
+    "sha256": "609f17f96fb1dd6e6195cc31a82b4ea1cb0452efe2fdb6b365ab6c075792adc2",
+    "lines": 32,
+    "classes": [
+      "AdminListItem"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/AddressType.java",
+    "sha256": "a24cc9af47851fd728ebec69d6d5cda2ad2fb895b673e9dbb031a12acffd56e0",
+    "lines": 3,
+    "classes": [
+      "AddressType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/ApplicationStatus.java",
+    "sha256": "264d096e14c3a5439b2e0d6c3895855f5aa30c13763876bdd99cffea86aee4b2",
+    "lines": 3,
+    "classes": [
+      "ApplicationStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/BatchStatus.java",
+    "sha256": "bbdab18898d6607cb19b37038c97c6541ee324e36a268dc8be56a5b7f2fc98a2",
+    "lines": 3,
+    "classes": [
+      "BatchStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/CampaignStatus.java",
+    "sha256": "bd95abd79d0a2956c74d1ce99c8dff6cbbf407138a5edc50ba9ef7d29ef518a9",
+    "lines": 3,
+    "classes": [
+      "CampaignStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/CartOwnerType.java",
+    "sha256": "30788abc1bf049216895f13f56d333d30e128d5701022f6855c506c19495ed58",
+    "lines": 3,
+    "classes": [
+      "CartOwnerType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/CommentStatus.java",
+    "sha256": "e6be8da91b945689d9a6c18a4232bc249c105e0663ed1f94667d1d9b63e31094",
+    "lines": 3,
+    "classes": [
+      "CommentStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/CustomerType.java",
+    "sha256": "91af4f8c63c510aab6fb3a507052304ac66b508390729206d1b6249cb6f7900c",
+    "lines": 3,
+    "classes": [
+      "CustomerType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/FulfillmentType.java",
+    "sha256": "82bbb7834cb50363761b54afa55256ee21d51b83708c509a2a3991965d9a2d8d",
+    "lines": 3,
+    "classes": [
+      "FulfillmentType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/NotificationType.java",
+    "sha256": "874a122576cdec7e9330b4fc17e3031b7dc137bb4cdbbfd267fbf7a633137ce7",
+    "lines": 3,
+    "classes": [
+      "NotificationType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/OrderOwnerType.java",
+    "sha256": "779f61c5887d2a1e9e33d533f9f5c56ab7532bd39a65bd5e9b5f43b2cd30dbe4",
+    "lines": 3,
+    "classes": [
+      "OrderOwnerType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/OrderStatus.java",
+    "sha256": "3692c7994107cdfc7ecdd19a07fcb48811701b4ce0cbab7aa9c4af678b940bdc",
+    "lines": 3,
+    "classes": [
+      "OrderStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/PaymentMethod.java",
+    "sha256": "ee84b1a560165ed5789d66acd3bef7a2433fd10040c4d742aef50bcb9a2cb1ab",
+    "lines": 3,
+    "classes": [
+      "PaymentMethod"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/PaymentStatus.java",
+    "sha256": "63cc041812be764cb23136b62e4e79235b91efc77d85869ccc9d7db9eb689164",
+    "lines": 3,
+    "classes": [
+      "PaymentStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/ProductStatus.java",
+    "sha256": "2df335acf79f00b94b16944b106116573ab0383b3fee6f6a4f36663b7824ad76",
+    "lines": 3,
+    "classes": [
+      "ProductStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/ReactionType.java",
+    "sha256": "69feaa9911eb106dcf2997674b2594153eaf0d77d7056d7625261bdbb416e98c",
+    "lines": 3,
+    "classes": [
+      "ReactionType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/ReportStatus.java",
+    "sha256": "5fb4d7f1d441446085cea6fd1fec38bf28c2d81d8093c145a43ab92b50e9bc0b",
+    "lines": 3,
+    "classes": [
+      "ReportStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/ReportTargetType.java",
+    "sha256": "0fb19bf495cdd93b09d758bbad5c8a901a62d8e784a93fb3368a4d67701d5968",
+    "lines": 3,
+    "classes": [
+      "ReportTargetType"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/RescueMode.java",
+    "sha256": "9c35a7663b0d4c05c928c7626caf87c883fa198a313949c51e5bb3e43daa3838",
+    "lines": 3,
+    "classes": [
+      "RescueMode"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/RescueReason.java",
+    "sha256": "9c4e6bc2c241df5045be7b498ccb99ddbe2e1dd2348c379aac710807f88c3d34",
+    "lines": 12,
+    "classes": [
+      "RescueReason"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/ReviewStatus.java",
+    "sha256": "c94c46d0b4f80a92f654f3b075b7962137338ba13a75e3bb1f8749c02b141c9e",
+    "lines": 3,
+    "classes": [
+      "ReviewStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/SellerStatus.java",
+    "sha256": "d5766e7f3153c39bf50bf8da97aa82a899e042f27e3c06c753e7853569686ad7",
+    "lines": 3,
+    "classes": [
+      "SellerStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/ShipmentStatus.java",
+    "sha256": "70ded40a22b5987225127accec3c110fd4ff7a5208acfdf1e6cc6ff442a43e80",
+    "lines": 3,
+    "classes": [
+      "ShipmentStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/UrgencyLevel.java",
+    "sha256": "ba98a5aba13455c8af920efa41b792f3017cb61cfe6f3438134f6dcbe4f59045",
+    "lines": 3,
+    "classes": [
+      "UrgencyLevel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/UserRole.java",
+    "sha256": "0392378340c2a75670cc3e2da9020ea40be94892c3c9d9d1a29e1012db4a4d41",
+    "lines": 3,
+    "classes": [
+      "UserRole"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/enums/UserStatus.java",
+    "sha256": "f86c6a39d270ac70e1f0cc228f2c16bd7c190f39c9ca69a7f58023c6b7ac21e1",
+    "lines": 3,
+    "classes": [
+      "UserStatus"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Address.java",
+    "sha256": "c203ad590fc573e877a0d298e55251ee8953ac2df6a3ae040e722c267425066c",
+    "lines": 87,
+    "classes": [
+      "Address"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Admin.java",
+    "sha256": "4a8ba7912ed17a251ddae2b252e531402d617cb9b699a908b464488926a84762",
+    "lines": 11,
+    "classes": [
+      "Admin"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Banner.java",
+    "sha256": "1e55a13644cd6bc37d741f93de756f16b84048d7f8bca0b0b5f2e9562d3ece07",
+    "lines": 45,
+    "classes": [
+      "Banner"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/CampaignEngagementSnapshot.java",
+    "sha256": "c820b79aa09fb64511aaa6758be954f1fcf4fb7758160b73b2e29b9bfcd007c7",
+    "lines": 26,
+    "classes": [
+      "CampaignEngagementSnapshot"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Cart.java",
+    "sha256": "d79cc6f14efcb675037ba392fe0c98861dff42df23e24995758ed4991d888735",
+    "lines": 73,
+    "classes": [
+      "Cart"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/CartItem.java",
+    "sha256": "aa634f569a6e6f889db86d732bc684aff42c3510ec6b7124ccf428affaa6e372",
+    "lines": 72,
+    "classes": [
+      "CartItem"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Category.java",
+    "sha256": "be1cb324a5a197c673662a5d12a39612a6c6e4f8cfe7ce624dda893c0c22ec3d",
+    "lines": 30,
+    "classes": [
+      "Category"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Comment.java",
+    "sha256": "c384da4c54400a30d0d422bd3c305a471c717a68815ed586d81cb52c249aefc7",
+    "lines": 42,
+    "classes": [
+      "Comment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Customer.java",
+    "sha256": "fedc7f907effb930f5a76c58f95f96ba5e157b4389e7f7e206e415d724693cad",
+    "lines": 27,
+    "classes": [
+      "Customer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Favorite.java",
+    "sha256": "342d7ed5a3f14979a3a4f9dad4aff4ed78b7e77653031ef912020c118d48b0dd",
+    "lines": 23,
+    "classes": [
+      "Favorite"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Notification.java",
+    "sha256": "76d0aaa4cb2f8145f8694419fe8f4fabce994ca611c5af97ec08ce1427dc4663",
+    "lines": 31,
+    "classes": [
+      "Notification"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Order.java",
+    "sha256": "d3ae4e3e75ddc18e45451e3d150c7b8ba52f4bd0cbc3ebcfb9c10d0c5d04e493",
+    "lines": 134,
+    "classes": [
+      "Order"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/OrderItem.java",
+    "sha256": "d4cfcba785c109d006570d29bbab3fe189905da017877b85dc3a613c9f0a74ad",
+    "lines": 61,
+    "classes": [
+      "OrderItem"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Payment.java",
+    "sha256": "37f43cd8b9ad0f9b29c74642523e13bb759dd78a03cde317aa4701d7b7c3ee9c",
+    "lines": 94,
+    "classes": [
+      "Payment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Product.java",
+    "sha256": "6df376f1a2a6fc0a609304ff8ddc0463aefbe3c8bca1c939a30e2e2e45e7c73e",
+    "lines": 99,
+    "classes": [
+      "Product"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/ProductBatch.java",
+    "sha256": "f13539ec83005c7974a62068ea8ae8596482bf90a71ba9b343732d814f6feb83",
+    "lines": 173,
+    "classes": [
+      "ProductBatch"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Reaction.java",
+    "sha256": "28a4777e340c19138a610989fc6bbbb7f207451ccd364dad444a927fb29af251",
+    "lines": 27,
+    "classes": [
+      "Reaction"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/RecentGuestOrder.java",
+    "sha256": "2c66a09ccb09748baf506f8f3672711a6db690c34290f8993847ac369182b124",
+    "lines": 247,
+    "classes": [
+      "RecentGuestOrder"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Report.java",
+    "sha256": "ab0c942584c8ace970b167952c15c0b90945adb3b45008500a384211df972570",
+    "lines": 52,
+    "classes": [
+      "Report"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/RescueCampaign.java",
+    "sha256": "fd108e1077ce0233676635ceec6a5c92d622b26a13a83586d0f8210540e8a1a4",
+    "lines": 348,
+    "classes": [
+      "RescueCampaign"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Review.java",
+    "sha256": "fb2a42238e15941cec77a0f2d773207ededa5aa35faebd95549a8a487c859d2c",
+    "lines": 52,
+    "classes": [
+      "Review"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Seller.java",
+    "sha256": "0975309f3c172bc990b8d43bc8f20f3975c1b369200acdca84e75b687fdb5323",
+    "lines": 70,
+    "classes": [
+      "Seller"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/SellerApplication.java",
+    "sha256": "4fa844e9ad4a7e61c8107abdc20653bf162e64a4f72b5151aa284789e69f1308",
+    "lines": 76,
+    "classes": [
+      "SellerApplication"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/Shipment.java",
+    "sha256": "2b227646497e481a657bc5abc0bbe7ccdfab7f2d26804eb49884cfb7baeff868",
+    "lines": 60,
+    "classes": [
+      "Shipment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/domain/model/User.java",
+    "sha256": "01b70ddfc74ec0f274ec81e2c92594c1a0751ad3da9b63e523a6e7a1e3481720",
+    "lines": 67,
+    "classes": [
+      "User"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/address/AddressDefaultPolicy.java",
+    "sha256": "3554162c325f2a771585423341077e6ee96d44f9fa221a24f1e24a379554858b",
+    "lines": 16,
+    "classes": [
+      "AddressDefaultPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/address/VietnamAddressCatalog.java",
+    "sha256": "b2e46d87f8a7f18784af3e9efc69c497314a55807a80f4b145c3105ed1629e09",
+    "lines": 74,
+    "classes": [
+      "VietnamAddressCatalog",
+      "Unit"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/admin/AdminSearchText.java",
+    "sha256": "3d5996f40693a43317827e2a6b340954be4b64140fe39aa0cdda33a700b92783",
+    "lines": 20,
+    "classes": [
+      "AdminSearchText"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/admin/AdminTransitionPolicy.java",
+    "sha256": "13c15e1ebea1e38cbf891fdf16bf987bdd9a4a765bb94f57742ae76bf3f31c71",
+    "lines": 60,
+    "classes": [
+      "AdminTransitionPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/admin/CatalogImagePolicy.java",
+    "sha256": "1fb99185e2b556b0d2710528439f1915005e45db2e9d91a5d45e0e14b896716e",
+    "lines": 18,
+    "classes": [
+      "CatalogImagePolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/admin/SellerApplicationIdentity.java",
+    "sha256": "0991c843ff668654caa9302a211d1ac7370d749ddc6971b4d42fffe705d36c75",
+    "lines": 13,
+    "classes": [
+      "values",
+      "SellerApplicationIdentity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/auth/GoogleCredentialService.java",
+    "sha256": "aaf55d2333ee040f04c8fc3a0160d4b5b23875ff40baa590789031d933ca4166",
+    "lines": 103,
+    "classes": [
+      "GoogleCredentialService",
+      "Callback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/auth/PasswordResetPolicy.java",
+    "sha256": "c3d64f71c1f2a351b8d99c8ca5e06188036dbbe6d8eea50c1a44cb216a4bb032",
+    "lines": 15,
+    "classes": [
+      "PasswordResetPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/backend/RenderBackendClient.java",
+    "sha256": "2760475e9b0b96d8ac8523f268c5681d6decf19429d848e6a4b0822eaf6d1329",
+    "lines": 65,
+    "classes": [
+      "RenderBackendClient",
+      "Callback"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/campaign/CampaignTimeFormatter.java",
+    "sha256": "a58cbe6c664f8bad15f31809ca861da29fdfbe1073ff3ab94412369fd659cb09",
+    "lines": 44,
+    "classes": [
+      "CampaignTimeFormatter"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/campaign/QuantityUnitPolicy.java",
+    "sha256": "b2dc2bd0416bc9c52cd25fe8c6dfe9823d37dbd97d1071d6b3aada0dd9660c36",
+    "lines": 10,
+    "classes": [
+      "QuantityUnitPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/cart/CartGroupingService.java",
+    "sha256": "8ed88693ec7add8d0ba032f6f664da07c73fd50b83a08a440f09df93f954dfea",
+    "lines": 20,
+    "classes": [
+      "CartGroupingService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/cart/CartMigrationService.java",
+    "sha256": "5e7279e1f86c578a4854ef7c1c825d00afb64fb7bcfaf9b54e0055d846fc7afc",
+    "lines": 98,
+    "classes": [
+      "CartMigrationService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/cart/CartMigrationWorker.java",
+    "sha256": "f0dac4883192ddcfaa401f97125801c6ca4040b1b5303c5d43b0046da21dedf1",
+    "lines": 43,
+    "classes": [
+      "CartMigrationWorker"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/cart/CartRevalidationService.java",
+    "sha256": "55aa7a30ba1645db78c7fd11989ddcef8f234a6ec373f10699c43f6f6a42a072",
+    "lines": 45,
+    "classes": [
+      "CartRevalidationService",
+      "Result"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/cart/CheckoutCartCleanup.java",
+    "sha256": "78c60c11a2da79ff8b9c40a69babf46d23a569da6fcc3d9b2766184c1bc4b4e9",
+    "lines": 32,
+    "classes": [
+      "CheckoutCartCleanup"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/engagement/NotificationDeepLinkService.java",
+    "sha256": "4a84428e9cb0f717d1b72439b3ff0a940283cf958b8ea6b2db0830d075687db0",
+    "lines": 3,
+    "classes": [
+      "NotificationDeepLinkService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/engagement/ReviewEligibilityService.java",
+    "sha256": "29029f43ff354335c3df5c886954f2fb5b980f95c09a57bdcd41afdf9304072a",
+    "lines": 3,
+    "classes": [
+      "ReviewEligibilityService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/engagement/ReviewSummary.java",
+    "sha256": "d08dd762dd5a9adc3c31caf2d530f7421bccb088b4eb70d00be3404d62fe7c93",
+    "lines": 18,
+    "classes": [
+      "ReviewSummary"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/feed/ReactionPolicy.java",
+    "sha256": "e9c73078ad5459ecd983d1f82f06c937fd51db8e96a8b30d4d46d081dd779984",
+    "lines": 16,
+    "classes": [
+      "ReactionPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/inventory/InventoryAlertEvaluator.java",
+    "sha256": "2c6b072a25e363e49ba364d3579034212f3ca1fe8bec3042c3d7b17cdc2b9ca4",
+    "lines": 35,
+    "classes": [
+      "InventoryAlertEvaluator",
+      "Filter"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/inventory/InventoryService.java",
+    "sha256": "b256ccc6a5c92bf22e150058bfc5894df802619eb1837351faf8842abe34fd53",
+    "lines": 54,
+    "classes": [
+      "InventoryService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/inventory/InventoryVersionPolicy.java",
+    "sha256": "1da3c7ebc622f9604aaed57843f22bcbe411b97273b436e5cb45421d0311ad4e",
+    "lines": 11,
+    "classes": [
+      "InventoryVersionPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/location/AndroidLocationProvider.java",
+    "sha256": "51949e04bc9a923c8b65baeab5122c4d0375d9fcc893749dc0f8d97e10be1407",
+    "lines": 328,
+    "classes": [
+      "AndroidLocationProvider"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/location/CampaignLocationService.java",
+    "sha256": "933711427081c6af47dd30d5c5e3c08b64f772f3b2b6dfea3b4149c928ffb5fb",
+    "lines": 44,
+    "classes": [
+      "CampaignLocationService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/location/GpsCoordinates.java",
+    "sha256": "f32aa8c0b3875a394c8f1b957cb5173bcaf534dccb3dcd37348654384a544b3a",
+    "lines": 12,
+    "classes": [
+      "GpsCoordinates"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/location/LocationProvider.java",
+    "sha256": "5320b61e798483fb5bff6eb6dd7509ca5b186f1d7876bb7f84116e9de8ad01ce",
+    "lines": 47,
+    "classes": [
+      "LocationProvider",
+      "LocationCallback",
+      "GeocodeCallback",
+      "GeocodedAddress"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/location/LocationProviderFactory.java",
+    "sha256": "ebad104135db7101e8b6e8fb1c104f9183aa9cc80270423d6ebffdf664c68ffb",
+    "lines": 11,
+    "classes": [
+      "LocationProviderFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/media/CloudinaryAssetCleanup.java",
+    "sha256": "b81acb56d81d10544820a6b249cf01505c1fb7f4f3461cee402aa4da3564b742",
+    "lines": 27,
+    "classes": [
+      "CloudinaryAssetCleanup"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/media/CloudinaryAssetIds.java",
+    "sha256": "bf2e66794312507587ae5bcf0fc5b020d9a9e10cf625350b890f4adce1989b32",
+    "lines": 54,
+    "classes": [
+      "CloudinaryAssetIds"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/media/CloudinaryMediaStorage.java",
+    "sha256": "a686a323b70a8a0930ce049326debb9f7baf0627de30b740202ed72673da3d3f",
+    "lines": 183,
+    "classes": [
+      "CloudinaryMediaStorage"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/media/CloudinaryUploadUi.java",
+    "sha256": "c64923e493cbac8607de036b755d10bb9f717e1a9a3cf3194eb7e990e4ba98fb",
+    "lines": 48,
+    "classes": [
+      "CloudinaryUploadUi",
+      "Result"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/media/MediaStorage.java",
+    "sha256": "9efe4301f16836017bf3f1a1e4bf161db9f45a00148b66071366b7e77bd1e921",
+    "lines": 11,
+    "classes": [
+      "MediaStorage"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/network/AndroidNetworkStatusProvider.java",
+    "sha256": "a90f581de40fb2a3c334bca87703e709153db916741f55113b98209f893f76ea",
+    "lines": 22,
+    "classes": [
+      "AndroidNetworkStatusProvider"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/network/NetworkStatusProvider.java",
+    "sha256": "abf20e79d3d9e15f7ed122b7283bc18251237ae3595bc82db0788ea5e0ad668f",
+    "lines": 5,
+    "classes": [
+      "NetworkStatusProvider"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/notification/FcmDeviceSyncWorker.java",
+    "sha256": "40ee034f6657a0e4dde8e2d79b2194969230556c4cc5ca107e31d3d3f5347044",
+    "lines": 55,
+    "classes": [
+      "FcmDeviceSyncWorker"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/notification/NotificationOutbox.java",
+    "sha256": "9282a42b22d6d38b51fef387e3fee9badebb8981bb7aa87397a2754c034dc2fd",
+    "lines": 25,
+    "classes": [
+      "NotificationOutbox"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/notification/RescueFarmMessagingService.java",
+    "sha256": "a50066d270b44d2a2f9f7b93b47c206748707c84a73d06020996686d48470d05",
+    "lines": 13,
+    "classes": [
+      "RescueFarmMessagingService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/order/CheckoutIdempotencyPolicy.java",
+    "sha256": "49ba94cfc9956454f84b00d94b5f5939711244abc8f3b33a8122ed0c6c8bcb63",
+    "lines": 2,
+    "classes": [
+      "CheckoutIdempotencyPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/order/CheckoutPolicy.java",
+    "sha256": "7652a5dda38070bc8393cc6ef2cf6c56011caabe6a4448364df2e17be750fa33",
+    "lines": 34,
+    "classes": [
+      "CheckoutPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/order/CheckoutRequest.java",
+    "sha256": "ff91629a2094136390d1259a1cfb2f328bd2df0ff78781004db2e18415176f42",
+    "lines": 32,
+    "classes": [
+      "CheckoutRequest"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/order/OrderLifecycleService.java",
+    "sha256": "36a47202f596e3748530626660cdfe84fd6d9127d05991cfcc81b59276476f3c",
+    "lines": 112,
+    "classes": [
+      "OrderLifecycleService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/pricing/PriceBreakdown.java",
+    "sha256": "f1362bbe2366eaf87253b2b541b97f0d0de84bb5e2b7d790a66518f6a35ef525",
+    "lines": 28,
+    "classes": [
+      "PriceBreakdown"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/pricing/PricingService.java",
+    "sha256": "086ec8d8a7e07be13b152c9fb38892c32fe5017934b2794352ee629b20d27ee1",
+    "lines": 34,
+    "classes": [
+      "PricingService"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/profile/ProfileInputPolicy.java",
+    "sha256": "a3e48032b69142a70663e6a03b9a6b2a1f66856e1d45156ef7c41986d582e858",
+    "lines": 15,
+    "classes": [
+      "ProfileInputPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/realtime/BackendSnapshotWatch.java",
+    "sha256": "b6aec4fccda22adebeb4fa82d76761b8cce196f02e744e1acc79c6157573b60f",
+    "lines": 122,
+    "classes": [
+      "BackendSnapshotWatch"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/realtime/FirebaseRealtime.java",
+    "sha256": "3fa9c1c556eb7aed4eeedb1715e7851641fbae94de0deda79083fa72a1f4bd11",
+    "lines": 62,
+    "classes": [
+      "FirebaseRealtime"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/seller/SellerDashboardAggregator.java",
+    "sha256": "9b9345b60f9b18da7e6ecb2f3a07f0abf9ebdad3ed6028e27ec8a303219bb4bd",
+    "lines": 168,
+    "classes": [
+      "SellerDashboardAggregator"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/seller/SellerDashboardSnapshot.java",
+    "sha256": "6a9c870a25e4d8f251b696913c4a56d12d0d7964a213e07ef1eacb43ef3e6275",
+    "lines": 64,
+    "classes": [
+      "SellerDashboardSnapshot",
+      "RankedMetric"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/seller/SellerRoutePolicy.java",
+    "sha256": "bf9554b36b673ad0b15a1443ca30487db1263b0f981ae593b84f326b3d0dd5f5",
+    "lines": 14,
+    "classes": [
+      "SellerRoutePolicy",
+      "Destination"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/seller/SellerStatisticsSnapshot.java",
+    "sha256": "696ea7b3f14254387f9531c58fded56832d6c1d0a042cab0bbda48b4031fcdb9",
+    "lines": 94,
+    "classes": [
+      "SellerStatisticsSnapshot",
+      "Quantity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/sync/CacheSyncPolicy.java",
+    "sha256": "ca86fcab78a85f9c4368b371ee0a9d549690abb313120838088a3f9ccffab9c4",
+    "lines": 31,
+    "classes": [
+      "CacheSyncPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/sync/CriticalActionPolicy.java",
+    "sha256": "f9014740d1dd62380e3ae67fc8f6ceafc1aebadd670b2ae82aa78d8544ae5226",
+    "lines": 13,
+    "classes": [
+      "CriticalActionPolicy",
+      "Action"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/sync/OfflineSyncScheduler.java",
+    "sha256": "d3f7077fdfe3879d10c71a5b39b82da2aed62062b61806454310b5bfe292a3aa",
+    "lines": 41,
+    "classes": [
+      "OfflineSyncScheduler"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/service/sync/ReadCacheSyncWorker.java",
+    "sha256": "bb4c394ee56c4699eadad2a3851a146ddaedba7d3fc629e541b3ffeb743d8e31",
+    "lines": 117,
+    "classes": [
+      "ReadCacheSyncWorker"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminDashboardCards.java",
+    "sha256": "7694786f19610fcd21e8740022195234db8d03f37c590417b2451d37b9d81a27",
+    "lines": 360,
+    "classes": [
+      "AdminDashboardCards",
+      "Metric",
+      "MetricColumnChart",
+      "MetricLineChart",
+      "CompletionChart"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminDashboardFragment.java",
+    "sha256": "a0c5e4bb5828ed0e5af22eb20d1a02586d084a4642b8e582b7f25c62cf742e38",
+    "lines": 143,
+    "classes": [
+      "AdminDashboardFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminDetailFormatter.java",
+    "sha256": "6b8916ae710038231a73413e9affe96941513d68646a548f31d986c9d589a908",
+    "lines": 191,
+    "classes": [
+      "AdminDetailFormatter"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminDetailFragment.java",
+    "sha256": "00228e1d776211f98384005c01621386bba17051d320aca91ecdef8b0552595b",
+    "lines": 352,
+    "classes": [
+      "AdminDetailFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminDetailRenderer.java",
+    "sha256": "27d2ba85e386b49974a596b97ccb4e4b09967627ffc77b83e8d8ad4ad3e4d0f1",
+    "lines": 197,
+    "classes": [
+      "AdminDetailRenderer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminResourceFragment.java",
+    "sha256": "dac41a940ba8642e75448a3e6004ec4a3a3b32af17d480e3fd126264d9a5a64e",
+    "lines": 792,
+    "classes": [
+      "AdminResourceFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminScreenState.java",
+    "sha256": "ae0bc5c96ce1f4e5fff0772109aed4b580bfa33c78d67fb58bfb4e214dfdcaa5",
+    "lines": 37,
+    "classes": [
+      "AdminScreenState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminUiStyles.java",
+    "sha256": "a29bb3294dd240e93fb2016c6024c7124a14252c91bd981dd4ebc5a938ad33a2",
+    "lines": 50,
+    "classes": [
+      "AdminUiStyles"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminViewModel.java",
+    "sha256": "2109594bbf6f36165531e1793584a34bc761ee48f0c7cd014137b4eeb80ce0c5",
+    "lines": 280,
+    "classes": [
+      "AdminViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/admin/AdminViewModelFactory.java",
+    "sha256": "b6f05c02f6b9f2164919f75a2bb0954056147f1d5edbf5c8c57519096945cf4e",
+    "lines": 15,
+    "classes": [
+      "AdminViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/AuthScreenState.java",
+    "sha256": "6e652ac7f13c3d7e4251859bce2fb616c69f3d20fbfbf65f6088f6edf63c66b1",
+    "lines": 42,
+    "classes": [
+      "AuthScreenState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/AuthValidator.java",
+    "sha256": "49819fe1fc3e16f0d8deba5f687db3023cbd87b36e7b6d015fd2d91e1b914fe4",
+    "lines": 84,
+    "classes": [
+      "AuthValidator"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/AuthViewModel.java",
+    "sha256": "70586af57923d61a4aa5d9e2eac3b5da2b1eca989687a12e5ce0c37d2a6ed891",
+    "lines": 196,
+    "classes": [
+      "AuthViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/AuthViewModelFactory.java",
+    "sha256": "16dfc55a5333f43c543de8e46b3b01d6071a9672cf8e4be261369179b9919a15",
+    "lines": 32,
+    "classes": [
+      "AuthViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/ForgotPasswordFragment.java",
+    "sha256": "cc2c750f7ba31f50b4324532d03481fdd6d7aff26bceb8423cebb00a94aa8ac0",
+    "lines": 95,
+    "classes": [
+      "ForgotPasswordFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/LaunchLoadingFragment.java",
+    "sha256": "77dfe3dbf312a0ba2b2130b0f84afd13be95fa5c39fa65b392e506a17f670e03",
+    "lines": 102,
+    "classes": [
+      "LaunchLoadingFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/LoginFragment.java",
+    "sha256": "73115ec03b43b1319c0dc757aca71fddb165faa821321c2463f5084f4be06597",
+    "lines": 104,
+    "classes": [
+      "LoginFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/OnboardingFragment.java",
+    "sha256": "6afeec64ed3e629c9fd2b59b6658d3e8ddf0b43b99b36e22023a02be18165b22",
+    "lines": 52,
+    "classes": [
+      "OnboardingFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/PasswordResetViewModel.java",
+    "sha256": "b2c732eb0ce6d5587799389e9c27106dc7bb48db11a6d66a22a65dd8930f5f47",
+    "lines": 71,
+    "classes": [
+      "PasswordResetViewModel",
+      "State"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/PasswordResetViewModelFactory.java",
+    "sha256": "0decdee38d72713b9bff5137f27ecb4c4ccb65cc93f2cd922eff1b694ef1b559",
+    "lines": 23,
+    "classes": [
+      "PasswordResetViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/RegisterFragment.java",
+    "sha256": "51e11eca07bedc13442e7f88ef23c32ba78007e5eb84e800479c5c351bdd3946",
+    "lines": 127,
+    "classes": [
+      "RegisterFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/RegistrationChoiceFragment.java",
+    "sha256": "f4fd271bb01f50120ce8455d48e3556ad95549e04a5eb648ad79a17afb1d8093",
+    "lines": 44,
+    "classes": [
+      "RegistrationChoiceFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/auth/SplashFragment.java",
+    "sha256": "1fb15d97fd4a33bccb0b3e92592840c56482849ad35b54ea1019e4b35d07486a",
+    "lines": 76,
+    "classes": [
+      "SplashFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignBatchOption.java",
+    "sha256": "29780f3ad5f487d8f85ccf74ae2b68fe4ebda74fb06066083c81d8891acf76ef",
+    "lines": 21,
+    "classes": [
+      "CampaignBatchOption"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignDetailFragment.java",
+    "sha256": "41a02c843e03752735c2c425e87dbaee7a1136ab65418c2e1d6798b62b2d33ff",
+    "lines": 992,
+    "classes": [
+      "CampaignDetailFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignEditorFragment.java",
+    "sha256": "9e7ff0c238ffcd0b6526a6a5dfeda2aa5fb37d8cfe99a37e18efd9aa26555889",
+    "lines": 446,
+    "classes": [
+      "CampaignEditorFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignListFragment.java",
+    "sha256": "1936e8e456ce16d9c1a90eba1e22dd58f3f8b7fd1839cd0bc93139a513ff20e4",
+    "lines": 134,
+    "classes": [
+      "CampaignListFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignScreenState.java",
+    "sha256": "808642a544818611214ff6c75cc651e68f6481a9c71e11191270ff8fb2f3925f",
+    "lines": 29,
+    "classes": [
+      "CampaignScreenState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignValidator.java",
+    "sha256": "fd3578f75e1d0ce34a9dac2294648c1fc66f8d2d34654f2d013b35207d5d83e6",
+    "lines": 81,
+    "classes": [
+      "CampaignValidator"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignViewModel.java",
+    "sha256": "b4e0d9224638727a3aeaf4a838edb45a04bbb9365fad084cf44d55fc500dc4ba",
+    "lines": 249,
+    "classes": [
+      "CampaignViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/CampaignViewModelFactory.java",
+    "sha256": "384c802fa79a4b53a2717fb47320334f1509e1461a3a3bbeaf96be3a70fe34a7",
+    "lines": 23,
+    "classes": [
+      "CampaignViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/MobileRescueFragment.java",
+    "sha256": "b0f5153cf9ab8748720b5549668abe94ccafc1088929e77c0676a977eaa9d196",
+    "lines": 127,
+    "classes": [
+      "MobileRescueFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/campaign/SellerCampaignListFragment.java",
+    "sha256": "6b73a319dc74844d53159933eb6a63893ed562cb3828ebc3c993f549242e4485",
+    "lines": 82,
+    "classes": [
+      "SellerCampaignListFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/cart/CartFragment.java",
+    "sha256": "cb34083784778e65f18db1d2fd6e0182ff5e7c98d3ff6e3595ac2a9a77cb4b87",
+    "lines": 311,
+    "classes": [
+      "CartFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/cart/CartScreenState.java",
+    "sha256": "3f7b749ba1dca454297930020d38217a7ff20d51513c8a8150c1150da184a18f",
+    "lines": 11,
+    "classes": [
+      "CartScreenState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/cart/CartViewModel.java",
+    "sha256": "37c5ba29442bba57eefa5d4a4efb28872351e13d052467434385a57ec94f3881",
+    "lines": 288,
+    "classes": [
+      "CartViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/cart/CartViewModelFactory.java",
+    "sha256": "45526a0cb8de90ec5b3975824febf3daca200974495a9cf39ffdb1ca46882c5f",
+    "lines": 26,
+    "classes": [
+      "CartViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/CheckoutFragment.java",
+    "sha256": "baa901e36b88ba533c3fafbd3db9a493ee7c17686d22b0136456659152f50a0a",
+    "lines": 753,
+    "classes": [
+      "CheckoutFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/CheckoutRequestIdentity.java",
+    "sha256": "a5ffedee7f519530096af69fab8e93e5f083f6d4734d733d6ed0dd9f2392b13a",
+    "lines": 18,
+    "classes": [
+      "CheckoutRequestIdentity"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/CheckoutState.java",
+    "sha256": "4ee8cf91c687b321e6c48d31e77145f0cf471f2e231117f4f179760203a75714",
+    "lines": 3,
+    "classes": [
+      "CheckoutState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/CheckoutViewModel.java",
+    "sha256": "9e9fc0fb39d73001bfef8a163397d7a3b558686c5ac81950364040bd6ae408ae",
+    "lines": 44,
+    "classes": [
+      "CheckoutViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/CheckoutViewModelFactory.java",
+    "sha256": "db1725ab4b0c059e2b2f0ecb6c41e6b759fa0f556a3d40242d9900f0d9e930fa",
+    "lines": 4,
+    "classes": [
+      "CheckoutViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/OrderConfirmationFragment.java",
+    "sha256": "342c7e59f26f6b988836c030397f05bacb9ca87963afbc3541f335bf410dc341",
+    "lines": 284,
+    "classes": [
+      "OrderConfirmationFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/OrderViewModel.java",
+    "sha256": "d94050f594da9c65e67ba7578329c4d0f9d84c7bd2465908dfaef929e57a47ed",
+    "lines": 3,
+    "classes": [
+      "OrderViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/checkout/OrderViewModelFactory.java",
+    "sha256": "12180cb0d1f7e9605da1a80d35de7c3bfe7a6d79250dc4242f31fef53a7a9360",
+    "lines": 1,
+    "classes": [
+      "OrderViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/AppBackButton.java",
+    "sha256": "6fa04f2e32e1aea9facf2c1b48e044daed2befc162b8579671a6a9d8c4a0cd99",
+    "lines": 29,
+    "classes": [
+      "AppBackButton"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/AppTypography.java",
+    "sha256": "fe06bc2bb0e47fa410cfae6075b5bb0e814044d140f42873fc2af977ed394784",
+    "lines": 28,
+    "classes": [
+      "AppTypography"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/CampaignProgressColors.java",
+    "sha256": "5c7e5fe5f59ff644d57ec28fc2c74bf73cabd4b9d5c93b7f0128cb7fa04d29f0",
+    "lines": 10,
+    "classes": [
+      "CampaignProgressColors"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/CodeLabelAdapter.java",
+    "sha256": "4118522dc1e60b0a65f76aaee10321432ada8814b8b3079a9a0d461fbee0a8f7",
+    "lines": 36,
+    "classes": [
+      "CodeLabelAdapter"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/CustomerUi.java",
+    "sha256": "e1be8e31a56df9cd57dfa7e4d6f10e1ead40312be3757e08344382a2176f99d9",
+    "lines": 47,
+    "classes": [
+      "CustomerUi"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/DatePickerInput.java",
+    "sha256": "ce4d55e36ec4971c6bfc0f7ebd42f3b42a857a7e7d94d66eb136207f3f2df6d2",
+    "lines": 37,
+    "classes": [
+      "DatePickerInput"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/DetailTypography.java",
+    "sha256": "d4badf91dbd31f2ae2c5d07eeb7de804b3629a713b9ff3fbab31ff669aacdca5",
+    "lines": 31,
+    "classes": [
+      "DetailTypography"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/EnumLabelAdapter.java",
+    "sha256": "96395322d910a009cbb4c834a893c06a540994f196179aec015ddb241de47fc5",
+    "lines": 30,
+    "classes": [
+      "selections",
+      "EnumLabelAdapter"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/EnumLabels.java",
+    "sha256": "f9edffb939e5d0d93e176e5d04bf4e48be145cd995f8db1d8f0d207539b42486",
+    "lines": 143,
+    "classes": [
+      "EnumLabels"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/ExpiryUiRefresh.java",
+    "sha256": "518505dd5fa6822e20f75ed9d5b3af69c54b457880b224225e3e6e7c031d362a",
+    "lines": 23,
+    "classes": [
+      "ExpiryUiRefresh"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/HomeLoadMoreButton.java",
+    "sha256": "1f114fdc1ca3028b305223169c38ec1d00803d49a188017d090c33c4a3ff3786",
+    "lines": 82,
+    "classes": [
+      "HomeLoadMoreButton"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/HomeSearchInput.java",
+    "sha256": "9d110910218cab93238902168891b8c927c1be235d889251470b3fb663cb13cd",
+    "lines": 26,
+    "classes": [
+      "HomeSearchInput"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/ListPagination.java",
+    "sha256": "9a7c3d0e22c20695e2775398820ff940796eab0a60437c686122499cb18c9e01",
+    "lines": 74,
+    "classes": [
+      "ListPagination"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/NavigationAwareNestedScrollView.java",
+    "sha256": "e095ca0c890aecf7b447d303800ec9ae67e842c44cf3d5828dc61ea8c3a23af9",
+    "lines": 26,
+    "classes": [
+      "NavigationAwareNestedScrollView"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/NavigationAwareRecyclerView.java",
+    "sha256": "c2925f4840ff76773e297e9eb37067ff092014fb91f1db5266b97e25afb8505e",
+    "lines": 26,
+    "classes": [
+      "NavigationAwareRecyclerView"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/NavigationAwareScrollView.java",
+    "sha256": "69bb2dc815d0022ec22e03818d7a894d66319ca26859b1e7b096615827c9904f",
+    "lines": 26,
+    "classes": [
+      "NavigationAwareScrollView"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/NavigationScrollInsets.java",
+    "sha256": "a56e2dd7d2ac98936b39c8312e884c31ad2dbcec2979ad26b90e7e0407c5dbab",
+    "lines": 77,
+    "classes": [
+      "NavigationScrollInsets"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/NavigationScrollListener.java",
+    "sha256": "c679b2bedcfcbb26095a812418873b4823985c61ba82bea3547056f0a08c3c07",
+    "lines": 6,
+    "classes": [
+      "NavigationScrollListener"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/NotificationBadge.java",
+    "sha256": "c2dc188b972de379a0af7d28e6aad83a861a9786a60f7157b3ddbb4301514023",
+    "lines": 24,
+    "classes": [
+      "NotificationBadge"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/OrderLabels.java",
+    "sha256": "6fd27754bc6c4a77f413b22af9a6c3fee7b41181ea7a641a479d65bb34c046da",
+    "lines": 33,
+    "classes": [
+      "OrderLabels"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/PageWindow.java",
+    "sha256": "d02d6128e3665237b4ce74123e2580a767080f810e30f9ea7356c30ed582135f",
+    "lines": 22,
+    "classes": [
+      "PageWindow"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/ProductTileImageView.java",
+    "sha256": "f973bee3973415b95842d81d1bc2dc65d122604d3a19c1ef12ee19dab4e33c0b",
+    "lines": 14,
+    "classes": [
+      "ProductTileImageView"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/ProvinceFilterPicker.java",
+    "sha256": "c8724c66c0533ba99bcf9cfe50633dba4c2273627fd729c3155222dc4b196a1a",
+    "lines": 105,
+    "classes": [
+      "ProvinceFilterPicker"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/RescueProgressUtils.java",
+    "sha256": "9e88f693ed08a6a21edbcdb7f3cf64cd4855ecb212cf04a3953a52d0882c892f",
+    "lines": 64,
+    "classes": [
+      "RescueProgressUtils"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/ResponsiveActionLayout.java",
+    "sha256": "4f404b6ce581383f4cdfb75c99d36ad7c8697041fcaf364baf13347f842f7a41",
+    "lines": 95,
+    "classes": [
+      "ResponsiveActionLayout"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/ResponsiveContentLayout.java",
+    "sha256": "248e9f66a2fca1b42d992c2d1425df0cd19fd24a54fd69868c1e9db7b23adeb7",
+    "lines": 40,
+    "classes": [
+      "ResponsiveContentLayout"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/ResponsiveGridLayout.java",
+    "sha256": "e34f2ccdefbbf5d449e64387068ab96b726d5c9391d4dce307378825dd2f66e5",
+    "lines": 89,
+    "classes": [
+      "ResponsiveGridLayout"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/UiState.java",
+    "sha256": "873b641b9175b46089e10908aaa261e7506df5acf71503b0b9489976a0fbfe41",
+    "lines": 53,
+    "classes": [
+      "UiState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/common/VietnamAddressView.java",
+    "sha256": "4674de20f7758a38a7d742d55a8af756b2cf4edb8d0b19f9a736a9df2a614b05",
+    "lines": 258,
+    "classes": [
+      "VietnamAddressView"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/AdminReportFragment.java",
+    "sha256": "57ed944e0fbcae062e45050e9757dc9b29d5b04bc07d565ceeecad299d768e20",
+    "lines": 3,
+    "classes": [
+      "AdminReportFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/ContextReportAction.java",
+    "sha256": "c177e50e658ef722fce6d118d71f767a52aef5e50f1012319ae7e178be99fcf2",
+    "lines": 38,
+    "classes": [
+      "ContextReportAction"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/EngagementState.java",
+    "sha256": "84a94f7dd65cc22267960c993c40db80cc7fa28edbc0466129a7e1765277f324",
+    "lines": 1,
+    "classes": [
+      "EngagementState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/EngagementViewModel.java",
+    "sha256": "57b0230cd4487e5d69937ddcb53a3632907fd4242bf48cc98117810819d29419",
+    "lines": 9,
+    "classes": [
+      "EngagementViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/EngagementViewModelFactory.java",
+    "sha256": "e96fa25c23abc53deb43a11317a213fddba07c6bd847c3b39de6073c9c4ca188",
+    "lines": 1,
+    "classes": [
+      "EngagementViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/FavoriteFragment.java",
+    "sha256": "39cc0a6d44268b199b171c68fc59bb44e5c98d76318fabf420ca91525ca0fc4b",
+    "lines": 166,
+    "classes": [
+      "FavoriteFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/NotificationFragment.java",
+    "sha256": "218ba9087788e157adc0fcffe15dfde40a70bd24d9602b163069a978bd4984b1",
+    "lines": 240,
+    "classes": [
+      "NotificationFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/ReportFragment.java",
+    "sha256": "9adc851c9670b9f52c4bbd3cd9dbd14719e9ccbbceb9658cb88b3539449653bd",
+    "lines": 73,
+    "classes": [
+      "ReportFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/ReportResultFragment.java",
+    "sha256": "b3ffdbeec1547a4c40d24afc8f8b51e8a3e4658974fbc155d445f457f7ecd106",
+    "lines": 115,
+    "classes": [
+      "ReportResultFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/ReviewFragment.java",
+    "sha256": "8c7d5e566aca8622d4a2edd5207913c9f937fe098512d2b4a4ce5d6a3f6f0e13",
+    "lines": 417,
+    "classes": [
+      "ReviewFragment",
+      "ReviewTarget"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/ReviewMediaRenderer.java",
+    "sha256": "9e19ea329ba289d24b5d2827e7e1aafacb73c5f9f5d66eb2c4b084dc97f62491",
+    "lines": 72,
+    "classes": [
+      "ReviewMediaRenderer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/engagement/UnreadNotificationsViewModel.java",
+    "sha256": "c1594297d5c4d72886e536dc91edf1066f7402de39c39336af4a656a7d1a3df6",
+    "lines": 69,
+    "classes": [
+      "UnreadNotificationsViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/feed/CampaignFeedCardRenderer.java",
+    "sha256": "dff01c33579de9c55f3402f37d21a17613027df504afab026f9f4edbf2aa113e",
+    "lines": 178,
+    "classes": [
+      "CampaignFeedCardRenderer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/feed/FeedFragment.java",
+    "sha256": "454a61ee74b54e80e9050e5ec30cced204f7f95bf158a0d1831828d65610c3c0",
+    "lines": 85,
+    "classes": [
+      "FeedFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/fund/RescueFundFragment.java",
+    "sha256": "fb2a5e4cc3380c35e98eae2da827ffbc32d5d6e5f83e10303aebd59aadd54ec0",
+    "lines": 522,
+    "classes": [
+      "RescueFundFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/fund/RescueFundTime.java",
+    "sha256": "2c754bbb3db9ffc42fbd0ed6475c0a3fd5dcc8406bec1d63d046087c7d28eab5",
+    "lines": 19,
+    "classes": [
+      "RescueFundTime"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/fund/RescueFundUi.java",
+    "sha256": "c1bb558325ada13f9462553999d1438e4b3583014a837bab211f2389cce42e36",
+    "lines": 234,
+    "classes": [
+      "RescueFundUi"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/AllActiveCampaignsFragment.java",
+    "sha256": "57265df5bd2ffcac576e25f5391b548cdd1eaa9082ae0f74350fc048fa68af81",
+    "lines": 114,
+    "classes": [
+      "AllActiveCampaignsFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/AllCategoriesFragment.java",
+    "sha256": "85d8e2a6dce7c04aec1c3f683da4ae04b4713eac1939b17d401ee6d4bc1b57b4",
+    "lines": 77,
+    "classes": [
+      "AllCategoriesFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/AllCriticalCampaignsFragment.java",
+    "sha256": "8fb9b2535d9b3c73f678a776ba312e1ba0fce4541dcbbd61ef0684cb8c5330cd",
+    "lines": 104,
+    "classes": [
+      "AllCriticalCampaignsFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/AllValueProductsFragment.java",
+    "sha256": "267641abf5ccc77f98c69154a59423e89c6c758c67cda1167b5ab28d87cbaf45",
+    "lines": 77,
+    "classes": [
+      "AllValueProductsFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/BannerPagerAdapter.java",
+    "sha256": "d55aa17a0731cfa21791a5f46a2717a46604ecdddd8fe8561cbe91a2831cc7be",
+    "lines": 82,
+    "classes": [
+      "BannerPagerAdapter",
+      "Listener",
+      "Holder"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/CategoryDetailFragment.java",
+    "sha256": "1f708efd3e1729ed52147d104bb1d6fc6eaf11cf6d365a840ac5ebe8b8dcd440",
+    "lines": 125,
+    "classes": [
+      "CategoryDetailFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/DiscoveryBottomSheet.java",
+    "sha256": "cc8a97c6f3fce6e098b49d2b5cb1c256791d23051d51423f2526a87e0d27e9da",
+    "lines": 302,
+    "classes": [
+      "DiscoveryBottomSheet"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/DiscoveryEngine.java",
+    "sha256": "404d283db6643be89734ac5eba3afcf61c4b92b9952ac7c1f88431d2de5742a3",
+    "lines": 319,
+    "classes": [
+      "DiscoveryEngine"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/DiscoveryFragment.java",
+    "sha256": "239ea31443a785f6694ca6ff1d9173db2c829fe44923d774ccd7c57a6303d8e2",
+    "lines": 191,
+    "classes": [
+      "DiscoveryFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/DiscoveryQuery.java",
+    "sha256": "51278299db9698fab7a7db943714900d321d41ec080e49db8adbab4cd6a5fdf5",
+    "lines": 68,
+    "classes": [
+      "DiscoveryQuery",
+      "Sort"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/DiscoveryQueryState.java",
+    "sha256": "14cfa02b8efa8078317f276ad959fa9138399c2767ca30e403fb18cb865735a3",
+    "lines": 50,
+    "classes": [
+      "DiscoveryQueryState"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/DiscoveryResult.java",
+    "sha256": "fd72434491501cbe003a7f469682abd6965fc4d49084e727daffa763224cb34b",
+    "lines": 52,
+    "classes": [
+      "DiscoveryResult",
+      "Type"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/ExpiringProduct.java",
+    "sha256": "c29e20d19b317e9d5b492f73947ac18956110217aa49d135876f5982fa06a58f",
+    "lines": 13,
+    "classes": [
+      "ExpiringProduct"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/GuestHomeFragment.java",
+    "sha256": "8aa5f7c5a2336623eee042367d46aab12ef4c4cc98354bc09ae18977dcb5788e",
+    "lines": 622,
+    "classes": [
+      "GuestHomeFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/HomeCardRenderer.java",
+    "sha256": "aaa00833963147b7f390d40df0ff9482497bf3d339e6576e0bd24ca0c792a8c2",
+    "lines": 250,
+    "classes": [
+      "HomeCardRenderer"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/HomeContentBuilder.java",
+    "sha256": "17e7ba83c8d23558da24ea48257584bb9d58e2acb8b0cd6e77d9cf5ffdcdf180",
+    "lines": 164,
+    "classes": [
+      "HomeContentBuilder"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/HomeViewModel.java",
+    "sha256": "aefb86721c999c3b0039d35a303768a6b3198062cf44d6d377ddcfab08481898",
+    "lines": 411,
+    "classes": [
+      "HomeViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/HomeViewModelFactory.java",
+    "sha256": "c260a863874dd5fbea8176f038aef5ce79d816e6a3f5502a09e31a85a2d64b66",
+    "lines": 37,
+    "classes": [
+      "HomeViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/home/HomeViewState.java",
+    "sha256": "4972fd5bafdad4a4569b480ebe0d295b7511f9f8c787cc72df08be87be7c0aa7",
+    "lines": 112,
+    "classes": [
+      "HomeViewState",
+      "LocationState",
+      "DataFreshness",
+      "Section"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/navigation/ActorUiPolicy.java",
+    "sha256": "99a72aee241c2d4a0d3ce3525f8b8b64bb70889e6f9dc5de1ee88a1db80e6c51",
+    "lines": 25,
+    "classes": [
+      "ActorUiPolicy"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/navigation/NotchedNavigationFrameLayout.java",
+    "sha256": "63c405fbbfe277f64566f96b33181ff853580000fe77466a0b8fe4d5232e7827",
+    "lines": 69,
+    "classes": [
+      "NotchedNavigationFrameLayout"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/CustomerOrderListFragment.java",
+    "sha256": "95f74fe88c9fda81c646afb7db708499f4e0ca5249ae5e95159ec18da5ac8f58",
+    "lines": 123,
+    "classes": [
+      "CustomerOrderListFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/OrderDetailFragment.java",
+    "sha256": "7cd27476461d89573dd53ed43916526ec0f5f1d8a34c615db5315e32247816b1",
+    "lines": 566,
+    "classes": [
+      "OrderDetailFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/OrderLifecycleState.java",
+    "sha256": "a0735fdd45a744cde7c26c0d662d17321dccc6c9de6ba545bd3fd9611c420f27",
+    "lines": 17,
+    "classes": [
+      "OrderLifecycleState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/OrderListRow.java",
+    "sha256": "464943bf7c4f0a07fe24cdcfc98221fd6892390996f54475747eb640a52f2110",
+    "lines": 44,
+    "classes": [
+      "OrderListRow"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/OrderReconciliationFragment.java",
+    "sha256": "e11e18c90a446f7063ac81eea36584bfcc88b28fdf052717ad011af1612dcb83",
+    "lines": 199,
+    "classes": [
+      "OrderReconciliationFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/OrderViewModel.java",
+    "sha256": "5813bd40cd5bcfca78e1a1b6d374ddef4e230ec367ad69bc9566dd68fe75d1c9",
+    "lines": 102,
+    "classes": [
+      "OrderViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/OrderViewModelFactory.java",
+    "sha256": "3b65d3c7a4ecc04ed13a672f5eebced142da298379f9de498df74e15c9309693",
+    "lines": 3,
+    "classes": [
+      "OrderViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/order/SellerOrderListFragment.java",
+    "sha256": "261a01ab1216dcfe2290c4f1884acde6cc18ca41272b6cb477c2a44b3058d909",
+    "lines": 83,
+    "classes": [
+      "SellerOrderListFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/BatchManagerFragment.java",
+    "sha256": "61d95d749fa89ddf74f96d8546b342b9be69e6431b54666cff268333d4731938",
+    "lines": 161,
+    "classes": [
+      "BatchManagerFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/ProductDetailFragment.java",
+    "sha256": "55b0e6230879d145d6bcd6fc350aaccf848fe37fa5713034ad4d664e1742003b",
+    "lines": 344,
+    "classes": [
+      "ProductDetailFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/ProductEditorFragment.java",
+    "sha256": "468886f116ccdbf5cc984ccddccff5e23489493b7620428bb66f36f3b8ab634f",
+    "lines": 169,
+    "classes": [
+      "ProductEditorFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/ProductListFragment.java",
+    "sha256": "a1d4d0de9497053f1a3d1e1d2d095e41253aeeb3c834adc1fd6e4f86ae305b7b",
+    "lines": 76,
+    "classes": [
+      "ProductListFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/ProductScreenState.java",
+    "sha256": "53a1ae28b55a9087894f1244d1221e331c31627e16a3afe12d75a0346364d221",
+    "lines": 30,
+    "classes": [
+      "ProductScreenState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/ProductValidator.java",
+    "sha256": "7079e54af6632d28c826fbe781470e6359af6980f705ac3948d5b404aeaf5050",
+    "lines": 51,
+    "classes": [
+      "ProductValidator"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/ProductViewModel.java",
+    "sha256": "75de0a7548b839678a002245d584c079ab9b3583fcb378658f22606f4966bb95",
+    "lines": 231,
+    "classes": [
+      "ProductViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/ProductViewModelFactory.java",
+    "sha256": "0d1c3a34ea047833e544eb8090323db5d8dc9f8ebc6e181618c21a004247ddb4",
+    "lines": 20,
+    "classes": [
+      "ProductViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/product/SellerProductListFragment.java",
+    "sha256": "556db198a7fe35828aa2174c2903954b30e75b518ced336b3484302e52543b76",
+    "lines": 112,
+    "classes": [
+      "SellerProductListFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/AddressEditorFragment.java",
+    "sha256": "85d8078baa1b79cfd9ef098a92ee8ad57f7d402fb4ab9e6c8c13bd4429e347e7",
+    "lines": 158,
+    "classes": [
+      "AddressEditorFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/AddressListFragment.java",
+    "sha256": "f50f71f4b8869f63e3387a4f5fe79fd1d04cb6e6080ec7634d62b6b53ab5338d",
+    "lines": 175,
+    "classes": [
+      "AddressListFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/EditProfileFragment.java",
+    "sha256": "560c670d59abda954540925a56a686def4884eec243bd00905aeb62879e1a28e",
+    "lines": 382,
+    "classes": [
+      "EditProfileFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/GuestProfileFragment.java",
+    "sha256": "3772153583d07879d9f97dc92bf60159c2819d29c188b2fa372d2e5a91a34b02",
+    "lines": 205,
+    "classes": [
+      "GuestProfileFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/ProfileFragment.java",
+    "sha256": "d8b6bec501c8a1d3a7f18c3deec6ee7a8cdbf8e2c0b38133492a50121b3d26d5",
+    "lines": 180,
+    "classes": [
+      "ProfileFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/ProfileScreenState.java",
+    "sha256": "310496315d59b916df6f1059ed99ef5b35257a05754aaf49a78c0e9cbd52da38",
+    "lines": 63,
+    "classes": [
+      "ProfileScreenState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/ProfileValidator.java",
+    "sha256": "715efcb833d0d86e8f2dd66cff9f749a59f0b4debcca7513f108a8ab4a4f68be",
+    "lines": 55,
+    "classes": [
+      "ProfileValidator"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/ProfileViewModel.java",
+    "sha256": "a98d93c444d3b44a25c6da7805945532ae56321a00e51a1ecd0b626328d1e789",
+    "lines": 258,
+    "classes": [
+      "ProfileViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/ProfileViewModelFactory.java",
+    "sha256": "b0f35195b56828900820f2464f909f3a8eb2edcd9d7a5809ca4ab1db0189fa1f",
+    "lines": 22,
+    "classes": [
+      "ProfileViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/PublicSellerProfileFragment.java",
+    "sha256": "31e8eb170173fe013e11f1c6e55a947fd35b9390782a5b31bd72004f3036d591",
+    "lines": 66,
+    "classes": [
+      "PublicSellerProfileFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/SellerApplicationFragment.java",
+    "sha256": "c6f4fca0a1018cec7650d3e8158d0b61b7f57288a002464163d530bda892eb6d",
+    "lines": 101,
+    "classes": [
+      "SellerApplicationFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/SellerProfileFragment.java",
+    "sha256": "82337c3eeec9ffd4ac8c1b4761618d289d40f46c3207ce4c6aec3c04e01366b3",
+    "lines": 329,
+    "classes": [
+      "SellerProfileFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/StorefrontFragment.java",
+    "sha256": "c2371f55f2951e4dbf37bf54ea2a137773259c05ea8f921f7d984b5105075ea4",
+    "lines": 98,
+    "classes": [
+      "StorefrontFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/StorefrontViewModel.java",
+    "sha256": "130b694aac3cbcb5196affb6112e24055b730cfa6be04d6ed7e819807654616d",
+    "lines": 48,
+    "classes": [
+      "StorefrontViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/profile/StorefrontViewModelFactory.java",
+    "sha256": "a108ba3edd8541c18da55218b925316447dede1e4f9804c4dc0f621732597a5a",
+    "lines": 14,
+    "classes": [
+      "StorefrontViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/BaseRescueOfferEditorFragment.java",
+    "sha256": "0892a82d115bb02b5bb3ca69adece9ddea89e51545473391f071ec21b13d8f61",
+    "lines": 346,
+    "classes": [
+      "BaseRescueOfferEditorFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/FlashRescueEditorFragment.java",
+    "sha256": "8ee934ec9c14d07b214fba664d09358b2a882091e3b79b5bce1ac97674cd4011",
+    "lines": 36,
+    "classes": [
+      "FlashRescueEditorFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/FlashSaleFragment.java",
+    "sha256": "7ca8f7279d8c6b287972b2015e29d2e4a254493fc7dfb1ec37410c7a915e58ad",
+    "lines": 112,
+    "classes": [
+      "FlashSaleFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/GiftRevealView.java",
+    "sha256": "9a3098592f0afa63181e4deb5aaad377932d0397e7443b2ea04b01542b963edb",
+    "lines": 211,
+    "classes": [
+      "GiftRevealView"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/MysteryBoxEditorFragment.java",
+    "sha256": "d51b8a057ddfb19bf10a16362923697b5df2619d7689e462a099bdbaa63d7095",
+    "lines": 36,
+    "classes": [
+      "MysteryBoxEditorFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/MysteryBoxFragment.java",
+    "sha256": "ef5f475413131b28a286c5ea82a10a9b491db773c3932372c8c694400608b388",
+    "lines": 103,
+    "classes": [
+      "MysteryBoxFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueBatchPickerDialog.java",
+    "sha256": "8b44d7805b5005ac1b1b42c72fecbec7d5cbaf7149da47ea6672c3162f3b5fd3",
+    "lines": 105,
+    "classes": [
+      "RescueBatchPickerDialog"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueHubFragment.java",
+    "sha256": "dfe4b5146105918886a28e30a2297106d8a8a45b2c4d46fa5f7b54af3adf0e02",
+    "lines": 342,
+    "classes": [
+      "RescueHubFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueImpactPanel.java",
+    "sha256": "1f87218067daf4aea99575fd9cd3863a683a119b312cc9051b35d51fc6f7a2ca",
+    "lines": 86,
+    "classes": [
+      "RescueImpactPanel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueMarketFragment.java",
+    "sha256": "23ecee7aff305ce46054e08e449f1f3cbf7cc3cc5fc1648301a0993f921be046",
+    "lines": 121,
+    "classes": [
+      "RescueMarketFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueMarketUi.java",
+    "sha256": "f3a4051eb086937f8cee4ada3402489a822e6a521a7ca9a9e8831978ccc0c38e",
+    "lines": 57,
+    "classes": [
+      "RescueMarketUi"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueOfferEditorFragment.java",
+    "sha256": "9b4561ceb69fbe63d977f99fb2db4ba681ff44f009ffe4f3d24d5a680da10d42",
+    "lines": 25,
+    "classes": [
+      "RescueOfferEditorFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueProgramsViewModel.java",
+    "sha256": "cc5069e956568b95b624f7afd7b12f007beefe90c1e98c267faa4112880dec06",
+    "lines": 140,
+    "classes": [
+      "RescueProgramsViewModel",
+      "State"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueTime.java",
+    "sha256": "2ac68f119ab835a97b630eacf48412ce7ad5605cc5e947864761cae867293a65",
+    "lines": 49,
+    "classes": [
+      "RescueTime",
+      "PickupWindow"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/rescue/RescueUi.java",
+    "sha256": "49e0a11fb4d2087bd04600fad30f3117cc076f1e4b9e73c8a60a9efb47d47033",
+    "lines": 77,
+    "classes": [
+      "RescueUi"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerDashboardCards.java",
+    "sha256": "b0a77cbe2cb681119e840e755b4511875d85a00a5953ee625539d450b25667e2",
+    "lines": 111,
+    "classes": [
+      "SellerDashboardCards",
+      "Metric"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerDashboardFragment.java",
+    "sha256": "7af5e65684749a0f3d4c37c800d38ed2520e2a8b1103c19bd9af647447a45111",
+    "lines": 248,
+    "classes": [
+      "SellerDashboardFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerDashboardState.java",
+    "sha256": "5439bfbc9762c4165fcc6756f26498fd4d9150136044a6c2ae2d71c62f43ab30",
+    "lines": 1,
+    "classes": [
+      "SellerDashboardState",
+      "Status"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerStatisticsChart.java",
+    "sha256": "ddddf58401f978c3b266a72e0cae813a34e215fcea93512e00312d6f89e52fb0",
+    "lines": 125,
+    "classes": [
+      "SellerStatisticsChart",
+      "Kind"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerStatisticsFragment.java",
+    "sha256": "d227b94c922825a82286b991ef43d5d4170ff089c1c1effa61c2abb1045b9814",
+    "lines": 152,
+    "classes": [
+      "SellerStatisticsFragment"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerStatisticsViewModel.java",
+    "sha256": "bc0a83c7a0f4e72632aab8a6340053ae19d1ffbefe1ebb8dbfd9b472652edbd7",
+    "lines": 44,
+    "classes": [
+      "SellerStatisticsViewModel",
+      "Status",
+      "State"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerUiStyles.java",
+    "sha256": "40a49b6d80aa2e1f306502d2aa1861a57b0f1bda75a2c76872bdf9cee885ee74",
+    "lines": 163,
+    "classes": [
+      "SellerUiStyles",
+      "Section",
+      "Row"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerViewModel.java",
+    "sha256": "c5b9f30622ae6a3854c19259ba347c5b00978afbc90e5eccf329e3e762324a55",
+    "lines": 53,
+    "classes": [
+      "SellerViewModel"
+    ]
+  },
+  {
+    "path": "app/src/main/java/com/rescuefarm/ui/seller/SellerViewModelFactory.java",
+    "sha256": "f665fd4808e7d4fc059f9432b38a530180f73087d5e0d23985f073fcc54f4bf9",
+    "lines": 1,
+    "classes": [
+      "SellerViewModelFactory"
+    ]
+  },
+  {
+    "path": "app/src/main/res/color/bottom_navigation_tint.xml",
+    "sha256": "7b3e353588741dfcf22c2c481d3d0bbf831082998ed0489fee49e651172ee124",
+    "lines": 5,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_account_profile_avatar.xml",
+    "sha256": "5a1b435026ec4811bf0753fd66dc24d9bdab1c2d93b8977da2a7d6b8f11e3cc4",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_critical_badge.xml",
+    "sha256": "265727bdb35d2107da9ef0bd6169ac662d8095f6d04c99927dcf31ba3af40847",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_fixed_badge.xml",
+    "sha256": "10063aeadde62d534cb2b8e838a0466d8277014b02ca70c24d2bcc929e05af64",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_hero_gradient.xml",
+    "sha256": "12650c0902ac0954ab3022f79bd2991ec6831ec59ecc7551dc9a4eaa815b276d",
+    "lines": 8,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_launch_logo.xml",
+    "sha256": "78bb6db12d03da65284dbe5f5f97691cb47d366a5ed5dd2393f35a8d05675e7f",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_mobile_badge.xml",
+    "sha256": "5af4cfda62bccbe6a8b76a269385dca2cb4feb79b8797a3132291fb81dbf6b35",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_notification_badge.xml",
+    "sha256": "a04fab85e694c13c8b0def1d48628c4f9e27d4b4dea699b83feaf74579dc3fe8",
+    "lines": 5,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_profile_avatar_circle.xml",
+    "sha256": "442cb652b24817f481043e5c4eaf85bec87e8a0a41f8b78ea6e4fe9f9ec6c109",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_profile_map.xml",
+    "sha256": "afcfdeaff2e8bb088affaccf84ae75f1e39b354803fb3912706395d7ad84492a",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_quantity_stepper.xml",
+    "sha256": "b5a2119b7e8b176702c4e20c9f2f03c779ac1e4928c815bd572cdf4d8cdd7fae",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_search_dropdown.xml",
+    "sha256": "9049790f16c7d981423e54ed223de270890968b1b7636ee9260ed10a647bd488",
+    "lines": 5,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_search_suggestion_icon.xml",
+    "sha256": "442cb652b24817f481043e5c4eaf85bec87e8a0a41f8b78ea6e4fe9f9ec6c109",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/bg_splash_mark.xml",
+    "sha256": "6aadb5ee0c5859801896f256b8a539af0ff6d9ebc6efed7f3e1ada2e99d27c0f",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_admin_banner.xml",
+    "sha256": "84d0b504a242e4d8a9f8ac97a8cce8c4fa9c82e262be1874169277692084d30f",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_admin_categories.xml",
+    "sha256": "4c07ae3ddebb7b73277befea50422b69cd6c94a2df665ec3fd4d826f093289d1",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_admin_report.xml",
+    "sha256": "2412f96a126fde38a100c866abec11d6544da6a1d42785aa082b0e010488de79",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_admin_review.xml",
+    "sha256": "7669948d467941ebc7a9b33b19f836c316f147db6fb4d6006342b803be486249",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_admin_shipping.xml",
+    "sha256": "a533bcca1d1c9f733858f3f5f9d9fe8139f5bffc4627a6e3abc5aeae225b0d9e",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_arrow_back.xml",
+    "sha256": "d1f9389ac9d6fba9e93e0c68133d73261e9dae75077dd162a7ddef0dae73a5e0",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_arrow_forward.xml",
+    "sha256": "25399477ace81e294e0bdbc16bdf797926d3ffe40e29269c8a42e2e32fb3f75b",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_close.xml",
+    "sha256": "f9eea2242f75719c7c367c60f4eb01091bc0240ea55a8befaf848369441885c2",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_fund_crown.xml",
+    "sha256": "f3369766b21749a638aaaee9a00c93529f750739fffaf8af3dbaffc3ca166ad2",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_fund_trophy.xml",
+    "sha256": "e6ddc8d5dc43a5a523d1640e06746cbb7211972287b751813f4dcd1f24755a79",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_google_g.xml",
+    "sha256": "805ea345e8031ecebda7a02ec4d6b8cb4e51d8f30f9cfa2e6180382c1ad85692",
+    "lines": 10,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_heart.xml",
+    "sha256": "0a1aa5ea553ae66ee59abaabe9d424b4633262f65872369fc7c3065d1c8e6de8",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_home_filter.xml",
+    "sha256": "3ee3755e1016fc63786c74dc3599ddb59111d42fc17e6950c0e8d35b1fd6682c",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_home_location.xml",
+    "sha256": "c2767f4f49c564d71faa1b0616f36ac5b975c354e53a78f62482b2073d83be81",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_home_notifications.xml",
+    "sha256": "9c94a2390db3f99ca5800cb963741040707096c483cac3514844e9ec8b2cfce3",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_home_search.xml",
+    "sha256": "a7fed461449a5b7e9de63d0cc7f9bfea9eebbf9b1053aa4690582c09fa3594ac",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_launcher_background.xml",
+    "sha256": "f86e6cdf48006fafd3dbc7919744e607749837a35dc6640231b3e03c99369fe1",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_launcher_foreground.xml",
+    "sha256": "1a80cd7b92543d7234992bc5474a12284b293abaebae7842c0d7de6c5d05b5b4",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_load_more_down.xml",
+    "sha256": "82528cad0ae6cc56cd3c9117fa5183d10c2d8596533be838dcd41ee6ab8042af",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_minus.xml",
+    "sha256": "bd4457c05ed3062c8ef08fde95ff668ce6bd3d0eef2f56d4fa4dfc6de32fa6d7",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_nav_cart.xml",
+    "sha256": "1d9ffccae40e63a9c309a2cb07a15d24e1bedd2f451f8b3d6057164eb2326871",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_nav_community.xml",
+    "sha256": "af5d9d9fd31ea9326c0294eca3b0ec6b6bb3fddbfa9549fe353782a8c9b913dd",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_nav_dashboard.xml",
+    "sha256": "ef9f299d5d2b506b716bddfcce6d29d3aaf41f904d100106f4b585a69a789e50",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_nav_home.xml",
+    "sha256": "80cacb5096805170c4cacf9512adb266498a2c5129e77bb4b79516ff55ff776d",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_nav_orders.xml",
+    "sha256": "f61bace72ebff43bd54b220c4ce5d8feae544b3ef2466aadb924bf4d6c7368be",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_nav_profile.xml",
+    "sha256": "688d9e91b517d4e60e6cc219d57051f67c50d53f7e3de546692809f86561b6f4",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_notification_rescuefarm.xml",
+    "sha256": "99b96d7cf74c0a846d79201b6e38617031b2dc525848b5c98f684f76c6d9343e",
+    "lines": 7,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_order_step_check.xml",
+    "sha256": "ecaa4a7f538b1570816fe666f45e2c8cd1ed58b82175ded1da6a520ebb50f958",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_placeholder_food.xml",
+    "sha256": "894b4e3a292ab3204d0ea7f0b4af35fe5109001cd2b22f5926b357c6d18ce4d9",
+    "lines": 12,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_plus.xml",
+    "sha256": "fae66f119370d10ffa4403506b46291a188ac1940fd592e238e0f282e0c0d5dd",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_profile_edit.xml",
+    "sha256": "da735bca0c42492430a2c9191ed2ce4756cc03c7551e145eec60cf5f6c54d842",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_profile_logout.xml",
+    "sha256": "02ec8e50d7760f4a2b7d8ee88d2b9f85b7a31ade91f3998812564d07d0fe1593",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_rescue_flash.xml",
+    "sha256": "96a3c146fd46d0ca02bfbc81a28623426ff38a5e1bd2bcf5ee4987486273df85",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_rescue_flash_plain.xml",
+    "sha256": "b754a45bf7b2a32cb687a9e9d6a00108e45da7d8ef687f236c9f8a7818b40bc4",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_rescue_fund.xml",
+    "sha256": "3da85a793e159d40532877ddecdc264d3a8475028f1c2733ec6c3aba233bd56a",
+    "lines": 5,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_rescue_gift.xml",
+    "sha256": "b35d38b65d72b78dbf25cccc5cf0edb95d295b3ba85e04096535478378d2f6e2",
+    "lines": 8,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_rescue_gift_plain.xml",
+    "sha256": "44405e463c4345fd4bdedda6712227eb98ddadbc67309e44749ff4043871953d",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_reset_success.xml",
+    "sha256": "153f3a89601426055b638aa4dcbd7e50ce10cf3636856191d7141e584b66a542",
+    "lines": 12,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_role_customer.xml",
+    "sha256": "469d6c9b1483097d7edea3c4857681388ed41082756c9367737637531e930e3b",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_role_seller.xml",
+    "sha256": "77ba2787eace6d6267657c5b625dbdcb995b7cc444ddbdd18f162bb7c69f9e33",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_shop_verified.xml",
+    "sha256": "594eb56906d8823246e0c45f8014b3314e7147192c2e4442f5ac1eef18912528",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_splash_leaf.xml",
+    "sha256": "b8bd0fe64766c1ac431f04a89f00703407b3e00ff2f52d13d3522d37d5f72e41",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_splash_sprout.xml",
+    "sha256": "d68f20d98a62eddfab4d825e63ec5f0e2cb09ec08aaedcb60da63fd5b756e928",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_store.xml",
+    "sha256": "20d10b5feed35efd3afb140a67e55fff4ed528ed9b77fac83daf378b9d7af139",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_trash.xml",
+    "sha256": "51325f4c24d38baf6da6df25fc15709d097f6eeeecf8faa5825169cb074cdde1",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/font/barlow.xml",
+    "sha256": "30c0cf814e6a8de066e61593f926bef849418d9cc6c4f95bfd06b0749845ea64",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/font/ibm_plex_sans.xml",
+    "sha256": "803f064ef46bcf3a6975c942df404c20fb9133f2f993ff7e968196575b35ba69",
+    "lines": 9,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/activity_main.xml",
+    "sha256": "39375d09f1f2287b32e5bd0662a8da291f1e73a1d444ecdc41d537e80c3de8a1",
+    "lines": 142,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/admin_dashboard_content.xml",
+    "sha256": "aadfeeea7038eff8f3e1d52cf381fb771e7e0a129a018424e94bec46d6f672c2",
+    "lines": 56,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/admin_dashboard_navigation.xml",
+    "sha256": "08575a2bcdf4900bb5bbefb14a71163537ca3eb4e2b917d02073f0393a50d65a",
+    "lines": 45,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/bottom_sheet_discovery.xml",
+    "sha256": "f64bdabe1f721b4d3297d90984bedbb835fd51f3be302f7acec94dfe39e600b2",
+    "lines": 187,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_address_editor.xml",
+    "sha256": "4b1e8eed719564a24502d86e9d6d0a97537f0c8d0fc4fc50329468fde988e2ca",
+    "lines": 46,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_address_list.xml",
+    "sha256": "2c9aa00326945c163ca079cff8a2909f8700875fe705dc8274d362067cfbb32b",
+    "lines": 19,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_admin_dashboard.xml",
+    "sha256": "df270a961481d86c37b46c918e506dac22a21d0729408f29f6ba7265af2d5cb5",
+    "lines": 11,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_admin_detail.xml",
+    "sha256": "c27331b68e5543a09ee92ad7a0fa57e892af8e323852a4fd55baa6522311cbc9",
+    "lines": 32,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_admin_reports.xml",
+    "sha256": "e9aefb9caad1cfcc6ce0433cdc352c3113af2a776a8b9729c3555db8251530da",
+    "lines": 1,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_admin_resource.xml",
+    "sha256": "4d68576d729769d38a29d651be2badcfb5540605b48f083ff15c5adffcf5bb11",
+    "lines": 48,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_all_active_campaigns.xml",
+    "sha256": "54d53704896697a6b1d0ccdceb1c1079038f5d19a809a03e03882d59c58cc31d",
+    "lines": 37,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_all_categories.xml",
+    "sha256": "6d77e2fdda38e5551677565604bcf511f068c6d866569227c9202c2ef87592c1",
+    "lines": 34,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_all_critical_campaigns.xml",
+    "sha256": "48ba062ae3680739728c09103db250e80ee6441e2bb0f5396a0d5b2dddbdb1f3",
+    "lines": 37,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_all_value_products.xml",
+    "sha256": "1dc30e05e033fd0ff279a32bebb00b6d64fe5f425834369505f45d03282faf84",
+    "lines": 37,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_batch_manager.xml",
+    "sha256": "3170d7d3dba52bd140def5d8b22a6b03182588e4b0f94f82c3ba13f51e39afea",
+    "lines": 36,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_campaign_detail.xml",
+    "sha256": "4db6bec393a8e7362d2ebef97edc1a5a0afd95bf8b0b3592d2b753e73f67fb44",
+    "lines": 460,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_campaign_editor.xml",
+    "sha256": "121ac4d29d7253cb84e56873207845e01243160f6ed29ee56d40eb26d0ad8792",
+    "lines": 73,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_campaign_list.xml",
+    "sha256": "ad9be0a139e147689f81c21003e8681dc30b987d11e3f15450deb9529678cc12",
+    "lines": 25,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_cart.xml",
+    "sha256": "d56717048d014f9cea72f717b5c4402a429f4f00f45f704bf7d575fa4714f8c0",
+    "lines": 93,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_category_detail.xml",
+    "sha256": "abc1790e29cd7fc97c771c0e4a77e66da78ab30a986edc273ee4ffdd6453a470",
+    "lines": 58,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_checkout.xml",
+    "sha256": "85ee9f73bffb69cb31242f081799d649ca04b44c2fdaa8d3bac49a66672c54cf",
+    "lines": 30,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_customer_order_list.xml",
+    "sha256": "1019b1e09f047f7f3688743a74a2876a0c8c4edc8c50fdf7a87998293c9fa626",
+    "lines": 106,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_discovery.xml",
+    "sha256": "a887f745e5c3171c842d61817ed6745a4787c9f52bd6da652ecad39b1ea3a5a1",
+    "lines": 78,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_edit_profile.xml",
+    "sha256": "af12e6e8bd457bcded0869511ba4d343c2232129cc922d9f54842ea10418ca21",
+    "lines": 82,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_favorites.xml",
+    "sha256": "808d3e5053a757d8917faefe5726220f1d29865ee86b8ee3f44259b8a68e65d5",
+    "lines": 40,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_feed.xml",
+    "sha256": "22777557fdb9e6b8eaceb564fd7f58c3b497d19d27ce8d089ccaaa7ce2d0e627",
+    "lines": 59,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_flash_rescue_editor.xml",
+    "sha256": "5628b504f8791094d9e5cb582fea612a80aeaa9935c71c93500366cad963cf49",
+    "lines": 87,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_forgot_password.xml",
+    "sha256": "3968f938cfc6d285f919f881fad8383527910645ba04fec82e52f74bb8620a3b",
+    "lines": 39,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_guest_home.xml",
+    "sha256": "41675176be415dfac6527e95e7008ffe84ad86f2c599dd882d10b120fcfb3728",
+    "lines": 350,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_guest_profile.xml",
+    "sha256": "6de2aa3aa90b72734d3e852673dbd6032aa8aa90baa956ce15ccf4705bf95aa6",
+    "lines": 302,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_launch_loading.xml",
+    "sha256": "ea8d19b75c34330c0e914e99c6cce1c678e24bea98e2029d2d5dfd1cbcc53248",
+    "lines": 32,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_login.xml",
+    "sha256": "0c5e0e0020c12366c702773c26456a0e462e1f33faea652754876b6217c030f0",
+    "lines": 209,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_mobile_rescue.xml",
+    "sha256": "238987b523b26d74e5749ffda65a1f4f93b025478865e147b4f9d750061867b1",
+    "lines": 15,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_mystery_box_editor.xml",
+    "sha256": "5990d49dd29216b126a4a56b9dafd3228f16dd96f95e849125072b72a9840113",
+    "lines": 87,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_notifications.xml",
+    "sha256": "316ee177b4b68b847e55a6be51e5d99cf6747c9adbc3ca101b5a9177c2a09071",
+    "lines": 48,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_onboarding.xml",
+    "sha256": "00d1115e70cdbe2eff7095589ace8d2f04ed36b545fb35d42ba12e6796191648",
+    "lines": 50,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_order_confirmation.xml",
+    "sha256": "a2524396d6108b4d4d4cd6e1f181a5e0660bf237a0092f1e76711047efabcadf",
+    "lines": 101,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_order_detail.xml",
+    "sha256": "ca48a2ade9c7229a5ad481f4843e96dabd181d1c05b6fad0c94141136d86978f",
+    "lines": 210,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_product_detail.xml",
+    "sha256": "fea291d365993b08c774504cf93e06c592e065d51daf147ca4cfb4398b706720",
+    "lines": 244,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_product_editor.xml",
+    "sha256": "bdb1357cfd54db4dffadfbc0822ceee4f3173be676cd923bcd20c9b24ff4c06b",
+    "lines": 71,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_product_list.xml",
+    "sha256": "ec64a638fca45b5f87df8247c88b0fdafff5472f2d4fee762dc0dbff81bf3f48",
+    "lines": 18,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_profile.xml",
+    "sha256": "28e640a2b3d07c2c3453a8ef1d5084b57aba3364c801eeff3da0e5a4955529ce",
+    "lines": 91,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_public_seller_profile.xml",
+    "sha256": "ba0ab9826fa0eb1fe5ca4a6042aad5ecf5f403b12180b796355912b17f989856",
+    "lines": 51,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_register.xml",
+    "sha256": "e71cf062fb7ea74893ece31da5a95dbc99778fe9ebdb8ed09a6b94d3bafc166b",
+    "lines": 263,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_registration_choice.xml",
+    "sha256": "f7bd7c40557b996c61a297d7fadf2530ae611bca21d191d927501063eb9ae8b8",
+    "lines": 183,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_report.xml",
+    "sha256": "e7f7b64f9e308739d0e9173395fc0712183de07cfa8cca2b7d87da0b05a390d6",
+    "lines": 42,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_rescue_fund.xml",
+    "sha256": "692033a5aee028f7c70dab5f360c142bdcd98ba5e5a781a1f498750372420835",
+    "lines": 85,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_rescue_hub.xml",
+    "sha256": "656656fd9ccaa98845a6cae4ea61a1c0c68db9f789140909d93f70902588e3a7",
+    "lines": 56,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_rescue_offer_editor.xml",
+    "sha256": "007131f8879b41222f4717cfba1b4ae4c2443bb1e95c7ee3b4122eb2fee4974f",
+    "lines": 45,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_reviews.xml",
+    "sha256": "d5176ea0c62e2e4b9570940a43c3f8ab7ed85952d59cddd4b1c835aab25e13a6",
+    "lines": 61,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_seller_application.xml",
+    "sha256": "5eb3255d2a804e1acf6e5f378eef6b4ea8fa7e8bccfe1663fb13a4e34e781cfe",
+    "lines": 40,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_seller_campaign_list.xml",
+    "sha256": "83c6cfe9c2a6182a12840a8766f1c550eb7e99ff259e107a868d58bde39af609",
+    "lines": 16,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_seller_dashboard.xml",
+    "sha256": "ac7aabaa739a65bcc9a1a117a20a265681f96cf05a8b0ad85fb9f106b52aa389",
+    "lines": 139,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_seller_order_list.xml",
+    "sha256": "2c4111cea50587f77b34e9b7ee965d83906e27970bf4bc5ff3478c11e45c5243",
+    "lines": 1,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_seller_product_list.xml",
+    "sha256": "5607513ac9a01faf53f9f74ab216702ccd957b9f89cfd8b67dbddc205d22dc01",
+    "lines": 18,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_seller_profile.xml",
+    "sha256": "8fe7a7792da0dac3cab1beebf9b951d1f4ff7dfed49b1da701ee606f955459b2",
+    "lines": 147,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_seller_statistics.xml",
+    "sha256": "ee58fc485df7b4f5ba9c18925306816d750b1e4390c3380550c82fb5dc84bf64",
+    "lines": 27,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/fragment_splash.xml",
+    "sha256": "1c5e696ac7387903b298c8e9fc8d27c2e3a3a646576a3896c333243e79467a93",
+    "lines": 80,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/item_campaign_article.xml",
+    "sha256": "8cf1b3b3a1828046be217c5e6121f5100056bcb89034ea9b1de0b4714e2aaf6b",
+    "lines": 52,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/item_cart_product.xml",
+    "sha256": "d2efac315386c07df4e608ba59cdb922f7878336025d3ba602d96732c0adfe45",
+    "lines": 147,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/item_cart_seller_header.xml",
+    "sha256": "2a9ee779c9213d7cfa54390e6cbc5930166094e3a3da305e11a6b3049c82ba7d",
+    "lines": 24,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/item_order_row.xml",
+    "sha256": "0b99c55ff343527833aced9d71842b476a6d26a3e6828c950bedf40a6d1d8cea",
+    "lines": 71,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/item_recent_guest_order.xml",
+    "sha256": "4d576ef72726b5eeb7758663fa55b3f04b5d05f896f900651e30e0402874aa88",
+    "lines": 89,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/item_search_suggestion.xml",
+    "sha256": "fff3d88d78fae62f8de3245481e1dcb6990d6c5fdc5a36a6d73ab710258fa6dd",
+    "lines": 19,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/popup_home_search.xml",
+    "sha256": "23cb9017a7168bb2c8e0225b994de4a9bbfbbbe30d9073808cee6d677a8806a0",
+    "lines": 28,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/seller_dashboard_content.xml",
+    "sha256": "2774caf1b2fc6b7170e52861b2fd29ccaf27c50866b15b7cf2d1bec8ab05386e",
+    "lines": 60,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/seller_dashboard_navigation.xml",
+    "sha256": "4ed6aafdabbd09384d12501dbad532e7d1ee80d2966228b005197df42f34262a",
+    "lines": 74,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/view_detail_header.xml",
+    "sha256": "f44397cf21a3ba24deef20c14489f3b50bbce0de03818fd7ca85c2652e1d7824",
+    "lines": 13,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/view_rescue_programs_entry.xml",
+    "sha256": "d7fc44bae14ba753432514d207d775d756425f27057eb8144329971bb7c3df4e",
+    "lines": 33,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout/view_search_empty.xml",
+    "sha256": "c8434392952623776dc8bfc9fd4a018ef559b5caa0e26f64d6a8892d6689decc",
+    "lines": 29,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout-w600dp/fragment_admin_dashboard.xml",
+    "sha256": "3ab97d52124cd6173c69dc937d31e1b74339cb777e042f3c2a6f2e18b8d4291a",
+    "lines": 21,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout-w600dp/fragment_seller_dashboard.xml",
+    "sha256": "147e65dd8f94c6beefa362884d7aa6196a3464de98732311d9be02e04f36d739",
+    "lines": 21,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout-w840dp/fragment_checkout.xml",
+    "sha256": "2d49dcb3e01a41f9ba4db2d85eaf0a4da63af44cde7bcf6ab772557ed9e5a96d",
+    "lines": 34,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout-w840dp/fragment_discovery.xml",
+    "sha256": "ab8ec1f679ca45728d912195fc531430fbb426f0c9c7664cd6d96ca5485e6720",
+    "lines": 45,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/layout-w840dp/fragment_product_detail.xml",
+    "sha256": "cebf14970e315fb0e5964f0fa3abaf4c39bd2bff355d0c35cf2f67f667c33436",
+    "lines": 65,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/menu/customer_bottom_navigation.xml",
+    "sha256": "7cb8eae88c0bad578b87084d43004421bf5c13e44092cf682132a66fb750fea7",
+    "lines": 19,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/mipmap-anydpi/ic_launcher.xml",
+    "sha256": "0c3dfad5310dc2d325479d6eac829a6ef251db9c6468d529ec10d4cfa0126476",
+    "lines": 5,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/mipmap-anydpi/ic_launcher_round.xml",
+    "sha256": "0c3dfad5310dc2d325479d6eac829a6ef251db9c6468d529ec10d4cfa0126476",
+    "lines": 5,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/navigation/main_navigation.xml",
+    "sha256": "e7e56c13152afc3031b787c88f4401979deb8374b8a53ef0577f0e4bdaabb6ed",
+    "lines": 397,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/account_profile.xml",
+    "sha256": "5c975543ad2a073f929d20fb904f590379932d11faa9afb60cc53515544924e6",
+    "lines": 26,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/addresses.xml",
+    "sha256": "ec2235aba6b87abf87263c3af1b3679865ae6fa9400436a3e0efb8afb5cf69d0",
+    "lines": 12,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/admin_details.xml",
+    "sha256": "274bb8ba7114dc57fc2b407118c9baaa193e8edc66f973775b1c2bc1a5ea4625",
+    "lines": 18,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/arrays.xml",
+    "sha256": "76e34f342166fcf3cac5768e9c1a523511415108bce2afceedb59de785c91588",
+    "lines": 35,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/campaign_article.xml",
+    "sha256": "b4ddd419ac779bbeee93925e8c09d40e10b9c178186c3ac04b10717f93b9bbde",
+    "lines": 14,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/campaign_editor.xml",
+    "sha256": "987ce70de2f2daeb145a735b4c724dc9e0afeb72362443efaa3fb4ddff346317",
+    "lines": 11,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/cart_seller.xml",
+    "sha256": "80c2ad640305fcad23362a705c9d544e9b6464535661412d6b5f8d2ae2c24776",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/category_detail.xml",
+    "sha256": "ee0299272967d46f41aa72ccb7ed42f57d81bf2a53ac619f931af4fc985f9027",
+    "lines": 14,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/colors.xml",
+    "sha256": "aaebb756e3e398737d01d1baaf8df50c171ad9daabc18aea1044133a680f1117",
+    "lines": 51,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/customer_orders.xml",
+    "sha256": "974cc0ed703f960198d5c3e1a2f24df99b52ce5847b83ff002879242dbd97325",
+    "lines": 18,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/detail_typography.xml",
+    "sha256": "81a9e029ad53bc8e972fb2f590701b0fd694003b2e54819158d7800d7e8f2e18",
+    "lines": 27,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/dimens.xml",
+    "sha256": "bf3fc6402055b29ec751866bd9c60952adcf454aa73fb83bc3f186cd470aaa52",
+    "lines": 11,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/fund_ranking_colors.xml",
+    "sha256": "ca609d144326b8675e720fb7d04025f373be1e0478955b0b86c639be9ae927a0",
+    "lines": 10,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/home_search.xml",
+    "sha256": "50915f20914a1c219aaa1de1d99ac6277f3e5a6842c717a77a95997c2ac3b373",
+    "lines": 13,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/location_policy.xml",
+    "sha256": "ac959962bee5e5210c3b6ee46497a9e553a43e2f19b1b3b5c1e19578958e4d71",
+    "lines": 8,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/navigation.xml",
+    "sha256": "56ec649ddea6d197b23241ad92f724648110470598c923c40d34c230352d82d8",
+    "lines": 4,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/order_timeline.xml",
+    "sha256": "eeec28b0370def582601066aeac0dd92d5b854fb79cb97ef29f773f67c76a398",
+    "lines": 20,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/pagination.xml",
+    "sha256": "3cfe12b61326c087b2409d6c50d5a92d3a3bcc92198b2404d24355c18e37d8cc",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/password_reset.xml",
+    "sha256": "78b8483ba8c0e1370898c34d9563422ba858a97e8163193ad24e84494d3abcfc",
+    "lines": 12,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/public_seller_profile.xml",
+    "sha256": "0e6d42154ef5708b85dcbe0a7771cf938c5c8871f2b36e920010cd696fdd983e",
+    "lines": 14,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/rescue_fund.xml",
+    "sha256": "91c6887e40c5cbe57354cf1a9a6e9ad6e126a4c33d84800d92dd1ef06443eb7b",
+    "lines": 47,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/rescue_programs.xml",
+    "sha256": "3083ba14260007e0a9eb3bef40ee2222cf1e12b7c4d93cfc6ffbe584226e7991",
+    "lines": 15,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/responsive.xml",
+    "sha256": "85d2662c22a26c9008db0cc6e74d31abca1bbcdac097ec6e13ac7ae3f6fdce97",
+    "lines": 19,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/shipping_carriers.xml",
+    "sha256": "b803ee210cd6ad0b8b515bb09a3c66d54095b65135635a68819f982646f14138",
+    "lines": 19,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/strings.xml",
+    "sha256": "650cce8b6ba64a77a10af8bbcf81cd269973c72f0509ac2bc4eeb984f9fdc1a5",
+    "lines": 415,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/styles.xml",
+    "sha256": "a1be9abac7d3b467fe93857befae575c77d64ed86e24a613fe72c0fb41b2e8f3",
+    "lines": 160,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/themes.xml",
+    "sha256": "5d11430d4853da34241034f68b02582d6ee7bb402e50cbf8a6930b3915a2aa04",
+    "lines": 18,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values/typography.xml",
+    "sha256": "510636ece12e28d0ef7726bf9102e11fcee5b9353fb2784fa6715e21f7bf3b61",
+    "lines": 56,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values-land/dimens.xml",
+    "sha256": "41ad0198b3e8f4e7e38cb6cf7bd459d1e49f2f5e3fd531ee3eb55ce5bbcdeb0a",
+    "lines": 5,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values-night/themes.xml",
+    "sha256": "5ae5c121257122e79ebcf0d7b2c6263551cca572b7ef386db547c8b40bffd702",
+    "lines": 8,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values-v31/themes.xml",
+    "sha256": "55a8fc4a0a8267cb25fc5b3f287b8e4f6f562cce76ca5fda6ff0787b4470c9a4",
+    "lines": 8,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/values-w600dp/responsive.xml",
+    "sha256": "a485fe31713927dcd75dbdb490b13681e36fb3fcfe6e88ddef52f6f83c7454bf",
+    "lines": 6,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/xml/backup_rules.xml",
+    "sha256": "f0fc597b48823728a336bdac64b18b83314e5f106d398df232bb0dd0463f5c31",
+    "lines": 15,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/xml/data_extraction_rules.xml",
+    "sha256": "da2f97689cce622fb1996c3b4b3416ca9141f30b30f30ae08ef6cabe6ac16386",
+    "lines": 21,
+    "classes": []
+  },
+  {
+    "path": "app/src/main/res/xml/fund_evidence_paths.xml",
+    "sha256": "484287950b15de72c0c1be52a8fd533a41b509da98d6bad83ca68323325ed490",
+    "lines": 3,
+    "classes": []
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/CacheMigrationContractTest.java",
+    "sha256": "0563c8725f1d2c816f82181025de2d51ba7c1ede5f7c6f9c7a1d2db2664b2ed5",
+    "lines": 20,
+    "classes": [
+      "CacheMigrationContractTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/GuestCartMapperTest.java",
+    "sha256": "e8b24114477c7318d512c0a1cf5e0497f0a7ca5961b4d67fcdee3de0b3c2b86b",
+    "lines": 22,
+    "classes": [
+      "GuestCartMapperTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/OrderCacheMapperTest.java",
+    "sha256": "5abf36217e51b9752959d5107276bd49fcc23c31307bcb17be3dd78fe0293440",
+    "lines": 31,
+    "classes": [
+      "OrderCacheMapperTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/ActorContractTest.java",
+    "sha256": "3f32b4c7d631071c7c1e469b112bea8df8c6fe54ff95a718a6d4b811ba9596f7",
+    "lines": 37,
+    "classes": [
+      "ActorContractTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/AddressTest.java",
+    "sha256": "80f3ce5ec506ac86348f571d7817fc22a4f8d59c6dae77517fcf40ae9ab941f6",
+    "lines": 31,
+    "classes": [
+      "AddressTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/CampaignAllocationTest.java",
+    "sha256": "94fa08b6ca9e6ed5bde8c5ede30690e0117771aa93f741328ac9a06450538ce8",
+    "lines": 41,
+    "classes": [
+      "CampaignAllocationTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/CampaignUnitTest.java",
+    "sha256": "e4fcc84d12a698c4fe6e195062f4ca8b07dcf1fc8718f782cb05329e56e52fdb",
+    "lines": 27,
+    "classes": [
+      "CampaignUnitTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/CommentTest.java",
+    "sha256": "b9309787293079d419440f205f1e501f5f7d0214831564684ecee2d966c435cf",
+    "lines": 23,
+    "classes": [
+      "CommentTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/ProductBatchBoundaryTest.java",
+    "sha256": "aa91c19f63d37a53863065d989f0d36510ebb6d92c9ae9773b2f35ffeefac545",
+    "lines": 44,
+    "classes": [
+      "ProductBatchBoundaryTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/ProductBatchTest.java",
+    "sha256": "7e5d3e3d6fdbe90b58c72964b48f1169a83da2a76a77f1ac6e5c7ba4b6493a72",
+    "lines": 57,
+    "classes": [
+      "ProductBatchTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/ProductBoundaryTest.java",
+    "sha256": "c4ddd288edff7c2b3865a8b512c5c2db3a717479802c923a8e4d0fe95ba161ad",
+    "lines": 25,
+    "classes": [
+      "ProductBoundaryTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/RescueCampaignBoundaryTest.java",
+    "sha256": "2e884d6277d2ae81a3739d97dc2f7d26c81f747ddc4f62237791cf50a997338e",
+    "lines": 67,
+    "classes": [
+      "RescueCampaignBoundaryTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/RescueCampaignTest.java",
+    "sha256": "dd0d5eba86c88489c4a52c28e1cf90885209dd434b27d830f603d5fb5c0fea0d",
+    "lines": 65,
+    "classes": [
+      "RescueCampaignTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/SellerProfileTest.java",
+    "sha256": "83040720cfecdb149ef1a3e4b49aa6acdf8cbd12ef0269a314c8d379a7349c02",
+    "lines": 20,
+    "classes": [
+      "SellerProfileTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/integration/OnSiteRescueFlowTest.java",
+    "sha256": "a46dfeeeab26ebc9546f4754fda17302c37b7b2809b24c450c58ed2ed6d0a535",
+    "lines": 99,
+    "classes": [
+      "OnSiteRescueFlowTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/AddressDefaultPolicyTest.java",
+    "sha256": "1d6b6ca0add6e84c419997a38e3e2e563a880be5cc024661b411370495972418",
+    "lines": 23,
+    "classes": [
+      "AddressDefaultPolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/AdminTransitionPolicyTest.java",
+    "sha256": "e88404fa98762045a0b402d1925fea3c76f36ecbae9f3fab6a22c078faa9f159",
+    "lines": 64,
+    "classes": [
+      "AdminTransitionPolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CacheSyncPolicyTest.java",
+    "sha256": "976b9f3d6107519f1c32f5672e0a9f827a9b71a8914dca5e9f6a5c260724a195",
+    "lines": 43,
+    "classes": [
+      "CacheSyncPolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CampaignLocationServiceTest.java",
+    "sha256": "f9af6b301ae03cf8210eb33d672e07483b281c1354f2c8da3dcae7abd29ad91e",
+    "lines": 32,
+    "classes": [
+      "CampaignLocationServiceTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CampaignTimeFormatterTest.java",
+    "sha256": "1e3d4824092442570796d25741fedb71ffcf455a7ac4cd9e651dd479a73343cc",
+    "lines": 40,
+    "classes": [
+      "CampaignTimeFormatterTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CartGroupingServiceTest.java",
+    "sha256": "413b48a077defc30549e676c60e36f5dc30c29f38b7c6622b92f12d2f7fcffa4",
+    "lines": 22,
+    "classes": [
+      "CartGroupingServiceTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CartMigrationServiceTest.java",
+    "sha256": "a63de3596e3cad61850a8e675e66c1ff715539f5f658bccb7a4a384e61fb27f8",
+    "lines": 103,
+    "classes": [
+      "CartMigrationServiceTest",
+      "FakeGuestCartDao"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CartRevalidationServiceTest.java",
+    "sha256": "9f05a63f2347b6ce1f3533c75a08c48c0438b1c0cf350ad99b1beeb5b9c73ff5",
+    "lines": 51,
+    "classes": [
+      "CartRevalidationServiceTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CheckoutCartCleanupTest.java",
+    "sha256": "53de7a385ef24ddf6eb678e0d34d6ed17999075fc50d1b99db467420aee37c79",
+    "lines": 30,
+    "classes": [
+      "CheckoutCartCleanupTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CheckoutPolicyTest.java",
+    "sha256": "78d1535920d7780fdb57dfa6322ea4ef4716fc07f1b6c825fe8c790152484825",
+    "lines": 8,
+    "classes": [
+      "CheckoutPolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/CheckoutReservationContractTest.java",
+    "sha256": "50687ee476eab40c87a1f96199af5e1be79338ad5a79b330a91b1a6f5d7a8fe9",
+    "lines": 7,
+    "classes": [
+      "CheckoutReservationContractTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/EngagementSafetyTest.java",
+    "sha256": "05351b4c6200f9270209ee642fb5bb08cc487d4aa05b2e20ce87433e1b9a52cf",
+    "lines": 12,
+    "classes": [
+      "EngagementSafetyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/InventoryServiceTest.java",
+    "sha256": "03003646e8b41f13ff701c7376165ba4e73d5a91e234726fa4e76a3320ecda4e",
+    "lines": 29,
+    "classes": [
+      "InventoryServiceTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/InventoryVersionPolicyTest.java",
+    "sha256": "3577d8ffb9e48c8aa6b163657402e7a1a7ed8fa195d154f2428a776dd0d2af1c",
+    "lines": 15,
+    "classes": [
+      "InventoryVersionPolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/OrderLifecycleServiceTest.java",
+    "sha256": "f88375f310d751ca90918601b2d5efedf9c1afb88cc69dc3e3229ae835874871",
+    "lines": 96,
+    "classes": [
+      "OrderLifecycleServiceTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/OrderPricingCompatibilityTest.java",
+    "sha256": "e88dfa0a3680ca58f4a0bdf356e4841719b9974dab87f495980f5f86a976acaa",
+    "lines": 29,
+    "classes": [
+      "OrderPricingCompatibilityTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/PricingServiceTest.java",
+    "sha256": "21f0100173d07531a68a7de0c8e059696bfcc1c75c80ca21b27ab20211749efb",
+    "lines": 22,
+    "classes": [
+      "PricingServiceTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/ReactionPolicyTest.java",
+    "sha256": "724f3701a1741c31e119bdf54d5e56feb1957b2bd67fea81f3e38858601f5965",
+    "lines": 19,
+    "classes": [
+      "ReactionPolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/ReviewSummaryTest.java",
+    "sha256": "25f92e3f07e247b9bf3263643300372d48c1cc732134313abdb64b58268dbbfd",
+    "lines": 22,
+    "classes": [
+      "ReviewSummaryTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/SellerApplicationIdentityTest.java",
+    "sha256": "fe3bea48781f25ff2375383828dbb015aea13527c672f8d204f150a49bdfd427",
+    "lines": 22,
+    "classes": [
+      "SellerApplicationIdentityTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/SellerDashboardAggregatorTest.java",
+    "sha256": "641167bbd2f9241f69d9b55f4c6b95f4698e0737d75fcb0e5125279ad7107991",
+    "lines": 12,
+    "classes": [
+      "SellerDashboardAggregatorTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/SePayPaymentTest.java",
+    "sha256": "ad576bbc550257a01c168a7f520935bd2e2ca152175aa3e9db8f7f070fc46a95",
+    "lines": 36,
+    "classes": [
+      "SePayPaymentTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/VietnamAddressCatalogTest.java",
+    "sha256": "24d38cbeb1f1a063572efd1899edc8f839f3e75199ba73c97e99010fce5d0c8b",
+    "lines": 82,
+    "classes": [
+      "VietnamAddressCatalogTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/local/BannerCacheMapperTest.java",
+    "sha256": "ca0c9e42380264f06a192086e713e3ae63b4322c49fb4ccc8a92f21315540308",
+    "lines": 20,
+    "classes": [
+      "BannerCacheMapperTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/local/CampaignCacheMapperTest.java",
+    "sha256": "2213f0eadba660e4ac44dd0845ef1bfde83bf2db7c31040e43c88901314c2497",
+    "lines": 28,
+    "classes": [
+      "CampaignCacheMapperTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/local/CatalogCacheMapperTest.java",
+    "sha256": "349e8b85449d74c21bd7f074edef894916ecf8cfdabbfb073cb39900b7e15f5d",
+    "lines": 35,
+    "classes": [
+      "CatalogCacheMapperTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/repository/OfflineProductRepositoryTest.java",
+    "sha256": "037910c1195a0a2c8eac484cdfb21454b637d271aa4dc2a8e4fe76fe971439dd",
+    "lines": 139,
+    "classes": [
+      "OfflineProductRepositoryTest",
+      "FakeCatalogCacheDao"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/repository/SellerStorefrontTest.java",
+    "sha256": "de220868ae7aa897b6104f8f90a34d34841793720b4cd76f64de028996f00081",
+    "lines": 24,
+    "classes": [
+      "SellerStorefrontTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/data/repository/UnavailableAuthRepositoryTest.java",
+    "sha256": "f6821e6a4dce6268113e59117ecdd1edb97bd557c60c3c050176ce764c499c06",
+    "lines": 27,
+    "classes": [
+      "UnavailableAuthRepositoryTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/domain/model/RecentGuestOrderTest.java",
+    "sha256": "417079eafbef232f3ebf320662ff61c88fd872fee201a56b2d8355bd9b402341",
+    "lines": 103,
+    "classes": [
+      "RecentGuestOrderTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/service/admin/CatalogImagePolicyTest.java",
+    "sha256": "3697b637d92ba2fa9c94c8c80fde197ba03f4912353c61c3d58314dd8cc81328",
+    "lines": 25,
+    "classes": [
+      "CatalogImagePolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/admin/AdminDetailFormatterTest.java",
+    "sha256": "5bc127653acd414ca2e2ec7e7c86b3909c89a23104d07ccc09410db12890341f",
+    "lines": 57,
+    "classes": [
+      "AdminDetailFormatterTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/admin/AdminRealtimeTest.java",
+    "sha256": "63887056251cc2b8af03f6815db382c88f289029b4fe769444ad8faa668730af",
+    "lines": 45,
+    "classes": [
+      "AdminRealtimeTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/auth/AuthValidatorTest.java",
+    "sha256": "5ce2ac94d62f84956490578ae160d0b69730316d7de4bb6407156c7a5076a673",
+    "lines": 37,
+    "classes": [
+      "AuthValidatorTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/auth/AuthViewModelTest.java",
+    "sha256": "4c621a764e50ac6b63b2f1572c99f40401b79cbfbb690ccee2c39369ac1cefc2",
+    "lines": 151,
+    "classes": [
+      "AuthViewModelTest",
+      "FakeGuestSessionRepository",
+      "FakeAuthRepository"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/auth/PasswordResetViewModelTest.java",
+    "sha256": "c8db579769f62b3e7fb2ca897973df8cfcce27a79b7d2ae9bed799bde775a1ba",
+    "lines": 78,
+    "classes": [
+      "PasswordResetViewModelTest",
+      "FakeAuth"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/campaign/CampaignValidatorTest.java",
+    "sha256": "998404ac3e03a68afe1436c39e31cd2b98a03dc8217b2110961a24fa653e8939",
+    "lines": 20,
+    "classes": [
+      "CampaignValidatorTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/campaign/CampaignViewModelTest.java",
+    "sha256": "17119b2540b777d55213b43776ca36f28f6b95ee48453808aebc771566ebc0b7",
+    "lines": 89,
+    "classes": [
+      "CampaignViewModelTest",
+      "FakeCampaignRepository",
+      "FakeAuth",
+      "FakeLocation",
+      "FakeProducts"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/cart/CartRealtimeTest.java",
+    "sha256": "b78b7aea7074cc7cec2a6319f0456473b19554bc4b495723e1e56ee6b19bc1e6",
+    "lines": 80,
+    "classes": [
+      "CartRealtimeTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/checkout/CheckoutRecipientLocationTest.java",
+    "sha256": "814411575a74d96d0d4908cbd0d5600fe0f06c0eb577c26e1dca09dc3b7df3cd",
+    "lines": 106,
+    "classes": [
+      "CheckoutRecipientLocationTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/checkout/CheckoutRequestIdentityTest.java",
+    "sha256": "f35d0770d19abf8fe24f1cd1f12bba3b41438fdbece52f9d5d44c110d5eecaff",
+    "lines": 24,
+    "classes": [
+      "CheckoutRequestIdentityTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/checkout/GuestOrderConfirmationFlowTest.java",
+    "sha256": "cafdc0e79f242a3bb0c9e3d0ade8adc00a927e51a8e1d75e1a463ac6f597349a",
+    "lines": 105,
+    "classes": [
+      "GuestOrderConfirmationFlowTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/common/CampaignProgressColorsTest.java",
+    "sha256": "9c5a574dcf0f146da2f198b48dc8bc91ab35ea8e4134a0178c6da554c8aff59a",
+    "lines": 13,
+    "classes": [
+      "CampaignProgressColorsTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/common/EnumLabelsTest.java",
+    "sha256": "d2fbe9b407b0dff4e0378a74eccd7b99c938ea867c8de5e3dd85177b0014bacc",
+    "lines": 33,
+    "classes": [
+      "EnumLabelsTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/common/OrderLabelsTest.java",
+    "sha256": "2050cb94cd608121c5d955f169148b127123debf79666fdc9e9453f71b07669a",
+    "lines": 21,
+    "classes": [
+      "OrderLabelsTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/common/PageWindowTest.java",
+    "sha256": "0f8ceb83fb1e9426e10cfbc7a6fe357e2ffbdf6b802d2734d1c99c16cb9fc23f",
+    "lines": 54,
+    "classes": [
+      "PageWindowTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/common/RescueProgressUtilsTest.java",
+    "sha256": "15b63c75048d7d5a822985330eb3a26f12781c7545906e450ab0b2b2a539959c",
+    "lines": 27,
+    "classes": [
+      "RescueProgressUtilsTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/engagement/ReviewMediaRendererTest.java",
+    "sha256": "f0d80ce60ebf0319d1b77690abbada2e3a4cf4df9c4129cd150552063c36f90a",
+    "lines": 29,
+    "classes": [
+      "ReviewMediaRendererTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/fund/RescueFundTimeTest.java",
+    "sha256": "ec8ad939b2115f7e25070f7590c710f2fde06b851f0cbc4ad43d1e0c9ee81974",
+    "lines": 28,
+    "classes": [
+      "RescueFundTimeTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/home/CategoryContentTest.java",
+    "sha256": "786097be07114a5e12b8be3112083470fca5f6a9ccb02716da62af4809e441e3",
+    "lines": 115,
+    "classes": [
+      "CategoryContentTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/home/DiscoveryCampaignProjectionTest.java",
+    "sha256": "ffbb7878b78236ea0b9ea6df35864663ee6ebc3c35fef555f93ef18892625bf9",
+    "lines": 64,
+    "classes": [
+      "DiscoveryCampaignProjectionTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/home/DiscoveryEngineTest.java",
+    "sha256": "7215a357b544829e4371032f1dc14bb810f1e3bb3c156a6e81bcf3d8196f9a5c",
+    "lines": 131,
+    "classes": [
+      "DiscoveryEngineTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/home/DiscoveryQueryStateTest.java",
+    "sha256": "90f4d9928738a28256f8d6a852469685a8b0485e389fdbc865405fce0eaa398d",
+    "lines": 39,
+    "classes": [
+      "DiscoveryQueryStateTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/home/HomeContentBuilderTest.java",
+    "sha256": "cfc39f3e553462ac2cb345a9150c80810bceec6d6f5b73f90b2bd7949bed3236",
+    "lines": 157,
+    "classes": [
+      "HomeContentBuilderTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/home/HomePaginationTest.java",
+    "sha256": "447cc0ee26f4acb897f4939d2d023e0ce1d9f377cbacd60093f62915eec7f22c",
+    "lines": 96,
+    "classes": [
+      "HomePaginationTest",
+      "Harness"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/order/CustomerOrderHistoryTest.java",
+    "sha256": "944fee80ba76f323005f78464b11140cb9116705b088a32b1ade0ef0f2942960",
+    "lines": 92,
+    "classes": [
+      "CustomerOrderHistoryTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/product/ProductValidatorTest.java",
+    "sha256": "9ad7c8677528b2118d588df9c3764f277aed000335aa46c7ce2c26604564346e",
+    "lines": 19,
+    "classes": [
+      "ProductValidatorTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/product/ProductViewModelTest.java",
+    "sha256": "4f22a9c878bf5dbd355e8d22eaaed810f2d150bd1fcef9c8d3248bd493826802",
+    "lines": 94,
+    "classes": [
+      "ProductViewModelTest",
+      "FakeProductRepository",
+      "FakeAuthRepository"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/profile/BusinessProfilePolicyTest.java",
+    "sha256": "50689d5747dbc1aec16465fef2b58eb7957fc2019ae7745840ab29390e73ea29",
+    "lines": 12,
+    "classes": [
+      "BusinessProfilePolicyTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/profile/ProfileValidatorTest.java",
+    "sha256": "c0d61d04beff94d86bb36fc400f6550f993dd17e386567fe0dc3a4f0a4d99697",
+    "lines": 20,
+    "classes": [
+      "ProfileValidatorTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/profile/ProfileViewModelTest.java",
+    "sha256": "16c51979b380a387482596a8bb94187fe9773d504b36de889618210ae135f0f7",
+    "lines": 95,
+    "classes": [
+      "ProfileViewModelTest",
+      "FakeLocationProvider",
+      "FakeAuthRepository"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/rescue/RescueMarketUiTest.java",
+    "sha256": "8ab972200b71e82c259a496333d00f46080feefb82f9232e31bbeb073281d0e1",
+    "lines": 20,
+    "classes": [
+      "RescueMarketUiTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/rescue/RescueTimeTest.java",
+    "sha256": "809473e6ae9a81254fd75ce2f8103badfade40c0ded593b6b1ca906072398dfc",
+    "lines": 74,
+    "classes": [
+      "RescueTimeTest"
+    ]
+  },
+  {
+    "path": "app/src/test/java/com/rescuefarm/ui/seller/SellerStatisticsViewModelTest.java",
+    "sha256": "b4b864414d5c7e1da7113f6716eb7cb8e5a430f5d533fdd016e0287812bdac90",
+    "lines": 34,
+    "classes": [
+      "SellerStatisticsViewModelTest",
+      "Repository"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/AdminDetailPresentationTest.java",
+    "sha256": "e20174de2c3fd54361898fd933d5a2965a8df743edeb289ecdbfa99b7c540985",
+    "lines": 156,
+    "classes": [
+      "AdminDetailPresentationTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/CampaignEditorLocationTest.java",
+    "sha256": "ec99bdf3ee4bfcd4534353e617a19de71037fc9dd2dc53e2a576c795986023bf",
+    "lines": 250,
+    "classes": [
+      "CampaignEditorLocationTest",
+      "TestEditor",
+      "FakeLocation"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/CourseRotationEvidenceTest.java",
+    "sha256": "f3def6c6b4a3240cd07ccc8ca50abff79532a9a5597265fc4fd1dced89f8b642",
+    "lines": 52,
+    "classes": [
+      "CourseRotationEvidenceTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/ExampleInstrumentedTest.java",
+    "sha256": "b393a75dac140f08b4d3363c0e2cb756aeca58a140a3888e4e5f3d0ad218420e",
+    "lines": 20,
+    "classes": [
+      "ExampleInstrumentedTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/MainActivitySmokeTest.java",
+    "sha256": "ea66578d2196cecedb8283b428af77d2b586900dd82ad51854ae6590d47bdee1",
+    "lines": 19,
+    "classes": [
+      "MainActivitySmokeTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/OfflineRoomEvidenceTest.java",
+    "sha256": "a20cadc6ca1de78034e08c22dc3428dffce7e918c279910d29c8f153b81b8b7e",
+    "lines": 59,
+    "classes": [
+      "OfflineRoomEvidenceTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/ReportScreenshotEvidenceTest.java",
+    "sha256": "e3edf73c30d924f138562afa1d528fc4763ac71330367f882b3a08b3b353abf0",
+    "lines": 152,
+    "classes": [
+      "ReportScreenshotEvidenceTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/RequestedUiTest.java",
+    "sha256": "6c083eb116d98cfd30bcb8668fac44756829a7b296eb81561ef3baf5eccff2c8",
+    "lines": 23,
+    "classes": [
+      "RequestedUiTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/RescueFundPresentationTest.java",
+    "sha256": "1b9b715e704e944d0d93cf6cb64dc2163d07bb0df8e391eaf4476a006c66bda2",
+    "lines": 179,
+    "classes": [
+      "RescueFundPresentationTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/ResponsiveLayoutsTest.java",
+    "sha256": "2fc2b4b65e435e97ed5fbfc6bd8b7c3a6a0e304df0c50321aa219d023416d7ee",
+    "lines": 309,
+    "classes": [
+      "ResponsiveLayoutsTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/SnapshotLiveDataTest.java",
+    "sha256": "7864bd4bba143ca8dfe5083f4e622c33d55fedac52d13f7cabdb716ca5eacd9d",
+    "lines": 125,
+    "classes": [
+      "SnapshotLiveDataTest",
+      "Owner"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/VietnamAddressViewTest.java",
+    "sha256": "3b2f83a8bd6a5599e55c3fad12bf5d648b497d092c1749f239a273393e425885",
+    "lines": 118,
+    "classes": [
+      "VietnamAddressViewTest"
+    ]
+  },
+  {
+    "path": "app/src/androidTest/java/com/rescuefarm/data/local/preferences/SharedPreferencesGuestSessionRepositoryTest.java",
+    "sha256": "77703dce259781c35b2ce58f45f18a3ac868920ae0db6bf90ec87109151c7962",
+    "lines": 96,
+    "classes": [
+      "SharedPreferencesGuestSessionRepositoryTest"
+    ]
+  },
+  {
+    "path": "functions/audit-fixes.test.cjs",
+    "sha256": "e06c28e5517f885a40bd2e3d022d5afa457cffc1fe90b737c995f8f946f4ddbc",
+    "lines": 116,
+    "classes": []
+  },
+  {
+    "path": "functions/batch-expiry.js",
+    "sha256": "6a96726ca95a8a0e2033d8bca334d1a1c3dee5f7b06305957a625ce2a7775797",
+    "lines": 113,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-cards.js",
+    "sha256": "52c5d84bb55e9ddd18b7ae57870c2e3fc6e8925f4c945d0762577c6bb2536d7b",
+    "lines": 65,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-cards.test.cjs",
+    "sha256": "9ac3f97e573a99e694495685ebac755a5680d24fd59a9e2afa679068368102e5",
+    "lines": 48,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-inventory.js",
+    "sha256": "cb909d1d10692d932db5d7d86e19167bd0bea93387bb1aeda6c228e0734b1af6",
+    "lines": 19,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-inventory.test.cjs",
+    "sha256": "13bf885ff8583030b5bbcf2d6439ed4bf8474aaeec0dd1bf737384eef6eda773",
+    "lines": 17,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-lifecycle.js",
+    "sha256": "b5a5ad9c54455315f46892a43aafbe572c1f2ca944752ccb8abdd7fb5e4e3599",
+    "lines": 466,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-lifecycle.test.cjs",
+    "sha256": "183cd88b79df868381836ebff57f64e5ae4455a09fc7aad41debe4788510429a",
+    "lines": 432,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-media-policy.js",
+    "sha256": "ffbcb77346991436c04bcaf73d59962e8e65d00ec6798e0a4f16130248b66aff",
+    "lines": 29,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-media.js",
+    "sha256": "3d9a6d67e8a34602e556cc8aa2a2d3ffa3775b1882a346cad732c174bec9177b",
+    "lines": 178,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-media.test.cjs",
+    "sha256": "8562f29a07c2c95b785d2e79f442429b763ad7e7d4f832142243bf1bd681ff5f",
+    "lines": 126,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-projection.js",
+    "sha256": "532659f9bf8a14bfbec98ae098da02da2d4de19850127b38cf631f2269368e35",
+    "lines": 18,
+    "classes": []
+  },
+  {
+    "path": "functions/campaign-projection.test.cjs",
+    "sha256": "106a30d34ad5d52b1c9ee7d717cba2b2337ad77bbf4d836ff6b6d6b1347358a1",
+    "lines": 24,
+    "classes": []
+  },
+  {
+    "path": "functions/cart-migration.js",
+    "sha256": "95aa6a632f36c9cc83d49d1f25506aaaf7112acc820612a7cb5862eae663f0c9",
+    "lines": 48,
+    "classes": []
+  },
+  {
+    "path": "functions/cart-migration.test.cjs",
+    "sha256": "884be301d999300c4b522cd0a3e246482bdf1ebb76d7edccfe0dfb12c0a3cef8",
+    "lines": 31,
+    "classes": []
+  },
+  {
+    "path": "functions/commerce.js",
+    "sha256": "7189eeabc4a4d1132fdf2d5a09f4ecf3947d52e57b15d6a97e925834c588a5de",
+    "lines": 431,
+    "classes": []
+  },
+  {
+    "path": "functions/commerce.test.cjs",
+    "sha256": "09cc90c078b925145c41ce4da9e0b48700ddbf78dddb9902e5633503df73f442",
+    "lines": 495,
+    "classes": []
+  },
+  {
+    "path": "functions/notification-outbox.js",
+    "sha256": "00dc199e7098637fec688bb2a0b11a780f541946c81e262b16a1d6b9bef88291",
+    "lines": 284,
+    "classes": []
+  },
+  {
+    "path": "functions/notification-outbox.test.cjs",
+    "sha256": "bef0fa3db4e90419bdd64b32630fa251860f0247beec0fcb9e289e6d011715b0",
+    "lines": 143,
+    "classes": []
+  },
+  {
+    "path": "functions/notifications-api.js",
+    "sha256": "4b885c8d5ef700f433f64d51710dade6349618212603adb8b0e71142fe419c95",
+    "lines": 151,
+    "classes": []
+  },
+  {
+    "path": "functions/notifications-api.test.cjs",
+    "sha256": "2dac561eb454eae975d95358ed4da0de9bc8c3f60f415b4ac5191f58d0150743",
+    "lines": 68,
+    "classes": []
+  },
+  {
+    "path": "functions/order-reconciliation.js",
+    "sha256": "e0fdaa4a36608f540c07a802db2ee11b02b89228c30d3802016f1dcea124ed09",
+    "lines": 132,
+    "classes": []
+  },
+  {
+    "path": "functions/order-status-labels.js",
+    "sha256": "ea16713605ec2f1dc952828cc3568a37989e7619155b2b45222dbf340c9b7d06",
+    "lines": 8,
+    "classes": []
+  },
+  {
+    "path": "functions/payment-qr.js",
+    "sha256": "2900a64b92de5af2fe80083a0f2199b14ae0dae45e13ee3feb7a2a1c8e5890ae",
+    "lines": 85,
+    "classes": []
+  },
+  {
+    "path": "functions/payment-qr.test.cjs",
+    "sha256": "a21957e88d0144c18aeaf1221fe98d214672b4b00dcad5bbd005073475064272",
+    "lines": 87,
+    "classes": []
+  },
+  {
+    "path": "functions/quantity-units.js",
+    "sha256": "244a5bd217e7ba656bd04ba839b7b17bf032a7430f7cafe16d37fdf5113b940c",
+    "lines": 14,
+    "classes": []
+  },
+  {
+    "path": "functions/quantity-units.test.cjs",
+    "sha256": "15e48f8a6b0601efd821220a3d04a9020a116ef4f35786b6fc6d0060bec73394",
+    "lines": 13,
+    "classes": []
+  },
+  {
+    "path": "functions/read-cache.js",
+    "sha256": "584fc0986affb73556867afb668bb867e851e59bd48569daa7166119d773e132",
+    "lines": 49,
+    "classes": []
+  },
+  {
+    "path": "functions/read-cache.test.cjs",
+    "sha256": "a4f3ed1caf3d758a594dd40c1a36ff2a3e315cf863943e3199a36dff220a220a",
+    "lines": 43,
+    "classes": []
+  },
+  {
+    "path": "functions/realtime.js",
+    "sha256": "218eb9539c3b87edebe58d0bf48713a50e3b41a48c540a610980277a0d8902ec",
+    "lines": 195,
+    "classes": []
+  },
+  {
+    "path": "functions/realtime.test.cjs",
+    "sha256": "2c4141446dee32433c6a713296eaff05eeb6e40aa479acef2c47c6646f989baa",
+    "lines": 155,
+    "classes": [
+      "LiveDb",
+      "Target"
+    ]
+  },
+  {
+    "path": "functions/rescue-fund.js",
+    "sha256": "34252dfb2a8caeb9e02014c6e0abeffd5847397d4e0a67b69a7f38eb8bffe20d",
+    "lines": 454,
+    "classes": []
+  },
+  {
+    "path": "functions/rescue-fund.test.cjs",
+    "sha256": "cc1ff63150c7079dff6ac47b3fe06f6a0884051caa6e3518608a12393099078f",
+    "lines": 389,
+    "classes": []
+  },
+  {
+    "path": "functions/rescue-impact.js",
+    "sha256": "6b390309358fba50b7ad4e703bb11332f2f6fd8a1e4857850c269485acc05bb6",
+    "lines": 32,
+    "classes": []
+  },
+  {
+    "path": "functions/rescue-impact.test.cjs",
+    "sha256": "b5973e3de7069ea661aece1e2be72b78997015acc732f0ba832156a5e2ed9bf1",
+    "lines": 36,
+    "classes": []
+  },
+  {
+    "path": "functions/rescue-policy.js",
+    "sha256": "4ae3e8aac8edbaac29eb20c21bcb1abe6913e28eba9961b836b542d6e348d795",
+    "lines": 74,
+    "classes": []
+  },
+  {
+    "path": "functions/rescue-policy.test.cjs",
+    "sha256": "958d2f794908d19659334589ceeeec503fb8a7d3e8533e01698f1fdbf622bbcd",
+    "lines": 46,
+    "classes": []
+  },
+  {
+    "path": "functions/rescue-programs.js",
+    "sha256": "05c84d933f78f9a506d48e8acbfb3f680beb05fd3a7c88910345ebdffbcd01c2",
+    "lines": 443,
+    "classes": []
+  },
+  {
+    "path": "functions/rescue-programs.test.cjs",
+    "sha256": "56f60abb3745d22bd48ffb4c57268a8d1b1ed5cc4acfa4d46b4cd0cac8b4cb13",
+    "lines": 261,
+    "classes": []
+  },
+  {
+    "path": "functions/seller-analytics.js",
+    "sha256": "0ea1575fec6221cfda4cbd280d2340888ebba12019e83c290025105b79f40511",
+    "lines": 131,
+    "classes": []
+  },
+  {
+    "path": "functions/seller-analytics.test.cjs",
+    "sha256": "a665c56f45ab9c7cc41ce8a8802f6dce8f7d4fa2805df9baa9fc52b28550c6b9",
+    "lines": 79,
+    "classes": []
+  },
+  {
+    "path": "functions/seller-names.js",
+    "sha256": "008328cfb7c2366d3ae069d643ad075ce05739a1f0556602709f4ee25ebb6b18",
+    "lines": 30,
+    "classes": []
+  },
+  {
+    "path": "functions/seller-names.test.cjs",
+    "sha256": "b144634a565694ce925489af1f50d3a2b64855b536c3c832bfcfed491f2b216d",
+    "lines": 38,
+    "classes": []
+  },
+  {
+    "path": "functions/seller-payment-options.js",
+    "sha256": "1cfcc33da7b8ecf50431a21c411cf59fcf68c12f85819b60b124e7c1567af12b",
+    "lines": 37,
+    "classes": []
+  },
+  {
+    "path": "functions/seller-payment-options.test.cjs",
+    "sha256": "f6763fc149a2aa361116dc72c779f2a11d22b92edf98d6b27860834982bc6076",
+    "lines": 66,
+    "classes": []
+  },
+  {
+    "path": "functions/sepay.js",
+    "sha256": "fe2a8053d63a028725743117c2a514e823530546676dd1313b76eadaeb439f5e",
+    "lines": 173,
+    "classes": []
+  },
+  {
+    "path": "functions/sepay.test.cjs",
+    "sha256": "0227161ce9abe4918842dfb154fe34e506831b5efe54861c606385220635653c",
+    "lines": 211,
+    "classes": []
+  },
+  {
+    "path": "functions/server.js",
+    "sha256": "5cbe4acf772ea829da520f8ea47f2a16dd9e7ca4b6e01f0e1acb21ddd7a57cd3",
+    "lines": 308,
+    "classes": []
+  },
+  {
+    "path": "functions/shipping-location.test.cjs",
+    "sha256": "afd3da79a7c5783d24fbc523e7da2ab32fbc66f4c57a92a7616936f006e00a97",
+    "lines": 96,
+    "classes": []
+  },
+  {
+    "path": "functions/scripts/bootstrap-admin.js",
+    "sha256": "446ff606907e0e8a36c0d684c167af09d21bf875a01f75f8447aec0a7554b688",
+    "lines": 48,
+    "classes": []
+  },
+  {
+    "path": "functions/scripts/check-sepay-config.js",
+    "sha256": "0a5fc7189e4778310bb9438b14c746ffa6faa4751bc1d06c3ac849da1ae40972",
+    "lines": 7,
+    "classes": []
+  },
+  {
+    "path": "functions/test-support/memory-firestore.cjs",
+    "sha256": "f6cf346f734b2a4765043902c5bff94d414a476393cbc382d09a419b41fcfc84",
+    "lines": 96,
+    "classes": [
+      "Timestamp",
+      "Reference",
+      "Query",
+      "MemoryFirestore"
+    ]
+  },
+  {
+    "path": "cloudinary-worker/wrangler.toml",
+    "sha256": "810ab4fb002eed987cfd83af9a65d6da8d69e0bd7fb0513f3b1a50e30e5a41dc",
+    "lines": 12,
+    "classes": []
+  },
+  {
+    "path": "cloudinary-worker/src/index.js",
+    "sha256": "22dcb0383b0dbbc513bc01b6c7322e4e2cf5e0e37b2a118b3893fc976cb144fc",
+    "lines": 262,
+    "classes": []
+  },
+  {
+    "path": "cloudinary-worker/test/campaign-upload.test.mjs",
+    "sha256": "7ad5927c43b187f62a9990a87c2cb3f7c1efb76312a250e5ed99353b6a3381bc",
+    "lines": 96,
+    "classes": []
+  },
+  {
+    "path": "tests/firestore/audit-probes.test.mjs",
+    "sha256": "076e51f7b44d880b4f79ea987871792604d621586b249c9a22acd1a8e3d9c11f",
+    "lines": 50,
+    "classes": []
+  },
+  {
+    "path": "tests/firestore/checkout.test.mjs",
+    "sha256": "a50099bed28655775432b1a8f7fb692ba0081830e8bea65dc7f6874c98ad36f5",
+    "lines": 1000,
+    "classes": [
+      "is"
+    ]
+  },
+  {
+    "path": "tests/firestore/realtime.test.mjs",
+    "sha256": "fd6c5948362e861b27b95fa435ec16055dd2c3bba45ac6a3e8d9b0f50e2a018d",
+    "lines": 57,
+    "classes": []
+  },
+  {
+    "path": "tests/firestore/seller-inventory.test.mjs",
+    "sha256": "017dec478f790e407e0123e34111a8d7d2ab8495f1945fb690082b85b1e1174d",
+    "lines": 89,
+    "classes": []
+  },
+  {
+    "path": ".github/workflows/android-package.yml",
+    "sha256": "a944ae475382bc40833bf3c657e890e3885456d3ec6d46a89a033324a56e33c6",
+    "lines": 162,
+    "classes": []
+  },
+  {
+    "path": ".github/workflows/notification-worker.yml",
+    "sha256": "52cc7b8533c1261ffeeaaad00c818088d925196a8dde72d1acbb2c56f29e3b79",
+    "lines": 28,
+    "classes": []
+  },
+  {
+    "path": ".github/workflows/rescue-fund-nightly.yml",
+    "sha256": "297bd1dc135a427440dca94f9c77a62ccf1aeb1835b32d527b2d37efb882d9c0",
+    "lines": 39,
+    "classes": []
+  }
+]

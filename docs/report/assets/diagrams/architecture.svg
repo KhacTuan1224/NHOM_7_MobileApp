@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1030" viewBox="0 0 1400 1030"><rect width="100%" height="100%" fill="white"/><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#333"/></marker></defs>
+<text x="700.0" y="48" font-family="Arial" font-size="30" font-weight="bold" text-anchor="middle" fill="#172b31">Kiến trúc và ranh giới dữ liệu</text>
+<rect x="30" y="80" width="770" height="770" rx="12" fill="none" stroke="#59747b" stroke-width="2"/>
+<text x="45" y="111" font-family="Arial" font-size="21" font-weight="bold" text-anchor="start" fill="#172b31">Android client</text>
+<rect x="855" y="80" width="510" height="820" rx="12" fill="none" stroke="#59747b" stroke-width="2"/>
+<text x="870" y="111" font-family="Arial" font-size="21" font-weight="bold" text-anchor="start" fill="#172b31">Dịch vụ bên ngoài thiết bị</text>
+<path d="M207.5 260.0 L207.5 350.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M350.0 401.7701863354037 L460.0 403.1366459627329" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M610.0 460.0 L610.0 650.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="550.0" y="533.0" width="120" height="29" fill="white"/>
+<text x="610.0" y="553.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">đọc cache</text>
+<path d="M350.0 705.0 L460.0 705.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M281.29166666666663 650.0 L536.2083333333334 460.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="360.75" y="533.0" width="96" height="29" fill="white"/>
+<text x="408.75" y="553.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">đồng bộ</text>
+<path d="M742.0 350.0 L958.0 260.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="826.0" y="283.0" width="48" height="29" fill="white"/>
+<text x="850.0" y="303.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">SDK</text>
+<path d="M760.0 405.0 L910.0 405.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="763.0" y="383.0" width="144" height="29" fill="white"/>
+<text x="835.0" y="403.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">HTTP online</text>
+<path d="M350 205 L815 205 L815 615 L910 615" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="773.0" y="520" width="84" height="58" fill="white"/>
+<text x="815" y="540" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">upload</text>
+<text x="815" y="568" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">online</text>
+<path d="M910 815 L870 815 L870 405 L910 405" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="800.0" y="705" width="120" height="29" fill="white"/>
+<text x="860" y="725" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">SePay vào</text>
+<path d="M1270 405 L1320 405 L1320 815 L1270 815" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="1278.0" y="690" width="84" height="29" fill="white"/>
+<text x="1320" y="710" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">outbox</text>
+<path d="M1090.0 560.0 L1090.0 460.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M1090.0 350.0 L1090.0 260.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="1030.0" y="283.0" width="120" height="29" fill="white"/>
+<text x="1090.0" y="303.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Admin SDK</text>
+<rect x="65" y="150" width="285" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="207.5" y="197.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Fragment và XML Views</text>
+<text x="207.5" y="228.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">MainActivity / Navigation</text>
+<rect x="65" y="350" width="285" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="207.5" y="392.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">ViewModel và LiveData</text>
+<text x="207.5" y="423.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">trạng thái theo vòng đời</text>
+<rect x="460" y="350" width="300" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="610.0" y="397.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Repository và policy</text>
+<text x="610.0" y="428.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">kiểm tra nguồn / quyền</text>
+<rect x="460" y="650" width="300" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="610.0" y="697.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Room v11 trên SQLite</text>
+<text x="610.0" y="728.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">cache đọc và giỏ Guest</text>
+<rect x="65" y="650" width="285" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="207.5" y="697.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">WorkManager</text>
+<text x="207.5" y="728.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">read sync và retry</text>
+<rect x="910" y="150" width="360" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1090.0" y="197.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Firebase Auth + Firestore</text>
+<text x="1090.0" y="228.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Rules cho Android SDK</text>
+<rect x="910" y="350" width="360" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1090.0" y="397.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Express trên Render</text>
+<text x="1090.0" y="428.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Admin SDK / transaction</text>
+<rect x="910" y="560" width="360" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1090.0" y="607.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Cloudflare Worker</text>
+<text x="1090.0" y="638.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Cloudinary / ký media</text>
+<rect x="910" y="760" width="170" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="995.0" y="807.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">SePay</text>
+<text x="995.0" y="838.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">webhook</text>
+<rect x="1100" y="760" width="170" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1185.0" y="807.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">FCM</text>
+<text x="1185.0" y="838.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">push</text>
+<text x="700.0" y="980" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Local: danh mục / sản phẩm / lô / chiến dịch / đơn đã cache.</text>
+<text x="700.0" y="1008" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Online bắt buộc: checkout, thanh toán, duyệt, cập nhật tồn và chuyển trạng thái.</text>
+</svg>

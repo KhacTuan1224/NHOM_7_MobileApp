@@ -1,0 +1,68 @@
+{
+  "title": "Phân rã chức năng theo nghiệp vụ",
+  "nodes": {
+    "root": [
+      460,
+      100,
+      360,
+      100,
+      "RescueFarm\nthương mại điện tử giải cứu"
+    ],
+    "browse": [
+      45,
+      340,
+      285,
+      130,
+      "Khám phá và nội dung\nHome / tìm kiếm\nCampaign và tương tác"
+    ],
+    "trade": [
+      375,
+      340,
+      285,
+      130,
+      "Thương mại\nProduct / Batch / Cart\nCheckout và giao nhận"
+    ],
+    "rescue": [
+      705,
+      340,
+      285,
+      130,
+      "Giải cứu mở rộng\nFlash / Mystery Box\nHũ / chuyến / ledger"
+    ],
+    "admin": [
+      1035,
+      340,
+      285,
+      130,
+      "Quản trị trên mobile\nduyệt và kiểm duyệt\nđối soát / cấu hình"
+    ]
+  },
+  "edges": [
+    [
+      "root",
+      "browse",
+      ""
+    ],
+    [
+      "root",
+      "trade",
+      ""
+    ],
+    [
+      "root",
+      "rescue",
+      ""
+    ],
+    [
+      "root",
+      "admin",
+      ""
+    ]
+  ],
+  "groups": [],
+  "size": [
+    1380,
+    650
+  ],
+  "note": "Chức năng cũ promotions, wallet ưu đãi và bài đăng tổng quát không được khôi phục\nchỉ vì tên collection hoặc tài liệu lịch sử còn tồn tại."
+}

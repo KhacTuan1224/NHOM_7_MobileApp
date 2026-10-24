@@ -27,8 +27,17 @@ android {
         }
     }
     buildFeatures { buildConfig = true }
+    testBuildType = providers.gradleProperty("reportTestBuildType").orElse("debug").get()
 
     buildTypes {
+        create("reportDemo") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".reportdemo"
+            matchingFallbacks += listOf("debug")
+            buildConfigField("String", "RENDER_BACKEND_URL", "\"http://10.0.2.2:3008\"")
+            buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"\"")
+            buildConfigField("String", "CLOUDINARY_SIGNING_URL", "\"http://10.0.2.2:3008/media-disabled\"")
+        }
         release {
             optimization {
                 enable = false

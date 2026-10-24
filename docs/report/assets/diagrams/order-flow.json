@@ -1,0 +1,121 @@
+{
+  "title": "Hoạt động đặt hàng và giữ tồn kho",
+  "nodes": {
+    "pick": [
+      70,
+      130,
+      340,
+      100,
+      "Chọn ProductBatch\ncòn hạn và đủ tồn"
+    ],
+    "cart": [
+      480,
+      130,
+      340,
+      100,
+      "Giỏ Guest / Customer\nsố lượng + giá tham khảo"
+    ],
+    "quote": [
+      890,
+      130,
+      340,
+      100,
+      "Backend quote / checkout\nkiểm tra lại giá, quyền, tồn"
+    ],
+    "fail": [
+      890,
+      350,
+      340,
+      100,
+      "Sai giá / hết tồn / hết hạn\ntrả lỗi để người mua sửa"
+    ],
+    "reserve": [
+      480,
+      350,
+      340,
+      100,
+      "Transaction giữ kho\nrequestId chống lặp"
+    ],
+    "pay": [
+      70,
+      350,
+      340,
+      100,
+      "BANK_TRANSFER → QR\nhoặc COD / tiền tại điểm"
+    ],
+    "hook": [
+      70,
+      590,
+      340,
+      110,
+      "Webhook hợp lệ\nkiểm mã, tiền, ngân hàng\nchống lặp giao dịch"
+    ],
+    "deliver": [
+      480,
+      590,
+      340,
+      110,
+      "Seller xử lý và giao nhận\nkiểm tra transition hợp lệ"
+    ],
+    "end": [
+      890,
+      590,
+      340,
+      110,
+      "Hoàn tất → chốt kho\nHủy / quá hạn → hoàn giữ\ngiữ lịch sử đơn"
+    ]
+  },
+  "edges": [
+    [
+      "pick",
+      "cart",
+      ""
+    ],
+    [
+      "cart",
+      "quote",
+      ""
+    ],
+    [
+      "quote",
+      "fail",
+      "không đạt"
+    ],
+    [
+      "quote",
+      "reserve",
+      "hợp lệ"
+    ],
+    [
+      "reserve",
+      "pay",
+      ""
+    ],
+    [
+      "pay",
+      "hook",
+      "QR"
+    ],
+    [
+      "pay",
+      "deliver",
+      "COD"
+    ],
+    [
+      "hook",
+      "deliver",
+      ""
+    ],
+    [
+      "deliver",
+      "end",
+      ""
+    ]
+  ],
+  "groups": [],
+  "size": [
+    1320,
+    860
+  ],
+  "note": "Client không tự đánh dấu đã nhận tiền. Webhook retry không tạo thêm khoản thu.\nĐơn giao nhận và trạng thái thanh toán là hai chiều trạng thái cần đối chiếu."
+}

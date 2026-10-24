@@ -1,0 +1,251 @@
+{
+  "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+  "merges": [
+    {
+      "sha": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+      "date": "2026-10-24T10:29:57+07:00",
+      "subject": "Merge pull request #197 from datweb07/main",
+      "files": [
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundTime.java",
+        "app/src/test/java/com/rescuefarm/ui/fund/RescueFundTimeTest.java",
+        "docs/rescue-fund.md",
+        "functions/rescue-fund.js",
+        "functions/rescue-fund.test.cjs"
+      ]
+    },
+    {
+      "sha": "3e59e1542812cca751c5018a92ea7c7bf10e2c2e",
+      "date": "2026-10-24T09:58:11+07:00",
+      "subject": "Merge pull request #196 from datweb07/main",
+      "files": [
+        "app/src/androidTest/java/com/rescuefarm/CourseRotationEvidenceTest.java",
+        "app/src/androidTest/java/com/rescuefarm/OfflineRoomEvidenceTest.java",
+        "app/src/main/res/layout-w840dp/fragment_product_detail.xml",
+        "app/src/main/res/layout/fragment_seller_dashboard.xml",
+        "docs/report/AI_REPORT_PROMPT_VI.md",
+        "docs/report/course-requirements-audit-2026-10-24.md",
+        "docs/report/evidence/course-audit-results.json"
+      ]
+    },
+    {
+      "sha": "bf648f2fbcbd9cc3b8a0eb319e3c23fda3f3186f",
+      "date": "2026-10-24T09:25:29+07:00",
+      "subject": "Merge pull request #195 from datweb07/main",
+      "files": [
+        "app/src/androidTest/java/com/rescuefarm/RequestedUiTest.java",
+        "app/src/main/java/com/rescuefarm/ui/common/HomeSearchInput.java",
+        "app/src/main/java/com/rescuefarm/ui/home/GuestHomeFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/product/ProductDetailFragment.java",
+        "app/src/main/res/layout/fragment_product_detail.xml",
+        "app/src/main/res/layout/fragment_splash.xml"
+      ]
+    },
+    {
+      "sha": "b6ee6b88d726834f83455f6d6707734bfd8efff9",
+      "date": "2026-10-23T23:50:11+07:00",
+      "subject": "Merge pull request #194 from datweb07/main",
+      "files": [
+        "app/src/main/java/com/rescuefarm/ui/admin/AdminDashboardFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/admin/AdminResourceFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundUi.java",
+        "app/src/main/java/com/rescuefarm/ui/rescue/RescueHubFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/seller/SellerDashboardFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/seller/SellerStatisticsFragment.java",
+        "app/src/main/res/drawable/ic_fund_crown.xml",
+        "app/src/main/res/drawable/ic_fund_trophy.xml",
+        "app/src/main/res/values/fund_ranking_colors.xml",
+        "docs/firestore-read-audit-2026-10-23.md",
+        "functions/campaign-inventory.js",
+        "functions/campaign-inventory.test.cjs",
+        "functions/notification-outbox.js",
+        "functions/package.json",
+        "functions/realtime.js",
+        "functions/realtime.test.cjs",
+        "functions/server.js"
+      ]
+    },
+    {
+      "sha": "5553b66371e83a10ef8d49b06cceb54b37499e06",
+      "date": "2026-10-23T23:28:02+07:00",
+      "subject": "Merge pull request #193 from datweb07/main",
+      "files": [
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundUi.java",
+        "app/src/main/res/values/rescue_fund.xml",
+        "docs/rescue-fund.md",
+        "firestore.indexes.json",
+        "functions/rescue-fund.js",
+        "functions/rescue-fund.test.cjs"
+      ]
+    },
+    {
+      "sha": "3e80abd00e41833c96ef88c0b7199804fcd68cdd",
+      "date": "2026-10-23T21:54:36+07:00",
+      "subject": "Merge pull request #192 from nguyentankhiem1610/main",
+      "files": [
+        "app/src/androidTest/java/com/rescuefarm/RescueFundPresentationTest.java",
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundUi.java",
+        "app/src/main/res/layout/fragment_rescue_fund.xml",
+        "app/src/main/res/values/rescue_fund.xml"
+      ]
+    },
+    {
+      "sha": "a58f82e66182e2a7cf2a4f7c352030c0dca889c6",
+      "date": "2026-10-23T21:27:17+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main",
+      "files": [
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundFragment.java",
+        "firestore.indexes.json",
+        "functions/rescue-fund.js"
+      ]
+    },
+    {
+      "sha": "18187d92a8d3d83bd7937c6f478aa484cf417dfb",
+      "date": "2026-10-23T21:16:30+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main",
+      "files": [
+        "app/src/main/java/com/rescuefarm/ui/admin/AdminDashboardCards.java",
+        "app/src/main/java/com/rescuefarm/ui/admin/AdminDetailFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/admin/AdminResourceFragment.java",
+        "app/src/main/java/com/rescuefarm/ui/fund/RescueFundFragment.java",
+        "app/src/main/res/layout/admin_dashboard_content.xml",
+        "app/src/main/res/layout/fragment_admin_resource.xml",
+        "docs/rescue-fund.md",
+        "functions/rescue-fund.js"
+      ]
+    },
+    {
+      "sha": "44ec1a23d8a26106dfb402ed8420127af2c3d88e",
+      "date": "2026-10-23T21:10:04+07:00",
+      "subject": "Merge pull request #191 from datweb07/main"
+    },
+    {
+      "sha": "b1b46ed321933b0e94f5788706f3848ad0d1be6a",
+      "date": "2026-10-23T20:29:11+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "b897c098aefc96bc4752d0bc226883fd638916c8",
+      "date": "2026-10-23T20:25:34+07:00",
+      "subject": "Merge branch 'main' of https://github.com/LaiThanhDat-glitch/NHOM_7_MobileApp"
+    },
+    {
+      "sha": "76f53e27aef7e9e90cfd96a020e8971a0ac7a7a6",
+      "date": "2026-10-23T20:20:06+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "921d2a9c99e8bacc28ed25fe865fd03860332165",
+      "date": "2026-10-23T20:11:21+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "61a13de6e934ddff788d1bb20018cb6fd637ab4c",
+      "date": "2026-10-23T20:06:51+07:00",
+      "subject": "Merge pull request #187 from datweb07/main"
+    },
+    {
+      "sha": "b70b4561dd91458fa55f9158dccef41dd7cc679c",
+      "date": "2026-10-23T17:59:14+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "b91e3e7e74d43570deb6596293c91ad55c470945",
+      "date": "2026-10-23T16:21:44+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "049b4ae6781527309d707954c5f9ab2c707a9bef",
+      "date": "2026-10-23T15:51:02+07:00",
+      "subject": "Merge pull request #185 from datweb07/main"
+    },
+    {
+      "sha": "e71487c3327e0ea451ab01fe50d84b2cdcd4f23e",
+      "date": "2026-10-23T15:36:09+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "9598dc0cc5517322ad754e2e5934fdebda9c6d43",
+      "date": "2026-10-23T11:05:05+07:00",
+      "subject": "Merge pull request #183 from datweb07/main"
+    },
+    {
+      "sha": "9d44f3568bd0b06f354ddd8bc6675bfea0ea0956",
+      "date": "2026-10-23T10:36:19+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "2b5000345687b513b7d5249edb8b6c68abd315ad",
+      "date": "2026-10-23T10:35:34+07:00",
+      "subject": "Merge pull request #182 from LaiThanhDat-glitch/feat/highlight-home-section-titles"
+    },
+    {
+      "sha": "9db7e3cf444762c8b47d1c0a7781aed6f232cebe",
+      "date": "2026-10-23T10:14:38+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "0aa288554859ad395a79af54189458830b95f188",
+      "date": "2026-10-23T09:52:18+07:00",
+      "subject": "Merge pull request #179 from datweb07/main"
+    },
+    {
+      "sha": "79a7fa11d25d71ab9b1b835081808193c6780dc6",
+      "date": "2026-10-23T09:50:39+07:00",
+      "subject": "Merge branch 'main' of https://github.com/datweb07/NHOM_7_MobileApp"
+    },
+    {
+      "sha": "ccad8626cd012f0856f715d831a8621791605eea",
+      "date": "2026-10-23T09:31:25+07:00",
+      "subject": "Merge pull request #178 from nguyentankhiem1610/main"
+    },
+    {
+      "sha": "81301f90413be29406cc8020bbf246f1119cbbbc",
+      "date": "2026-10-23T09:24:45+07:00",
+      "subject": "Merge branch 'LaiThanhDat-glitch:main' into main"
+    },
+    {
+      "sha": "ddb01d10521fc2c4c4e1dae250568162f8dc46c2",
+      "date": "2026-10-23T09:24:33+07:00",
+      "subject": "Merge pull request #177 from datweb07/main"
+    },
+    {
+      "sha": "9c0b949bcebed5ba5dca551d99a9a0490f3513f0",
+      "date": "2026-10-22T23:38:00+07:00",
+      "subject": "Merge pull request #176 from datweb07/main"
+    },
+    {
+      "sha": "b95965ff37a72c274d4bb262303948ddc8011a59",
+      "date": "2026-10-22T20:37:15+07:00",
+      "subject": "Merge pull request #174 from datweb07/main"
+    },
+    {
+      "sha": "b1398f95cfcc307e3e0e37cca5d9ad7a04916274",
+      "date": "2026-10-21T20:47:39+07:00",
+      "subject": "Merge pull request #172 from datweb07/main"
+    }
+  ],
+  "aliases": [
+    "110\tdatweb07",
+    "    81\tLại Thành Đạt",
+    "    61\tNguyễn Tấn Khiêm",
+    "    38\tNguyễn Phương Chinh",
+    "    28\tATdataSale12",
+    "    24\tĐạt Trương",
+    "    23\tLaiThanhDat-glitch",
+    "    20\tchinhngprit",
+    "    20\tnguyentankhiem1610",
+    "     3\tPhan Khắc Anh Tuấn",
+    "     1\tKhacTuan1224"
+  ],
+  "remotes": [
+    "origin\thttps://github.com/datweb07/NHOM_7_MobileApp.git (fetch)",
+    "origin\thttps://github.com/datweb07/NHOM_7_MobileApp.git (push)",
+    "upstream\thttps://github.com/LaiThanhDat-glitch/NHOM_7_MobileApp.git (fetch)",
+    "upstream\thttps://github.com/LaiThanhDat-glitch/NHOM_7_MobileApp.git (push)"
+  ],
+  "warning": "Counts do not measure contribution percentages; alias mapping awaits team confirmation"
+}
