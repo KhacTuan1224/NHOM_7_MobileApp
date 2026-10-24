@@ -45,6 +45,7 @@ import java.util.function.Function;
 
 public class GuestHomeFragment extends Fragment {
     private HomeViewModel viewModel;
+    private RescueMapView rescueMap;
     private final com.rescuefarm.ui.common.ListPagination suggestionPages = new com.rescuefarm.ui.common.ListPagination(6);
     private final Map<String, com.rescuefarm.ui.common.ListPagination> sectionPages = new java.util.HashMap<>();
     private com.rescuefarm.ui.common.HomeLoadMoreButton loadMoreHome;
@@ -92,6 +93,8 @@ public class GuestHomeFragment extends Fragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state); renderer = new HomeCardRenderer(this);
+        rescueMap = view.findViewById(R.id.homeRescueMap);
+        rescueMap.bind(this, this::openCampaign);
         view.findViewById(R.id.openRescueFundButton).setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.rescueFundFragment));
         view.findViewById(R.id.openFlashSaleButton).setOnClickListener(v ->
@@ -598,6 +601,7 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        if (rescueMap != null) { rescueMap.release(); rescueMap = null; }
         loadMoreHome = null;
         bannerHandler.removeCallbacks(freshnessTick);
         bannerHandler.removeCallbacks(availabilityTransitionTick);

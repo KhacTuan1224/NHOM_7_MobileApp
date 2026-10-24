@@ -31,12 +31,19 @@ public class MobileRescueFragment extends Fragment {
     private java.util.List<RescueCampaign> current = java.util.Collections.emptyList();
     private final java.util.Map<String,TextView> stateLabels=new java.util.HashMap<>();
     private final java.util.Map<String,Button> updateButtons=new java.util.HashMap<>();
+    private final java.util.Map<String,Button> stopButtons=new java.util.HashMap<>();
     private void refreshTimes() {
         Date now=new Date(); for(RescueCampaign c:current) {
             TextView label=stateLabels.get(c.getId()); if(label!=null) label.setText(com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(c,now)
                 +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.locationUpdated(c.getLocationUpdatedAt(),now)
                 +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.remaining(c,now));
-            Button button=updateButtons.get(c.getId()); if(button!=null) button.setEnabled(com.rescuefarm.service.campaign.CampaignTimeFormatter.canUpdateLocation(c,now));
+            Button button=updateButtons.get(c.getId()); if(button!=null) {
+                boolean tracking=com.rescuefarm.service.location.MobileLocationService.isTracking(c.getId());
+                button.setEnabled(!tracking&&com.rescuefarm.service.campaign.CampaignTimeFormatter.canUpdateLocation(c,now));
+                button.setText(tracking?"Đang chia sẻ vị trí xe":"Bắt đầu chia sẻ vị trí xe");
+            }
+            Button stop=stopButtons.get(c.getId());if(stop!=null)stop.setEnabled(c.isLocationSharingEnabled()
+                ||com.rescuefarm.service.location.MobileLocationService.isTracking(c.getId()));
         }
     }
     private final android.os.Handler clock = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -78,7 +85,7 @@ public class MobileRescueFragment extends Fragment {
                 .render(container, matching, this::renderPage);
     }
     private void renderPage(List<RescueCampaign> values) {
-        container.removeAllViews(); stateLabels.clear(); updateButtons.clear(); if (values == null) return;
+        container.removeAllViews(); stateLabels.clear(); updateButtons.clear(); stopButtons.clear(); if (values == null) return;
         for (RescueCampaign value : values) if (value.getStatus() == CampaignStatus.ACTIVE
                 && value.getRescueMode() == RescueMode.MOBILE_POINT
                 && (requestedCampaignId.isEmpty() || requestedCampaignId.equals(value.getId()))) {
@@ -99,11 +106,17 @@ public class MobileRescueFragment extends Fragment {
         state.setText(com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(value,new Date())
                 +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.locationUpdated(value.getLocationUpdatedAt(),new Date())
                 +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.remaining(value,new Date()));
-        Button update = row.action("Lấy GPS", getString(R.string.update_mobile_location_action), v -> requestLocation(value.getId()));
+        Button update = row.action("Chia sẻ GPS", "Bắt đầu chia sẻ vị trí xe", v -> requestLocation(value.getId()));
         update.setEnabled(com.rescuefarm.service.campaign.CampaignTimeFormatter.canUpdateLocation(value,new Date()));
         stateLabels.put(value.getId(),state); updateButtons.put(value.getId(),update);
-        Button stop = row.action("Dừng", getString(R.string.stop_location_sharing_action), v -> viewModel.stopLocationSharing(value.getId()));
-        stop.setEnabled(value.isLocationSharingEnabled());
+        row.body("Bật chia sẻ để công khai vị trí điện thoại khi di chuyển; có thể dừng trong thông báo.");
+        Button stop = row.action("Dừng", getString(R.string.stop_location_sharing_action), v -> {
+            if(com.rescuefarm.service.location.MobileLocationService.isTracking(value.getId()))
+                com.rescuefarm.service.location.MobileLocationService.stop(requireContext());
+            else viewModel.stopLocationSharing(value.getId());
+        });
+        stop.setEnabled(value.isLocationSharingEnabled() || com.rescuefarm.service.location.MobileLocationService.isTracking(value.getId()));
+        stopButtons.put(value.getId(),stop);
         return row.root;
     }
     private void requestLocation(String campaignId) {
@@ -114,14 +127,20 @@ public class MobileRescueFragment extends Fragment {
                 == PackageManager.PERMISSION_GRANTED;
         if (!fine && !coarse) permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION});
-        else viewModel.updateCurrentLocation(campaignId);
+        else startSharing(campaignId);
     }
     private void onPermissions(Map<String, Boolean> result) {
         if (Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
                 || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
-            viewModel.updateCurrentLocation(pendingLocationCampaignId);
+            startSharing(pendingLocationCampaignId);
         } else Toast.makeText(requireContext(), R.string.location_permission_required, Toast.LENGTH_LONG).show();
     }
-    @Override public void onDestroyView() {clock.removeCallbacks(tick);stateLabels.clear();updateButtons.clear();container=null;super.onDestroyView();}
+    private void startSharing(String campaignId) {
+        for(RescueCampaign value:current) if(value.getId().equals(campaignId)
+                &&com.rescuefarm.service.campaign.CampaignTimeFormatter.canUpdateLocation(value,new Date())) {
+            com.rescuefarm.service.location.MobileLocationService.start(requireContext(),campaignId,value.getEndDate().getTime());return;
+        }
+    }
+    @Override public void onDestroyView() {clock.removeCallbacks(tick);stateLabels.clear();updateButtons.clear();stopButtons.clear();container=null;super.onDestroyView();}
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 }

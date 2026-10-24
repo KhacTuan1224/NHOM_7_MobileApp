@@ -114,6 +114,18 @@ function createRealtimeApi({db, admin, authenticate, now = Date.now, maxSessions
       for (const [field, operator, value] of spec.filters || []) target = target.where(field, operator, value);
       entry = {subscribers: new Set(), children: new Map(), failed: false, initialized: false, unsubscribe: () => {}}; watches.set(key, entry);
       entry.unsubscribe = target.onSnapshot(snapshot => {
+        // GPS heartbeats do not change campaign article cards. Avoid invalidating
+        // every API cache and waking each card viewer for a moving marker.
+        if (spec.collection === 'campaigns' && spec.field === 'status' && spec.value === 'ACTIVE'
+            && Array.isArray(snapshot.docs) && snapshot.docs.every(row => typeof row.data === 'function')) {
+          const projection = snapshot.docs.map(row => {
+            const data = {...row.data()};
+            for (const field of ['currentLatitude', 'currentLongitude', 'locationUpdatedAt', 'updatedAt']) delete data[field];
+            return [row.id, data];
+          });
+          if (entry.cardProjection && require('node:util').isDeepStrictEqual(entry.cardProjection, projection)) return;
+          entry.cardProjection = projection;
+        }
         // The initial snapshot establishes a baseline, not a database mutation.
         // Opening an unrelated screen must not evict every warm API cache.
         if (entry.initialized) invalidateReadCaches();
