@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-24",
+  "head": "bf648f2fbcbd9cc3b8a0eb319e3c23fda3f3186f",
+  "workingTreeChangesIncluded": true,
+  "androidJvm": {
+    "failures": 0,
+    "errors": 0,
+    "tests": 251
+  },
+  "backendUnit": {
+    "tests": 183,
+    "passed": 183
+  },
+  "cloudinaryWorker": {
+    "tests": 9,
+    "passed": 9
+  },
+  "navigation": {
+    "fragmentDestinations": 59
+  },
+  "androidDebugBuild": "passed",
+  "lint": {
+    "errors": 0,
+    "warnings": 693
+  },
+  "instrumentation": {
+    "responsivePassed": 9,
+    "passed": 10,
+    "sqlitePassed": 1,
+    "selected": 11,
+    "skipped": 1,
+    "failed": 0,
+    "initialGradleAttempt": "failed before executing tests: process crashed; direct adb rerun succeeded",
+    "rotation": "skipped: emulator already has an authenticated user"
+  },
+  "productionBusinessWrites": false,
+  "screenshotsForReport": "not created in this audit; required in follow-up report workflow",
+  "remaining": [
+    "Actual Activity rotation on isolated demo emulator",
+    "Offline UI end-to-end demo and real screenshots",
+    "Google OAuth provider verification",
+    "Official report template and confirmed team allocation",
+    "Rendered PDF and UEH similarity result"
+  ]
+}
