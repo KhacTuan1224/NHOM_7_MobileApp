@@ -10,37 +10,15 @@
     android:paddingEnd="24dp"
     android:paddingBottom="24dp" android:layout_gravity="center_horizontal" app:maxContentWidth="@dimen/form_max_width">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="84dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="96dp"
-            android:layout_height="84dp"
-            android:contentDescription="@string/app_name"
-            android:scaleType="fitCenter"
-            android:src="@drawable/logo" />
-    </LinearLayout>
-
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="190dp"
         android:layout_marginTop="20dp">
 
         <ImageView
-            android:layout_width="220dp"
-            android:layout_height="162dp"
-            android:layout_gravity="top|center_horizontal"
-            android:contentDescription="@string/splash_illustration_description"
-            android:scaleType="centerCrop"
-            android:src="@drawable/splash_rescue_garden" />
-
-        <ImageView
             android:layout_width="100dp"
             android:layout_height="87dp"
-            android:layout_gravity="bottom|center_horizontal"
+            android:layout_gravity="center"
             android:contentDescription="@string/app_name"
             android:scaleType="fitCenter"
             android:src="@drawable/logo" />

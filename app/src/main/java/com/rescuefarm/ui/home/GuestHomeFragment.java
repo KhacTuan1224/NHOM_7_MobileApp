@@ -171,6 +171,7 @@ public class GuestHomeFragment extends Fragment {
     }
 
     private void setupSearch(View view, Bundle state) {
+        searchOpen = false;
         searchInput = view.findViewById(R.id.homeSearchInput);
         searchAnchor = view.findViewById(R.id.searchButton);
         searchPanel = getLayoutInflater().inflate(R.layout.popup_home_search, null, false);
@@ -186,11 +187,6 @@ public class GuestHomeFragment extends Fragment {
         searchLayoutListener = this::fitSearchPopup;
         searchAnchor.getViewTreeObserver().addOnGlobalLayoutListener(searchLayoutListener);
         searchInput.setText(viewModel.getQuery().getText());
-        if (state != null && state.getBoolean("home.searchOpen")) showSearchSuggestions();
-        searchInput.setOnFocusChangeListener((v, focused) -> {
-            if (focused) showSearchSuggestions();
-        });
-        searchInput.setOnClickListener(v -> showSearchSuggestions());
         view.findViewById(R.id.searchButton).setOnClickListener(v -> {
             searchInput.requestFocus();
             showSearchSuggestions();
@@ -202,10 +198,10 @@ public class GuestHomeFragment extends Fragment {
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 suggestionPages.reset();
                 viewModel.setQuery(viewModel.getQuery().withText(s.toString()));
-                showSearchSuggestions();
             }
             @Override public void afterTextChanged(Editable s) { }
         });
+        com.rescuefarm.ui.common.HomeSearchInput.bind(searchInput, this::isResumed, this::showSearchSuggestions);
         searchInput.setOnEditorActionListener((v, action, event) -> {
             if (action != EditorInfo.IME_ACTION_SEARCH) return false;
             hideSearchKeyboard();
@@ -304,7 +300,6 @@ public class GuestHomeFragment extends Fragment {
 
     @Override public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean("home.searchOpen", searchOpen);
     }
 
     private void showGuestNotificationLoginDialog(View view) {
@@ -593,6 +588,8 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override public void onPause() {
+        searchOpen = false;
+        if (searchInput != null) { hideSearchKeyboard(); searchInput.clearFocus(); }
         if (searchPopup != null) searchPopup.dismiss();
         bannerHandler.removeCallbacks(freshnessTick);
         bannerHandler.removeCallbacks(availabilityTransitionTick);
