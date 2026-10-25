@@ -6,6 +6,9 @@ import java.util.Date;
 public class Comment {
     private String id; private String campaignId; private String userId; private String content;
     private CommentStatus status; private Date createdAt; private Date updatedAt;
+    private String senderName="",senderAvatarUrl="";
+    private boolean anonymous;
+    private java.util.List<String> imageUrls=new java.util.ArrayList<>();
     public Comment() { status = CommentStatus.ACTIVE; }
     public static Comment create(String id, String campaignId, String userId, String content, Date createdAt) {
         return restore(id, campaignId, userId, content, CommentStatus.ACTIVE, createdAt, createdAt);
@@ -28,7 +31,16 @@ public class Comment {
         validateContent(updatedContent); content = clean(updatedContent);
         updatedAt = updateTime == null ? new Date() : copy(updateTime); status = CommentStatus.EDITED;
     }
-    public void delete() { content = ""; status = CommentStatus.DELETED; updatedAt = new Date(); }
+    public void delete() { content = ""; imageUrls.clear(); status = CommentStatus.DELETED; updatedAt = new Date(); }
+    public void setPresentation(String name,String avatar,boolean anonymous,java.util.List<String> images) {
+        this.anonymous=anonymous;senderName=anonymous?"Người dùng ẩn danh":clean(name);
+        senderAvatarUrl=anonymous?"":clean(avatar);imageUrls=new java.util.ArrayList<>();
+        if(images!=null)for(String url:images)if(url!=null&&url.startsWith("https://")&&imageUrls.size()<3)imageUrls.add(url);
+    }
+    public String getSenderName(){return senderName.isEmpty()?"Người dùng":senderName;}
+    public String getSenderAvatarUrl(){return anonymous?"":senderAvatarUrl;}
+    public boolean isAnonymous(){return anonymous;}
+    public java.util.List<String> getImageUrls(){return new java.util.ArrayList<>(imageUrls);}
     public static void validateContent(String value) {
         int length = clean(value).length();
         if (length < 1 || length > 500) throw new IllegalArgumentException("Comment must contain 1-500 characters");

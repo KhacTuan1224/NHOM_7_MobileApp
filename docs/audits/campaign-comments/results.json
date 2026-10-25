@@ -1,0 +1,38 @@
+{
+  "auditedAt": "2026-10-25T10:53:36.4195511+07:00",
+  "baseCommit": "a227460bf4cf81f940f287d0f421f5367509d9a3",
+  "workingTree": "Uncommitted feature changes; unrelated README and diagram files preserved",
+  "productionDeployed": false,
+  "android": {
+    "jvmPassed": 261,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "assembleDebug": "passed",
+    "instrumentationCompile": "passed",
+    "deviceTests": "not run; emulator5554 untouched by user request",
+    "lintErrors": 0,
+    "lintWarnings": 710,
+    "apk": "app/build/outputs/apk/debug/app-debug.apk",
+    "apkSha256": "D0D51B06375B4124347FA64AEEB01537C4D7F7515BB84A205D0FA6D238BA12B7"
+  },
+  "backend": {
+    "syntaxCheck": "passed",
+    "unitPassed": 200,
+    "failed": 0,
+    "skipped": 0
+  },
+  "worker": {
+    "unitPassed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "realUpload": "not tested"
+  },
+  "firestore": {
+    "project": "demo-rescuefarm",
+    "regressionPassed": 175,
+    "failed": 0,
+    "skipped": 0,
+    "externalAuth": "local identity stub; not provider verification"
+  }
+}

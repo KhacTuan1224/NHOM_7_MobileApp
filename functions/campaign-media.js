@@ -160,7 +160,7 @@ function createCampaignMedia({db,admin,authenticate,env=process.env,now=Date.now
     if(fundFolder && publicId.startsWith(`rescuefarm/${fundFolder}/${caller.uid}/`)
       && /^rescuefarm\/(fund-receipts|fund-deliveries)\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/image-[a-f0-9-]{36}$/.test(publicId))
       return {protected:false}; // Immutable upload; client deletion is not supported for fund evidence.
-    const owned=['users','sellers','products','reviews'].some(type=>publicId.startsWith(`rescuefarm/${type}/${caller.uid}/`));
+    const owned=['users','sellers','products','reviews','campaign-comments'].some(type=>publicId.startsWith(`rescuefarm/${type}/${caller.uid}/`));
     const adminAsset=caller.role==='ADMIN'&&/^rescuefarm\/(categories|banners)\/[A-Za-z0-9_-]+\/image(?:-[a-f0-9-]{36})?$/.test(publicId);
     if(!/^rescuefarm\/[A-Za-z0-9_/-]+$/.test(publicId)||(!owned&&!adminAsset))throw fail(403,'Asset ownership required');
     const reference=await db.collection('campaignAssetReferences').doc(crypto.createHash('sha256').update(publicId).digest('hex')).get();
