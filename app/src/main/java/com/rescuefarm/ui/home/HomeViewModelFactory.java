@@ -22,7 +22,8 @@ public class HomeViewModelFactory implements ViewModelProvider.Factory {
         return (T) new HomeViewModel(ProductRepositoryFactory.create(context),
                 CampaignRepositoryFactory.create(context), AuthRepositoryFactory.create(context),
                 LocationProviderFactory.create(context), UserRepositoryFactory.create(context),
-                new androidx.lifecycle.SavedStateHandle());
+                new androidx.lifecycle.SavedStateHandle(),
+                com.rescuefarm.data.local.preferences.HomeLocationStore.get(context));
     }
     @NonNull @Override public <T extends ViewModel> T create(@NonNull Class<T> modelClass,
             @NonNull CreationExtras extras) {
@@ -32,6 +33,7 @@ public class HomeViewModelFactory implements ViewModelProvider.Factory {
         return (T) new HomeViewModel(ProductRepositoryFactory.create(context),
                 CampaignRepositoryFactory.create(context), AuthRepositoryFactory.create(context),
                 LocationProviderFactory.create(context), UserRepositoryFactory.create(context),
-                SavedStateHandleSupport.createSavedStateHandle(extras));
+                SavedStateHandleSupport.createSavedStateHandle(extras),
+                com.rescuefarm.data.local.preferences.HomeLocationStore.get(context));
     }
 }

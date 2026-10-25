@@ -156,6 +156,8 @@ public class FirebaseAuthRepository implements AuthRepository {
             @Override public void run() {
                 if (!completed.compareAndSet(false, true)) return;
                 handler.removeCallbacks(this);
+                com.rescuefarm.data.local.preferences.HomeLocationStore.get(
+                    com.google.firebase.FirebaseApp.getInstance().getApplicationContext()).clearAccount(uid);
                 FirebaseUser active = firebaseAuth.getCurrentUser();
                 if (active != null && uid.equals(active.getUid())) firebaseAuth.signOut();
                 if (callback != null) callback.onSuccess();

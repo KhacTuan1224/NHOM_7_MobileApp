@@ -41,7 +41,10 @@ public final class HomeCardRenderer {
 
         ImageView image = imageView();
         Product related = findRelatedProduct(campaign, products);
-        if (related != null && !related.getImageUrls().isEmpty()) {
+        if (!campaign.getImageUrls().isEmpty()) {
+            Glide.with(fragment).load(campaign.getImageUrls().get(0)).centerCrop()
+                    .placeholder(R.drawable.splash_rescue_garden).error(R.drawable.splash_rescue_garden).into(image);
+        } else if (related != null && !related.getImageUrls().isEmpty()) {
             Glide.with(fragment).load(related.getImageUrls().get(0)).centerCrop().into(image);
         } else {
             image.setImageResource(R.drawable.splash_rescue_garden);

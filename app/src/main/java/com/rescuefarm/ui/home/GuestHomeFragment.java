@@ -318,13 +318,13 @@ public class GuestHomeFragment extends Fragment {
 
     private void showLocationPicker() {
         String[] options = new String[] {
-            "📍 Lấy vị trí GPS hiện tại của bạn",
-            "🏙️ TP. Hồ Chí Minh (Trung tâm)",
-            "🏛️ Hà Nội (Trung tâm)",
-            "🌸 Đà Lạt (Lâm Đồng)",
-            "🌾 Cần Thơ (Miền Tây)",
-            "🥭 Tiền Giang (Vựa trái cây)",
-            "☕ Đắk Lắk (Tây Nguyên)"
+            "Lấy vị trí GPS hiện tại của bạn",
+            "TP. Hồ Chí Minh (Trung tâm)",
+            "Hà Nội (Trung tâm)",
+            "Đà Lạt (Lâm Đồng)",
+            "Cần Thơ (Miền Tây)",
+            "Tiền Giang (Vựa trái cây)",
+            "Đắk Lắk (Tây Nguyên)"
         };
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Chọn vị trí xem nông sản")
@@ -447,10 +447,6 @@ public class GuestHomeFragment extends Fragment {
         setSectionVisible(root, R.id.categoryHomeGroup, !state.getCategories().isEmpty());
         setSectionVisible(root, R.id.criticalHomeGroup, !state.getCritical().isEmpty());
         boolean hasLocation = state.getLocationState() == HomeViewState.LocationState.AVAILABLE;
-        View locationAction = root.findViewById(R.id.homeNearbyLocationButton);
-        locationAction.setVisibility(hasLocation ? View.GONE : View.VISIBLE);
-        locationAction.setEnabled(state.getLocationState() != HomeViewState.LocationState.LOADING);
-        locationAction.setOnClickListener(v -> root.findViewById(R.id.homeLocationContainer).performClick());
         setSectionVisible(root, R.id.nearbyMobileHomeGroup, hasLocation && !state.getNearbyMobile().isEmpty());
         setSectionVisible(root, R.id.nearbyFixedHomeGroup, hasLocation && !state.getNearbyFixed().isEmpty());
         setSectionVisible(root, R.id.endingSoonHomeGroup, !endingSoon.isEmpty());
