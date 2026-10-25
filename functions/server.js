@@ -102,7 +102,7 @@ app.get("/health", (_, res) => {
   try { sepayStatus = Object.keys(require('./sepay').merchants()).length ? 'CONFIGURED' : 'NOT_CONFIGURED'; }
   catch (_) { sepayStatus = 'INVALID_CONFIGURATION'; }
   res.json({ok: true, paymentFlowVersion: 2, sepayStatus, pricingVersion: 3,
-    rescueProgramsVersion: 1, realtimeVersion: 1, rescueMapVersion: 1,
+    rescueProgramsVersion: 1, realtimeVersion: 1, rescueMapVersion: 1, campaignCommentsVersion: 1,
     rescuePaymentPolicy: 'PICKUP_CASH_NO_PREPAYMENT', migrationsReady,
     firestoreReadStatus: quotaGuard.remainingSeconds() ? 'QUOTA_COOLDOWN' : 'NOT_IN_COOLDOWN',
     retryAfterSeconds: quotaGuard.remainingSeconds()});
@@ -111,6 +111,7 @@ app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: aut
 app.use(rescueFund.router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
 app.use(require('./campaign-cards').createCampaignCardsApi({db}).router);
+app.use(require('./campaign-comments').createCampaignCommentsApi({db,admin,authenticate:auth}).router);
 const rescueMap = require('./rescue-map').createRescueMapApi({db,
   onError: error => { if (isQuotaError(error)) noteQuota(error); else console.warn('[rescue-map]', error.code || 'UNAVAILABLE'); }});
 app.use(rescueMap.router);

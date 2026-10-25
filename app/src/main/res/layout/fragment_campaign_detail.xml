@@ -425,6 +425,24 @@
                 <com.google.android.material.textfield.TextInputEditText android:textSize="15sp" android:id="@+id/campaignCommentInput"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:hint="Viết bình luận về chiến dịch" android:minLines="1" android:maxLines="4" />
+                <LinearLayout android:id="@+id/campaignCommentComposer" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical">
+                    <com.google.android.material.checkbox.MaterialCheckBox android:id="@+id/campaignCommentAnonymous"
+                        android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Bình luận ẩn danh" />
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Tên và avatar hồ sơ sẽ hiển thị nếu bạn không chọn ẩn danh."
+                        android:textSize="12sp" android:textColor="@color/rescue_on_surface_variant" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/campaignCommentAddImage"
+                        style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:text="Thêm ảnh (0/3)" />
+                    <TextView android:id="@+id/campaignCommentUploadStatus" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:visibility="gone" android:textSize="13sp"
+                        android:accessibilityLiveRegion="polite" android:textColor="@color/rescue_on_surface_variant" />
+                    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <LinearLayout android:id="@+id/campaignCommentImages" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:orientation="horizontal" />
+                    </HorizontalScrollView>
+                </LinearLayout>
                 <com.google.android.material.button.MaterialButton android:textSize="15sp" android:id="@+id/campaignSendCommentButton"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="Gửi bình luận" />

@@ -370,10 +370,15 @@ service cloud.firestore {
     function validCampaignComment(data, campaignId) {
       return data.keys().hasOnly([
             'id', 'campaignId', 'userId', 'status', 'content', 'createdAt', 'updatedAt',
+            'senderName', 'senderAvatarUrl', 'anonymous', 'imageUrls',
             'moderatedBy', 'moderatedAt', 'moderationReason', 'moderationPreviousStatus'
           ])
           && data.id is string && data.campaignId == campaignId
           && data.userId is string
+          && data.get('senderName', '') is string && data.get('senderName', '').size() <= 120
+          && data.get('senderAvatarUrl', '') is string && data.get('senderAvatarUrl', '').size() <= 2048
+          && data.get('anonymous', false) is bool
+          && data.get('imageUrls', []) is list && data.get('imageUrls', []).size() <= 3
           && data.get('moderationPreviousStatus', '') in ['', 'ACTIVE', 'EDITED']
           && data.status in ['ACTIVE', 'EDITED', 'DELETED', 'HIDDEN']
           && data.content is string
@@ -973,6 +978,7 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow get, list: if activeCampaign(campaignId) || isAdmin();
         allow create: if hasRole(request.auth.uid, 'CUSTOMER') && activeCampaign(campaignId)
+            && !request.resource.data.keys().hasAny(['senderName', 'senderAvatarUrl', 'anonymous', 'imageUrls'])
             && request.resource.data.id == commentId
             && request.resource.data.userId == request.auth.uid
             && request.resource.data.status == 'ACTIVE'
@@ -985,7 +991,10 @@ service cloud.firestore {
             && request.resource.data.campaignId == resource.data.campaignId
             && request.resource.data.createdAt == resource.data.createdAt
             && request.resource.data.updatedAt == request.time
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'status', 'updatedAt'])
+            && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'status', 'updatedAt'])
+              || (request.resource.data.status == 'DELETED'
+                && request.resource.data.get('imageUrls', []).size() == 0
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'status', 'updatedAt', 'imageUrls'])))
             && request.resource.data.status in ['EDITED', 'DELETED']
             && validCampaignComment(request.resource.data, campaignId)
           || (isAdmin()

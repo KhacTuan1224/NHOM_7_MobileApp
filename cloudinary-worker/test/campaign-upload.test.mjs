@@ -2,6 +2,14 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import worker,{resolveAsset,imageMime,readCampaignImage,uploadCampaign} from '../src/index.js';
 const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
 const image=(bytes=png,mime='image/png')=>new Request('https://worker/upload-campaign?resourceId=campaign&slot=0',{method:'POST',headers:{'Content-Type':mime},body:bytes});
+test('Campaign comment images are immutable, Customer-scoped and limited to three slots',async()=>{
+  const input={assetType:'campaignComment',resourceId:'comment',slot:0};
+  const first=await resolveAsset(input,'customer',{role:'CUSTOMER'}),second=await resolveAsset(input,'customer',{role:'CUSTOMER'});
+  assert.match(first.publicId,/^rescuefarm\/campaign-comments\/customer\/comment\/image-[a-f0-9-]{36}$/);
+  assert.equal(first.immutable,true);assert.notEqual(first.publicId,second.publicId);
+  assert.equal(await resolveAsset({...input,slot:3},'customer',{role:'CUSTOMER'}),null);
+  assert.equal(await resolveAsset(input,'seller',{role:'SELLER'}),null);
+});
 
 test('Fund evidence is immutable, role-scoped and cannot be deleted by clients',async()=>{
   const input={assetType:'fundDelivery',resourceId:'job',slot:0};

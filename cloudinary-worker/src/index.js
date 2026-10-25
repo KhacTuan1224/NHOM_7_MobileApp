@@ -167,6 +167,9 @@ async function resolveAsset(body, uid, profile) {
   if (type === "campaign") return null;
   if (type === "review" && profile.role === "CUSTOMER")
     return { publicId: `rescuefarm/reviews/${uid}/${resourceId}/image-${slot}`, assetFolder: `rescuefarm_assets/reviews/${uid}/${resourceId}` };
+  if (type === "campaignComment" && profile.role === "CUSTOMER" && slot < 3)
+    return {publicId: `rescuefarm/campaign-comments/${uid}/${resourceId}/image-${crypto.randomUUID()}`,
+      assetFolder: `rescuefarm_assets/campaign_comments/${uid}/${resourceId}`, immutable: true};
 
   if (type === "category" || type === "banner") {
     if (profile.role !== "ADMIN") return null;
