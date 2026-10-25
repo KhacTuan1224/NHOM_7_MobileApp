@@ -1,0 +1,24 @@
+{
+  "auditDate": "2026-10-25T20:57:57.3488183+07:00",
+  "baseCommit": "b37ee236e40389740ebc794e58b2d1e875e56f09",
+  "fix": "Nonzero WebView viewport inside wrap-content AlertDialog; native loading and error text",
+  "backendPublicGet": {
+    "appBridge": true,
+    "googleScript": true,
+    "googleWidget": true,
+    "credentialsOrTokensSent": false,
+    "status": 200
+  },
+  "jvm": {
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "tests": 265
+  },
+  "build": "passed",
+  "lintErrors": 0,
+  "lintWarnings": 710,
+  "deviceUi": "not run; emulator5554 untouched",
+  "backendChanged": false,
+  "apkSha256": "F56833E7AE021C0D4FC4AD11BC9861531211813570F722400CCE11768073DCC7"
+}

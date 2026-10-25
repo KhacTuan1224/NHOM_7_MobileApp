@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-25T21:26:03.6563977+07:00",
+  "baseCommit": "b37ee236e40389740ebc794e58b2d1e875e56f09",
+  "feature": "Normal horizontal Google checkbox and full inline image challenge viewport",
+  "android": {
+    "tests": 265,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "build": "passed",
+  "lintErrors": 0,
+  "lintWarnings": 710,
+  "backendAndDomPassed": 214,
+  "workerPassed": 10,
+  "failures": 0,
+  "skipped": 0,
+  "domTests": 5,
+  "keyChanges": false,
+  "backendDeployRequiredForNormalWidget": true,
+  "backendDeployedByAgent": false,
+  "uiOnDevice": "not tested; emulator5554 untouched",
+  "apkSha256": "DED0E2DCE169FE0200B8EDB538A396BAAEF6FA22505D7FBAE42E35475100BD0E"
+}
