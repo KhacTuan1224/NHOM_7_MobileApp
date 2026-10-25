@@ -63,6 +63,8 @@ Admin functions are implemented in the Android application. There is no separate
 
 ## Technologies Used
 
+<img alt="fpt-shop-banner" src="https://github.com/LaiThanhDat-glitch/NHOM_7_MobileApp/blob/main/images/technology.png" />
+
 | Layer | Technology |
 |---|---|
 | Frontend / Android | Java, XML Views, Android SDK, AndroidX, Material Components, ConstraintLayout, RecyclerView, ViewPager2, Navigation Component |
