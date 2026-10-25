@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="598" viewBox="0 0 1320 598"><rect width="100%" height="100%" fill="white"/>
+<rect x="19.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="145.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Chi tiết</text>
+<text x="145.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">giỏ và checkout</text>
+<path d="M145.0 70 L145.0 545" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="362.3333333333333" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="488.3333333333333" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Repository</text>
+<text x="488.3333333333333" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Android</text>
+<path d="M488.3333333333333 70 L488.3333333333333 545" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="705.6666666666666" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="831.6666666666666" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Render</text>
+<text x="831.6666666666666" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">commerce.js</text>
+<path d="M831.6666666666666 70 L831.6666666666666 545" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="1049.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="1175.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Firestore</text>
+<text x="1175.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">transaction</text>
+<path d="M1175.0 70 L1175.0 545" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<path d="M145.0 110 L488.3333333333333 110" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,110 476.3333333333333,104 476.3333333333333,116" fill="#315943"/>
+<rect x="109.66666666666663" y="78" width="414.0" height="27" fill="white"/>
+<text x="316.66666666666663" y="101" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">1  Chọn productId batchId và số lượng</text>
+<path d="M488.3333333333333 165 L831.6666666666666 165" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,165 819.6666666666666,159 819.6666666666666,171" fill="#315943"/>
+<rect x="524.25" y="133" width="271.5" height="27" fill="white"/>
+<text x="660.0" y="156" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">2  Lấy báo giá hiện hành</text>
+<path d="M488.3333333333333 220 L145.0 220" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="145.0,220 157.0,214 157.0,226" fill="#315943"/>
+<rect x="77.91666666666663" y="188" width="477.5" height="27" fill="white"/>
+<text x="316.66666666666663" y="211" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">3  Giỏ Guest ở Room hoặc Customer ở carts</text>
+<path d="M145.0 275 L488.3333333333333 275" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,275 476.3333333333333,269 476.3333333333333,281" fill="#315943"/>
+<rect x="125.91666666666663" y="243" width="381.5" height="27" fill="white"/>
+<text x="316.66666666666663" y="266" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">4  Xác nhận checkout với requestId</text>
+<path d="M488.3333333333333 330 L831.6666666666666 330" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,330 819.6666666666666,324 819.6666666666666,336" fill="#315943"/>
+<rect x="433.25" y="298" width="453.5" height="27" fill="white"/>
+<text x="660.0" y="321" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">5  checkoutGuest hoặc checkoutCustomer</text>
+<path d="M831.6666666666666 385 L1175.0 385" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="1175.0,385 1163.0,379 1163.0,391" fill="#315943"/>
+<rect x="781.0833333333333" y="353" width="444.5" height="27" fill="white"/>
+<text x="1003.3333333333333" y="376" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">6  Kiểm quyền giá hạn lô và tồn khả dụng</text>
+<path d="M1175.0 440 L831.6666666666666 440" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="831.6666666666666,440 843.6666666666666,434 843.6666666666666,446" fill="#315943"/>
+<rect x="756.5833333333333" y="408" width="493.5" height="27" fill="white"/>
+<text x="1003.3333333333333" y="431" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">7  Ghi đơn giữ kho và receipt cùng transaction</text>
+<path d="M831.6666666666666 495 L145.0 495" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="145.0,495 157.0,489 157.0,501" fill="#315943"/>
+<rect x="247.09505208333331" y="463" width="482.4765625" height="27" fill="white"/>
+<text x="488.3333333333333" y="486" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">8  Trả đơn hoặc yêu cầu xác nhận lại báo giá</text>
+<text x="660.0" y="584" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#172b31">QR chỉ được ghi nhận thanh toán qua webhook SePay hợp lệ; COD theo vòng đời đơn.</text>
+</svg>

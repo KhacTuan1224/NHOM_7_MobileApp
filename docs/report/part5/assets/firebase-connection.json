@@ -1,0 +1,48 @@
+{
+  "actors": [
+    "Android\nJava XML",
+    "Firebase\nAuth và Rules",
+    "Cloud\nFirestore",
+    "Render\nAdmin SDK"
+  ],
+  "steps": [
+    [
+      0,
+      1,
+      "1  Đăng nhập email hoặc Google credential"
+    ],
+    [
+      1,
+      0,
+      "2  Phiên người dùng và ID token",
+      true
+    ],
+    [
+      0,
+      1,
+      "3  SDK đọc ghi theo UID và vai trò"
+    ],
+    [
+      1,
+      2,
+      "4  Rules cho phép hoặc từ chối"
+    ],
+    [
+      0,
+      3,
+      "5  HTTP kèm ID token cho nghiệp vụ tin cậy"
+    ],
+    [
+      3,
+      2,
+      "6  Xác thực và transaction phía server"
+    ],
+    [
+      2,
+      0,
+      "7  Snapshot cập nhật các màn đang theo dõi",
+      true
+    ]
+  ],
+  "note": "Rules kiểm soát SDK client; backend Admin SDK phải tự kiểm tra quyền."
+}

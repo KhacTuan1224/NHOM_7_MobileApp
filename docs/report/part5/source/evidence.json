@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-25",
+  "baseCommit": "0d0f0c72e1b93defcfb720af5b4ad4bc9f3b5ad1",
+  "sourcePdf": "docs/report/Phần của Đạt.pdf",
+  "sourceImage": "docs/diagram (2).png",
+  "sourceImagePixels": [
+    9047,
+    8378
+  ],
+  "figureCount": 7,
+  "tableCount": 4,
+  "plannedPages": {
+    "content": 8,
+    "references": 1
+  },
+  "limits": [
+    "No new UI screenshots; precise shot notes supplied",
+    "No tests or production deploy claimed in this document task",
+    "GitDiagram web viewer inaccessible via web fetch; provided local HD export used"
+  ],
+  "references": [
+    {
+      "organization": "Google Firebase",
+      "title": "Add Firebase to your Android project",
+      "url": "https://firebase.google.com/docs/android/setup"
+    },
+    {
+      "organization": "Google Firebase",
+      "title": "Authenticate with Google on Android",
+      "url": "https://firebase.google.com/docs/auth/android/google-signin"
+    },
+    {
+      "organization": "Google Firebase",
+      "title": "Get realtime updates with Cloud Firestore",
+      "url": "https://firebase.google.com/docs/firestore/query-data/listen"
+    },
+    {
+      "organization": "Google Firebase",
+      "title": "Transactions and batched writes",
+      "url": "https://firebase.google.com/docs/firestore/manage-data/transactions"
+    },
+    {
+      "organization": "Google Firebase",
+      "title": "Security Rules and Firebase Authentication",
+      "url": "https://firebase.google.com/docs/rules/rules-and-auth"
+    },
+    {
+      "organization": "Android Developers",
+      "title": "Save data in a local database using Room",
+      "url": "https://developer.android.com/training/data-storage/room"
+    },
+    {
+      "organization": "Google Firebase",
+      "title": "Connect your app to the Cloud Firestore Emulator",
+      "url": "https://firebase.google.com/docs/emulator-suite/connect_firestore"
+    },
+    {
+      "organization": "GitDiagram",
+      "title": "Sơ đồ repository RescueFarm do người dùng cung cấp",
+      "url": "https://gitdiagram.com/laithanhdat-glitch/nhom_7_mobileapp"
+    }
+  ]
+}

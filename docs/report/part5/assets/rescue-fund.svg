@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="708" viewBox="0 0 1320 708"><rect width="100%" height="100%" fill="white"/>
+<rect x="19.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="145.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Người ủng hộ</text>
+<text x="145.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Seller và Admin</text>
+<path d="M145.0 70 L145.0 655" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="362.3333333333333" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="488.3333333333333" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Render</text>
+<text x="488.3333333333333" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">rescue-fund.js</text>
+<path d="M488.3333333333333 70 L488.3333333333333 655" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="705.6666666666666" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="831.6666666666666" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Firestore</text>
+<text x="831.6666666666666" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">quỹ kho và ledger</text>
+<path d="M831.6666666666666 70 L831.6666666666666 655" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="1049.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="1175.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">SePay hoặc</text>
+<text x="1175.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">ngân hàng</text>
+<path d="M1175.0 70 L1175.0 655" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<path d="M145.0 110 L1175.0 110" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="1175.0,110 1163.0,104 1163.0,116" fill="#315943"/>
+<rect x="475.5" y="78" width="369.0" height="27" fill="white"/>
+<text x="660.0" y="101" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">1  Ủng hộ theo QR và mã theo dõi</text>
+<path d="M1175.0 165 L488.3333333333333 165" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,165 500.3333333333333,159 500.3333333333333,171" fill="#315943"/>
+<rect x="681.6705729166666" y="133" width="299.9921875" height="27" fill="white"/>
+<text x="831.6666666666666" y="156" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">2  Webhook tiền vào hợp lệ</text>
+<path d="M488.3333333333333 220 L831.6666666666666 220" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,220 819.6666666666666,214 819.6666666666666,226" fill="#315943"/>
+<rect x="481.26171875" y="188" width="357.4765625" height="27" fill="white"/>
+<text x="660.0" y="211" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">3  Chống trùng và ghi nhận PAID</text>
+<path d="M488.3333333333333 275 L831.6666666666666 275" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,275 819.6666666666666,269 819.6666666666666,281" fill="#315943"/>
+<rect x="456.5" y="243" width="407.0" height="27" fill="white"/>
+<text x="660.0" y="266" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">4  Phân bổ giữ đồng thời tiền và hàng</text>
+<path d="M145.0 330 L488.3333333333333 330" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,330 476.3333333333333,324 476.3333333333333,336" fill="#315943"/>
+<rect x="45.68229166666663" y="298" width="541.96875" height="27" fill="white"/>
+<text x="316.66666666666663" y="321" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">5  Seller ACCEPT rồi DELIVER kèm ảnh trước hạn</text>
+<path d="M488.3333333333333 385 L831.6666666666666 385" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,385 819.6666666666666,379 819.6666666666666,391" fill="#315943"/>
+<rect x="402.5" y="353" width="515.0" height="27" fill="white"/>
+<text x="660.0" y="376" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">6  Ghi bằng chứng hoặc hủy quá hạn giải phóng</text>
+<path d="M145.0 440 L488.3333333333333 440" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,440 476.3333333333333,434 476.3333333333333,446" fill="#315943"/>
+<rect x="99.68229166666663" y="408" width="433.96875" height="27" fill="white"/>
+<text x="316.66666666666663" y="431" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">7  Admin VERIFY chuyến đã giao hợp lệ</text>
+<path d="M145.0 495 L1175.0 495" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="1175.0,495 1163.0,489 1163.0,501" fill="#315943"/>
+<rect x="458.51171875" y="463" width="402.9765625" height="27" fill="white"/>
+<text x="660.0" y="486" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">8  Admin chuyển tiền ngoài ứng dụng</text>
+<path d="M145.0 550 L488.3333333333333 550" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,550 476.3333333333333,544 476.3333333333333,556" fill="#315943"/>
+<rect x="81.19401041666663" y="518" width="470.9453125" height="27" fill="white"/>
+<text x="316.66666666666663" y="541" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">9  PAY ghi mã giao dịch số tiền và chứng từ</text>
+<path d="M488.3333333333333 605 L831.6666666666666 605" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,605 819.6666666666666,599 819.6666666666666,611" fill="#315943"/>
+<rect x="414.25" y="573" width="491.5" height="27" fill="white"/>
+<text x="660.0" y="596" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">10  Chuyển reserved sang spent và ghi ledger</text>
+<text x="660.0" y="694" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#172b31">DELIVER đúng hạn được duyệt muộn; RESERVED hoặc ACCEPTED quá hạn mới tự hủy.</text>
+</svg>

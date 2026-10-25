@@ -18,6 +18,8 @@ app.use(express.json({limit: "256kb", verify: (req, res, bytes) => {
 const rescueFund = require('./rescue-fund').createRescueFund({db, admin, authenticate: auth});
 app.use(rescueFund.webhookRouter);
 app.use(require('./sepay').createSePayApi({db, admin}).router);
+// CAPTCHA performs no Firestore reads and remains independent of the database quota gate.
+app.use(require('./password-captcha').createPasswordCaptcha().router);
 // SePay keeps its existing verification/retry path above. This gate only pauses
 // other API work; never acknowledge a payment without the existing transaction.
 app.use(createQuotaMiddleware(quotaGuard, () => migrationsReady));

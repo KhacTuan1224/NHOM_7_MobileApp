@@ -89,6 +89,29 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/passwordCaptchaButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_target_min"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
+            android:layout_marginTop="12dp"
+            android:text="@string/password_captcha_action"
+            app:cornerRadius="16dp" />
+
+        <TextView
+            android:id="@+id/passwordCaptchaStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/auth_horizontal_margin"
+            android:layout_marginEnd="@dimen/auth_horizontal_margin"
+            android:text="@string/password_captcha_hint"
+            android:textSize="12sp"
+            android:textColor="@color/rescue_on_surface_variant"
+            android:accessibilityLiveRegion="polite" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/forgotPasswordButton"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="653" viewBox="0 0 1320 653"><rect width="100%" height="100%" fill="white"/>
+<rect x="19.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="145.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Seller hoặc</text>
+<text x="145.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Customer</text>
+<path d="M145.0 70 L145.0 600" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="362.3333333333333" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="488.3333333333333" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Android</text>
+<text x="488.3333333333333" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Repository</text>
+<path d="M488.3333333333333 70 L488.3333333333333 600" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="705.6666666666666" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="831.6666666666666" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Firestore</text>
+<text x="831.6666666666666" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">campaigns</text>
+<path d="M831.6666666666666 70 L831.6666666666666 600" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="1049.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="1175.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Render và</text>
+<text x="1175.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">media</text>
+<path d="M1175.0 70 L1175.0 600" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<path d="M145.0 110 L488.3333333333333 110" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,110 476.3333333333333,104 476.3333333333333,116" fill="#315943"/>
+<rect x="101.41666666666663" y="78" width="430.5" height="27" fill="white"/>
+<text x="316.66666666666663" y="101" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">1  Seller bật chia sẻ GPS của chiến dịch</text>
+<path d="M488.3333333333333 165 L831.6666666666666 165" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,165 819.6666666666666,159 819.6666666666666,171" fill="#315943"/>
+<rect x="455.0" y="133" width="410.0" height="27" fill="white"/>
+<text x="660.0" y="156" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">2  Ghi fix mới timestamp và cờ chia sẻ</text>
+<path d="M831.6666666666666 220 L1175.0 220" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="1175.0,220 1163.0,214 1163.0,226" fill="#315943"/>
+<rect x="832.8333333333333" y="188" width="341.0" height="27" fill="white"/>
+<text x="1003.3333333333333" y="211" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">3  Listener chung nhận thay đổi</text>
+<path d="M1175.0 275 L488.3333333333333 275" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="488.3333333333333,275 500.3333333333333,269 500.3333333333333,281" fill="#315943"/>
+<rect x="584.4166666666666" y="243" width="494.5" height="27" fill="white"/>
+<text x="831.6666666666666" y="266" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">4  SSE rescue-map/events gửi điểm công khai</text>
+<path d="M488.3333333333333 330 L145.0 330" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="145.0,330 157.0,324 157.0,336" fill="#315943"/>
+<rect x="117.66666666666663" y="298" width="398.0" height="27" fill="white"/>
+<text x="316.66666666666663" y="321" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">5  Cập nhật marker và thời điểm vị trí</text>
+<path d="M145.0 385 L1175.0 385" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="1175.0,385 1163.0,379 1163.0,391" fill="#315943"/>
+<rect x="413.75390625" y="353" width="492.4921875" height="27" fill="white"/>
+<text x="660.0" y="376" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">6  Customer tải ảnh qua Worker và Cloudinary</text>
+<path d="M145.0 440 L1175.0 440" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="1175.0,440 1163.0,434 1163.0,446" fill="#315943"/>
+<rect x="465.5" y="408" width="389.0" height="27" fill="white"/>
+<text x="660.0" y="431" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">7  Gửi text ảnh và lựa chọn ẩn danh</text>
+<path d="M1175.0 495 L831.6666666666666 495" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,495 843.6666666666666,489 843.6666666666666,501" fill="#315943"/>
+<rect x="747.0833333333333" y="463" width="512.5" height="27" fill="white"/>
+<text x="1003.3333333333333" y="486" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">8  Xác thực tác giả rồi ghi comments transaction</text>
+<path d="M831.6666666666666 550 L488.3333333333333 550" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="488.3333333333333,550 500.3333333333333,544 500.3333333333333,556" fill="#315943"/>
+<rect x="441.5" y="518" width="437.0" height="27" fill="white"/>
+<text x="660.0" y="541" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">9  Listener bình luận cập nhật danh sách</text>
+<text x="660.0" y="639" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#172b31">GPS có chu kỳ; SSE truyền thay đổi đã ghi, không tự đo vị trí xe.</text>
+</svg>
