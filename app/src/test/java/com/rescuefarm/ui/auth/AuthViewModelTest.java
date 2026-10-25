@@ -59,12 +59,25 @@ public class AuthViewModelTest {
 
     @Test
     public void validLogin_usesRepositoryAndEmitsAuthenticatedState() {
-        viewModel.signIn("customer@example.com", "strongPass123");
+        viewModel.signIn("customer@example.com", "strongPass123", "synthetic-response");
         assertTrue(authRepository.signInCalled);
         assertEquals(
                 AuthScreenState.Status.AUTHENTICATED,
                 viewModel.getScreenState().getValue().getStatus()
         );
+    }
+
+    @Test public void passwordLoginWithoutCaptchaNeverCallsRepository(){
+        viewModel.signIn("customer@example.com","strongPass123");
+        org.junit.Assert.assertFalse(authRepository.signInCalled);
+        assertEquals(AuthScreenState.Status.ERROR,viewModel.getScreenState().getValue().getStatus());
+        assertTrue(viewModel.getScreenState().getValue().getMessage().contains("reCAPTCHA"));
+    }
+
+    @Test public void googleLoginDoesNotRequirePasswordCaptcha(){
+        viewModel.signInWithGoogleIdToken("synthetic-google-token");
+        assertEquals(AuthScreenState.Status.AUTHENTICATED,viewModel.getScreenState().getValue().getStatus());
+        org.junit.Assert.assertFalse(authRepository.signInCalled);
     }
 
     @Test
@@ -98,6 +111,9 @@ public class AuthViewModelTest {
     }
 
     private static final class FakeAuthRepository implements AuthRepository {
+        @Override public void signInWithCaptcha(String email,String password,String responseToken,AuthCallback callback){
+            assertEquals("synthetic-response",responseToken);signIn(email,password,callback);
+        }
         private boolean authenticated;
         private boolean signInCalled;
         private UserRole registeredRole;

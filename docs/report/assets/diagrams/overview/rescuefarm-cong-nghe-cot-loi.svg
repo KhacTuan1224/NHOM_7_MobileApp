@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1620" viewBox="0 0 2400 1620"><rect width="100%" height="100%" fill="white"/>
+<text x="70" y="59.120000000000005" font-family="Arial" font-size="24" font-weight="700" text-anchor="start" fill="#2d704b">RESCUEFARM  /  CÔNG NGHỆ</text>
+<text x="70" y="127.24000000000001" font-family="Arial" font-size="48" font-weight="700" text-anchor="start" fill="#19372d">Tổng quan các công nghệ cốt lõi</text>
+<text x="70" y="177.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#65756e">Kiến trúc Android, dữ liệu Firebase, backend và dịch vụ hình ảnh</text>
+<path d="M690 430 L900 430" fill="none" stroke="#2d704b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="900,430 885.2630240959538,436.2306934769384 885.2630240959538,423.7693065230616" fill="#2d704b"/>
+<text x="795" y="402.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="middle" fill="#2d704b">SDK</text>
+<path d="M690 325 L780 325 L780 218 L2040 218 L2040 270" fill="none" stroke="#426e9b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="2040,270 2033.7693065230617,255.26302409595382 2046.2306934769383,255.26302409595382" fill="#426e9b"/>
+<text x="1520" y="206.0" font-family="Arial" font-size="25" font-weight="700" text-anchor="middle" fill="#426e9b">HTTPS API</text>
+<path d="M1720 530 L1500 530" fill="none" stroke="#426e9b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="1500,530 1514.7369759040462,523.7693065230616 1514.7369759040462,536.2306934769384" fill="#426e9b"/>
+<text x="1610" y="497.0" font-family="Arial" font-size="25" font-weight="700" text-anchor="middle" fill="#426e9b">Admin SDK</text>
+<path d="M690 1030 L900 1030" fill="none" stroke="#98703f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="900,1030 885.2630240959538,1036.2306934769383 885.2630240959538,1023.7693065230616" fill="#98703f"/>
+<text x="795" y="999.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="middle" fill="#98703f">DAO</text>
+<path d="M690 1158 L780 1158 L780 1325 L2040 1325 L2040 1200" fill="none" stroke="#86629c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="2040,1200 2046.2306934769383,1214.7369759040462 2033.7693065230617,1214.7369759040462" fill="#86629c"/>
+<text x="1400" y="1303.76" font-family="Arial" font-size="27" font-weight="700" text-anchor="middle" fill="#86629c">Upload có chữ ký  /  tải ảnh qua CDN</text>
+<path d="M2040 820 L2040 700" fill="none" stroke="#86629c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="2040,700 2046.2306934769383,714.7369759040462 2033.7693065230617,714.7369759040462" fill="#86629c"/>
+<text x="2040" y="771.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="middle" fill="#86629c">Kiểm tra quyền media</text>
+<rect x="70" y="270" width="620" height="930" rx="24" fill="#edf5ef" stroke="#2d704b" stroke-width="2"/>
+<text x="102" y="327.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="start" fill="#2d704b">ỨNG DỤNG ANDROID</text>
+<text x="102" y="394.32" font-family="Arial" font-size="39" font-weight="700" text-anchor="start" fill="#19372d">Java và XML Views</text>
+<text x="102" y="449.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">AndroidX • Material Components</text>
+<path d="M102 485 L650 485" fill="none" stroke="#c6d9cb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="102" y="552.28" font-family="Arial" font-size="31" font-weight="700" text-anchor="start" fill="#19372d">Tổ chức mã</text>
+<text x="102" y="607.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">Fragment và ViewModel</text>
+<text x="102" y="653.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">MVVM • Repository • LiveData</text>
+<text x="102" y="742.28" font-family="Arial" font-size="31" font-weight="700" text-anchor="start" fill="#19372d">Trải nghiệm trên mobile</text>
+<text x="102" y="797.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">Guest • Customer • Seller • Admin</text>
+<text x="102" y="843.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">Điều hướng và giao diện responsive</text>
+<text x="102" y="889.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">Glide tải và hiển thị ảnh</text>
+<text x="102" y="1001.28" font-family="Arial" font-size="31" font-weight="700" text-anchor="start" fill="#19372d">Công cụ phát triển</text>
+<text x="102" y="1056.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">Android Studio • Gradle</text>
+<text x="102" y="1102.52" font-family="Arial" font-size="29" font-weight="400" text-anchor="start" fill="#42524c">Android SDK • Emulator</text>
+<rect x="900" y="270" width="600" height="430" rx="24" fill="#fff8e9" stroke="#b78026" stroke-width="2"/>
+<text x="934" y="326.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="start" fill="#9d6b1e">DỮ LIỆU VÀ DANH TÍNH</text>
+<text x="934" y="395.08" font-family="Arial" font-size="41" font-weight="700" text-anchor="start" fill="#19372d">Firebase</text>
+<text x="934" y="454.52" font-family="Arial" font-size="29" font-weight="700" text-anchor="start" fill="#19372d">Authentication</text>
+<text x="934" y="491.76" font-family="Arial" font-size="27" font-weight="400" text-anchor="start" fill="#42524c">Đăng ký, đăng nhập và UID</text>
+<text x="934" y="536.52" font-family="Arial" font-size="29" font-weight="700" text-anchor="start" fill="#19372d">Cloud Firestore</text>
+<text x="934" y="573.76" font-family="Arial" font-size="27" font-weight="400" text-anchor="start" fill="#42524c">Collection, document và listener</text>
+<text x="934" y="618.52" font-family="Arial" font-size="29" font-weight="700" text-anchor="start" fill="#19372d">FCM và App Check</text>
+<text x="934" y="655.76" font-family="Arial" font-size="27" font-weight="400" text-anchor="start" fill="#42524c">Thông báo và xác thực ứng dụng</text>
+<rect x="1720" y="270" width="610" height="430" rx="24" fill="#eff4fa" stroke="#426e9b" stroke-width="2"/>
+<text x="1754" y="326.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="start" fill="#426e9b">BACKEND TIN CẬY</text>
+<text x="1754" y="393.32" font-family="Arial" font-size="39" font-weight="700" text-anchor="start" fill="#19372d">Node.js và Express</text>
+<text x="1754" y="449.28" font-family="Arial" font-size="31" font-weight="700" text-anchor="start" fill="#426e9b">Triển khai trên Render</text>
+<text x="1754" y="505.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">HTTPS API và Firebase Admin SDK</text>
+<text x="1754" y="550.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Báo giá, checkout và giữ tồn kho</text>
+<text x="1754" y="595.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Thanh toán, Hũ và kiểm tra quyền</text>
+<text x="1754" y="640.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Transaction và chống xử lý trùng</text>
+<rect x="900" y="820" width="600" height="380" rx="24" fill="#fbf5ec" stroke="#98703f" stroke-width="2"/>
+<text x="934" y="876.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="start" fill="#98703f">DỮ LIỆU CỤC BỘ</text>
+<text x="934" y="944.2" font-family="Arial" font-size="40" font-weight="700" text-anchor="start" fill="#19372d">Room và SQLite</text>
+<text x="934" y="1009.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Cache một phần nội dung đã xem</text>
+<text x="934" y="1054.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Giỏ khách và dữ liệu theo phiên</text>
+<text x="934" y="1099.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">WorkManager hỗ trợ đồng bộ</text>
+<text x="934" y="1144.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">SharedPreferences lưu tùy chọn</text>
+<rect x="1720" y="820" width="610" height="380" rx="24" fill="#f5f0f9" stroke="#86629c" stroke-width="2"/>
+<text x="1754" y="876.88" font-family="Arial" font-size="26" font-weight="700" text-anchor="start" fill="#86629c">HÌNH ẢNH VÀ MEDIA</text>
+<text x="1754" y="944.2" font-family="Arial" font-size="40" font-weight="700" text-anchor="start" fill="#19372d">Cloudinary</text>
+<text x="1754" y="1002.4" font-family="Arial" font-size="30" font-weight="700" text-anchor="start" fill="#86629c">Cloudflare Worker ký upload</text>
+<text x="1754" y="1062.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Ảnh sản phẩm, chiến dịch, bình luận</text>
+<text x="1754" y="1106.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Firestore lưu URL và metadata</text>
+<text x="1754" y="1150.64" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#42524c">Khóa ký được giữ ở phía server</text>
+<rect x="70" y="1400" width="2260" height="153" rx="20" fill="#f4f7f5" stroke="none" stroke-width="2"/>
+<text x="104" y="1447.0" font-family="Arial" font-size="25" font-weight="700" text-anchor="start" fill="#2d704b">API VÀ THÀNH PHẦN HỖ TRỢ</text>
+<text x="104" y="1497.4" font-family="Arial" font-size="30" font-weight="400" text-anchor="start" fill="#19372d">Google Credential Manager  •  GPS Fused Location Provider  •  Leaflet và OpenStreetMap  •  QR / webhook SePay</text>
+<text x="104" y="1537.76" font-family="Arial" font-size="27" font-weight="400" text-anchor="start" fill="#65756e">Room hỗ trợ đọc cache; checkout và các nghiệp vụ kho / tiền vẫn cần kiểm tra online.</text>
+</svg>

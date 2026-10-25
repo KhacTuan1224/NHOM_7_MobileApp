@@ -32,6 +32,9 @@ public interface AuthRepository {
     String getCurrentUserId();
     void restoreSession(AuthCallback callback);
     void signIn(String email, String password, AuthCallback callback);
+    default void signInWithCaptcha(String email, String password, String responseToken, AuthCallback callback) {
+        callback.onError(ErrorCode.NOT_CONFIGURED, "Chưa cấu hình reCAPTCHA đăng nhập.");
+    }
     void register(
             String email,
             String password,

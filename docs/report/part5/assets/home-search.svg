@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="543" viewBox="0 0 1320 543"><rect width="100%" height="100%" fill="white"/>
+<rect x="19.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="145.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Home và</text>
+<text x="145.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">tìm kiếm</text>
+<path d="M145.0 70 L145.0 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="362.3333333333333" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="488.3333333333333" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">ViewModel</text>
+<text x="488.3333333333333" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">DiscoveryEngine</text>
+<path d="M488.3333333333333 70 L488.3333333333333 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="705.6666666666666" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="831.6666666666666" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Repository</text>
+<text x="831.6666666666666" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Room cache</text>
+<path d="M831.6666666666666 70 L831.6666666666666 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="1049.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="1175.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Firestore</text>
+<text x="1175.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">SDK</text>
+<path d="M1175.0 70 L1175.0 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<path d="M145.0 110 L488.3333333333333 110" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,110 476.3333333333333,104 476.3333333333333,116" fill="#315943"/>
+<rect x="124.66666666666663" y="78" width="384.0" height="27" fill="white"/>
+<text x="316.66666666666663" y="101" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">1  Mở trang hoặc đổi từ khóa bộ lọc</text>
+<path d="M488.3333333333333 165 L831.6666666666666 165" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,165 819.6666666666666,159 819.6666666666666,171" fill="#315943"/>
+<rect x="432.25390625" y="133" width="455.4921875" height="27" fill="white"/>
+<text x="660.0" y="156" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">2  Theo dõi danh mục và dữ liệu công khai</text>
+<path d="M831.6666666666666 220 L488.3333333333333 220" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="488.3333333333333,220 500.3333333333333,214 500.3333333333333,226" fill="#315943"/>
+<rect x="460.51171875" y="188" width="398.9765625" height="27" fill="white"/>
+<text x="660.0" y="211" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">3  Trả bản cache đủ điều kiện nếu có</text>
+<path d="M831.6666666666666 275 L1175.0 275" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="1175.0,275 1163.0,269 1163.0,281" fill="#315943"/>
+<rect x="815.5950520833333" y="243" width="375.4765625" height="27" fill="white"/>
+<text x="1003.3333333333333" y="266" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">4  Query ACTIVE có giới hạn trang</text>
+<path d="M1175.0 330 L831.6666666666666 330" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="831.6666666666666,330 843.6666666666666,324 843.6666666666666,336" fill="#315943"/>
+<rect x="821.8333333333333" y="298" width="363.0" height="27" fill="white"/>
+<text x="1003.3333333333333" y="321" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">5  Snapshot mới và ánh xạ model</text>
+<path d="M831.6666666666666 385 L488.3333333333333 385" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="488.3333333333333,385 500.3333333333333,379 500.3333333333333,391" fill="#315943"/>
+<rect x="493.75" y="353" width="332.5" height="27" fill="white"/>
+<text x="660.0" y="376" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">6  Lưu Room và phát LiveData</text>
+<path d="M488.3333333333333 440 L145.0 440" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="145.0,440 157.0,434 157.0,446" fill="#315943"/>
+<rect x="85.41666666666663" y="408" width="462.5" height="27" fill="white"/>
+<text x="316.66666666666663" y="431" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">7  Lọc sắp xếp và dựng các nhóm nội dung</text>
+<text x="660.0" y="529" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#172b31">Đổi bộ lọc dùng dữ liệu đã tải; tải thêm mới mở rộng tập kết quả.</text>
+</svg>
