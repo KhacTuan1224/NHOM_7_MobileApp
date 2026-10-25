@@ -360,6 +360,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
                 || destinationId == R.id.rescueFundFragment
+                || destinationId == R.id.rescueFundDeliveriesFragment
                 || destinationId == R.id.flashSaleFragment
                 || destinationId == R.id.mysteryBoxFragment
                 || destinationId == R.id.rescueOfferEditorFragment
@@ -424,6 +425,7 @@ public class MainActivity extends AppCompatActivity implements NavigationScrollL
                 || destinationId == R.id.categoryDetailFragment
                 || destinationId == R.id.rescueHubFragment
                 || destinationId == R.id.rescueFundFragment
+                || destinationId == R.id.rescueFundDeliveriesFragment
                 || destinationId == R.id.flashSaleFragment
                 || destinationId == R.id.mysteryBoxFragment
                 || destinationId == R.id.rescueOfferEditorFragment

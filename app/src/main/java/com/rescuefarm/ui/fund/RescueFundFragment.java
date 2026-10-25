@@ -38,6 +38,7 @@ public final class RescueFundFragment extends Fragment {
     private View progress, refresh;
     private androidx.core.widget.NestedScrollView scroll;
     private boolean receiptVisible;
+    private boolean deliveriesPage;
     private String role = "GUEST", focus = "", uploadResource = "", uploadType = "", proofUrl = "";
     private JSONObject fund = new JSONObject();
     private SharedPreferences prefs;
@@ -89,6 +90,10 @@ public final class RescueFundFragment extends Fragment {
         busy = false; proofUrl = "";
         prefs = requireContext().getSharedPreferences("rescue_fund_receipts", 0);
         focus = getArguments() == null ? "" : getArguments().getString("deliveryId", "");
+        deliveriesPage = getArguments() != null && getArguments().getBoolean("deliveriesOnly", false)
+                || !focus.isEmpty();
+        ((TextView)view.findViewById(R.id.fundTitle)).setText(deliveriesPage
+                ? R.string.fund_delivery_title : R.string.fund_screen_title);
         if (FirebaseAuth.getInstance().getCurrentUser() == null) { role = "GUEST"; view.post(this::load); return; }
         ProfileViewModel vm = new ViewModelProvider(this, new ProfileViewModelFactory(requireContext())).get(ProfileViewModel.class);
         vm.getState().observe(getViewLifecycleOwner(), this::profileState); vm.loadProfile();
@@ -161,6 +166,7 @@ public final class RescueFundFragment extends Fragment {
     }
     private void load() {
         if (getView() == null) return;
+        if (deliveriesPage) { loadDeliveryPage(); return; }
         showingReceipt = false; poller.removeCallbacks(poll);
         request(role.equals("ADMIN") ? "admin/get" : "public", json(), value -> {
             fund = value.optJSONObject("fund"); if (fund == null) fund = new JSONObject();
@@ -174,11 +180,24 @@ public final class RescueFundFragment extends Fragment {
                 button(admin, "Điều chỉnh sau đối soát ngân hàng", v -> adjust());
             }
             if (role.equals("ADMIN") || role.equals("SELLER")) {
-                heading(body, getString(R.string.fund_delivery_title)); jobs = column(requireContext()); body.addView(jobs);
-                if (!focus.isEmpty()) button(body, "Xem tất cả chuyến giao", v -> { focus = ""; load(); });
-                loadJobs("");
+                heading(body, getString(R.string.fund_delivery_title));
+                button(body, "Xem danh sách chuyến giao", v ->
+                    androidx.navigation.fragment.NavHostFragment.findNavController(this)
+                        .navigate(R.id.rescueFundDeliveriesFragment));
             }
         });
+    }
+    private void loadDeliveryPage() {
+        if (busy) return;
+        clearPage(false);
+        if (!role.equals("ADMIN") && !role.equals("SELLER")) {
+            progress.setVisibility(View.GONE);
+            showStatus("Danh sách chuyến giao chỉ dành cho Admin và Seller phụ trách.");
+            return;
+        }
+        jobs = column(requireContext()); body.addView(jobs);
+        if (!focus.isEmpty()) button(body, "Xem tất cả chuyến giao", v -> { focus = ""; load(); });
+        loadJobs("");
     }
     private void renderOverview() {
         LinearLayout introduction = RescueFundUi.row(body);
@@ -206,7 +225,7 @@ public final class RescueFundFragment extends Fragment {
                     R.color.rescue_on_surface_variant, false);
         }
 
-        LinearLayout accounting = RescueFundUi.card(body);
+        LinearLayout accounting = plainSection();
         // Stack figures so full VND values and large accessibility fonts always fit.
         RescueFundUi.detail(accounting, R.drawable.ic_nav_orders, getString(R.string.fund_reserved), money(fund.optDouble("reserved")));
         View divider = new View(requireContext()); divider.setBackgroundColor(requireContext().getColor(R.color.rescue_outline));
@@ -216,19 +235,20 @@ public final class RescueFundFragment extends Fragment {
             button(accounting, getString(R.string.fund_receipt), v -> receipt());
 
         heading(body, getString(R.string.fund_destination));
-        LinearLayout destination = RescueFundUi.card(body);
+        LinearLayout destination = plainSection();
         String charity = fund.optString("charityName").trim(), address = fund.optString("address").trim();
         RescueFundUi.detail(destination, R.drawable.ic_home_location,
                 charity.isEmpty() ? getString(R.string.fund_destination_empty) : charity,
                 address.isEmpty() ? getString(R.string.fund_address_empty) : address);
 
         renderRanking();
-        if (!role.equals("ADMIN")) return;
-        heading(body, getString(R.string.fund_how_title));
-        LinearLayout steps = RescueFundUi.card(body);
-        RescueFundUi.step(steps, "1", getString(R.string.fund_step_donate), getString(R.string.fund_step_donate_description));
-        RescueFundUi.step(steps, "2", getString(R.string.fund_step_rescue), getString(R.string.fund_step_rescue_description));
-        RescueFundUi.step(steps, "3", getString(R.string.fund_step_deliver), getString(R.string.fund_step_deliver_description));
+    }
+    private LinearLayout plainSection() {
+        LinearLayout section = column(requireContext());
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.bottomMargin = dp(requireContext(), 16);
+        body.addView(section, params);
+        return section;
     }
     private String token() {
         String token = prefs.getString("token", "");

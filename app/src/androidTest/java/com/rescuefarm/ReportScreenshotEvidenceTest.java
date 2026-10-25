@@ -52,6 +52,7 @@ public class ReportScreenshotEvidenceTest {
         String role=InstrumentationRegistry.getArguments().getString("reportActor","seller");
         String stage=InstrumentationRegistry.getArguments().getString("reportStage","reserved");
         try {actor(role);open(R.id.rescueFundFragment,null);shot("fund-"+stage+"-"+role+"-top");
+            open(R.id.rescueFundDeliveriesFragment,null);
             scenario.onActivity(a->((androidx.core.widget.NestedScrollView)a.findViewById(R.id.fundScroll)).fullScroll(View.FOCUS_DOWN));settle();shot("fund-"+stage+"-"+role+"-jobs");
         } finally {if(scenario!=null)scenario.close();FirebaseAuth.getInstance().signOut();}
     }
