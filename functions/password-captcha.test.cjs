@@ -27,6 +27,7 @@ test('public Google test key cannot be used as production verification',async()=
 test('hosted page uses a real Google widget nonce CSP and never exposes the secret',async()=>{
   const f=fixture(),r=await f.call('get');assert.ok(r.html.includes('google.com/recaptcha/api.js'));
   assert.ok(r.html.includes('grecaptcha.render'));assert.ok(!r.html.includes(env.PASSWORD_RECAPTCHA_SECRET_KEY));
+  assert.ok(r.html.includes("size:'normal'"));assert.ok(!r.html.includes("size:'compact'"));
   assert.ok(r.headers['Content-Security-Policy'].includes("frame-ancestors 'none'"));assert.equal(r.headers['Cache-Control'],'no-store');
 });
 test('verification sends only response and server secret to Google and rejects replay',async()=>{

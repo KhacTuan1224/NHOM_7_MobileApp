@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-25T21:31:56.2954168+07:00",
+  "change": "Hide success hint under captcha",
+  "android": {
+    "errors": 0,
+    "skipped": 0,
+    "tests": 265,
+    "failures": 0
+  },
+  "build": "passed",
+  "lintErrors": 0,
+  "selectedBackendTestsPassed": 9,
+  "backendTestExit": 0,
+  "liveBackendGet": {
+    "status": 200,
+    "compact": true,
+    "normal": false
+  },
+  "normalWidgetChange": "prepared in functions/password-captcha.js; not deployed",
+  "agentPushedOrDeployed": false,
+  "deviceUiTested": false,
+  "apkSha256": "0D791045BD2E2B8A502CB05C53D86C06097CA8412919B9336964393F85D5632B"
+}
