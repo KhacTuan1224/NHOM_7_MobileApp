@@ -55,6 +55,7 @@ public class EditProfileFragment extends Fragment {
     private View mapContainer;
     private WebView locationMap;
     private TextView mapStatus;
+    private android.app.Dialog mapDialog;
     private final Handler mapHandler = new Handler(Looper.getMainLooper());
     private int mapGeneration;
     private double mappedLatitude = Double.NaN, mappedLongitude = Double.NaN;
@@ -221,15 +222,27 @@ public class EditProfileFragment extends Fragment {
         startActivity(new Intent(Intent.ACTION_VIEW, location));
     }
     private void configureMap() {
-        WebSettings settings = locationMap.getSettings();
+        configureMap(locationMap,false);
+    }
+    private void configureMap(WebView target,boolean expanded) {
+        WebSettings settings = target.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         String defaultUserAgent = settings.getUserAgentString();
         settings.setUserAgentString(defaultUserAgent + " RescueFarmAndroidApp/1.0 (com.example.nhom_7_mobileapp)");
-        locationMap.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-        locationMap.setWebViewClient(new WebViewClient() {
+        target.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        target.setWebViewClient(new WebViewClient() {
+            @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request) {
+                Uri uri=request.getUrl();
+                if("rescuefarm-map".equals(uri.getScheme())) {
+                    if(!expanded&&"expand".equals(uri.getHost()))openProfileMap();
+                    else if(expanded&&"back".equals(uri.getHost())&&mapDialog!=null)mapDialog.dismiss();
+                }
+                return true;
+            }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if ("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) {
@@ -252,7 +265,7 @@ public class EditProfileFragment extends Fragment {
                 Log.w("ProfileMap", "Resource failed: " + request.getUrl().getHost() + ", code=" + error.getErrorCode());
             }
         });
-        locationMap.setWebChromeClient(new WebChromeClient() {
+        target.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onConsoleMessage(ConsoleMessage message) {
                 if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
                     Log.e("ProfileMap", message.message());
@@ -304,37 +317,39 @@ public class EditProfileFragment extends Fragment {
     }
 
     private String mapHtml(double lat, double lon) {
-        String latitudeText = String.format(Locale.US, "%.6f", lat);
-        String longitudeText = String.format(Locale.US, "%.6f", lon);
-        boolean sellerMap = ActorUiPolicy.isSeller(this);
-        String tileUrl = sellerMap
-                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-                : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
-        String attribution = sellerMap
-                ? "Sources: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, &copy; OpenStreetMap contributors"
-                : "Sources: <a href=\"https://www.esri.com/\">Esri</a>, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Mapwithyou, NOSTRA, "
-                + "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>, and the GIS User Community";
-        return "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">"
-                + "<link rel=\"stylesheet\" href=\"leaflet.css\">"
-                + "<style>html,body,#map{height:100%;width:100%;margin:0;background:#f8faf6}"
-                + (sellerMap ? ".leaflet-tile{filter:grayscale(.94) brightness(1.08) contrast(.92)}.map-pin{width:26px;height:26px;position:relative;transform:rotate(-45deg);border-radius:50% 50% 50% 0;background:#1769ff;border:3px solid #fff;box-shadow:0 2px 8px #0004}.map-pin span{position:absolute;width:8px;height:8px;left:6px;top:6px;border-radius:50%;background:#fff;transform:rotate(45deg)}" : "")
-                + "#status{position:absolute;z-index:1000;inset:0;display:flex;align-items:center;justify-content:center;"
-                + "padding:16px;text-align:center;font:14px sans-serif;color:#586159;background:#f8faf6}"
-                + ".leaflet-popup-content{font:13px sans-serif}</style></head><body><div id=\"map\"></div>"
-                + "<div id=\"status\">" + getString(R.string.profile_map_loading) + "</div>"
-                + "<script src=\"leaflet.js\"></script><script>"
-                + "const p=[" + latitudeText + "," + longitudeText + "],sellerMap=" + sellerMap + ",statusElement=document.getElementById('status');"
-                + "try{const map=L.map('map',{scrollWheelZoom:false}).setView(p,15);"
-                + "const pin=L.divIcon({className:'',html:'<div class=map-pin><span></span></div>',iconSize:[32,42],iconAnchor:[16,40]});const marker=sellerMap?L.marker(p,{icon:pin}):L.circleMarker(p,{radius:9,color:'#fff',weight:3,fillColor:'#2e6b45',fillOpacity:1});marker.addTo(map);"
-                + "if(!sellerMap)marker.bindPopup('Vĩ độ " + latitudeText + "<br>Kinh độ " + longitudeText + "').openPopup();"
-                + "const tiles=L.tileLayer('" + tileUrl + "',{maxZoom:19,"
-                + "attribution:'" + attribution + "'}).addTo(map);"
-                + "let ready=false;tiles.once('tileload',()=>{ready=true;window.rescueMapReady=true;statusElement.style.display='none'});"
-                + "tiles.on('tileerror',()=>{if(!ready)statusElement.textContent='"
-                + getString(R.string.profile_map_unavailable) + "'});"
-                + "setTimeout(()=>{if(statusElement.style.display!=='none')statusElement.textContent='"
-                + getString(R.string.profile_map_unavailable) + "';},10000);"
-                + "}catch(e){statusElement.textContent='" + getString(R.string.profile_map_unavailable) + "';}</script></body></html>";
+        return mapHtml(lat,lon,false);
+    }
+    private String mapHtml(double lat,double lon,boolean expanded) {
+        // Shared renderer only: profile maps never subscribe to rescue data.
+        // Coordinates stay in the local document, not a tile URL or backend request.
+        try(java.io.InputStream input=requireContext().getAssets().open("maps/rescue-map.html")) {
+            java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();
+            byte[] buffer=new byte[4096];int count;
+            while((count=input.read(buffer))!=-1)bytes.write(buffer,0,count);
+            String html=new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
+            html=html.replace("<script src=\"leaflet.js\"></script>",
+                    "<script>window.rescueMapOptions={profile:true,expanded:"+expanded+"};</script><script src=\"leaflet.js\"></script>");
+            return html.replace("</body>","<script>window.setProfilePoint("
+                    +String.format(Locale.US,"%.6f",lat)+","+String.format(Locale.US,"%.6f",lon)
+                    +");</script></body>");
+        } catch(java.io.IOException error) {
+            Log.e("ProfileMap","Missing bundled map",error);
+            return "<html><body>"+getString(R.string.profile_map_unavailable)+"</body></html>";
+        }
+    }
+    private void openProfileMap() {
+        if(!isAdded()||mapContainer==null||mapContainer.getVisibility()!=View.VISIBLE
+                ||mapDialog!=null&&mapDialog.isShowing())return;
+        android.app.Dialog dialog=new android.app.Dialog(requireContext(),android.R.style.Theme_Material_Light_NoActionBar);
+        WebView fullMap=new WebView(requireContext());configureMap(fullMap,true);
+        mapDialog=dialog;dialog.setContentView(fullMap);
+        dialog.setOnDismissListener(unused->{
+            fullMap.stopLoading();fullMap.setWebViewClient(null);fullMap.setWebChromeClient(null);fullMap.destroy();
+            if(mapDialog==dialog)mapDialog=null;
+        });
+        fullMap.loadDataWithBaseURL("https://appassets.androidplatform.net/maps/",mapHtml(latitude,longitude,true),"text/html","UTF-8",null);
+        dialog.show();
+        if(dialog.getWindow()!=null)dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
     }
     private void renderAvatar(String url) {
         if (url == null || url.trim().isEmpty()) {
@@ -360,6 +375,7 @@ public class EditProfileFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        if(mapDialog!=null)mapDialog.dismiss();
         mapGeneration++;
         mapHandler.removeCallbacksAndMessages(null);
         mappedLatitude = Double.NaN;

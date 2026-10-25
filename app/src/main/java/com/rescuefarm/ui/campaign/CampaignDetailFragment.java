@@ -78,8 +78,9 @@ public class CampaignDetailFragment extends Fragment {
         root.findViewById(R.id.campaignRescueNowButton).setEnabled(purchase);
         boolean mobile=campaign.getRescueMode()==RescueMode.MOBILE_POINT;
         root.findViewById(R.id.campaignDirectionsButton).setEnabled(open && (!mobile || campaign.isLocationFresh(now)));
-        for(int id:new int[]{R.id.campaignSendCommentButton, R.id.campaignCareButton})
-            root.findViewById(id).setEnabled(open && canUseCampaignSocialActions());
+        root.findViewById(R.id.campaignCareButton).setEnabled(open && canUseCampaignSocialActions());
+        root.findViewById(R.id.campaignSendCommentButton).setEnabled(open && canUseCampaignSocialActions()&&!commentSending&&!commentUploading);
+        root.findViewById(R.id.campaignCommentAddImage).setEnabled(open&&canUseCampaignSocialActions()&&!commentSending&&!commentUploading&&commentImages.size()<3);
         if(mobile) {
             set(root,R.id.campaignDetailLocation,com.rescuefarm.service.campaign.CampaignTimeFormatter.locationStatus(campaign,now)
                     +"\n"+com.rescuefarm.service.campaign.CampaignTimeFormatter.locationUpdated(campaign.getLocationUpdatedAt(),now));
@@ -104,11 +105,21 @@ public class CampaignDetailFragment extends Fragment {
     private CampaignEngagementRepository engagementRepository;
     private boolean engagementLoaded;
     private boolean viewRecorded;
-    private boolean commentSubmitted;
+    private boolean commentSending,commentUploading;
+    private String commentDraftText="";
+    private boolean commentDraftAnonymous;
+    private String commentDraftId=java.util.UUID.randomUUID().toString(),composerOwner="";
+    private final List<String> commentImages=new ArrayList<>();
+    private android.widget.CheckBox commentAnonymous;
+    private LinearLayout commentImageGallery;
+    private TextView commentUploadStatus;
+    private final ActivityResultLauncher<String> commentImagePicker=registerForActivityResult(
+        new ActivityResultContracts.GetContent(),this::uploadCommentImage);
     private TextView engagementSummary;
     private LinearLayout commentContainer;
     private com.google.android.material.textfield.TextInputEditText commentInput;
     private boolean careSelected;
+    private CampaignEngagementSnapshot lastEngagement;
     
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("vi-VN"));
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -154,7 +165,23 @@ public class CampaignDetailFragment extends Fragment {
         engagementSummary = view.findViewById(R.id.campaignEngagementSummary);
         commentContainer = view.findViewById(R.id.campaignCommentContainer);
         commentInput = view.findViewById(R.id.campaignCommentInput);
+        commentInput.setSaveEnabled(false);
+        commentAnonymous=view.findViewById(R.id.campaignCommentAnonymous);commentAnonymous.setSaveEnabled(false);
+        commentImageGallery=view.findViewById(R.id.campaignCommentImages);
+        commentUploadStatus=view.findViewById(R.id.campaignCommentUploadStatus);
+        if(!composerOwner.equals(currentUserId())){
+            commentImages.clear();commentDraftText="";commentDraftAnonymous=false;commentDraftId=java.util.UUID.randomUUID().toString();
+        }
+        composerOwner=currentUserId();commentSending=false;commentUploading=false;
+        if(state!=null&&composerOwner.equals(state.getString("commentOwner"))) {
+            commentDraftId=state.getString("commentDraft",commentDraftId);
+            commentInput.setText(state.getString("commentText",""));commentAnonymous.setChecked(state.getBoolean("commentAnonymous"));
+            List<String> savedImages=state.getStringArrayList("commentImages");commentImages.clear();if(savedImages!=null)commentImages.addAll(savedImages);
+        } else {commentInput.setText(commentDraftText);commentAnonymous.setChecked(commentDraftAnonymous);}
+        renderCommentAttachments();
+        view.findViewById(R.id.campaignCommentAddImage).setOnClickListener(v->commentImagePicker.launch("image/*"));
         engagementRepository = CampaignEngagementRepositoryFactory.create(requireContext());
+        engagementLoaded=false;
 
         CampaignViewModel viewModel = new ViewModelProvider(this,
                 new CampaignViewModelFactory(requireContext())).get(CampaignViewModel.class);
@@ -290,9 +317,7 @@ public class CampaignDetailFragment extends Fragment {
         });
         view.findViewById(R.id.campaignCareButton).setOnClickListener(v -> toggleCare());
         view.findViewById(R.id.campaignSendCommentButton).setOnClickListener(v -> {
-            String content = commentInput.getText() == null ? "" : commentInput.getText().toString();
-            commentSubmitted = !content.trim().isEmpty();
-            engagementRepository.addComment(campaignId, currentUserId(), content, actionRefresh());
+            sendComment();
         });
 
         applyActorActions(view);
@@ -305,6 +330,7 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private void applyActorActions(View root) {
+        if(!composerOwner.equals(currentUserId())){composerOwner=currentUserId();resetCommentComposer();}
         boolean isReadOnly = ActorUiPolicy.isSellerReadOnly(this);
         boolean socialEnabled = canUseCampaignSocialActions();
         root.findViewById(R.id.reportCampaignButton).setVisibility(
@@ -312,6 +338,7 @@ public class CampaignDetailFragment extends Fragment {
         root.findViewById(R.id.campaignCareButton).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
         root.findViewById(R.id.campaignCommentInput).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
         root.findViewById(R.id.campaignSendCommentButton).setVisibility(socialEnabled ? View.VISIBLE : View.GONE);
+        root.findViewById(R.id.campaignCommentComposer).setVisibility(socialEnabled?View.VISIBLE:View.GONE);
         View actionCard = root.findViewById(R.id.campaignProductActionCard);
         if (actionCard != null) {
             actionCard.setVisibility(isReadOnly ? View.GONE : View.VISIBLE);
@@ -398,11 +425,10 @@ public class CampaignDetailFragment extends Fragment {
         if (engagementRepository == null || campaignId.isEmpty()) return;
         engagementRepository.load(campaignId, currentUserId(), new CampaignEngagementRepository.Callback() {
             @Override public void onSuccess(CampaignEngagementSnapshot value) {
-                if (!isAdded()) return; renderEngagement(value);
-                if (commentSubmitted) { commentSubmitted = false; commentInput.setText(""); }
+                if (!isAdded()||getView()==null) return; renderEngagement(value);
             }
             @Override public void onError(String message) {
-                if (isAdded()) engagementSummary.setText(message);
+                if (isAdded()&&getView()!=null) engagementSummary.setText(message);
             }
         });
     }
@@ -487,6 +513,66 @@ public class CampaignDetailFragment extends Fragment {
         com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
         return user == null ? "" : user.getUid();
     }
+    private int commentDp(int size){return Math.round(size*getResources().getDisplayMetrics().density);}
+    private void resetCommentComposer(){
+        commentImages.clear();commentDraftId=java.util.UUID.randomUUID().toString();commentSending=false;commentUploading=false;
+        commentDraftText="";commentDraftAnonymous=false;
+        if(commentInput!=null)commentInput.setText("");if(commentAnonymous!=null)commentAnonymous.setChecked(false);
+        if(commentUploadStatus!=null)commentUploadStatus.setVisibility(View.GONE);renderCommentAttachments();
+    }
+    private void renderCommentAttachments(){
+        if(getView()==null||commentImageGallery==null)return;
+        commentImageGallery.removeAllViews();
+        ((TextView)getView().findViewById(R.id.campaignCommentAddImage)).setText("Thêm ảnh ("+commentImages.size()+"/3)");
+        for(String url:new ArrayList<>(commentImages)){
+            LinearLayout item=new LinearLayout(requireContext());item.setOrientation(LinearLayout.VERTICAL);
+            ImageView image=new ImageView(requireContext());item.addView(image,new LinearLayout.LayoutParams(commentDp(88),commentDp(88)));
+            Glide.with(this).load(url).centerCrop().into(image);
+            com.google.android.material.button.MaterialButton remove=new com.google.android.material.button.MaterialButton(requireContext());
+            remove.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));remove.setTextColor(requireContext().getColor(R.color.rescue_primary));
+            remove.setText("Gỡ ảnh");remove.setEnabled(!commentSending&&!commentUploading);
+            remove.setOnClickListener(v->{commentImages.remove(url);renderCommentAttachments();updateTemporalUi();});item.addView(remove);
+            commentImageGallery.addView(item);
+        }
+    }
+    private void uploadCommentImage(Uri uri){
+        if(uri==null||getView()==null||campaign==null||!com.rescuefarm.service.campaign.CampaignTimeFormatter.withinSchedule(campaign,new Date())
+            ||!canUseCampaignSocialActions()||commentUploading||commentSending||commentImages.size()>=3)return;
+        final View root=getView();final String owner=currentUserId(),draft=commentDraftId;
+        commentUploading=true;commentUploadStatus.setVisibility(View.VISIBLE);commentUploadStatus.setText("Đang tải ảnh lên…");
+        updateTemporalUi();renderCommentAttachments();
+        new com.rescuefarm.service.media.CloudinaryMediaStorage(requireContext()).uploadImage(uri.toString(),"campaignComment",draft,commentImages.size())
+            .whenComplete((url,error)->new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+                if(!isAdded()||getView()!=root||!owner.equals(currentUserId())||!draft.equals(commentDraftId))return;
+                commentUploading=false;
+                if(error!=null){commentUploadStatus.setText("Tải ảnh chưa thành công. Bạn có thể thử lại.");}
+                else{commentImages.add(url);commentUploadStatus.setText("Ảnh đã tải lên. Bấm Gửi bình luận để đăng.");}
+                renderCommentAttachments();updateTemporalUi();
+            }));
+    }
+    private void sendComment(){
+        if(commentSending||commentUploading)return;
+        String content=commentInput.getText()==null?"":commentInput.getText().toString();
+        try{Comment.validateContent(content);}catch(IllegalArgumentException error){commentInput.setError("Nhập bình luận từ 1 đến 500 ký tự.");return;}
+        final String draft=commentDraftId,owner=currentUserId();final View root=getView();
+        commentSending=true;updateTemporalUi();renderCommentAttachments();
+        engagementRepository.addComment(campaignId,owner,draft,content,new ArrayList<>(commentImages),commentAnonymous.isChecked(),new CampaignEngagementRepository.Action(){
+            public void onSuccess(){if(!isAdded()||getView()!=root||!owner.equals(currentUserId())||!draft.equals(commentDraftId))return;
+                resetCommentComposer();commentPages.reset();updateTemporalUi();if(lastEngagement!=null)renderEngagement(lastEngagement);}
+            public void onError(String message){if(!isAdded()||getView()!=root||!draft.equals(commentDraftId))return;
+                commentSending=false;updateTemporalUi();renderCommentAttachments();Toast.makeText(requireContext(),message,Toast.LENGTH_LONG).show();}
+        });
+    }
+    @Override public void onSaveInstanceState(@NonNull Bundle out){
+        super.onSaveInstanceState(out);out.putString("commentOwner",composerOwner);out.putString("commentDraft",commentDraftId);
+        out.putString("commentText",commentInput==null?commentDraftText:commentInput.getText().toString());
+        out.putBoolean("commentAnonymous",commentAnonymous==null?commentDraftAnonymous:commentAnonymous.isChecked());out.putStringArrayList("commentImages",new ArrayList<>(commentImages));
+    }
+    private void showCommentImage(String url){
+        ImageView image=new ImageView(requireContext());image.setAdjustViewBounds(true);image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        image.setMaxHeight((int)(getResources().getDisplayMetrics().heightPixels*.7));Glide.with(this).load(url).into(image);
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext()).setView(image).setPositiveButton("Đóng",null).show();
+    }
 
     private boolean canUseCampaignSocialActions() {
         return requireActivity() instanceof MainActivity
@@ -495,6 +581,7 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     private void renderEngagement(CampaignEngagementSnapshot value) {
+        lastEngagement=value;
         java.util.Map<ReactionType, Integer> counts = value.getReactionCounts();
         careSelected = value.getCurrentUserReaction() == ReactionType.CARE;
         updateCareButton();
@@ -504,8 +591,32 @@ public class CampaignDetailFragment extends Fragment {
         if (page.isEmpty()) { commentContainer.addView(commentText("Chưa có bình luận.")); return; }
         for (Comment comment : page) {
             LinearLayout row = new LinearLayout(requireContext()); row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(commentDp(12),commentDp(12),commentDp(12),commentDp(12));
+            android.graphics.drawable.GradientDrawable background=new android.graphics.drawable.GradientDrawable();
+            background.setColor(requireContext().getColor(R.color.rescue_surface));background.setCornerRadius(commentDp(16));row.setBackground(background);
+            LinearLayout.LayoutParams rowParams=new LinearLayout.LayoutParams(-1,-2);rowParams.topMargin=commentDp(10);row.setLayoutParams(rowParams);
+            LinearLayout header=new LinearLayout(requireContext());header.setGravity(Gravity.CENTER_VERTICAL);
+            ImageView avatar=new ImageView(requireContext());avatar.setContentDescription("Avatar "+comment.getSenderName());
+            avatar.setBackgroundResource(R.drawable.bg_profile_avatar_circle);avatar.setImageResource(R.drawable.ic_nav_profile);
+            header.addView(avatar,new LinearLayout.LayoutParams(commentDp(38),commentDp(38)));
+            if(!comment.isAnonymous()&&!comment.getSenderAvatarUrl().isEmpty())Glide.with(this).load(comment.getSenderAvatarUrl()).circleCrop()
+                .placeholder(R.drawable.ic_nav_profile).error(R.drawable.ic_nav_profile).into(avatar);
+            LinearLayout author=new LinearLayout(requireContext());author.setOrientation(LinearLayout.VERTICAL);author.setPadding(commentDp(10),0,0,0);
+            TextView name=commentText(comment.getSenderName());name.setTypeface(null,android.graphics.Typeface.BOLD);author.addView(name);
+            if(comment.getCreatedAt()!=null){TextView time=commentText(new SimpleDateFormat("dd/MM/yyyy HH:mm",Locale.forLanguageTag("vi-VN")).format(comment.getCreatedAt()));time.setTextSize(12);author.addView(time);}
+            header.addView(author,new LinearLayout.LayoutParams(0,-2,1));row.addView(header);
             row.addView(commentText(comment.getContent()
                     + (comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED ? " · đã chỉnh sửa" : "")));
+            if(!comment.getImageUrls().isEmpty()){
+                android.widget.HorizontalScrollView gallery=new android.widget.HorizontalScrollView(requireContext());
+                LinearLayout images=new LinearLayout(requireContext());gallery.addView(images);
+                for(String url:comment.getImageUrls()){
+                    com.google.android.material.imageview.ShapeableImageView photo=new com.google.android.material.imageview.ShapeableImageView(requireContext());
+                    photo.setShapeAppearanceModel(photo.getShapeAppearanceModel().toBuilder().setAllCornerSizes(commentDp(12)).build());
+                    LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(commentDp(108),commentDp(108));params.setMarginEnd(commentDp(8));images.addView(photo,params);
+                    photo.setContentDescription("Ảnh đính kèm bình luận");photo.setOnClickListener(v->showCommentImage(url));Glide.with(this).load(url).centerCrop().into(photo);
+                }row.addView(gallery);
+            }
             if (comment.getUserId().equals(currentUserId()) && canUseCampaignSocialActions()) {
                 LinearLayout actions = new LinearLayout(requireContext());
                 com.google.android.material.button.MaterialButton edit = new com.google.android.material.button.MaterialButton(requireContext());
@@ -522,7 +633,7 @@ public class CampaignDetailFragment extends Fragment {
                     || comment.getStatus() == com.rescuefarm.domain.enums.CommentStatus.EDITED)) {
                 com.google.android.material.button.MaterialButton report = new com.google.android.material.button.MaterialButton(
                         requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-                report.setText("Báo cáo bình luận"); report.setOnClickListener(v -> {
+                report.setText("Báo cáo");report.setContentDescription("Báo cáo bình luận"); report.setOnClickListener(v -> {
                     Bundle args = new Bundle(); args.putString("targetType", "COMMENT");
                     args.putString("targetId", "campaigns/" + campaignId + "/comments/" + comment.getId());
                     androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.action_campaignDetailFragment_to_reportFragment, args);
@@ -968,6 +1079,9 @@ public class CampaignDetailFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        if(commentInput!=null){commentDraftText=commentInput.getText().toString();commentDraftAnonymous=commentAnonymous.isChecked();}
+        if(engagementRepository!=null)engagementRepository.close();
+        commentInput=null;commentAnonymous=null;commentImageGallery=null;commentUploadStatus=null;
         contentsGeneration++; contentsWatch = null;
         clock.removeCallbacks(timeTick);
         if (locationProvider != null) {

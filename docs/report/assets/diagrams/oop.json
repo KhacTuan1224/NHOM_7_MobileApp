@@ -1,0 +1,140 @@
+{
+  "title": "Quan hệ lớp và trách nhiệm chủ đạo",
+  "nodes": {
+    "user": [
+      60,
+      100,
+      300,
+      110,
+      "User trừu tượng\nCustomer / Seller / Admin"
+    ],
+    "product": [
+      540,
+      100,
+      300,
+      110,
+      "Product\ngiá / danh mục / mô tả"
+    ],
+    "batch": [
+      1020,
+      100,
+      300,
+      110,
+      "ProductBatch\nreserve / release / finalize"
+    ],
+    "cart": [
+      60,
+      370,
+      300,
+      110,
+      "Cart / CartItem\nowner + số lượng chọn"
+    ],
+    "order": [
+      540,
+      370,
+      300,
+      110,
+      "Order / OrderItem\ntrạng thái + snapshot"
+    ],
+    "campaign": [
+      1020,
+      370,
+      300,
+      110,
+      "RescueCampaign\nquota theo từng Batch"
+    ],
+    "repo": [
+      60,
+      650,
+      300,
+      110,
+      "Repository interface\nFirebase / Offline / Guest"
+    ],
+    "service": [
+      540,
+      650,
+      300,
+      110,
+      "Domain và service\nInventory / policy / pricing"
+    ],
+    "vm": [
+      1020,
+      650,
+      300,
+      110,
+      "ViewModel\nFragment quan sát\nLiveData"
+    ]
+  },
+  "edges": [
+    [
+      "user",
+      "product",
+      "Seller sở hữu"
+    ],
+    [
+      "product",
+      "batch",
+      "1 : n"
+    ],
+    [
+      "user",
+      "cart",
+      "owner"
+    ],
+    [
+      "cart",
+      "order",
+      "checkout"
+    ],
+    [
+      "batch",
+      "campaign",
+      "phân bổ"
+    ],
+    [
+      "order",
+      "service",
+      "invariant"
+    ],
+    [
+      "repo",
+      "service",
+      "phối hợp"
+    ],
+    [
+      "vm",
+      "repo",
+      "phụ thuộc interface",
+      {
+        "points": [
+          [
+            1170,
+            760
+          ],
+          [
+            1170,
+            825
+          ],
+          [
+            210,
+            825
+          ],
+          [
+            210,
+            760
+          ]
+        ],
+        "labelAt": [
+          690,
+          797
+        ]
+      }
+    ]
+  ],
+  "groups": [],
+  "size": [
+    1380,
+    940
+  ],
+  "note": "Sơ đồ lớp rút gọn cho phần giải thích hướng đối tượng; không thay thế toàn bộ source.\nBackend vẫn kiểm tra invariant giao dịch, không tin riêng đối tượng ở Android client."
+}

@@ -1,0 +1,14 @@
+{
+  "accessed": "2026-10-24",
+  "kind": "Official technical references; implementation evidence is the repository and current tests",
+  "sources": [
+    {"id": 1, "title": "Room local persistence", "url": "https://developer.android.com/training/data-storage/room", "supports": "Room is an abstraction over SQLite; entities/DAO and local cache"},
+    {"id": 2, "title": "Firestore transactions", "url": "https://firebase.google.com/docs/firestore/manage-data/transactions", "supports": "Atomic transaction mechanism; app-specific invariants are verified in source/tests"},
+    {"id": 3, "title": "Firebase Local Emulator Suite", "url": "https://firebase.google.com/docs/emulator-suite/connect_and_prototype", "supports": "Demo projects and connecting individual services"},
+    {"id": 4, "title": "Android app resources", "url": "https://developer.android.com/guide/topics/resources/providing-resources", "supports": "Alternative resource configurations"},
+    {"id": 5, "title": "Firestore offline data", "url": "https://firebase.google.com/docs/firestore/manage-data/enable-offline", "supports": "SDK cache distinguished from application Room database"},
+    {"id": 6, "title": "Google authentication on Android", "url": "https://firebase.google.com/docs/auth/android/google-signin", "supports": "Google credential into Firebase Auth; no live provider success asserted"},
+    {"id": 7, "title": "Persistent background work", "url": "https://developer.android.com/develop/background-work/background-tasks/persistent", "supports": "WorkManager scheduling and deferrable work"},
+    {"id": 8, "title": "SePay webhook authentication", "url": "https://developer.sepay.vn/vi/sepay-webhooks/xac-thuc", "supports": "Webhook authentication; no live bank test asserted"}
+  ]
+}

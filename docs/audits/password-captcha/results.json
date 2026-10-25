@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-25",
+  "baseCommit": "0d0f0c72e1b93defcfb720af5b4ad4bc9f3b5ad1",
+  "workingTree": "uncommitted feature changes; existing report artifacts preserved",
+  "android": {
+    "failures": 0,
+    "tests": 265,
+    "skipped": 0,
+    "errors": 0
+  },
+  "assembleDebug": "passed",
+  "instrumentationCompile": "passed",
+  "lintErrors": 0,
+  "lintWarnings": 710,
+  "backendTestsPassed": 209,
+  "workerTestsPassed": 10,
+  "backendAndWorkerFailed": 0,
+  "backendAndWorkerSkipped": 0,
+  "backendCheck": "passed",
+  "providerUsed": "unit stub only",
+  "realGoogleWidgetTested": false,
+  "androidUiTested": false,
+  "productionDeployed": false,
+  "emulator5554": "untouched",
+  "apkSha256": "23EF5DBA4A780D35B55D2952C07CF99E364AAC3F7BF5578AF8D5597108A7D099"
+}

@@ -45,6 +45,7 @@ import java.util.function.Function;
 
 public class GuestHomeFragment extends Fragment {
     private HomeViewModel viewModel;
+    private RescueMapView rescueMap;
     private final com.rescuefarm.ui.common.ListPagination suggestionPages = new com.rescuefarm.ui.common.ListPagination(6);
     private final Map<String, com.rescuefarm.ui.common.ListPagination> sectionPages = new java.util.HashMap<>();
     private com.rescuefarm.ui.common.HomeLoadMoreButton loadMoreHome;
@@ -92,6 +93,8 @@ public class GuestHomeFragment extends Fragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state); renderer = new HomeCardRenderer(this);
+        rescueMap = view.findViewById(R.id.homeRescueMap);
+        rescueMap.bind(this, this::openCampaign);
         view.findViewById(R.id.openRescueFundButton).setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.rescueFundFragment));
         view.findViewById(R.id.openFlashSaleButton).setOnClickListener(v ->
@@ -315,13 +318,13 @@ public class GuestHomeFragment extends Fragment {
 
     private void showLocationPicker() {
         String[] options = new String[] {
-            "📍 Lấy vị trí GPS hiện tại của bạn",
-            "🏙️ TP. Hồ Chí Minh (Trung tâm)",
-            "🏛️ Hà Nội (Trung tâm)",
-            "🌸 Đà Lạt (Lâm Đồng)",
-            "🌾 Cần Thơ (Miền Tây)",
-            "🥭 Tiền Giang (Vựa trái cây)",
-            "☕ Đắk Lắk (Tây Nguyên)"
+            "Lấy vị trí GPS hiện tại của bạn",
+            "TP. Hồ Chí Minh (Trung tâm)",
+            "Hà Nội (Trung tâm)",
+            "Đà Lạt (Lâm Đồng)",
+            "Cần Thơ (Miền Tây)",
+            "Tiền Giang (Vựa trái cây)",
+            "Đắk Lắk (Tây Nguyên)"
         };
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Chọn vị trí xem nông sản")
@@ -444,10 +447,6 @@ public class GuestHomeFragment extends Fragment {
         setSectionVisible(root, R.id.categoryHomeGroup, !state.getCategories().isEmpty());
         setSectionVisible(root, R.id.criticalHomeGroup, !state.getCritical().isEmpty());
         boolean hasLocation = state.getLocationState() == HomeViewState.LocationState.AVAILABLE;
-        View locationAction = root.findViewById(R.id.homeNearbyLocationButton);
-        locationAction.setVisibility(hasLocation ? View.GONE : View.VISIBLE);
-        locationAction.setEnabled(state.getLocationState() != HomeViewState.LocationState.LOADING);
-        locationAction.setOnClickListener(v -> root.findViewById(R.id.homeLocationContainer).performClick());
         setSectionVisible(root, R.id.nearbyMobileHomeGroup, hasLocation && !state.getNearbyMobile().isEmpty());
         setSectionVisible(root, R.id.nearbyFixedHomeGroup, hasLocation && !state.getNearbyFixed().isEmpty());
         setSectionVisible(root, R.id.endingSoonHomeGroup, !endingSoon.isEmpty());
@@ -598,6 +597,7 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override public void onDestroyView() {
+        if (rescueMap != null) { rescueMap.release(); rescueMap = null; }
         loadMoreHome = null;
         bannerHandler.removeCallbacks(freshnessTick);
         bannerHandler.removeCallbacks(availabilityTransitionTick);

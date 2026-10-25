@@ -1,0 +1,176 @@
+{
+  "title": "Mô hình collection và snapshot giao dịch",
+  "nodes": {
+    "users": [
+      45,
+      140,
+      280,
+      110,
+      "users/{uid}\nrole / status / sellerStatus"
+    ],
+    "prod": [
+      430,
+      140,
+      280,
+      110,
+      "products/{productId}\nsellerId / categoryId"
+    ],
+    "batch": [
+      825,
+      140,
+      320,
+      110,
+      "productBatches/{batchId}\nexpiryDate / stock counters"
+    ],
+    "campaign": [
+      825,
+      400,
+      320,
+      150,
+      "campaigns/{campaignId}\nbatchTargets\nreservedByBatch\nrescuedByBatch"
+    ],
+    "orders": [
+      430,
+      400,
+      280,
+      120,
+      "orders/{orderId}\nowner / seller / totals\nitems/{batchId} snapshot",
+      "snapshot"
+    ],
+    "payments": [
+      45,
+      400,
+      280,
+      120,
+      "payments / shipments\norderId + snapshot",
+      "snapshot"
+    ],
+    "fund": [
+      825,
+      700,
+      320,
+      120,
+      "rescueFundDeliveries\nbatchId / sellerId\ndeadline + snapshot",
+      "snapshot"
+    ],
+    "ledger": [
+      430,
+      700,
+      280,
+      120,
+      "rescueFunds / Donations\nLedger / References\nRuns / PayoutReferences"
+    ],
+    "room": [
+      45,
+      700,
+      280,
+      120,
+      "SQLite cache\n9 Room tables\nkhông phải dữ liệu chuẩn"
+    ]
+  },
+  "edges": [
+    [
+      "users",
+      "prod",
+      "1 : n"
+    ],
+    [
+      "prod",
+      "batch",
+      "1 : n"
+    ],
+    [
+      "batch",
+      "campaign",
+      "tham chiếu lô"
+    ],
+    [
+      "batch",
+      "orders",
+      "giữ / chốt kho"
+    ],
+    [
+      "orders",
+      "payments",
+      "1 : 1"
+    ],
+    [
+      "users",
+      "orders",
+      "owner / Seller"
+    ],
+    [
+      "batch",
+      "fund",
+      "giữ / chốt kho",
+      {
+        "points": [
+          [
+            1145,
+            195
+          ],
+          [
+            1170,
+            195
+          ],
+          [
+            1170,
+            760
+          ],
+          [
+            1145,
+            760
+          ]
+        ],
+        "labelAt": [
+          1085,
+          590
+        ]
+      }
+    ],
+    [
+      "fund",
+      "ledger",
+      "ledger + số dư",
+      {
+        "points": [
+          [
+            825,
+            760
+          ],
+          [
+            790,
+            760
+          ],
+          [
+            790,
+            620
+          ],
+          [
+            570,
+            620
+          ],
+          [
+            570,
+            700
+          ]
+        ],
+        "labelAt": [
+          675,
+          590
+        ]
+      }
+    ],
+    [
+      "orders",
+      "room",
+      "cache theo user"
+    ]
+  ],
+  "groups": [],
+  "size": [
+    1200,
+    1000
+  ],
+  "note": "Mũi tên biểu diễn tham chiếu logic do code kiểm tra, không phải khóa ngoại Firestore.\nSnapshot màu nhạt lưu dữ liệu tại thời điểm giao dịch; Room là bản sao có thể cũ."
+}

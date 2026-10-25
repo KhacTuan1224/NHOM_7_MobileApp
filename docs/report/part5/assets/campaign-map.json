@@ -1,0 +1,60 @@
+{
+  "actors": [
+    "Seller hoặc\nCustomer",
+    "Android\nRepository",
+    "Firestore\ncampaigns",
+    "Render và\nmedia"
+  ],
+  "steps": [
+    [
+      0,
+      1,
+      "1  Seller bật chia sẻ GPS của chiến dịch"
+    ],
+    [
+      1,
+      2,
+      "2  Ghi fix mới timestamp và cờ chia sẻ"
+    ],
+    [
+      2,
+      3,
+      "3  Listener chung nhận thay đổi",
+      true
+    ],
+    [
+      3,
+      1,
+      "4  SSE rescue-map/events gửi điểm công khai",
+      true
+    ],
+    [
+      1,
+      0,
+      "5  Cập nhật marker và thời điểm vị trí",
+      true
+    ],
+    [
+      0,
+      3,
+      "6  Customer tải ảnh qua Worker và Cloudinary"
+    ],
+    [
+      0,
+      3,
+      "7  Gửi text ảnh và lựa chọn ẩn danh"
+    ],
+    [
+      3,
+      2,
+      "8  Xác thực tác giả rồi ghi comments transaction"
+    ],
+    [
+      2,
+      1,
+      "9  Listener bình luận cập nhật danh sách",
+      true
+    ]
+  ],
+  "note": "GPS có chu kỳ; SSE truyền thay đổi đã ghi, không tự đo vị trí xe."
+}

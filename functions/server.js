@@ -18,6 +18,8 @@ app.use(express.json({limit: "256kb", verify: (req, res, bytes) => {
 const rescueFund = require('./rescue-fund').createRescueFund({db, admin, authenticate: auth});
 app.use(rescueFund.webhookRouter);
 app.use(require('./sepay').createSePayApi({db, admin}).router);
+// CAPTCHA performs no Firestore reads and remains independent of the database quota gate.
+app.use(require('./password-captcha').createPasswordCaptcha().router);
 // SePay keeps its existing verification/retry path above. This gate only pauses
 // other API work; never acknowledge a payment without the existing transaction.
 app.use(createQuotaMiddleware(quotaGuard, () => migrationsReady));
@@ -102,7 +104,7 @@ app.get("/health", (_, res) => {
   try { sepayStatus = Object.keys(require('./sepay').merchants()).length ? 'CONFIGURED' : 'NOT_CONFIGURED'; }
   catch (_) { sepayStatus = 'INVALID_CONFIGURATION'; }
   res.json({ok: true, paymentFlowVersion: 2, sepayStatus, pricingVersion: 3,
-    rescueProgramsVersion: 1, realtimeVersion: 1,
+    rescueProgramsVersion: 1, realtimeVersion: 1, rescueMapVersion: 1, campaignCommentsVersion: 1,
     rescuePaymentPolicy: 'PICKUP_CASH_NO_PREPAYMENT', migrationsReady,
     firestoreReadStatus: quotaGuard.remainingSeconds() ? 'QUOTA_COOLDOWN' : 'NOT_IN_COOLDOWN',
     retryAfterSeconds: quotaGuard.remainingSeconds()});
@@ -111,6 +113,10 @@ app.use(require('./payment-qr').createPaymentQrApi({db, admin, authenticate: aut
 app.use(rescueFund.router);
 app.use(require('./seller-names').createSellerNamesApi({db}).router);
 app.use(require('./campaign-cards').createCampaignCardsApi({db}).router);
+app.use(require('./campaign-comments').createCampaignCommentsApi({db,admin,authenticate:auth}).router);
+const rescueMap = require('./rescue-map').createRescueMapApi({db,
+  onError: error => { if (isQuotaError(error)) noteQuota(error); else console.warn('[rescue-map]', error.code || 'UNAVAILABLE'); }});
+app.use(rescueMap.router);
 app.use(require('./seller-payment-options').createSellerPaymentOptionsApi({db}).router);
 const realtime = require('./realtime').createRealtimeApi({db, admin, authenticate: auth,
   onError: error => { if (isQuotaError(error)) noteQuota(error); else console.warn('[realtime]', error.message); }});

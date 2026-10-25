@@ -1,0 +1,664 @@
+{
+  "auditDate": "2026-10-24",
+  "head": "b6911d07de2b243b900680d78ed62c4d32d6778c",
+  "androidJVM": {
+    "tests": 255.0,
+    "failures": 0.0,
+    "errors": 0.0,
+    "skipped": 0.0
+  },
+  "backendUnitPassed": 193,
+  "workerPassed": 9,
+  "firestoreIntegrationPassed": 1,
+  "lint": [
+    {
+      "severity": "Warning",
+      "count": 701
+    }
+  ],
+  "deviceUI": "NOT EXECUTED SUCCESSFULLY: isolated AVD memory/GPU; user declined use of5554",
+  "apkSha256": "81d5293b936fcdf21685eda96cdc297b58227e649a95bac0501f0ae7eaef30c3",
+  "deployment": "Not deployed",
+  "jvmSuites": [
+    {
+      "suite": "com.rescuefarm.data.CacheMigrationContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.051Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.GuestCartMapperTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.068Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.local.BannerCacheMapperTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.079Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.local.CampaignCacheMapperTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.083Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.local.CatalogCacheMapperTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.096Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.OrderCacheMapperTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.073Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.repository.OfflineProductRepositoryTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.113Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.repository.SellerStorefrontTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.125Z"
+    },
+    {
+      "suite": "com.rescuefarm.data.repository.UnavailableAuthRepositoryTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.129Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.ActorContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.133Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.AddressTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.138Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.CampaignAllocationTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.144Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.CampaignUnitTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.150Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.CommentTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.154Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.model.RecentGuestOrderTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.199Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.ProductBatchBoundaryTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.159Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.ProductBatchTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.163Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.ProductBoundaryTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.178Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.RescueCampaignBoundaryTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.185Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.RescueCampaignTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.191Z"
+    },
+    {
+      "suite": "com.rescuefarm.domain.SellerProfileTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.194Z"
+    },
+    {
+      "suite": "com.rescuefarm.integration.OnSiteRescueFlowTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.205Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.AddressDefaultPolicyTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.210Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.admin.CatalogImagePolicyTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.594Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.AdminTransitionPolicyTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.217Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CacheSyncPolicyTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.227Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CampaignLocationServiceTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.232Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CampaignTimeFormatterTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.238Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CartGroupingServiceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.258Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CartMigrationServiceTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.263Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CartRevalidationServiceTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.273Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CheckoutCartCleanupTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.302Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CheckoutPolicyTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.310Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.CheckoutReservationContractTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.321Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.EngagementSafetyTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.325Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.InventoryServiceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.338Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.InventoryVersionPolicyTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.342Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.LocationPublishPolicyTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.347Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.OrderLifecycleServiceTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.352Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.OrderPricingCompatibilityTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.356Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.PricingServiceTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.358Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.ReactionPolicyTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.362Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.ReviewSummaryTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.366Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.SellerApplicationIdentityTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.374Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.SellerDashboardAggregatorTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.381Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.SePayPaymentTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.368Z"
+    },
+    {
+      "suite": "com.rescuefarm.service.VietnamAddressCatalogTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.391Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.admin.AdminDetailFormatterTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.599Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.admin.AdminRealtimeTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.630Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.auth.AuthValidatorTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.652Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.auth.AuthViewModelTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.658Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.auth.PasswordResetViewModelTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.669Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.campaign.CampaignValidatorTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.718Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.campaign.CampaignViewModelTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.727Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.cart.CartRealtimeTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.745Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.checkout.CheckoutRecipientLocationTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.766Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.checkout.CheckoutRequestIdentityTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.785Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.checkout.GuestOrderConfirmationFlowTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.789Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.common.CampaignProgressColorsTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.797Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.common.EnumLabelsTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.799Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.common.OrderLabelsTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.806Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.common.PageWindowTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.811Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.common.RescueProgressUtilsTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.818Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.engagement.ReviewMediaRendererTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.822Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.fund.RescueFundTimeTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.841Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.home.CategoryContentTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.860Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.home.DiscoveryCampaignProjectionTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.912Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.home.DiscoveryEngineTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.921Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.home.DiscoveryQueryStateTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.930Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.home.HomeContentBuilderTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.933Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.home.HomePaginationTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.942Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.order.CustomerOrderHistoryTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.952Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.product.ProductValidatorTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.959Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.product.ProductViewModelTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.965Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.profile.BusinessProfilePolicyTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.973Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.profile.ProfileValidatorTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.976Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.profile.ProfileViewModelTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.980Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.rescue.RescueMarketUiTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:44.989Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.rescue.RescueTimeTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:45.004Z"
+    },
+    {
+      "suite": "com.rescuefarm.ui.seller.SellerStatisticsViewModelTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T15:25:45.018Z"
+    }
+  ]
+}

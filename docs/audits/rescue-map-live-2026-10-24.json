@@ -1,0 +1,33 @@
+{
+  "auditedAt": "2026-10-24T14:46:08.431Z",
+  "project": "nhom7-rescuefarm",
+  "collection": "campaigns",
+  "documentsRead": 9,
+  "documentsWritten": 0,
+  "byMode": {
+    "FIXED_POINT": 9
+  },
+  "byModeAndStatus": {
+    "FIXED_POINT/ACTIVE": 4,
+    "FIXED_POINT/EXPIRED": 5
+  },
+  "mobile": {
+    "total": 0,
+    "active": 0,
+    "sharingEnabled": 0,
+    "freshLocation": 0,
+    "activeFreshInScheduleWithRemaining": 0
+  },
+  "fixed": {
+    "total": 9,
+    "active": 4,
+    "validCoordinates": 9,
+    "activeInScheduleWithRemaining": 4
+  },
+  "excludes": [
+    "names",
+    "document IDs",
+    "coordinate values",
+    "credentials"
+  ]
+}

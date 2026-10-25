@@ -4,6 +4,8 @@ RescueFarm is an Android marketplace for rescuing agricultural products that are
 
 The product requirements and domain decisions are documented in [`final.md`](final.md). This README describes the current repository and how to build and operate it; it is not a substitute for that specification.
 
+[![Architecture diagram of laithanhdat-glitch/nhom_7_mobileapp](https://gitdiagram.com/laithanhdat-glitch/nhom_7_mobileapp/diagram.png)](https://gitdiagram.com/laithanhdat-glitch/nhom_7_mobileapp?utm_source=readme&utm_medium=picture)
+
 ## Main capabilities
 
 - **Guest and Customer:** browse products, categories, banners, campaigns and their community discussions; use a local guest cart or a signed-in Customer cart; checkout, follow orders, manage profile and addresses, favorite products, comment/react/report, and review eligible delivered purchases.

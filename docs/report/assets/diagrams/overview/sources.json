@@ -1,0 +1,30 @@
+{
+  "auditDate": "2026-10-25",
+  "commit": "0d0f0c72e1b93defcfb720af5b4ad4bc9f3b5ad1",
+  "type": "Source-based explanatory figures; not screenshots or measured impact claims",
+  "evidence": [
+    "app/build.gradle.kts",
+    "app/src/main/java/com/rescuefarm/data/local/database/RescueFarmDatabase.java",
+    "app/src/main/java/com/rescuefarm/data/repository/CartRepositoryFactory.java",
+    "app/src/main/assets/maps/rescue-map.html",
+    "functions/package.json",
+    "functions/server.js",
+    "functions/commerce.js",
+    "functions/campaign-comments.js",
+    "cloudinary-worker/src/index.js"
+  ],
+  "output": {
+    "mindmapPixels": [
+      4400,
+      2880
+    ],
+    "technologiesPixels": [
+      4800,
+      3240
+    ],
+    "formats": [
+      "PNG 300 dpi",
+      "editable SVG"
+    ]
+  }
+}

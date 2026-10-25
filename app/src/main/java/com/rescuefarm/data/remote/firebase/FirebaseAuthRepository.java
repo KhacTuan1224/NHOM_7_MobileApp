@@ -59,6 +59,26 @@ public class FirebaseAuthRepository implements AuthRepository {
 
     @Override
     public void signIn(String email, String password, AuthCallback callback) {
+        callback.onError(ErrorCode.INVALID_CREDENTIALS, "Vui lòng xác minh reCAPTCHA trước khi đăng nhập.");
+    }
+
+    @Override public void signInWithCaptcha(String email, String password, String responseToken, AuthCallback callback) {
+        if(responseToken==null || responseToken.trim().length()<10 || responseToken.length()>8192){
+            callback.onError(ErrorCode.INVALID_CREDENTIALS,"Vui lòng xác minh reCAPTCHA trước khi đăng nhập.");return;
+        }
+        org.json.JSONObject body=new org.json.JSONObject();
+        try{body.put("responseToken",responseToken);}catch(org.json.JSONException error){callback.onError(ErrorCode.UNKNOWN,"Không tạo được yêu cầu reCAPTCHA.");return;}
+        com.rescuefarm.service.backend.RenderBackendClient.postGuest("/auth/password-captcha/verify",body,
+            new com.rescuefarm.service.backend.RenderBackendClient.Callback(){
+                public void onSuccess(org.json.JSONObject result){
+                    if(!result.optBoolean("ok",false)){callback.onError(ErrorCode.INVALID_CREDENTIALS,"reCAPTCHA chưa được xác minh.");return;}
+                    signInPasswordAfterCaptcha(email,password,callback);
+                }
+                public void onError(String message){callback.onError(ErrorCode.INVALID_CREDENTIALS,message);}
+            });
+    }
+
+    private void signInPasswordAfterCaptcha(String email, String password, AuthCallback callback) {
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> loadRequiredProfile(result.getUser(), callback))
                 .addOnFailureListener(exception -> notifyFailure(exception, callback));
@@ -156,6 +176,8 @@ public class FirebaseAuthRepository implements AuthRepository {
             @Override public void run() {
                 if (!completed.compareAndSet(false, true)) return;
                 handler.removeCallbacks(this);
+                com.rescuefarm.data.local.preferences.HomeLocationStore.get(
+                    com.google.firebase.FirebaseApp.getInstance().getApplicationContext()).clearAccount(uid);
                 FirebaseUser active = firebaseAuth.getCurrentUser();
                 if (active != null && uid.equals(active.getUid())) firebaseAuth.signOut();
                 if (callback != null) callback.onSuccess();

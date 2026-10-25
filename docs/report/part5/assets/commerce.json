@@ -1,0 +1,54 @@
+{
+  "actors": [
+    "Chi tiết\ngiỏ và checkout",
+    "Repository\nAndroid",
+    "Render\ncommerce.js",
+    "Firestore\ntransaction"
+  ],
+  "steps": [
+    [
+      0,
+      1,
+      "1  Chọn productId batchId và số lượng"
+    ],
+    [
+      1,
+      2,
+      "2  Lấy báo giá hiện hành"
+    ],
+    [
+      1,
+      0,
+      "3  Giỏ Guest ở Room hoặc Customer ở carts",
+      true
+    ],
+    [
+      0,
+      1,
+      "4  Xác nhận checkout với requestId"
+    ],
+    [
+      1,
+      2,
+      "5  checkoutGuest hoặc checkoutCustomer"
+    ],
+    [
+      2,
+      3,
+      "6  Kiểm quyền giá hạn lô và tồn khả dụng"
+    ],
+    [
+      3,
+      2,
+      "7  Ghi đơn giữ kho và receipt cùng transaction",
+      true
+    ],
+    [
+      2,
+      0,
+      "8  Trả đơn hoặc yêu cầu xác nhận lại báo giá",
+      true
+    ]
+  ],
+  "note": "QR chỉ được ghi nhận thanh toán qua webhook SePay hợp lệ; COD theo vòng đời đơn."
+}

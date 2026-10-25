@@ -97,6 +97,8 @@
         </LinearLayout>
 
         <include layout="@layout/view_rescue_programs_entry" />
+        <com.rescuefarm.ui.home.RescueMapView android:id="@+id/homeRescueMap"
+            android:layout_width="match_parent" android:layout_height="wrap_content" />
         <LinearLayout android:id="@+id/categoryHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">
         <com.rescuefarm.ui.common.ResponsiveActionLayout
@@ -189,14 +191,6 @@
         <LinearLayout android:id="@+id/bannerDots" android:layout_width="match_parent"
             android:layout_height="16dp" android:gravity="center"
             android:orientation="horizontal" />
-
-        <com.google.android.material.button.MaterialButton android:id="@+id/homeNearbyLocationButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="48dp" android:layout_marginTop="24dp"
-            android:text="Chọn vị trí để tìm điểm giải cứu gần bạn" android:textAllCaps="false"
-            app:icon="@drawable/ic_home_location" app:iconTint="@color/rescue_primary"
-            app:strokeColor="@color/rescue_primary" app:cornerRadius="12dp" />
 
         <LinearLayout android:id="@+id/nearbyMobileHomeGroup" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="24dp">

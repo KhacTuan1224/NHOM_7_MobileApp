@@ -313,7 +313,8 @@ public class FirebaseCampaignRepository implements CampaignRepository {
             DocumentSnapshot snapshot = transaction.get(reference);
             RescueCampaign campaign = requireOwnedCampaign(snapshot);
             if (campaign.getStatus() != CampaignStatus.ACTIVE
-                    || campaign.getRescueMode() != RescueMode.MOBILE_POINT) {
+                    || campaign.getRescueMode() != RescueMode.MOBILE_POINT
+                    || sharingEnabled && (campaign.getEndDate() == null || !campaign.getEndDate().after(new Date()))) {
                 throw new IllegalStateException("MOBILE_NOT_ACTIVE");
             }
             campaign.setLocationSharingEnabled(sharingEnabled);
@@ -456,8 +457,13 @@ public class FirebaseCampaignRepository implements CampaignRepository {
         });
     }
     private void cache(RescueCampaign value) {
-        cacheExecutor.execute(() -> campaignDao.replaceCampaign(CampaignCacheMapper.toEntity(
-                value, System.currentTimeMillis())));
+        // A foreground sharing session may be destroyed while a transaction
+        // completes. Its late result must not crash a closed cache executor.
+        if (cacheExecutor.isShutdown()) return;
+        try {
+            cacheExecutor.execute(() -> campaignDao.replaceCampaign(CampaignCacheMapper.toEntity(
+                    value, System.currentTimeMillis())));
+        } catch (java.util.concurrent.RejectedExecutionException ignored) { }
     }
     private void notifyFailure(Exception error, ErrorConsumer consumer) {
         String code = error.getMessage();

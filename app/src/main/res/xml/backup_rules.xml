@@ -8,6 +8,7 @@
 <full-backup-content>
     <exclude domain="sharedpref" path="rescuefarm_guest_session.xml" />
     <exclude domain="sharedpref" path="rescue_fund_receipts.xml" />
+    <exclude domain="sharedpref" path="rescuefarm_home_location.xml" />
     <!--
    <include domain="sharedpref" path="."/>
    <exclude domain="sharedpref" path="device.xml"/>

@@ -33,6 +33,11 @@ public class HomeViewModel extends ViewModel {
     private final LocationProvider locationProvider;
     private final HomeContentBuilder contentBuilder = new HomeContentBuilder();
     private final SavedStateHandle savedState;
+    private final com.rescuefarm.data.local.preferences.HomeLocationStore locationStore;
+    private long locationGeneration;
+    private final Runnable locationScopeChanged = () -> {
+        locationGeneration++; message=""; restoreLocationSelection(); syncSellerLocationSources(); publish();
+    };
     private final DiscoveryEngine discoveryEngine = new DiscoveryEngine();
     private final MediatorLiveData<HomeViewState> homeState = new MediatorLiveData<>();
     private final MutableLiveData<List<DiscoveryResult>> searchResults =
@@ -74,10 +79,19 @@ public class HomeViewModel extends ViewModel {
     public HomeViewModel(ProductRepository productRepository, CampaignRepository campaignRepository,
             AuthRepository authRepository, LocationProvider locationProvider,
             UserRepository userRepository, SavedStateHandle savedState) {
+        this(productRepository,campaignRepository,authRepository,locationProvider,userRepository,savedState,null);
+    }
+    public HomeViewModel(ProductRepository productRepository, CampaignRepository campaignRepository,
+            AuthRepository authRepository, LocationProvider locationProvider,
+            UserRepository userRepository, SavedStateHandle savedState,
+            com.rescuefarm.data.local.preferences.HomeLocationStore locationStore) {
         this.productRepository = productRepository; this.campaignRepository = campaignRepository;
         this.authRepository = authRepository; this.locationProvider = locationProvider;
         this.userRepository = userRepository;
         this.savedState = savedState;
+        this.locationStore = locationStore;
+        restoreLocationSelection();
+        if(locationStore!=null)locationStore.addListener(locationScopeChanged);
         this.query = DiscoveryQueryState.restore(savedState);
         loadGreetingName();
         homeState.addSource(productRepository.observePublicProductPage(), values -> {
@@ -176,23 +190,26 @@ public class HomeViewModel extends ViewModel {
     }
 
     public void requestNearbyLocation() {
+        final long request = ++locationGeneration;
+        final String owner = authRepository.getCurrentUserId();
         locationState = HomeViewState.LocationState.LOADING; message = "Đang lấy vị trí hiện tại…";
         publish();
         locationProvider.getCurrentLocation(new LocationProvider.LocationCallback() {
             @Override public void onLocationAvailable(double valueLatitude, double valueLongitude) {
+                if(!currentLocationRequest(request,owner))return;
                 latitude = valueLatitude; longitude = valueLongitude;
                 syncSellerLocationSources();
                 locationState = HomeViewState.LocationState.AVAILABLE;
                 message = "Đã sắp xếp điểm giải cứu gần vị trí hiện tại.";
-                if (customLocationLabel == null || customLocationLabel.isEmpty()
-                        || customLocationLabel.equals("Chọn vị trí để xem nông sản quanh bạn")) {
-                    customLocationLabel = "Đang xem nông sản gần vị trí của bạn";
-                }
+                customLocationLabel = "Đang xem nông sản gần vị trí của bạn";
+                saveLocationSelection();
                 locationProvider.reverseGeocode(valueLatitude, valueLongitude, new LocationProvider.GeocodeCallback() {
                     @Override public void onAddressAvailable(LocationProvider.GeocodedAddress address) {
+                        if(!currentLocationRequest(request,owner))return;
                         String name = formatAddress(address);
                         if (!name.isEmpty()) {
                             customLocationLabel = name;
+                            saveLocationSelection();
                             publish();
                         }
                     }
@@ -201,18 +218,33 @@ public class HomeViewModel extends ViewModel {
                 publish();
             }
             @Override public void onLocationUnavailable(String value) {
+                if(!currentLocationRequest(request,owner))return;
                 locationState = HomeViewState.LocationState.UNAVAILABLE; message = value; publish();
             }
         });
     }
 
     public void setCustomLocation(double valueLatitude, double valueLongitude, String label) {
+        locationGeneration++;
         latitude = valueLatitude; longitude = valueLongitude;
         customLocationLabel = label == null || label.trim().isEmpty() ? "Vị trí đã chọn" : label.trim();
         syncSellerLocationSources();
         locationState = HomeViewState.LocationState.AVAILABLE;
+        saveLocationSelection();
         message = "Đã chọn vị trí: " + customLocationLabel;
         publish();
+    }
+    private boolean currentLocationRequest(long request,String owner) {
+        return request==locationGeneration&&java.util.Objects.equals(owner,authRepository.getCurrentUserId());
+    }
+    private void saveLocationSelection() {
+        if(locationStore!=null&&latitude!=null&&longitude!=null)locationStore.save(latitude,longitude,customLocationLabel);
+    }
+    private void restoreLocationSelection() {
+        com.rescuefarm.service.location.ScopedHomeLocation.Selection selected=locationStore==null?null:locationStore.read();
+        latitude=selected==null?null:selected.latitude;longitude=selected==null?null:selected.longitude;
+        customLocationLabel=selected==null?"":selected.label;
+        locationState=selected==null?HomeViewState.LocationState.PERMISSION_REQUIRED:HomeViewState.LocationState.AVAILABLE;
     }
 
     public static String formatAddress(LocationProvider.GeocodedAddress address) {
@@ -404,6 +436,8 @@ public class HomeViewModel extends ViewModel {
         return values == null ? new ArrayList<>() : new ArrayList<>(values);
     }
     @Override protected void onCleared() {
+        locationGeneration++;
+        if(locationStore!=null)locationStore.removeListener(locationScopeChanged);
         for (LiveData<SellerStorefront> source : sellerLocationSources.values()) homeState.removeSource(source);
         sellerLocationSources.clear(); sellerCoordinates.clear();
         productRepository.close(); campaignRepository.close(); locationProvider.close();

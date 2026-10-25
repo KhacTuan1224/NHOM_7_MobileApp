@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="860" viewBox="0 0 1320 860"><rect width="100%" height="100%" fill="white"/><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#333"/></marker></defs>
+<text x="660.0" y="48" font-family="Arial" font-size="30" font-weight="bold" text-anchor="middle" fill="#172b31">Hoạt động đặt hàng và giữ tồn kho</text>
+<path d="M410.0 180.0 L480.0 180.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M820.0 180.0 L890.0 180.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M1060.0 230.0 L1060.0 350.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="1000.0" y="268.0" width="120" height="29" fill="white"/>
+<text x="1060.0" y="288.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">không đạt</text>
+<path d="M966.8181818181819 230.0 L743.1818181818181 350.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="813.0" y="268.0" width="84" height="29" fill="white"/>
+<text x="855.0" y="288.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">hợp lệ</text>
+<path d="M480.0 400.0 L410.0 400.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M240.0 450.0 L240.0 590.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="222.0" y="498.0" width="36" height="29" fill="white"/>
+<text x="240.0" y="518.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">QR</text>
+<path d="M323.6734693877551 450.0 L557.9591836734694 590.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="416.8163265306123" y="498.0" width="48" height="29" fill="white"/>
+<text x="440.8163265306123" y="518.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">COD</text>
+<path d="M410.0 645.0 L480.0 645.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M820.0 645.0 L890.0 645.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="70" y="130" width="340" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="240.0" y="172.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Chọn ProductBatch</text>
+<text x="240.0" y="203.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">còn hạn và đủ tồn</text>
+<rect x="480" y="130" width="340" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="650.0" y="172.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Giỏ Guest / Customer</text>
+<text x="650.0" y="203.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">số lượng + giá tham khảo</text>
+<rect x="890" y="130" width="340" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1060.0" y="172.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Backend quote / checkout</text>
+<text x="1060.0" y="203.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">kiểm tra lại giá, quyền, tồn</text>
+<rect x="890" y="350" width="340" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1060.0" y="392.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Sai giá / hết tồn / hết hạn</text>
+<text x="1060.0" y="423.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">trả lỗi để người mua sửa</text>
+<rect x="480" y="350" width="340" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="650.0" y="392.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Transaction giữ kho</text>
+<text x="650.0" y="423.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">requestId chống lặp</text>
+<rect x="70" y="350" width="340" height="100" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="240.0" y="392.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">BANK_TRANSFER → QR</text>
+<text x="240.0" y="423.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">hoặc COD / tiền tại điểm</text>
+<rect x="70" y="590" width="340" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="240.0" y="621.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Webhook hợp lệ</text>
+<text x="240.0" y="652.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">kiểm mã, tiền, ngân hàng</text>
+<text x="240.0" y="683.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">chống lặp giao dịch</text>
+<rect x="480" y="590" width="340" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="650.0" y="637.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Seller xử lý và giao nhận</text>
+<text x="650.0" y="668.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">kiểm tra transition hợp lệ</text>
+<rect x="890" y="590" width="340" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="1060.0" y="621.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Hoàn tất → chốt kho</text>
+<text x="1060.0" y="652.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Hủy / quá hạn → hoàn giữ</text>
+<text x="1060.0" y="683.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">giữ lịch sử đơn</text>
+<text x="660.0" y="810" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Client không tự đánh dấu đã nhận tiền. Webhook retry không tạo thêm khoản thu.</text>
+<text x="660.0" y="838" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Đơn giao nhận và trạng thái thanh toán là hai chiều trạng thái cần đối chiếu.</text>
+</svg>

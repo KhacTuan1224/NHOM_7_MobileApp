@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="543" viewBox="0 0 1320 543"><rect width="100%" height="100%" fill="white"/>
+<rect x="19.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="145.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Android</text>
+<text x="145.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Java XML</text>
+<path d="M145.0 70 L145.0 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="362.3333333333333" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="488.3333333333333" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Firebase</text>
+<text x="488.3333333333333" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Auth và Rules</text>
+<path d="M488.3333333333333 70 L488.3333333333333 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="705.6666666666666" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="831.6666666666666" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Cloud</text>
+<text x="831.6666666666666" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Firestore</text>
+<path d="M831.6666666666666 70 L831.6666666666666 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<rect x="1049.0" y="7" width="252" height="58" rx="8" fill="#eaf2ee" stroke="#35664b" stroke-width="2"/>
+<text x="1175.0" y="36" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Render</text>
+<text x="1175.0" y="60" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#172b31">Admin SDK</text>
+<path d="M1175.0 70 L1175.0 490" stroke="#7d8e95" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<path d="M145.0 110 L488.3333333333333 110" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,110 476.3333333333333,104 476.3333333333333,116" fill="#315943"/>
+<rect x="85.16666666666663" y="78" width="463.0" height="27" fill="white"/>
+<text x="316.66666666666663" y="101" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">1  Đăng nhập email hoặc Google credential</text>
+<path d="M488.3333333333333 165 L145.0 165" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="145.0,165 157.0,159 157.0,171" fill="#315943"/>
+<rect x="140.66666666666663" y="133" width="352.0" height="27" fill="white"/>
+<text x="316.66666666666663" y="156" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">2  Phiên người dùng và ID token</text>
+<path d="M145.0 220 L488.3333333333333 220" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="488.3333333333333,220 476.3333333333333,214 476.3333333333333,226" fill="#315943"/>
+<rect x="131.91666666666663" y="188" width="369.5" height="27" fill="white"/>
+<text x="316.66666666666663" y="211" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">3  SDK đọc ghi theo UID và vai trò</text>
+<path d="M488.3333333333333 275 L831.6666666666666 275" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,275 819.6666666666666,269 819.6666666666666,281" fill="#315943"/>
+<rect x="491.0" y="243" width="338.0" height="27" fill="white"/>
+<text x="660.0" y="266" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">4  Rules cho phép hoặc từ chối</text>
+<path d="M145.0 330 L1175.0 330" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="1175.0,330 1163.0,324 1163.0,336" fill="#315943"/>
+<rect x="425.00390625" y="298" width="469.9921875" height="27" fill="white"/>
+<text x="660.0" y="321" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">5  HTTP kèm ID token cho nghiệp vụ tin cậy</text>
+<path d="M1175.0 385 L831.6666666666666 385" stroke="#315943" stroke-width="2" fill="none"/>
+<polygon points="831.6666666666666,385 843.6666666666666,379 843.6666666666666,391" fill="#315943"/>
+<rect x="799.0833333333333" y="353" width="408.5" height="27" fill="white"/>
+<text x="1003.3333333333333" y="376" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">6  Xác thực và transaction phía server</text>
+<path d="M831.6666666666666 440 L145.0 440" stroke="#315943" stroke-width="2" fill="none" stroke-dasharray="7 7"/>
+<polygon points="145.0,440 157.0,434 157.0,446" fill="#315943"/>
+<rect x="249.08333333333331" y="408" width="478.5" height="27" fill="white"/>
+<text x="488.3333333333333" y="431" text-anchor="middle" font-family="Arial" font-size="23" font-weight="400" fill="#172b31">7  Snapshot cập nhật các màn đang theo dõi</text>
+<text x="660.0" y="529" text-anchor="middle" font-family="Arial" font-size="20" font-weight="400" fill="#172b31">Rules kiểm soát SDK client; backend Admin SDK phải tự kiểm tra quyền.</text>
+</svg>

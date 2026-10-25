@@ -26,6 +26,11 @@ test('Fund evidence guard only accepts immutable paths owned by the appropriate 
   await assert.rejects(()=>f.media.assetGuard({uid:'other',role:'SELLER'},{publicId}),e=>e.status===403);
   await assert.rejects(()=>f.media.assetGuard({uid:'seller',role:'ADMIN'},{publicId}),e=>e.status===403);
 });
+test('comment image guard allows only the caller namespace',async()=>{
+  const f=fixture(),publicId='rescuefarm/campaign-comments/customer/comment/image-12345678-1234-1234-1234-123456789abc';
+  assert.deepEqual(await f.media.assetGuard({uid:'customer',role:'CUSTOMER'},{publicId}),{protected:false});
+  await assert.rejects(()=>f.media.assetGuard({uid:'other',role:'CUSTOMER'},{publicId}),e=>e.status===403);
+});
 test('each campaign upload uses a different immutable public ID, even in the same slot',async()=>{
   const f=fixture(),a=await upload(f),b=await upload(f);assert.notEqual(a.publicId,b.publicId);assert.notEqual(a.leaseId,b.leaseId);
   assert.equal(f.db.documents.get('campaignMediaDrafts/campaign').ownerUid,'seller');

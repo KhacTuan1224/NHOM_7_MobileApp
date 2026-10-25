@@ -1,0 +1,61 @@
+{
+  "actors": [
+    "Người ủng hộ\nSeller và Admin",
+    "Render\nrescue-fund.js",
+    "Firestore\nquỹ kho và ledger",
+    "SePay hoặc\nngân hàng"
+  ],
+  "steps": [
+    [
+      0,
+      3,
+      "1  Ủng hộ theo QR và mã theo dõi"
+    ],
+    [
+      3,
+      1,
+      "2  Webhook tiền vào hợp lệ"
+    ],
+    [
+      1,
+      2,
+      "3  Chống trùng và ghi nhận PAID"
+    ],
+    [
+      1,
+      2,
+      "4  Phân bổ giữ đồng thời tiền và hàng"
+    ],
+    [
+      0,
+      1,
+      "5  Seller ACCEPT rồi DELIVER kèm ảnh trước hạn"
+    ],
+    [
+      1,
+      2,
+      "6  Ghi bằng chứng hoặc hủy quá hạn giải phóng"
+    ],
+    [
+      0,
+      1,
+      "7  Admin VERIFY chuyến đã giao hợp lệ"
+    ],
+    [
+      0,
+      3,
+      "8  Admin chuyển tiền ngoài ứng dụng"
+    ],
+    [
+      0,
+      1,
+      "9  PAY ghi mã giao dịch số tiền và chứng từ"
+    ],
+    [
+      1,
+      2,
+      "10  Chuyển reserved sang spent và ghi ledger"
+    ]
+  ],
+  "note": "DELIVER đúng hạn được duyệt muộn; RESERVED hoặc ACCEPTED quá hạn mới tự hủy."
+}

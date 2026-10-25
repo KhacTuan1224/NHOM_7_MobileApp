@@ -14,6 +14,21 @@ class LiveDb {
     }
   }
 }
+test('GPS-only campaign change preserves article caches and does not fan out card invalidations', async t => {
+  const f=fixture();t.after(()=>f.api.close());
+  const session=await f.call('watch',{scope:'campaign_cards'},false);await pause(10);
+  const row = data => ({id:'mobile',data:()=>data});
+  const base={title:'Mobile',status:'ACTIVE',locationSharingEnabled:true,currentLatitude:10,currentLongitude:106,locationUpdatedAt:100,updatedAt:100};
+  f.db.emit('campaigns',null,{docs:[row(base)]});await pause(15);
+  const path='realtimeSubscriptions/'+session.subscriptionId, revision=f.db.documents.get(path).revision;
+  let loads=0;const cache=createReadCache();await cache.get('card',()=>++loads);
+  f.db.emit('campaigns',null,{docs:[row({...base,currentLatitude:11,locationUpdatedAt:200,updatedAt:200})]});await pause(15);
+  assert.equal(await cache.get('card',()=>++loads),1);
+  assert.equal(f.db.documents.get(path).revision,revision);
+  f.db.emit('campaigns',null,{docs:[row({...base,title:'Changed'})]});await pause(15);
+  assert.equal(await cache.get('card',()=>++loads),2);
+  assert.notEqual(f.db.documents.get(path).revision,revision);
+});
 class Target {
   constructor(db, path, filters = []) { Object.assign(this, {db, path, filters}); }
   doc(id) { return new Target(this.db, this.path + '/' + id, this.filters); }

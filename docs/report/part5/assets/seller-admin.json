@@ -1,0 +1,44 @@
+{
+  "actors": [
+    "Seller\ntrên mobile",
+    "Repository\nvà media",
+    "Firestore\nvà Rules",
+    "Admin\ntrên mobile"
+  ],
+  "steps": [
+    [
+      0,
+      1,
+      "1  Nhập sản phẩm lô hoặc chiến dịch"
+    ],
+    [
+      1,
+      2,
+      "2  Kiểm owner và ghi dữ liệu hợp lệ"
+    ],
+    [
+      2,
+      3,
+      "3  Nội dung chờ duyệt xuất hiện",
+      true
+    ],
+    [
+      3,
+      2,
+      "4  Duyệt hoặc từ chối theo quyền Admin"
+    ],
+    [
+      2,
+      1,
+      "5  Snapshot trạng thái mới",
+      true
+    ],
+    [
+      1,
+      0,
+      "6  Seller xem kết quả và cập nhật hợp lệ",
+      true
+    ]
+  ],
+  "note": "Chức năng quản trị nằm trong ứng dụng Android; không có web admin được suy diễn."
+}

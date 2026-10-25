@@ -1,0 +1,697 @@
+{
+  "auditDate": "2026-10-24",
+  "timezone": "Asia/Novosibirsk",
+  "head": "28adb48bb2e5e4ac8230379a1152f64a52251f5e",
+  "workingTree": "M app/build.gradle.kts\n M docs/report/AI_REPORT_PROMPT_VI.md\n?? app/src/androidTest/java/com/rescuefarm/ReportScreenshotEvidenceTest.java\n?? app/src/reportDemo/\n?? \"docs/MOBILE FINAL PROJECT.pdf\"\n?? docs/report/assets/\n?? docs/report/audit-matrix.md\n?? docs/report/defense-questions.md\n?? docs/report/demo-5-minutes.md\n?? docs/report/evidence/audit-results-current.json\n?? docs/report/evidence/device-apk.txt\n?? docs/report/evidence/document-qa.json\n?? docs/report/evidence/fund-demo-accept.json\n?? docs/report/evidence/fund-demo-deliver.json\n?? docs/report/evidence/fund-demo-expire-verify.json\n?? docs/report/evidence/fund-demo-pay.json\n?? docs/report/evidence/fund-demo-setup.json\n?? docs/report/evidence/git-evidence.json\n?? docs/report/evidence/implementation-diff.patch\n?? docs/report/evidence/pdf-pages.json\n?? docs/report/evidence/reference.json\n?? docs/report/evidence/render-final/\n?? docs/report/evidence/render-verified/\n?? docs/report/evidence/screenshots-manifest.json\n?? docs/report/evidence/source-inventory.json\n?? docs/report/evidence/sources.json\n?? docs/report/handoff.md\n?? docs/report/report.docx\n?? docs/report/report.pdf\n?? docs/report/source/\n?? firebase.report-demo.json",
+  "apk": {
+    "package": "com.example.nhom_7_mobileapp.reportdemo",
+    "sha256": "d9425762529c3cf7f013d5ad195a1c4d90c04f728fc68804f0fe0e5bc803fa34",
+    "versionName": "1.0",
+    "versionCode": 1,
+    "modifiedUtc": "2026-10-24T08:52:28.506610+00:00"
+  },
+  "jvm": {
+    "tests": 253,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "jvmSuites": [
+    {
+      "file": "TEST-com.rescuefarm.data.CacheMigrationContractTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.328Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.GuestCartMapperTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.339Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.local.BannerCacheMapperTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.353Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.local.CampaignCacheMapperTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.357Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.local.CatalogCacheMapperTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.367Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.OrderCacheMapperTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.345Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.repository.OfflineProductRepositoryTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.383Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.repository.SellerStorefrontTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.402Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.data.repository.UnavailableAuthRepositoryTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.408Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.ActorContractTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.413Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.AddressTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.416Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.CampaignAllocationTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.422Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.CampaignUnitTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.430Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.CommentTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.435Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.model.RecentGuestOrderTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.471Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.ProductBatchBoundaryTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.439Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.ProductBatchTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.443Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.ProductBoundaryTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.453Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.RescueCampaignBoundaryTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.459Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.RescueCampaignTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.464Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.domain.SellerProfileTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.467Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.integration.OnSiteRescueFlowTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.476Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.AddressDefaultPolicyTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.480Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.admin.CatalogImagePolicyTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.758Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.AdminTransitionPolicyTest.xml",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.485Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CacheSyncPolicyTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.499Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CampaignLocationServiceTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.502Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CampaignTimeFormatterTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.506Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CartGroupingServiceTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.519Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CartMigrationServiceTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.524Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CartRevalidationServiceTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.533Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CheckoutCartCleanupTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.549Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CheckoutPolicyTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.555Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.CheckoutReservationContractTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.560Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.EngagementSafetyTest.xml",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.565Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.InventoryServiceTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.575Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.InventoryVersionPolicyTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.576Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.OrderLifecycleServiceTest.xml",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.579Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.OrderPricingCompatibilityTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.582Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.PricingServiceTest.xml",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.584Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.ReactionPolicyTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.588Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.ReviewSummaryTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.590Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.SellerApplicationIdentityTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.599Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.SellerDashboardAggregatorTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.603Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.SePayPaymentTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.593Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.service.VietnamAddressCatalogTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.613Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.admin.AdminDetailFormatterTest.xml",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.766Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.admin.AdminRealtimeTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.811Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.auth.AuthValidatorTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.838Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.auth.AuthViewModelTest.xml",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.848Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.auth.PasswordResetViewModelTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.858Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.campaign.CampaignValidatorTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.908Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.campaign.CampaignViewModelTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.918Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.cart.CartRealtimeTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.936Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.checkout.CheckoutRecipientLocationTest.xml",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.966Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.checkout.CheckoutRequestIdentityTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.992Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.checkout.GuestOrderConfirmationFlowTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:10.998Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.common.CampaignProgressColorsTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.007Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.common.EnumLabelsTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.012Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.common.OrderLabelsTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.018Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.common.PageWindowTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.021Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.common.RescueProgressUtilsTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.026Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.engagement.ReviewMediaRendererTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.031Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.fund.RescueFundTimeTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.054Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.home.CategoryContentTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.073Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.home.DiscoveryCampaignProjectionTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.114Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.home.DiscoveryEngineTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.123Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.home.DiscoveryQueryStateTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.129Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.home.HomeContentBuilderTest.xml",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.131Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.home.HomePaginationTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.138Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.order.CustomerOrderHistoryTest.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.156Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.product.ProductValidatorTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.165Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.product.ProductViewModelTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.173Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.profile.BusinessProfilePolicyTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.191Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.profile.ProfileValidatorTest.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.196Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.profile.ProfileViewModelTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.201Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.rescue.RescueMarketUiTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.211Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.rescue.RescueTimeTest.xml",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.227Z"
+    },
+    {
+      "file": "TEST-com.rescuefarm.ui.seller.SellerStatisticsViewModelTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-24T09:29:11.233Z"
+    }
+  ],
+  "lint": {
+    "Error": 0,
+    "Fatal": 0,
+    "Warning": 693,
+    "Information": 0
+  },
+  "backend": {
+    "checkExit": 0,
+    "tests": 183,
+    "pass": 183,
+    "fail": 0,
+    "skipped": 0,
+    "log": "backend-unit.log"
+  },
+  "worker": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+  },
+  "firestore": {
+    "project": "demo-rescuefarm",
+    "tests": 173,
+    "pass": 173,
+    "fail": 0,
+    "skipped": 0,
+    "log": "firestore-head-retry.log"
+  },
+  "navigation": {
+    "destinations": 59,
+    "exit": 0
+  },
+  "instrumentation": {
+    "selected": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0,
+    "log": "instrumentation-final-apk.log"
+  },
+  "limits": [
+    "No live OAuth, SePay, media upload, FCM delivery or production deploy validated",
+    "UEH similarity not run",
+    "MSSV, class and task allocation percentages await confirmation"
+  ]
+}

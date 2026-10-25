@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1000" viewBox="0 0 1200 1000"><rect width="100%" height="100%" fill="white"/><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#333"/></marker></defs>
+<text x="600.0" y="48" font-family="Arial" font-size="30" font-weight="bold" text-anchor="middle" fill="#172b31">Mô hình collection và snapshot giao dịch</text>
+<path d="M325.0 195.0 L430.0 195.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="341.5" y="173.0" width="72" height="29" fill="white"/>
+<text x="377.5" y="193.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">1 : n</text>
+<path d="M710.0 195.0 L825.0 195.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="731.5" y="173.0" width="72" height="29" fill="white"/>
+<text x="767.5" y="193.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">1 : n</text>
+<path d="M985.0 250.0 L985.0 400.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="901.0" y="303.0" width="168" height="29" fill="white"/>
+<text x="985.0" y="323.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">tham chiếu lô</text>
+<path d="M898.8679245283018 250.0 L663.9622641509434 400.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="691.4150943396226" y="303.0" width="180" height="29" fill="white"/>
+<text x="781.4150943396226" y="323.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">giữ / chốt kho</text>
+<path d="M430.0 460.0 L325.0 460.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="341.5" y="438.0" width="72" height="29" fill="white"/>
+<text x="377.5" y="458.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">1 : 1</text>
+<path d="M264.9056603773585 250.0 L482.8301886792453 400.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="283.8679245283019" y="303.0" width="180" height="29" fill="white"/>
+<text x="373.8679245283019" y="323.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">owner / Seller</text>
+<path d="M1145 195 L1170 195 L1170 760 L1145 760" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="995.0" y="590" width="180" height="29" fill="white"/>
+<text x="1085" y="610" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">giữ / chốt kho</text>
+<path d="M825 760 L790 760 L790 620 L570 620 L570 700" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="585.0" y="590" width="180" height="29" fill="white"/>
+<text x="675" y="610" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">ledger + số dư</text>
+<path d="M493.0 520.0 L262.0 700.0" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="281.5" y="588.0" width="192" height="29" fill="white"/>
+<text x="377.5" y="608.0" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">cache theo user</text>
+<rect x="45" y="140" width="280" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="185.0" y="187.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">users/{uid}</text>
+<text x="185.0" y="218.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">role / status / sellerStatus</text>
+<rect x="430" y="140" width="280" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="570.0" y="187.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">products/{productId}</text>
+<text x="570.0" y="218.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">sellerId / categoryId</text>
+<rect x="825" y="140" width="320" height="110" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="985.0" y="187.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">productBatches/{batchId}</text>
+<text x="985.0" y="218.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">expiryDate / stock counters</text>
+<rect x="825" y="400" width="320" height="150" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="985.0" y="436.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">campaigns/{campaignId}</text>
+<text x="985.0" y="467.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">batchTargets</text>
+<text x="985.0" y="498.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">reservedByBatch</text>
+<text x="985.0" y="529.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">rescuedByBatch</text>
+<rect x="430" y="400" width="280" height="120" rx="9" fill="#f4f1e9" stroke="#345961" stroke-width="2"/>
+<text x="570.0" y="436.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">orders/{orderId}</text>
+<text x="570.0" y="467.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">owner / seller / totals</text>
+<text x="570.0" y="498.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">items/{batchId} snapshot</text>
+<rect x="45" y="400" width="280" height="120" rx="9" fill="#f4f1e9" stroke="#345961" stroke-width="2"/>
+<text x="185.0" y="452.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">payments / shipments</text>
+<text x="185.0" y="483.0" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">orderId + snapshot</text>
+<rect x="825" y="700" width="320" height="120" rx="9" fill="#f4f1e9" stroke="#345961" stroke-width="2"/>
+<text x="985.0" y="736.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">rescueFundDeliveries</text>
+<text x="985.0" y="767.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">batchId / sellerId</text>
+<text x="985.0" y="798.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">deadline + snapshot</text>
+<rect x="430" y="700" width="280" height="120" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="570.0" y="736.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">rescueFunds / Donations</text>
+<text x="570.0" y="767.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Ledger / References</text>
+<text x="570.0" y="798.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">Runs / PayoutReferences</text>
+<rect x="45" y="700" width="280" height="120" rx="9" fill="#eef4f4" stroke="#345961" stroke-width="2"/>
+<text x="185.0" y="736.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">SQLite cache</text>
+<text x="185.0" y="767.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">9 Room tables</text>
+<text x="185.0" y="798.5" font-family="Arial" font-size="23" font-weight="normal" text-anchor="middle" fill="#172b31">không phải dữ liệu chuẩn</text>
+<text x="600.0" y="950" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Mũi tên biểu diễn tham chiếu logic do code kiểm tra, không phải khóa ngoại Firestore.</text>
+<text x="600.0" y="978" font-family="Arial" font-size="20" font-weight="normal" text-anchor="middle" fill="#172b31">Snapshot màu nhạt lưu dữ liệu tại thời điểm giao dịch; Room là bản sao có thể cũ.</text>
+</svg>
