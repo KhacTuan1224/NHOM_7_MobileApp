@@ -52,9 +52,9 @@ The backend owns checkoutReceipts, guestOrderCodes, guestOrderGrants, campaignVi
 
 The Android backup configuration excludes Guest access preferences from cloud backups. A user on another device can still look up a Guest order with its code and phone.
 
-## Regression tests
+## Development checks
 
-Install functions dependencies with npm ci. From tests/firestore, run npm ci and npm test. The suite starts an isolated demo-rescuefarm Firestore Emulator, then checks rules and the actual HTTP handlers sequentially. No production credentials are required. The commerce tests refuse to run without a localhost emulator address.
+Run `npm ci` and `npm run check` from `functions` to check backend, setup scripts and media Worker JavaScript syntax. Automated regression suites were removed during repository cleanup; historical test results in other documents refer to earlier revisions. See [cleanup details](../docs/repository-cleanup.md).
 
 ### Checkout payment availability
 

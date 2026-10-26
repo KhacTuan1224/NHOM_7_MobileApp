@@ -1,1 +1,8 @@
-{"name":"rescuefarm-cloudinary-worker","private":true,"type":"module","scripts":{"check":"node --check src/index.js","test":"node --test test/campaign-upload.test.mjs"}}
+{
+  "name": "rescuefarm-cloudinary-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js"
+  }
+}
