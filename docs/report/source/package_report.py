@@ -14,7 +14,7 @@ for p in (R/'evidence').iterdir():
     if p.name in ['course-audit-results.json','course-emulator-final.log','delivery-files.json']:continue
     if p.suffix in ['.json','.log','.txt','.patch','.md']:files.append(p)
 files+=list((R/'evidence/render-verified').glob('contact-*.jpg'))
-for n in ['app/build.gradle.kts','app/src/androidTest/java/com/rescuefarm/ReportScreenshotEvidenceTest.java','firebase.report-demo.json','docs/MOBILE FINAL PROJECT.pdf']:
+for n in ['app/build.gradle.kts','firebase.report-demo.json','docs/MOBILE FINAL PROJECT.pdf']:
     files.append(ROOT/n)
 files+=list(p for p in (ROOT/'app/src/reportDemo').rglob('*') if p.is_file())
 files=sorted(set(files))

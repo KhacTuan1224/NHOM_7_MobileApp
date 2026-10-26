@@ -85,7 +85,7 @@ Source ứng dụng là Java; file `.kts` dùng cấu hình Gradle, không phả
 
 - **Android Studio/SDK** - SDK API 37 để build; thiết bị tối thiểu API 29.
 - **Java** - CI chọn JDK 21; dùng JDK tương thích cấu hình Gradle/AGP của dự án.
-- **Node.js/npm** - Node ≥24.12 cho toàn bộ suite Emulator; backend khai báo tối thiểu Node 20.
+- **Node.js/npm** - Node ≥20 cho backend.
 - **Firebase CLI và project** - Auth, Firestore, Rules/indexes và App Check phù hợp môi trường.
 - **Dịch vụ** - Render cho backend, Cloudflare Worker/Cloudinary cho media; cấu hình provider khi cần QR, webhook và CAPTCHA.
 
@@ -100,10 +100,9 @@ cd NHOM_7_MobileApp
 
 ```bash
 npm --prefix functions ci
-npm --prefix tests/firestore ci
 ```
 
-Mở root repo bằng Android Studio và Sync Gradle. Thư viện Android ở [app/build.gradle.kts](app/build.gradle.kts) và [version catalog](gradle/libs.versions.toml). Test Worker dùng Node Test Runner; deploy Worker dùng Wrangler CLI.
+Mở root repo bằng Android Studio và Sync Gradle. Thư viện Android ở [app/build.gradle.kts](app/build.gradle.kts) và [version catalog](gradle/libs.versions.toml). Deploy Worker dùng Wrangler CLI.
 
 ### Bước 3 Cấu hình biến môi trường
 
@@ -205,16 +204,14 @@ APK nằm tại `app/build/outputs/apk/debug/app-debug.apk`. Chọn đúng thi�
 ### Bước 13 Kiểm tra phát triển
 
 ```powershell
-.\gradlew.bat :app:testDebugUnitTest :app:lintDebug
+.\gradlew.bat :app:assembleDebug :app:lintDebug
 npm --prefix functions run check
-npm --prefix functions run test:unit
-npm --prefix tests/firestore test
 python scripts/check_navigation.py
 ```
 
-Suite Firestore tự chạy project Emulator `demo-rescuefarm`, không chứng minh production hay UI đã hoạt động. Xem [hướng dẫn Emulator](tests/firestore/README.md) và [môi trường demo](docs/report/source/README.md); chỉ chạy class instrumentation được chọn sau khi cô lập cả Firebase lẫn HTTP backend của Android.
+Các bộ test tự động và script audit dùng một lần đã được dọn khỏi repo. Hiện kiểm tra bằng build/lint Android, cú pháp JavaScript backend/Worker và điều hướng. Xem [chi tiết dọn repo](docs/repository-cleanup.md). Kết quả test trong báo cáo/audit cũ là dữ liệu lịch sử.
 
-[Workflow APK](.github/workflows/android-package.yml) xuất artifact **Packages** và APK/checksum cho tag `v*`. Build push/manual dùng secret `GOOGLE_SERVICES_JSON` và các biến endpoint công khai. Workflow không deploy Render, Worker hoặc Rules. **Chênh lệch CI hiện có:** workflow chọn Node 22, nhưng Rules Unit Testing trong lockfile cần ≥24.12; cần đồng bộ runtime trước khi dựa vào bước Emulator. APK debug không phải bản ký phát hành Play Store.
+Workflow [đóng gói Android](.github/workflows/android-package.yml) vẫn build APK debug, tạo artifact Packages và đính kèm APK/checksum cho tag `v*`. Cần secret `GOOGLE_SERVICES_JSON` và biến endpoint phù hợp để build dùng được; workflow không triển khai backend, Worker hoặc Firestore.
 
 ### Thông tin Admin mặc định
 

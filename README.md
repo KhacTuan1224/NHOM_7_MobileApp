@@ -78,7 +78,7 @@ Admin functions are implemented in the Android application. There is no separate
 | Location and Maps | Google Play services Fused Location Provider, Android Geocoder, Haversine distance, Leaflet, OpenStreetMap tiles, external map intents |
 | Payment | VietQR generation/QR images, SePay webhooks, COD and pickup cash flows |
 | Notifications and Background Work | Firebase Cloud Messaging, WorkManager, foreground location service, backend reconciliation/outbox workers |
-| DevOps and Testing | Git, GitHub, GitHub Actions, Render, Cloudflare Workers/Wrangler, Gradle Kotlin DSL, JUnit 4, AndroidX Test, Espresso, Room Testing, Node Test Runner, Firebase Emulator Suite and Rules Unit Testing |
+| DevOps and Checks | Git, GitHub, GitHub Actions, Render, Cloudflare Workers/Wrangler, Gradle Kotlin DSL, Android Lint and JavaScript syntax checks |
 | Dataset and Tooling | Historical `daohoangson/dvhcvn` JSON snapshot bundled as offline TSV; Python maintenance/audit scripts and PowerShell helpers |
 | Environment Configuration | Gradle properties / BuildConfig for public client settings; Node `process.env`, Render variables, Worker vars/secrets and GitHub Actions variables/secrets |
 
@@ -90,7 +90,7 @@ Application source is Java; `.kts` files configure Gradle rather than implementi
 
 - **Android Studio and SDK** - API 37 for compilation; the application supports Android API 29+.
 - **Java** - JDK 21 is selected in CI; use a JDK compatible with the repository's Gradle/Android Gradle Plugin configuration.
-- **Node.js and npm** - Node 24.12+ for the complete Emulator test suite. The backend itself declares Node >=20.
+- **Node.js and npm** - Node >=20 for the backend.
 - **Firebase CLI and a Firebase project** - Authentication, Firestore, Rules/indexes and appropriate App Check configuration.
 - **Service configuration** - Render for the HTTP backend, Cloudflare Worker/Cloudinary for media, and provider credentials for optional payment/CAPTCHA integrations.
 
@@ -105,10 +105,9 @@ cd NHOM_7_MobileApp
 
 ```bash
 npm --prefix functions ci
-npm --prefix tests/firestore ci
 ```
 
-Open the repository in Android Studio and sync Gradle. Android dependencies are declared in [app/build.gradle.kts](app/build.gradle.kts) and [gradle/libs.versions.toml](gradle/libs.versions.toml). Worker tests use Node's built-in test runner; Worker deployment uses the Wrangler CLI.
+Open the repository in Android Studio and sync Gradle. Android dependencies are declared in [app/build.gradle.kts](app/build.gradle.kts) and [gradle/libs.versions.toml](gradle/libs.versions.toml). Worker deployment uses the Wrangler CLI.
 
 ### Step 3: Configure Environment Variables
 
@@ -210,16 +209,14 @@ The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Select the in
 ### Step 13: Run Development Checks
 
 ```powershell
-.\gradlew.bat :app:testDebugUnitTest :app:lintDebug
+.\gradlew.bat :app:assembleDebug :app:lintDebug
 npm --prefix functions run check
-npm --prefix functions run test:unit
-npm --prefix tests/firestore test
 python scripts/check_navigation.py
 ```
 
-The Firestore command starts an isolated `demo-rescuefarm` Emulator project. See [Emulator instructions](tests/firestore/README.md) and [the demo build workflow](docs/report/source/README.md) before device tests; select instrumentation classes explicitly and isolate Android's Firebase **and** HTTP backend connections.
+The automated test suites and one-off audit scripts were removed during repository cleanup. Current checks cover Android build/lint, backend/Worker JavaScript syntax and navigation destinations. See [cleanup details](docs/repository-cleanup.md). Historical test results in report/audit documents describe earlier repository versions.
 
-The Android [package workflow](.github/workflows/android-package.yml) builds debug APKs, uploads a **Packages** artifact and attaches APK/checksum files for `v*` releases. It requires the `GOOGLE_SERVICES_JSON` Actions secret for usable push/manual builds and public endpoint variables. It does not deploy Render, Worker or Firestore configuration. **Current CI mismatch:** the workflow selects Node 22, but the locked Rules Unit Testing package requires >=24.12; align that runtime before relying on its Emulator step. Debug artifacts are not Play Store-signed releases.
+The Android [package workflow](.github/workflows/android-package.yml) builds debug APKs, uploads a **Packages** artifact and attaches APK/checksum files for `v*` releases. It requires the `GOOGLE_SERVICES_JSON` Actions secret for usable push/manual builds and public endpoint variables. It does not deploy Render, Worker or Firestore configuration. Debug artifacts are not Play Store-signed releases.
 
 ### Default Account Credentials
 #### Admin
