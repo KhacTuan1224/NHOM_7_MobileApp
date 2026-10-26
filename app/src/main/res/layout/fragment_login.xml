@@ -88,17 +88,19 @@
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/passwordCaptchaButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+        <FrameLayout
+            android:id="@+id/passwordCaptchaViewport"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="@dimen/touch_target_min"
+            android:layout_height="100dp"
             android:layout_marginStart="@dimen/auth_horizontal_margin"
             android:layout_marginEnd="@dimen/auth_horizontal_margin"
-            android:layout_marginTop="12dp"
-            android:text="@string/password_captcha_action"
-            app:cornerRadius="16dp" />
+            android:layout_marginTop="12dp">
+            <WebView
+                android:id="@+id/passwordCaptchaWebView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAutofill="noExcludeDescendants" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/passwordCaptchaStatus"

@@ -15,6 +15,12 @@ out/
 build/
 app/build/
 functions/node_modules/
+**/node_modules/
+__pycache__/
+*.pyc
+~$*.docx
+docs/report/evidence/render*/
+docs/report/RescueFarm-report-bundle.zip
 .firebase/
 
 .gradle/

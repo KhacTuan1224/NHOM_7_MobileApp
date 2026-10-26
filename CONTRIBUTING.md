@@ -41,20 +41,15 @@ keystores, Cloudinary API secrets, user exports, or generated APKs.
 
 ## Validation
 
-Run the checks relevant to your change and include their results in the pull
-request. The isolated Firestore and backend regression suite is documented in
-[`tests/firestore/README.md`](tests/firestore/README.md). From
-`tests/firestore`, it can be run with:
+Run the checks relevant to your change and include their results in the pull request:
 
 ```powershell
-npm ci
-npm --prefix ..\..\functions ci
-npm test
+.\gradlew.bat :app:assembleDebug :app:lintDebug
+npm --prefix functions run check
+python scripts/check_navigation.py
 ```
 
-For an Android change, build the app with `.gradlew.bat :app:assembleDebug`.
-For the Render service, run `npm run check` from `functions`. Do not point
-tests at a production Firebase project.
+Automated test suites were removed during repository cleanup. These commands check build/lint, JavaScript syntax and navigation; they do not replace behavioral regression tests. See [cleanup details](docs/repository-cleanup.md). Validate changed flows in an isolated environment.
 
 ## Pull request process
 

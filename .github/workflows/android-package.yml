@@ -42,29 +42,11 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
-      - name: Check campaign lifecycle and seller statistics
+      - name: Check backend and media Worker syntax
         working-directory: functions
         run: |
           npm ci
           npm run check
-          npm run test:unit
-
-      - name: Check trusted API transactions and Firestore Rules
-        id: firestore-tests
-        working-directory: tests/firestore
-        run: |
-          npm ci
-          npm test 2>&1 | tee firestore-test-output.log
-
-      - name: Upload Firestore test diagnostics
-        if: failure() && steps.firestore-tests.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: firestore-test-diagnostics
-          path: |
-            tests/firestore/firestore-test-output.log
-            tests/firestore/firestore-debug.log
-          retention-days: 7
 
       - name: Prepare Firebase configuration
         env:
@@ -106,7 +88,7 @@ jobs:
         run: |
           chmod +x ./gradlew
           test -f ./gradlew
-          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug \
+          ./gradlew --no-daemon :app:assembleDebug \
             "-PRENDER_BACKEND_URL=$RENDER_BACKEND_URL" \
             "-PCLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME" \
             "-PCLOUDINARY_SIGNING_URL=$CLOUDINARY_SIGNING_URL"

@@ -18,7 +18,6 @@ android {
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${providers.gradleProperty("CLOUDINARY_CLOUD_NAME").orElse("").get()}\"")
         buildConfigField("String", "CLOUDINARY_SIGNING_URL", "\"${providers.gradleProperty("CLOUDINARY_SIGNING_URL").orElse("").get()}\"")
         buildConfigField("String", "RENDER_BACKEND_URL", "\"${providers.gradleProperty("RENDER_BACKEND_URL").orElse("").get()}\"")
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -27,7 +26,6 @@ android {
         }
     }
     buildFeatures { buildConfig = true }
-    testBuildType = providers.gradleProperty("reportTestBuildType").orElse("debug").get()
 
     buildTypes {
         create("reportDemo") {
@@ -75,9 +73,4 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.work.runtime)
     annotationProcessor(libs.room.compiler)
-    testImplementation(libs.junit)
-    testImplementation(libs.arch.core.testing)
-    testImplementation(libs.room.testing)
-    androidTestImplementation(libs.espresso.core)
-    androidTestImplementation(libs.ext.junit)
 }

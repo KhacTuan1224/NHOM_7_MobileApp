@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-25T21:14:20.5700532+07:00",
+  "baseCommit": "b37ee236e40389740ebc794e58b2d1e875e56f09",
+  "feature": "Real Google widget inline below password; app dialog removed",
+  "android": {
+    "errors": 0,
+    "skipped": 0,
+    "failures": 0,
+    "tests": 265
+  },
+  "assembleDebug": "passed",
+  "instrumentationCompile": "passed",
+  "lintErrors": 0,
+  "lintWarnings": 710,
+  "backendAndDomTestsPassed": 213,
+  "workerTestsPassed": 10,
+  "backendAndWorkerFailed": 0,
+  "backendAndWorkerSkipped": 0,
+  "domAdapterTestsPassed": 4,
+  "initialLintFailure": "WebView parent wrap_content; fixed with explicit FrameLayout viewport",
+  "backendRuntimeChanged": false,
+  "keysChanged": false,
+  "deviceUi": "not tested; emulator5554 untouched",
+  "apkSha256": "D5D167BE56FF04FE253AE0EBB3320D305359F70CB51A3F15B5AF12AE2A744FB1"
+}

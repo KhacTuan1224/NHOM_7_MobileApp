@@ -1,3 +1,5 @@
+> Ghi chú sau dọn repo 27/10/2026: bộ test, dependency và cấu hình Emulator dành riêng cho test đã được xóa. Các lệnh npm/test bên dưới là hướng dẫn lịch sử. Dùng [hướng dẫn demo hiện tại](../../docs/report/source/README.md) hoặc [lệnh kiểm tra hiện tại](../../docs/repository-cleanup.md).
+
 # Firestore checkout regression tests
 
 Uses the official Firestore Emulator and `@firebase/rules-unit-testing` with the
