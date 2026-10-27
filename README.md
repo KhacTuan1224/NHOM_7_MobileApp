@@ -31,7 +31,7 @@ This README describes the repository implementation and configuration, not a gua
 - **Rescue Map** - Open the Home map preview, inspect fixed/mobile points and follow fresh positions shared by a Seller's phone.
 - **Flash Sale and Mystery Boxes** - Discover stock-backed pickup offers and manage claims. These offers use a separate claim flow and payment at pickup.
 - **Rescue Fund** - Donate using a tracking code/QR and view fund activity according to role permissions.
-- **Authentication** - Register, sign in with email/password or Google, reset passwords and continue as a Guest. Password login includes reCAPTCHA; Google sign-in and registration do not require that app-level CAPTCHA step.
+- **Authentication** - Register, sign in with email/password or Google, reset passwords and continue as a Guest. Email/password login goes directly through Firebase Authentication without an app CAPTCHA step.
 - **Profile and Addresses** - Edit profile/avatar, manage delivery addresses and retain Home location selection in the appropriate local session scope.
 - **Responsive and Offline Support** - Portrait/landscape layouts and selected Room-cached content. Checkout, payment and inventory mutations require online checks; cached URLs do not prove offline image availability.
 
@@ -69,11 +69,11 @@ Admin functions are implemented in the Android application. There is no separate
 |---|---|
 | Frontend / Android | Java, XML Views, Android SDK, AndroidX, Material Components, ConstraintLayout, RecyclerView, ViewPager2, Navigation Component |
 | App Architecture | MVVM, Repository Pattern, ViewModel, LiveData, SavedStateHandle |
-| Embedded Web Content | Android WebView, HTML, CSS, JavaScript; Leaflet 1.9.4 and reCAPTCHA widget integration |
+| Embedded Web Content | Android WebView, HTML, CSS, JavaScript; Leaflet 1.9.4 |
 | Backend | Node.js, Express 4, Firebase Admin SDK, REST/HTTPS APIs, Server-Sent Events, Node Crypto and native Fetch |
 | Database | Cloud Firestore; Room over SQLite for selected local data |
 | Caching and Local State | Room entities/DAOs, SharedPreferences, Firestore SDK cache, bounded in-process Map/TTL caches and shared listeners |
-| Authentication and Security | Firebase Authentication, Google Credential Manager/Google ID, App Check with Play Integrity, Firestore Rules, reCAPTCHA v2, server authorization, signed media requests and webhook verification |
+| Authentication and Security | Firebase Authentication, Google Credential Manager/Google ID, App Check with Play Integrity, Firestore Rules, server authorization, signed media requests and webhook verification |
 | Images | Cloudinary REST API/CDN, Cloudflare Worker signing/upload coordination, Glide |
 | Location and Maps | Google Play services Fused Location Provider, Android Geocoder, Haversine distance, Leaflet, OpenStreetMap tiles, external map intents |
 | Payment | VietQR generation/QR images, SePay webhooks, COD and pickup cash flows |
@@ -92,7 +92,7 @@ Application source is Java; `.kts` files configure Gradle rather than implementi
 - **Java** - JDK 21 is selected in CI; use a JDK compatible with the repository's Gradle/Android Gradle Plugin configuration.
 - **Node.js and npm** - Node >=20 for the backend.
 - **Firebase CLI and a Firebase project** - Authentication, Firestore, Rules/indexes and appropriate App Check configuration.
-- **Service configuration** - Render for the HTTP backend, Cloudflare Worker/Cloudinary for media, and provider credentials for optional payment/CAPTCHA integrations.
+- **Service configuration** - Render for the HTTP backend, Cloudflare Worker/Cloudinary for media, and provider credentials for optional payment integrations.
 
 ### Step 1: Clone the Repository
 
@@ -128,7 +128,7 @@ Configure server values through Render Environment or your terminal process envi
 | `MEDIA_WORKER_SECRET` | Matching private value on Render and Worker |
 | `NOTIFICATION_WORKER_SECRET` | Matching Render/Actions secret for worker wakeups |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_SIGNING_URL` | Backend media/QR integration where required |
-| `PASSWORD_RECAPTCHA_SITE_KEY`, `PASSWORD_RECAPTCHA_SECRET_KEY`, `PASSWORD_RECAPTCHA_HOSTNAMES` | Password-login CAPTCHA configuration |
+| `PASSWORD_RECAPTCHA_SITE_KEY`, `PASSWORD_RECAPTCHA_SECRET_KEY`, `PASSWORD_RECAPTCHA_HOSTNAMES` | Legacy CAPTCHA endpoints for older APKs only; unused by the current app |
 | `SEPAY_MERCHANTS_JSON` | Private Seller-to-bank/webhook configuration |
 | `VIETQR_CLIENT_ID`, `VIETQR_API_KEY` | Optional backend VietQR generation |
 | `RESCUE_FUND_SELLER_ID` | Fund bank-account selection when sharing an enabled Seller's connection |
@@ -168,11 +168,9 @@ Password-reset email is sent by **Firebase Authentication**. Configure its email
 
 Enable Google sign-in in Firebase Authentication, register the signing certificate fingerprints for the Android build, and download the updated `google-services.json`. The generated `default_web_client_id` is used by Credential Manager to request a Google ID token, which Firebase Auth exchanges for a session. Rebuild after configuration changes; see [GoogleCredentialService](app/src/main/java/com/rescuefarm/service/auth/GoogleCredentialService.java).
 
-### Step 8: Configure Google reCAPTCHA v2
+### Step 8: Email/password Login
 
-Create a **web v2 checkbox** key for the backend hostname. Set `PASSWORD_RECAPTCHA_SITE_KEY`, `PASSWORD_RECAPTCHA_SECRET_KEY` and `PASSWORD_RECAPTCHA_HOSTNAMES` on Render. The app loads `/auth/password-captcha` and verifies responses via `/auth/password-captcha/verify` before password sign-in.
-
-The horizontal widget requires the backend version with `size: normal` and the matching APK. This is an app-level password-login gate, not global Identity Platform enforcement. Google sign-in and registration keep their existing flows. Follow the [complete CAPTCHA guide](docs/password-login-recaptcha.md).
+The current app signs in directly with Firebase Authentication. No reCAPTCHA widget, response token or Render CAPTCHA configuration is required. Build and install the updated APK to apply this change. Legacy backend CAPTCHA endpoints remain available for older APKs; see the [historical CAPTCHA guide](docs/password-login-recaptcha.md).
 
 ### Step 9: Configure QR Payments and SePay
 
