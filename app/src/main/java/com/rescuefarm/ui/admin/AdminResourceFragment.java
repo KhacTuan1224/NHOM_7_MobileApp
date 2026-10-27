@@ -721,6 +721,10 @@ public final class AdminResourceFragment extends Fragment {
 
     private void renderAnalytics(AdminDashboardSnapshot value) {
         if (value == null) return;
+        // Dashboard refreshes can emit several states (loading, updated data, realtime
+        // snapshots). Rebuild the analytics content instead of appending a duplicate
+        // set of charts on every emission.
+        container.removeAllViews();
         NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         AdminDashboardCards.addSectionTitle(requireContext(), container, "TỔNG QUAN HỆ THỐNG");
         AdminDashboardCards.addLineChart(requireContext(), container,
