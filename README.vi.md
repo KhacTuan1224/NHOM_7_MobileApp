@@ -28,7 +28,7 @@ README mô tả code và cấu hình trong repo, không khẳng định mọi th
 - **Bản đồ giải cứu** - Bản đồ nhỏ trên Home mở ra bản đồ lớn; xem điểm cố định và vị trí còn mới do điện thoại Seller chia sẻ.
 - **Flash Sale và Hộp bí ẩn** - Khám phá gói có tồn kho thật và quản lý suất nhận. Module dùng luồng claim riêng, nhận tại điểm và trả tiền khi nhận.
 - **Hũ giải cứu** - Ủng hộ bằng QR/mã theo dõi và xem hoạt động theo quyền.
-- **Xác thực** - Đăng ký, đăng nhập email/password hoặc Google, đặt lại mật khẩu và tiếp tục với Guest. CAPTCHA của app chỉ bắt buộc ở đăng nhập password.
+- **Xác thực** - Đăng ký, đăng nhập email/password hoặc Google, đặt lại mật khẩu và tiếp tục với Guest. Đăng nhập email/password gọi trực tiếp Firebase Authentication, không yêu cầu CAPTCHA của app.
 - **Hồ sơ và địa chỉ** - Sửa hồ sơ/avatar, quản lý địa chỉ nhận hàng và giữ vị trí tìm kiếm Home theo scope phiên/tài khoản.
 - **Responsive và offline** - Có bố cục dọc/ngang và cache Room cho dữ liệu được chọn. Checkout, tiền và kho phải kiểm tra online; lưu URL không chứng minh ảnh đã xem được offline.
 
@@ -64,11 +64,11 @@ Các tác vụ Admin nằm trong ứng dụng Android, không có web admin riê
 |---|---|
 | Frontend / Android | Java, XML Views, Android SDK, AndroidX, Material Components, ConstraintLayout, RecyclerView, ViewPager2, Navigation Component |
 | Kiến trúc app | MVVM, Repository Pattern, ViewModel, LiveData, SavedStateHandle |
-| Nội dung WebView | HTML, CSS, JavaScript, Leaflet 1.9.4 và tích hợp widget reCAPTCHA |
+| Nội dung WebView | HTML, CSS, JavaScript, Leaflet 1.9.4 |
 | Backend | Node.js, Express 4, Firebase Admin SDK, REST/HTTPS, Server-Sent Events, Node Crypto và Fetch native |
 | Database | Cloud Firestore; Room trên SQLite cho dữ liệu cục bộ được chọn |
 | Cache và trạng thái | Room/DAO, SharedPreferences, cache Firestore SDK, Map/TTL trong RAM backend và listener dùng chung |
-| Xác thực/bảo mật | Firebase Auth, Google Credential Manager/Google ID, App Check Play Integrity, Firestore Rules, reCAPTCHA v2, kiểm quyền server, chữ ký media/webhook |
+| Xác thực/bảo mật | Firebase Auth, Google Credential Manager/Google ID, App Check Play Integrity, Firestore Rules, kiểm quyền server, chữ ký media/webhook |
 | Ảnh | Cloudinary REST API/CDN, Cloudflare Worker, Glide |
 | Vị trí/bản đồ | Fused Location Provider, Android Geocoder, Haversine, Leaflet, OpenStreetMap tiles, map intent ngoài app |
 | Thanh toán | VietQR, SePay webhook, COD và trả tiền trực tiếp khi nhận gói |
@@ -87,7 +87,7 @@ Source ứng dụng là Java; file `.kts` dùng cấu hình Gradle, không phả
 - **Java** - CI chọn JDK 21; dùng JDK tương thích cấu hình Gradle/AGP của dự án.
 - **Node.js/npm** - Node ≥20 cho backend.
 - **Firebase CLI và project** - Auth, Firestore, Rules/indexes và App Check phù hợp môi trường.
-- **Dịch vụ** - Render cho backend, Cloudflare Worker/Cloudinary cho media; cấu hình provider khi cần QR, webhook và CAPTCHA.
+- **Dịch vụ** - Render cho backend, Cloudflare Worker/Cloudinary cho media; cấu hình provider khi cần QR và webhook.
 
 ### Bước 1 Clone repository
 
@@ -123,7 +123,7 @@ Backend đọc `process.env`, không tự tải `.env` bằng dotenv. Dùng Rend
 | `MEDIA_WORKER_SECRET` | Secret giống nhau trên Render và Worker |
 | `NOTIFICATION_WORKER_SECRET` | Secret giống nhau trên Render và Actions |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_SIGNING_URL` | Tích hợp media/QR của backend khi cần |
-| `PASSWORD_RECAPTCHA_SITE_KEY`, `PASSWORD_RECAPTCHA_SECRET_KEY`, `PASSWORD_RECAPTCHA_HOSTNAMES` | CAPTCHA đăng nhập password |
+| `PASSWORD_RECAPTCHA_SITE_KEY`, `PASSWORD_RECAPTCHA_SECRET_KEY`, `PASSWORD_RECAPTCHA_HOSTNAMES` | Chỉ dùng cho endpoint CAPTCHA cũ; app hiện tại không sử dụng |
 | `SEPAY_MERCHANTS_JSON` | Cấu hình riêng tư Seller/ngân hàng/webhook |
 | `VIETQR_CLIENT_ID`, `VIETQR_API_KEY` | API tạo VietQR tùy chọn |
 | `RESCUE_FUND_SELLER_ID` | Chọn kết nối ngân hàng Seller dùng chung cho Hũ |
@@ -163,11 +163,9 @@ Email đặt lại mật khẩu do **Firebase Authentication** gửi. Cấu hìn
 
 Bật Google trong Firebase Auth, khai báo fingerprint chứng chỉ ký của bản Android rồi tải lại `google-services.json`. Credential Manager sử dụng resource `default_web_client_id` để lấy Google ID token; Firebase Auth đổi credential này thành phiên đăng nhập. Build lại sau khi đổi cấu hình; đối chiếu [GoogleCredentialService](app/src/main/java/com/rescuefarm/service/auth/GoogleCredentialService.java).
 
-### Bước 8 Cấu hình reCAPTCHA v2
+### Bước 8 Đăng nhập email/password
 
-Tạo key **web v2 checkbox** cho hostname backend, đặt ba biến `PASSWORD_RECAPTCHA_*` trên Render. App tải `/auth/password-captcha` và gọi `/auth/password-captcha/verify` trước khi đăng nhập password.
-
-Ô ngang cần backend có `size: normal` cùng APK tương ứng. Đây là gate trong luồng app, không bật enforcement toàn cục Identity Platform. Đăng ký/Google Sign-In giữ luồng cũ. Xem [hướng dẫn CAPTCHA](docs/password-login-recaptcha.md).
+App hiện tại đăng nhập trực tiếp qua Firebase Authentication, không cần widget, token hoặc cấu hình reCAPTCHA trên Render. Build và cài APK mới để áp dụng. Endpoint CAPTCHA trên backend được giữ để tương thích APK cũ; xem [tài liệu CAPTCHA lịch sử](docs/password-login-recaptcha.md).
 
 ### Bước 9 Cấu hình QR và SePay
 

@@ -88,31 +88,6 @@
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <FrameLayout
-            android:id="@+id/passwordCaptchaViewport"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginStart="@dimen/auth_horizontal_margin"
-            android:layout_marginEnd="@dimen/auth_horizontal_margin"
-            android:layout_marginTop="12dp">
-            <WebView
-                android:id="@+id/passwordCaptchaWebView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:importantForAutofill="noExcludeDescendants" />
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/passwordCaptchaStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/auth_horizontal_margin"
-            android:layout_marginEnd="@dimen/auth_horizontal_margin"
-            android:text="@string/password_captcha_hint"
-            android:textSize="12sp"
-            android:textColor="@color/rescue_on_surface_variant"
-            android:accessibilityLiveRegion="polite" />
-
         <com.google.android.material.button.MaterialButton
             android:id="@+id/forgotPasswordButton"
             style="@style/Widget.Material3.Button.TextButton"

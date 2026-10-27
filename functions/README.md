@@ -13,11 +13,7 @@ This folder replaces Firebase Cloud Functions with an Express API. The Firebase 
 
 ## Routes
 
-Password-login CAPTCHA: `GET /auth/password-captcha` serves the real Google v2 widget;
-`POST /auth/password-captcha/verify` checks its response server-side without Firestore reads.
-Configure the site key, secret and allowed hostnames before installing the new APK.
-See [setup and protection scope](../docs/password-login-recaptcha.md). Google sign-in and
-registration keep their existing flows; this does not enable global Identity Platform enforcement.
+The current Android app signs in with email/password directly through Firebase Auth, without CAPTCHA. Legacy `GET /auth/password-captcha` and `POST /auth/password-captcha/verify` routes remain available for older APKs. Their keys and hostnames are only needed by those older clients. See the [historical CAPTCHA guide](../docs/password-login-recaptcha.md).
 
 - **Expanded rescue programs:** `/rescue/*` provides stock-backed mystery boxes and nearby flash alerts. These use cash-at-pickup with explicit buyer receipt, not prepayment/refunds. See [setup, API and operation guide](../docs/rescue-programs-setup.md). Deploy the new indexes and keep the existing notification worker heartbeat configured; `/health` exposes `rescueProgramsVersion: 1`.
 
