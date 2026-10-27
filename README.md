@@ -217,17 +217,7 @@ The automated test suites and one-off audit scripts were removed during reposito
 The Android [package workflow](.github/workflows/android-package.yml) builds debug APKs, uploads a **Packages** artifact and attaches APK/checksum files for `v*` releases. It requires the `GOOGLE_SERVICES_JSON` Actions secret for usable push/manual builds and public endpoint variables. It does not deploy Render, Worker or Firestore configuration. Debug artifacts are not Play Store-signed releases.
 
 ### Default Account Credentials
-#### Admin
-- **Email**: admin@gmail.com
-- **Password**: admin123
 
-#### Seller
-- **Email**: seller@gmail.com
-- **Password**: seller123
-
-#### Customer
-- **Email**: customer@gmail.com
-- **Password**: customer123
 
 ## Development Team
 
