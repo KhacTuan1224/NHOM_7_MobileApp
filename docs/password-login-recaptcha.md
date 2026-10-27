@@ -1,4 +1,6 @@
-# reCAPTCHA cho đăng nhập bằng mật khẩu
+# reCAPTCHA cho đăng nhập bằng mật khẩu (lịch sử)
+
+> Cập nhật 27/10/2026: đã gỡ reCAPTCHA khỏi màn hình và luồng đăng nhập Android. App gọi trực tiếp Firebase Auth sau khi kiểm tra email/mật khẩu; không gọi endpoint CAPTCHA trên Render. Cần build/cài APK mới. Các endpoint backend được giữ để tương thích APK cũ. Nội dung dưới đây mô tả tích hợp trước khi gỡ; các file adapter/token phía Android đã được xóa.
 
 ## Phạm vi
 

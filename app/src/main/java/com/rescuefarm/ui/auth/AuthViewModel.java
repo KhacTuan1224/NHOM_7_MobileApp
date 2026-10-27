@@ -74,21 +74,14 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void signIn(String email, String password) {
-        signIn(email,password,"");
-    }
-
-    public void signIn(String email, String password, String responseToken) {
         if(screenState.getValue()!=null && screenState.getValue().getStatus()==AuthScreenState.Status.LOADING)return;
         String validationError = AuthValidator.validateLogin(email, password);
         if (validationError != null) {
             screenState.setValue(AuthScreenState.error(validationError));
             return;
         }
-        if(responseToken==null || responseToken.trim().length()<10 || responseToken.length()>8192){
-            screenState.setValue(AuthScreenState.error("Vui lòng xác minh reCAPTCHA trước khi đăng nhập."));return;
-        }
         screenState.setValue(AuthScreenState.loading());
-        authRepository.signInWithCaptcha(email.trim(), password, responseToken, createAuthCallback());
+        authRepository.signIn(email.trim(), password, createAuthCallback());
     }
 
     public void register(
