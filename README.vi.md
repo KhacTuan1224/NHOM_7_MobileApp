@@ -212,7 +212,7 @@ Các bộ test tự động và thư mục `scripts` ở root không còn trong 
 
 Workflow [đóng gói Android](.github/workflows/android-package.yml) vẫn build APK debug, tạo artifact Packages và đính kèm APK/checksum cho tag `v*`. Cần secret `GOOGLE_SERVICES_JSON` và biến endpoint phù hợp để build dùng được; workflow không triển khai backend, Worker hoặc Firestore.
 
-Workflow vẫn gọi `scripts/check_navigation.py` đã bị xóa; cần cập nhật bước này hoặc khôi phục script để CI chạy qua với bộ file hiện tại.
+Workflow APK kiểm tra cú pháp JavaScript backend/Worker, chuẩn bị cấu hình Firebase, build Android và đóng gói APK/checksum; không chạy test hoặc script điều hướng đã bị xóa.
 
 ## Nhóm phát triển
 

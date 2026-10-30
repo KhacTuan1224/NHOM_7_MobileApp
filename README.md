@@ -217,7 +217,7 @@ The automated test suites and root-level `scripts` directory are no longer prese
 
 The Android [package workflow](.github/workflows/android-package.yml) builds debug APKs, uploads a **Packages** artifact and attaches APK/checksum files for `v*` releases. It requires the `GOOGLE_SERVICES_JSON` Actions secret for usable push/manual builds and public endpoint variables. It does not deploy Render, Worker or Firestore configuration. Debug artifacts are not Play Store-signed releases.
 
-The workflow still calls the deleted `scripts/check_navigation.py`; that step must be updated or the script restored before CI can pass with the current file set.
+The APK workflow checks backend/Worker JavaScript syntax, prepares Firebase configuration, builds Android and packages the APK/checksum. It does not run tests or the deleted navigation script.
 
 ## Development Team
 
