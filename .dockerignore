@@ -1,0 +1,10 @@
+# Only backend runtime source and dependency manifests enter the build context.
+**
+!Dockerfile
+!.dockerignore
+!functions/
+!functions/package.json
+!functions/package-lock.json
+!functions/*.js
+!functions/scripts/
+!functions/scripts/*.js

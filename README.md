@@ -196,6 +196,8 @@ npm --prefix functions start
 
 Check `/health` on the backend. The [Render blueprint](functions/render.yaml) specifies `functions` as the root directory, `npm install` as the build command and `npm start` as the start command. See [backend operations](functions/README.md) for startup migrations, optional integrations and hosting limits.
 
+Alternatively, build the backend using the root [Dockerfile](Dockerfile). The [Docker package workflow](.github/workflows/docker-package.yml) publishes its image to GitHub Packages/GHCR on `main` updates and version tags; see [Docker setup and publishing](docs/docker-packaging.md). Android is distributed separately as an APK through Releases.
+
 ### Step 12: Build and Access the Application
 
 From PowerShell at the repository root:
@@ -218,6 +220,8 @@ The automated test suites and root-level `scripts` directory are no longer prese
 The Android [package workflow](.github/workflows/android-package.yml) builds debug APKs, uploads a **Packages** artifact and attaches APK/checksum files for `v*` releases. It requires the `GOOGLE_SERVICES_JSON` Actions secret for usable push/manual builds and public endpoint variables. It does not deploy Render, Worker or Firestore configuration. Debug artifacts are not Play Store-signed releases.
 
 The APK workflow checks backend/Worker JavaScript syntax, prepares Firebase configuration, builds Android and packages the APK/checksum. It does not run tests or the deleted navigation script.
+
+The first-release description is prepared in [v1.0.0 release notes](docs/releases/v1.0.0.md); the tag workflow uses this text when creating that release.
 
 ## Development Team
 
