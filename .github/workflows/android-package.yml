@@ -32,9 +32,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Check navigation destinations
-        run: python3 scripts/check_navigation.py
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -126,6 +123,9 @@ jobs:
       contents: write
       actions: read
     steps:
+      - name: Check out release notes
+        uses: actions/checkout@v7
+
       - name: Download Packages artifact
         uses: actions/download-artifact@v7
         with:
@@ -139,6 +139,12 @@ jobs:
         run: |
           TAG="$GITHUB_REF_NAME"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "RescueFarm $TAG" --generate-notes
+            if [[ "$TAG" == "v1.0.0" ]]; then
+              gh release create "$TAG" \
+                --title 'RescueFarm v1.0.0' \
+                --notes-file docs/releases/v1.0.0.md
+            else
+              gh release create "$TAG" --title "RescueFarm $TAG" --generate-notes
+            fi
           fi
           gh release upload "$TAG" Packages/*.apk Packages/*.sha256 --clobber

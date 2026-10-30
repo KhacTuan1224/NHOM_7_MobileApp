@@ -191,6 +191,8 @@ npm --prefix functions start
 
 Kiểm tra endpoint `/health`. [Blueprint Render](functions/render.yaml) dùng root `functions`, build `npm install`, start `npm start`. Xem [vận hành backend](functions/README.md) trước khi chạy startup migration hoặc tích hợp provider.
 
+Có thể đóng gói backend bằng [Dockerfile](Dockerfile) ở root. [Workflow Docker package](.github/workflows/docker-package.yml) đưa image lên GitHub Packages/GHCR khi cập nhật `main` hoặc push tag phiên bản; xem [hướng dẫn Docker và phát hành](docs/docker-packaging.md). Android được phân phối riêng bằng APK trong Releases.
+
 ### Bước 12 Build và mở app
 
 Tại root repo bằng PowerShell:
@@ -212,7 +214,9 @@ Các bộ test tự động và thư mục `scripts` ở root không còn trong 
 
 Workflow [đóng gói Android](.github/workflows/android-package.yml) vẫn build APK debug, tạo artifact Packages và đính kèm APK/checksum cho tag `v*`. Cần secret `GOOGLE_SERVICES_JSON` và biến endpoint phù hợp để build dùng được; workflow không triển khai backend, Worker hoặc Firestore.
 
-Workflow vẫn gọi `scripts/check_navigation.py` đã bị xóa; cần cập nhật bước này hoặc khôi phục script để CI chạy qua với bộ file hiện tại.
+Workflow APK kiểm tra cú pháp JavaScript backend/Worker, chuẩn bị cấu hình Firebase, build Android và đóng gói APK/checksum; không chạy test hoặc script điều hướng đã bị xóa.
+
+Nội dung phát hành đầu tiên đã soạn tại [release notes v1.0.0](docs/releases/v1.0.0.md); workflow theo tag dùng nội dung này khi tạo bản phát hành tương ứng.
 
 ## Nhóm phát triển
 
