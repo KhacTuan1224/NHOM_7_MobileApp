@@ -23,9 +23,9 @@ This README describes the repository implementation and configuration, not a gua
 - **Product Detail** - View descriptions, image galleries, seller information and batch choices. Expiry and available stock belong to a batch, not the product as a whole.
 - **Search and Discovery** - Search loaded content by keyword and filter by category, price, location and sorting options; load more to extend results.
 - **Shopping Cart** - Add products by batch, update quantities and remove items. Guest carts use Room; signed-in Customer carts use Firestore.
-- **Checkout** - Revalidate price, shipping, batch expiry, stock and campaign allocations on the backend; use request IDs to prevent duplicate orders/reservations.
-- **Payment Methods** - COD and configured bank-transfer QR flows, with SePay webhook verification for enabled sellers.
-- **Order Management** - Follow order history and status, cancel where allowed and confirm receipt with ownership checks.
+- **Checkout** - Support delivery, pickup and on-site rescue; revalidate price, shipping, batch expiry, stock and campaign allocations on the backend, with request IDs to prevent duplicate orders/reservations.
+- **Payment Methods** - COD for delivery, cash for pickup/on-site rescue and configured bank-transfer QR flows, with SePay webhook verification for enabled sellers.
+- **Order Management** - Follow order history and status, cancel where allowed and confirm receipt with ownership checks. Guests can look up orders using the order code and receiver phone number.
 - **Favorites and Reviews** - Save products and submit reviews for eligible purchases.
 - **Rescue Campaigns** - Read campaign details, progress and linked products; react, report and comment with text and up to three photos. Anonymous presentation uses a fixed name/avatar.
 - **Rescue Map** - Open the Home map preview, inspect fixed/mobile points and follow fresh positions shared by a Seller's phone.
@@ -39,7 +39,7 @@ This README describes the repository implementation and configuration, not a gua
 
 - **Seller Application** - Apply for Seller access and wait for Admin approval.
 - **Storefront and Products** - Manage owned product information, images and storefront details.
-- **Batch Inventory** - Manage prices, quantities and expiry dates without discarding transaction history.
+- **Batch Inventory** - Manage harvest/expiry dates and quantities while preserving stock movements. Original/rescue prices are managed on the product, not on each batch.
 - **Campaign Management** - Create campaigns tied to real batches and submit content for review.
 - **Mobile Rescue Points** - Start/stop foreground GPS sharing for an eligible mobile campaign. Updates are throttled; viewers receive server events rather than one Firestore query per second.
 - **Orders and Fulfillment** - Process owned orders and shipments through allowed state transitions.
@@ -79,7 +79,7 @@ Admin functions are implemented in the Android application. There is no separate
 | Payment | VietQR generation/QR images, SePay webhooks, COD and pickup cash flows |
 | Notifications and Background Work | Firebase Cloud Messaging, WorkManager, foreground location service, backend reconciliation/outbox workers |
 | DevOps and Checks | Git, GitHub, GitHub Actions, Render, Cloudflare Workers/Wrangler, Gradle Kotlin DSL, Android Lint and JavaScript syntax checks |
-| Dataset and Tooling | Historical `daohoangson/dvhcvn` JSON snapshot bundled as offline TSV; Python maintenance/audit scripts and PowerShell helpers |
+| Dataset and Tooling | Historical `daohoangson/dvhcvn` JSON snapshot bundled as offline TSV; Python and PowerShell helpers for report generation, plus Node.js Admin bootstrap and SePay configuration checks |
 | Environment Configuration | Gradle properties / BuildConfig for public client settings; Node `process.env`, Render variables, Worker vars/secrets and GitHub Actions variables/secrets |
 
 Application source is Java; `.kts` files configure Gradle rather than implementing a Kotlin UI. The backend is hosted on Render, not Firebase Cloud Functions. Cloudinary integration uses REST/native Fetch rather than an installed Cloudinary SDK. Full source mapping and versions are in [technology-stack.md](docs/technology-stack.md).
@@ -148,6 +148,8 @@ Keep service accounts, signing secrets, bank configuration and real customer dat
 
 The default alias is recorded in `.firebaserc`; explicitly select your project rather than assuming that alias is your environment. Firestore uses collections/documents, not a MySQL schema import. Room creates/migrates the local SQLite database from application code.
 
+Debug builds use the App Check debug provider; register the device's debug token in Firebase Console if App Check enforcement is enabled. Release builds use Play Integrity and need the corresponding app registration and signing configuration.
+
 ### Step 5: Configure Cloudinary Image Storage
 
 Set the Worker variables `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `FIREBASE_PROJECT_ID` and `MEDIA_BACKEND_URL` for your environment. From `cloudinary-worker`, store private values and deploy using Wrangler:
@@ -209,15 +211,13 @@ The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Select the in
 ```powershell
 .\gradlew.bat :app:assembleDebug :app:lintDebug
 npm --prefix functions run check
-python scripts/check_navigation.py
 ```
 
-The automated test suites and one-off audit scripts were removed during repository cleanup. Current checks cover Android build/lint, backend/Worker JavaScript syntax and navigation destinations. See [cleanup details](docs/repository-cleanup.md). Historical test results in report/audit documents describe earlier repository versions.
+The automated test suites and root-level `scripts` directory are no longer present. Current commands cover Android build/lint and backend/Worker JavaScript syntax. The [cleanup record](docs/repository-cleanup.md) describes an earlier cleanup state and still lists root scripts that have since been removed; historical test results in report/audit documents describe earlier repository versions.
 
 The Android [package workflow](.github/workflows/android-package.yml) builds debug APKs, uploads a **Packages** artifact and attaches APK/checksum files for `v*` releases. It requires the `GOOGLE_SERVICES_JSON` Actions secret for usable push/manual builds and public endpoint variables. It does not deploy Render, Worker or Firestore configuration. Debug artifacts are not Play Store-signed releases.
 
-### Default Account Credentials
-
+The workflow still calls the deleted `scripts/check_navigation.py`; that step must be updated or the script restored before CI can pass with the current file set.
 
 ## Development Team
 

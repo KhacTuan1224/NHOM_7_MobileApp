@@ -1,0 +1,150 @@
+{
+  "source_zip": "C:\\Users\\THANH DAT\\Downloads\\MOBILE FINAL PROJECT.zip",
+  "source_pdf": "C:\\Users\\THANH DAT\\Downloads\\MOBILE FINAL PROJECT (1).pdf",
+  "preserved_original_text": [
+    "CHƯƠNG 5. XÂY DỰNG ỨNG DỤNG",
+    "5.1. Cấu Trúc của Ứng dụng",
+    "RescueFarm được xây dựng bằng Java và XML Views trên Android, phục vụ Guest, Customer, Seller và Admin. Chương này trình bày cách tổ chức mã nguồn, kết nối Firebase và phối hợp dữ liệu giữa các trang.",
+    "Hình 5.1 Tổng quan các thành phần RescueFarm",
+    "Hình trên là cách tổ chức của hệ thống trong ứng dụng Android, tầng truy cập dữ liệu và backend. Ở Android, Fragment hiển thị nội dung, ViewModel giữ trạng thái màn hình và Repository phối hợp Firebase với bộ nhớ cục bộ. Các tác vụ như checkout, kiểm tra tồn kho và xác minh thanh toán được xử lý tập trung tại server nhằm tránh rủi ro từ dữ liệu phía người dùng.",
+    "Bảng 5.1 Ánh xạ cấu trúc mã nguồn và vai trò",
+    "Thành phầnVai tròVí dụ trong mã nguồnui/Fragment, ViewModel, adapter và trạng thái theo màn hìnhHomeViewModel, CampaignDetailFragment, CartViewModeldomain/Model, enum và logic nghiệp vụ được tách biệt ra khỏi UIProduct, ProductBatch, RescueCampaign, Commentdata/repository/Quản lý đọc/ghi dữ liệu, tự động chọn nguồn theo sessionProductRepository, CartRepositoryFactory data/remote/firebase/Query, listener, ánh xạ document và xử lý quyền truy cậpFirebaseProductRepository, SnapshotLiveData data/local/Quản lý Room database (entity, DAO, mapper) và lưu trữ cài đặt cục bộ RescueFarmDatabase, HomeLocationStore service/HTTP backend, GPS, media, giá/kho và đồng bộ dữ liệu ngầmRenderBackendClient, MobileLocationService, ReadCacheSyncWorker res/Layout XML, responsive, drawable và navigation layout, layout-land, navigation graph functions/Express trên Render, nghiệp vụ cần kiểm tra phía server commerce.js, sepay.js, rescue-fund.jscloudinary-worker/Xác thực và tạo chữ ký bảo mật cho tệp tin Cloudinary, không lưu API Secret trong APKsrc/index.js",
+    "Ứng dụng RescueFarm được xây dựng trên nền tảng Android (Java/XML) áp dụng kiến trúc MVVM kết hợp Repository Pattern. Kiến trúc giúp phân tách rõ ràng giữa giao diện (Fragment/Activity), quản lý trạng thái (ViewModel), xử lý nghiệp vụ (Domain Model) và quản lý dữ liệu (Repository). Các tác vụ nhạy cảm như checkout, kiểm tra tồn kho và xác nhận thanh toán được xử lý tập trung tại backend Express trên Render để đảm bảo tính an toàn dữ liệu.",
+    "+ Bảo mật và Tải tệp: Sử dụng Cloudinary Worker để ký số tự động cho hình ảnh, không lưu trữ secret key phía client.",
+    "+ Cơ chế Cache cục bộ: Ứng dụng tích hợp Room Database lưu đệm dữ liệu công khai (danh mục, sản phẩm, chiến dịch - hiệu lực 10 đến 60 phút) và dữ liệu cá nhân theo session/tài khoản. Cache đóng vai trò hỗ trợ đọc nhanh cho ngoại tuyến, không thay thế việc kiểm tra giá và tồn kho trực tuyến.",
+    "5.2. Kết nối với Firebase",
+    "Ứng dụng kết nối với Firebase qua google-services.json và quản lý thư viện tập trung bằng Firebase BoM (Bill of Materials).",
+    "+ Firebase Authentication: Quản lý đăng ký/đăng nhập bằng Email/Password hoặc Google Sign-In, liên kết định danh người dùng qua UID.",
+    "+ Cloud Firestore & Security Rules: Phân quyền truy cập dữ liệu trực tiếp trên client bằng Firestore Security Rules dựa vào vai trò người dùng (Guest, Customer, Seller, Admin). Đối với backend, Admin SDK tự xác thực ID Token và chịu trách nhiệm kiểm tra nghiệp vụ độc lập.",
+    "Hình 5.2.1 Hai đường truy cập Firebase qua SDK client và backend",
+    "Bảng 5.2 Cấu hình kết nối và phạm vi từng dịch vụ",
+    "Dịch vụ hoặc cấu hìnhCách sử dụng trong RescueFarmAuthenticationEmail/mật khẩu, Google Credential Manager lấy Google ID token rồi đổi thành Firebase credential, UID liên kết hồ sơ users Firestore và RulesLưu collection/document, Rules kiểm tra vai trò, trạng thái và quyền sở hữu của thao tác SDK, Index phục vụ query hiện cóRender và Admin SDKXác thực ID token và kiểm nghiệp vụ phía server, Admin SDK không tự chịu giới hạn Rules của clientMedia và NotificationẢnh lưu Cloudinary qua Worker, Firestore giữ URL/metadata, FCM hỗ trợ nhận thông báo",
+    "Hình 5.2.2 Một vài collection trong database",
+    "Hình 5.2.3 Một vài thông tin tài khoản trong database",
+    "Hình 5.2.3 Mục rules của ứng dụng RescueFarm",
+    "5.3. Xây Dựng Nội Dung Các Trang",
+    "a) Trang chủ và Trang tìm kiếm",
+    "- Quản lý trạng thái (HomeViewState): HomeViewModel lắng nghe dữ liệu từ Repository, tổng hợp trạng thái tải, bộ lọc và vị trí địa lý để cung cấp cho UI.",
+    "- Truy vấn & Cache: Tải tối đa 12 sản phẩm/chiến dịch ACTIVE cho mỗi trang (query limit = 13 để xác định còn trang). SnapshotLiveData tự tháo listener khi màn hình mất quan sát để tránh rò rỉ tài nguyên.",
+    "- Tìm kiếm (DiscoveryEngine): Lọc từ khóa, danh mục, khoảng giá và tính khoảng cách theo tọa độ địa lý trực tiếp trên tập dữ liệu đã tải.",
+    "Bảng 5.3.1 Đầu vào và kết quả của luồng xử lý",
+    "Đầu vàoXử lý và đầu raTừ khóa và bộ lọcHomeSearchInput chuẩn hóa thao tác nhập, DiscoveryQuery/DiscoveryEngine tạo danh sách phù hợp GPS hoặc vị trí chọnHomeLocationStore giữ lựa chọn theo sessionLàm mới hoặc tải thêm Repository cập nhật query, lỗi mạng giữ nội dung đã tải thay vì giả danh sách mới",
+    "b) Trang chi tiết sản phẩm và Trang giỏ hàng",
+    "- Chi tiết & Lô hàng: Đối tượng Product chứa thông tin chung, còn ProductBatch quản lý hạn sử dụng, đơn giá và tồn kho riêng cho từng lô. Người dùng bắt buộc chọn lô và số lượng trước khi thêm vào giỏ.",
+    "- Quản lý Giỏ hàng: CartRepositoryFactory linh hoạt chuyển đổi giữa GuestCartRepository (lưu Room cục bộ) và FirebaseCartRepository (lưu Firestore theo customerId).",
+    "c) Trang thanh toán và theo dõi đơn hàng",
+    "- Quy trình Checkout: Client gửi thông tin đến endpoint /checkoutCustomer hoặc /checkoutGuest. Backend thực hiện tính lại giá, phí giao hàng, kiểm tra hạn lô, trừ tồn kho khả dụng và tạo hóa đơn (checkoutReceipts) hoàn toàn trong Firestore Transaction. Thanh toán QR được xác nhận tự động thông qua SePay Webhook.",
+    "d) Trang chiến dịch và bản đồ điểm giải cứu",
+    "- Chế độ vị trí: Hỗ trợ điểm cố định (FIXED_POINT) và điểm di động thời gian thực (MOBILE_POINT).",
+    "- Chia sẻ GPS di động: MobileLocationService (Foreground Service) phía Seller gửi tọa độ lên hệ thống. Backend rescue-map.js lọc điểm công khai và phát dữ liệu thời gian thực tới Customer qua giao thức SSE (Server-Sent Events), giúp Marker tự cập nhật mà không cần polling Firestore liên tục. Bản đồ hiển thị qua Leaflet trong WebView.",
+    "- Bình luận cộng đồng: Hỗ trợ gửi văn bản kèm tối đa 3 ảnh (upload qua Cloudinary). Backend tự động lấy thông tin tác giả từ hồ sơ để chống giả mạo. Hỗ trợ bình luận ẩn danh và tự động bổ sung thông tin tác giả bị thiếu qua cache 60 giây.",
+    "e) Trang quản lý của Seller và Trang quản trị của Admin",
+    "- Quản lý sản phẩm & lô: Seller quản lý sản phẩm/lô thuộc quyền sở hữu của mình. Hệ thống chặn việc đổi trạng thái để tiếp tục bán các lô hàng đã hết hạn và bảo toàn lịch sử giao dịch.",
+    "Bảng 5.3.2 Ánh xạ tác vụ quản lý vào dữ liệu trên Firebase",
+    "Nhóm tác vụThao tác dữ liệuSản phẩm và ảnhRepository thực hiện ghi dữ liệu vào collection products tuân theo quyền của Seller, Worker đảm nhận việc upload media và document sẽ lưu giữ URL cùng public ID của ảnh Quản lý lôGhi nhận productBatches theo sản phẩm thuộc quyền sở hữu của Seller, kiểm tra hạn sử dụng và tính nhất quán của tồn kho, trong đó lượng hàng đang bị giữ (chờ thanh toán/xử lý) không được tính là hàng còn bánTạo chiến dịchCho phép chọn lô hàng, mục tiêu, lịch trình và chế độ định vị điểm, ghi nhận dữ liệu vào campaigns Kiểm duyệtAdmin xem xét yêu cầu đăng ký của Seller cùng nội dung chi tiết, thực hiện phê duyệt hoặc từ chối, đồng thời ghi lại trạng thái và thông tin kiểm duyệtĐơn và vận hànhSeller xử lý các đơn hàng thuộc về mình, Admin thực hiện xem và đối soát dữ liệu dựa trên phân quyền. Tuyệt đối không cho phép sửa đơn hàng hoặc thay đổi trạng thái thanh toán trực tiếp từ phía client",
+    "- Kiểm duyệt trên Mobile: Admin thực hiện xem xét và phê duyệt yêu cầu của Seller/Chiến dịch trực tiếp trên ứng dụng mobile. Mọi thao tác ghi dữ liệu đều được bảo vệ nghiêm ngặt qua Firestore Rules và Admin SDK backend.",
+    "f) Trang hũ giải cứu và thiện nguyện",
+    "- Minh bạch tài chính: Màn hình Hũ hiển thị số tiền khả dụng, tiền đang giữ, tiền đã chi và biến động quỹ. Tiền ủng hộ vào quỹ được tự động ghi nhận và chống trùng qua SePay Webhook.",
+    "- Phân bổ tự động: Backend tự chọn các lô hàng có hạn sử dụng phù hợp () để phân bổ. Thao tác phân bổ giữ đồng thời tiền và hàng qua Transaction.",
+    "- Vòng đời chuyến hàng: Tuân thủ chuỗi trạng thái RESERVED ACCEPTED DELIVERED VERIFIED PAID. Seller phải gửi ảnh bằng chứng trước deadline (24 giờ). Admin xác minh (VERIFY) và thực hiện chuyển tiền ngoài app (PAY) để chốt sổ.",
+    "- Công thức cân đối quỹ:"
+  ],
+  "restored_images_5_1_5_2": [
+    "images/image18.png",
+    "images/image59.png",
+    "images/image44.png",
+    "images/image34.png",
+    "images/image40.png"
+  ],
+  "removed_5_3_image_files": [
+    "images/image21.png",
+    "images/image19.png",
+    "images/image38.png",
+    "images/image50.png",
+    "images/image6.png",
+    "images/image47.png",
+    "images/image33.png",
+    "images/image36.png",
+    "images/image13.png",
+    "images/image65.png",
+    "images/image10.png",
+    "images/image55.png",
+    "images/image53.png",
+    "images/image49.png",
+    "images/image32.png",
+    "images/image22.png"
+  ],
+  "replaced_figure_numbers": [
+    "5.3.1",
+    "5.3.2",
+    "5.3.3",
+    "5.3.4",
+    "5.3.5",
+    "5.3.6",
+    "5.3.7",
+    "5.3.8",
+    "5.3.9",
+    "5.3.10",
+    "5.3.11"
+  ],
+  "code_blocks": 15,
+  "explanation_paragraphs": 15,
+  "original_image_hashes": [
+    {
+      "original": "images/image18.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image18.png",
+      "sha256": "68968b87ce126bbf30c1d09f922be02390cfc774dbf39eb0c305dd794a9d9872"
+    },
+    {
+      "original": "images/image59.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image59.png",
+      "sha256": "e5249695608d3a5def9d3a9a63b2ed8c0061eedf11eee1890ae8d182dd4b825b"
+    },
+    {
+      "original": "images/image44.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image44.png",
+      "sha256": "759cc0b60fb50ab5e157cdaaf5db3d71917a414f7f3acd5550c6f8de7a3ac4b1"
+    },
+    {
+      "original": "images/image34.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image34.png",
+      "sha256": "5cfa33791f4b5e4b278504f45bd886062ed67cc4600a59926792b8815d13fb7e"
+    },
+    {
+      "original": "images/image40.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image40.png",
+      "sha256": "282aee26d773f3035bd60a86d8dd1f9e4b8798613c6beb4125286d6805ceff39"
+    },
+    {
+      "original": "images/image1.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image1.png",
+      "sha256": "d7cce49bc30bd7411dcdc6e42edde1585bf56d6a6056789fd6ac2eaf6fec6621"
+    },
+    {
+      "original": "images/image2.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image2.png",
+      "sha256": "15a864e59603b948bd399f114951b3d9a42dac89bce302ff509329012ee36e48"
+    },
+    {
+      "original": "images/image2.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image2.png",
+      "sha256": "15a864e59603b948bd399f114951b3d9a42dac89bce302ff509329012ee36e48"
+    },
+    {
+      "original": "images/image2.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image2.png",
+      "sha256": "15a864e59603b948bd399f114951b3d9a42dac89bce302ff509329012ee36e48"
+    },
+    {
+      "original": "images/image2.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image2.png",
+      "sha256": "15a864e59603b948bd399f114951b3d9a42dac89bce302ff509329012ee36e48"
+    },
+    {
+      "original": "images/image3.png",
+      "file": "docs\\report\\part5\\assets\\original-report\\image3.png",
+      "sha256": "1acfa0fe3d66e5ae9c1f99771b2bed7e226b736472ff1afc10ab260fad3b534d"
+    }
+  ],
+  "rule": "5.1 unchanged; 5.2 original text and images plus code underneath; 5.3 original text/tables, replace only numbered figure slots; keep mathematical inline images."
+}

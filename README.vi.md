@@ -20,9 +20,9 @@ README mô tả code và cấu hình trong repo, không khẳng định mọi th
 - **Chi tiết sản phẩm** - Xem mô tả, ảnh, người bán và chọn lô. Hạn dùng/tồn khả dụng thuộc Batch, không phải một hạn dùng chung cho Product.
 - **Tìm kiếm và khám phá** - Từ khóa, danh mục, giá, vị trí và cách sắp xếp trên dữ liệu đã tải; tải thêm để mở rộng kết quả.
 - **Giỏ hàng** - Thêm theo lô, tăng/giảm số lượng và xóa dòng hàng. Guest lưu giỏ bằng Room; Customer đăng nhập dùng Firestore.
-- **Thanh toán đơn** - Backend kiểm lại giá, phí giao hàng, hạn lô, tồn và phân bổ chiến dịch; requestId chống tạo đơn/giữ kho trùng.
-- **Phương thức thu tiền** - COD và QR chuyển khoản theo cấu hình; Seller bật SePay dùng webhook để xác minh tiền vào.
-- **Quản lý đơn** - Theo dõi lịch sử/trạng thái, hủy khi được phép và xác nhận đã nhận hàng theo quyền.
+- **Thanh toán đơn** - Hỗ trợ giao hàng, đến nhận và giải cứu tại điểm; backend kiểm lại giá, phí giao hàng, hạn lô, tồn và phân bổ chiến dịch; requestId chống tạo đơn/giữ kho trùng.
+- **Phương thức thu tiền** - COD khi giao hàng, tiền mặt khi đến nhận/giải cứu tại điểm và QR chuyển khoản theo cấu hình; Seller bật SePay dùng webhook để xác minh tiền vào.
+- **Quản lý đơn** - Theo dõi lịch sử/trạng thái, hủy khi được phép và xác nhận đã nhận hàng theo quyền. Guest tra cứu đơn bằng mã đơn và số điện thoại người nhận.
 - **Yêu thích và đánh giá** - Lưu sản phẩm và gửi đánh giá khi có giao dịch đủ điều kiện.
 - **Chiến dịch và cộng đồng** - Xem tiến độ, sản phẩm liên quan; reaction, báo cáo, bình luận text kèm tối đa ba ảnh. Bình luận ẩn danh dùng tên/avatar mặc định trên giao diện.
 - **Bản đồ giải cứu** - Bản đồ nhỏ trên Home mở ra bản đồ lớn; xem điểm cố định và vị trí còn mới do điện thoại Seller chia sẻ.
@@ -36,7 +36,7 @@ README mô tả code và cấu hình trong repo, không khẳng định mọi th
 
 - **Đăng ký Seller** - Gửi hồ sơ và chờ Admin duyệt.
 - **Cửa hàng và sản phẩm** - Quản lý thông tin, ảnh và sản phẩm thuộc quyền sở hữu.
-- **Kho theo lô** - Quản lý giá, số lượng, hạn dùng; giữ lịch sử giao dịch.
+- **Kho theo lô** - Quản lý ngày thu hoạch, hạn dùng và số lượng; giữ lịch sử biến động kho. Giá gốc/giá giải cứu được quản lý ở sản phẩm, không nằm riêng trên từng lô.
 - **Chiến dịch** - Tạo nội dung gắn lô thật và gửi kiểm duyệt.
 - **Điểm di động** - Bật/tắt chia sẻ GPS bằng foreground service cho chiến dịch đủ điều kiện; có giới hạn tần suất ghi vị trí.
 - **Đơn và giao nhận** - Xử lý đơn thuộc Seller theo các chuyển trạng thái hợp lệ.
@@ -73,8 +73,8 @@ Các tác vụ Admin nằm trong ứng dụng Android, không có web admin riê
 | Vị trí/bản đồ | Fused Location Provider, Android Geocoder, Haversine, Leaflet, OpenStreetMap tiles, map intent ngoài app |
 | Thanh toán | VietQR, SePay webhook, COD và trả tiền trực tiếp khi nhận gói |
 | Nền/thông báo | Firebase Cloud Messaging, WorkManager, foreground location service, outbox/reconciliation backend |
-| DevOps/Testing | Git/GitHub, GitHub Actions, Render, Cloudflare Workers/Wrangler, Gradle Kotlin DSL, JUnit 4, AndroidX Test, Espresso, Room Testing, Node Test Runner, Firebase Emulator Suite/Rules Unit Testing |
-| Dataset/công cụ | Snapshot JSON lịch sử `daohoangson/dvhcvn` đóng gói TSV offline; script Python và PowerShell |
+| DevOps/Testing | Git/GitHub, GitHub Actions, Render, Cloudflare Workers/Wrangler, Gradle Kotlin DSL, Android Lint và kiểm tra cú pháp JavaScript |
+| Dataset/công cụ | Snapshot JSON lịch sử `daohoangson/dvhcvn` đóng gói TSV offline; Python/PowerShell dựng báo cáo, script Node.js bootstrap Admin và kiểm tra cấu hình SePay |
 | Biến môi trường | Gradle properties/BuildConfig cho cấu hình client công khai; process.env, Render Environment, Worker vars/secrets, Actions vars/secrets |
 
 Source ứng dụng là Java; file `.kts` dùng cấu hình Gradle, không phải UI Kotlin. Backend chạy Render, không phải Firebase Cloud Functions. Cloudinary dùng REST/native Fetch, không có SDK Cloudinary được cài làm dependency. Chi tiết phiên bản và đường dẫn kiểm chứng nằm tại [technology-stack.md](docs/technology-stack.md).
@@ -143,6 +143,8 @@ Không đưa service account, secret, tài khoản ngân hàng hay dữ liệu n
 
 Alias mặc định ở `.firebaserc` không tự trở thành project của bạn. Firestore dùng collection/document, không import schema MySQL. Room tạo/migrate SQLite từ mã ứng dụng.
 
+Bản debug dùng App Check debug provider; nếu bật enforcement, đăng ký debug token của thiết bị trong Firebase Console. Bản release dùng Play Integrity và cần cấu hình đăng ký ứng dụng/chứng chỉ ký tương ứng.
+
 ### Bước 5 Cấu hình Cloudinary
 
 Đặt `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `FIREBASE_PROJECT_ID`, `MEDIA_BACKEND_URL` đúng môi trường Worker. Trong thư mục `cloudinary-worker`:
@@ -204,16 +206,13 @@ APK nằm tại `app/build/outputs/apk/debug/app-debug.apk`. Chọn đúng thi�
 ```powershell
 .\gradlew.bat :app:assembleDebug :app:lintDebug
 npm --prefix functions run check
-python scripts/check_navigation.py
 ```
 
-Các bộ test tự động và script audit dùng một lần đã được dọn khỏi repo. Hiện kiểm tra bằng build/lint Android, cú pháp JavaScript backend/Worker và điều hướng. Xem [chi tiết dọn repo](docs/repository-cleanup.md). Kết quả test trong báo cáo/audit cũ là dữ liệu lịch sử.
+Các bộ test tự động và thư mục `scripts` ở root không còn trong repo. Các lệnh hiện tại kiểm tra build/lint Android và cú pháp JavaScript backend/Worker. [Biên bản dọn repo](docs/repository-cleanup.md) ghi nhận trạng thái dọn trước đó, vẫn liệt kê một số script root đã bị xóa sau này; kết quả test trong báo cáo/audit cũ là dữ liệu lịch sử.
 
 Workflow [đóng gói Android](.github/workflows/android-package.yml) vẫn build APK debug, tạo artifact Packages và đính kèm APK/checksum cho tag `v*`. Cần secret `GOOGLE_SERVICES_JSON` và biến endpoint phù hợp để build dùng được; workflow không triển khai backend, Worker hoặc Firestore.
 
-### Thông tin Admin mặc định
-
-**Không có tài khoản/mật khẩu Admin mặc định.** Tạo Customer đang hoạt động, xác minh email rồi dùng [quy trình bootstrap có kiểm soát](docs/admin-bootstrap.md) trên máy tin cậy. Không cho tự chọn Admin khi đăng ký.
+Workflow vẫn gọi `scripts/check_navigation.py` đã bị xóa; cần cập nhật bước này hoặc khôi phục script để CI chạy qua với bộ file hiện tại.
 
 ## Nhóm phát triển
 
