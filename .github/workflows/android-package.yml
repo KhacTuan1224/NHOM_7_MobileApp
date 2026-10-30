@@ -141,7 +141,7 @@ jobs:
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             if [[ "$TAG" == "v1.0.0" ]]; then
               gh release create "$TAG" \
-                --title 'RescueFarm v1.0.0 — Giải cứu nông sản, kết nối cộng đồng' \
+                --title 'RescueFarm v1.0.0' \
                 --notes-file docs/releases/v1.0.0.md
             else
               gh release create "$TAG" --title "RescueFarm $TAG" --generate-notes
